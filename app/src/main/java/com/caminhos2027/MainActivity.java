@@ -10,6 +10,12 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Locale;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
@@ -24,7 +30,7 @@ public class MainActivity extends Activity {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_REQ);
         }
-        webView.loadUrl("file:///android_asset/index.html");
+        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html");
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -37,12 +43,57 @@ public class MainActivity extends Activity {
         s.setAllowContentAccess(true);
         s.setBuiltInZoomControls(false);
         s.setDisplayZoomControls(false);
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                String url = request.getUrl().toString();
+                String prefix = "https://appassets.androidplatform.net/assets/";
+                if (url.startsWith(prefix)) {
+                    String assetPath = url.substring(prefix.length());
+                    try {
+                        InputStream is = getAssets().open(assetPath);
+                        return new WebResourceResponse(mimeType(assetPath), "UTF-8", is);
+                    } catch (IOException ignored) {
+                        return null;
+                    }
+                }
+                return super.shouldInterceptRequest(view, request);
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                String prefix = "https://appassets.androidplatform.net/assets/";
+                if (url.startsWith(prefix)) {
+                    String assetPath = url.substring(prefix.length());
+                    try {
+                        InputStream is = getAssets().open(assetPath);
+                        return new WebResourceResponse(mimeType(assetPath), "UTF-8", is);
+                    } catch (IOException ignored) {
+                        return null;
+                    }
+                }
+                return super.shouldInterceptRequest(view, url);
+            }
+        });
         webView.setWebChromeClient(new WebChromeClient() {
             @Override public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
                 callback.invoke(origin, true, false);
             }
         });
+    }
+
+    private static String mimeType(String path) {
+        String p = path.toLowerCase(Locale.ROOT);
+        if (p.endsWith(".html")) return "text/html";
+        if (p.endsWith(".js")) return "application/javascript";
+        if (p.endsWith(".css")) return "text/css";
+        if (p.endsWith(".json")) return "application/json";
+        if (p.endsWith(".kml")) return "application/vnd.google-earth.kml+xml";
+        if (p.endsWith(".geojson")) return "application/geo+json";
+        if (p.endsWith(".svg")) return "image/svg+xml";
+        if (p.endsWith(".png")) return "image/png";
+        if (p.endsWith(".jpg") || p.endsWith(".jpeg")) return "image/jpeg";
+        return "application/octet-stream";
     }
 
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {

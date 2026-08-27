@@ -26,3 +26,7 @@ Projeto Android preparado para compilação via GitHub Actions.
 
 ## Objetivo seguinte
 Testar no Android real: GPS, acompanhamento do track, afastamento e consumo de bateria; depois melhorar os mapas offline e substituir os dados 2026 pelos dados oficiais 2027.
+
+
+## Correção da primeira build
+A primeira APK carregava o HTML via `file://`, o que impedia o `fetch()` dos ficheiros locais e deixava o mapa e botões sem inicialização. Esta versão usa uma origem HTTPS local (`appassets.androidplatform.net`) para servir os assets e permitir o carregamento do GeoJSON/JSON.

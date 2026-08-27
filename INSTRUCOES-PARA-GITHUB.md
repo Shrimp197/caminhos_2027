@@ -13,3 +13,7 @@
 11. Extraia e instale `app-debug.apk` no Android.
 
 NOTA: o APK é de teste. O percurso é baseado no KML fornecido; os apoios 2026 do protótipo devem ser confirmados antes de uma utilização em campo.
+
+
+### Atualização após o primeiro teste
+Substitui o conteúdo do repositório pela versão deste pacote e faz novo commit. O workflow será executado novamente e gerará uma nova `app-debug.apk`.
