@@ -1,0 +1,27 @@
+{
+  "appVersion": "0.2.0-immersive-test",
+  "routeSource": "caminho-do-centenario.kml",
+  "routeAuthority": "KML",
+  "audioProfile": "immersivo",
+  "audioEvents": {
+    "navigation": true,
+    "offRoute": true,
+    "routeRecovered": true,
+    "routeProgress": true,
+    "localityChanges": true,
+    "supportApproach": true,
+    "supportServices": true,
+    "overnight": true,
+    "breakSuggestions": true
+  },
+  "stageSelection": {
+    "enabled": true,
+    "startAndEndFromRouteLocalities": true,
+    "allowStartFromCurrentLocation": true,
+    "allowContinue": true
+  },
+  "testMode": {
+    "simulation": true,
+    "showAllSupportPoints": true
+  }
+}

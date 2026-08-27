@@ -3,183 +3,63 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#176b3a">
-<title>Caminho do Centenário — Mapa do Peregrino</title>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🥾%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#123d2a">
+<title>Caminho do Centenário</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-:root{--green:#176b3a;--green2:#2e8b57;--bg:#f4f6f3;--card:#fff;--text:#173126;--muted:#65756d;--warn:#c87900;--red:#c63c35}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{background:#10261d;color:#fff;padding:12px 16px;position:sticky;top:0;z-index:1000}
-header .title{font-weight:800;font-size:18px}header .sub{font-size:12px;opacity:.8}
-main{max-width:1200px;margin:auto;padding:12px}
-.grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px}
-.card{background:var(--card);border-radius:16px;box-shadow:0 2px 12px #00000012;overflow:hidden}
-#map{height:68vh;min-height:520px}
-.panel{padding:14px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat{background:#eef5ef;border-radius:12px;padding:10px}.stat b{font-size:20px;display:block}.stat small{color:var(--muted)}
-.status{padding:12px;border-radius:12px;background:#edf7ee;margin-bottom:10px}.status.warn{background:#fff3df;color:#6b4300}
-button,select{font:inherit;border:0;border-radius:10px;padding:10px 12px}button{background:var(--green);color:white;font-weight:700;cursor:pointer}button.secondary{background:#e7eee9;color:var(--green)}
-.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.filters{display:grid;grid-template-columns:1fr 1fr;gap:7px}.filters label{background:#f2f5f2;padding:8px;border-radius:9px;font-size:13px}
-.list{max-height:43vh;overflow:auto}.item{padding:10px 0;border-bottom:1px solid #e8ece9}.item:last-child{border-bottom:0}.item b{display:block}.item small{color:var(--muted)}.badge{display:inline-block;border-radius:999px;padding:3px 7px;font-size:11px;background:#e8f3ea;color:var(--green);margin-top:4px}
-#nextSupport{border:2px solid #d9e9dc}.legend{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted)}.legend span{display:flex;align-items:center;gap:4px}
-.dot{width:12px;height:12px;border-radius:50%;display:inline-block}.routeDot{background:#f1c40f}.freeDot{background:#176b3a}.supportDot{background:#2878c8}
-.footer{font-size:11px;color:var(--muted);padding:10px 2px}.leaflet-popup-content{min-width:220px}.leaflet-popup-content h3{margin:0 0 5px}
-@media(max-width:900px){.grid{grid-template-columns:1fr}#map{height:64vh;min-height:460px}.list{max-height:none}.stats{grid-template-columns:repeat(3,1fr)}}
+:root{--g:#123d2a;--g2:#1f6b49;--bg:#edf2ee;--card:#fff;--text:#173127;--muted:#6a786f;--ok:#176b3a;--warn:#c77910;--danger:#b73932;--route:#f1c40f}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+body{overflow:hidden}.app{height:100%;display:flex;flex-direction:column}.top{background:var(--g);color:#fff;padding:10px 14px 9px;display:flex;align-items:center;justify-content:space-between;z-index:20}.brand{display:flex;align-items:center;gap:9px}.brand .boot{font-size:25px}.brand b{font-size:16px}.brand small{display:block;opacity:.75;font-size:11px}.mode-pill{font-size:12px;border:1px solid #ffffff33;border-radius:999px;padding:6px 8px;background:#ffffff10}
+.main{position:relative;flex:1;min-height:0}.map-wrap{position:absolute;inset:0;background:#dfe8e1}.map-stage{position:absolute;inset:0;transform-origin:center center;transition:transform .35s ease}.map-stage.follow{transition:none}#map{position:absolute;inset:0}
+.panel{position:absolute;left:10px;right:10px;bottom:12px;z-index:10;background:#fffffff2;backdrop-filter:blur(8px);border-radius:18px;box-shadow:0 6px 30px #0003;padding:12px}.row{display:flex;gap:8px;align-items:center}.status{flex:1;border-radius:12px;padding:9px 10px;background:#edf7ee}.status.warn{background:#fff2df}.status b{display:block;font-size:14px}.status small{color:var(--muted)}.btn{border:0;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:800;background:var(--g);color:#fff}.btn.secondary{background:#e7eee9;color:var(--g)}.btn.icon{width:44px;height:44px;padding:0;font-size:19px;border-radius:50%}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:9px}.stat{background:#f4f7f4;border-radius:12px;padding:8px}.stat b{font-size:18px;display:block}.stat small{color:var(--muted);font-size:10px}
+.next{margin-top:9px;border:1px solid #d9e5dc;border-radius:12px;padding:9px 10px;background:#fbfdfb}.next .label{font-size:10px;letter-spacing:.08em;color:var(--muted)}.next b{font-size:14px}.next small{display:block;color:var(--muted);margin-top:2px}
+.toolbar{position:absolute;right:10px;top:10px;z-index:10;display:flex;flex-direction:column;gap:8px}.floating{width:44px;height:44px;border-radius:50%;border:0;background:#fff;box-shadow:0 3px 14px #0003;font-size:18px;color:var(--g)}.floating.active{background:var(--g);color:#fff}
+.menu{position:absolute;left:10px;top:10px;z-index:10}.menu button{background:#fff;border:0;box-shadow:0 3px 14px #0003;border-radius:12px;padding:9px 12px;color:var(--g);font-weight:800}.drawer{position:absolute;z-index:30;left:10px;right:10px;top:58px;background:#fff;border-radius:16px;box-shadow:0 8px 32px #0003;padding:12px;display:none;max-height:55vh;overflow:auto}.drawer.open{display:block}.support{padding:9px 0;border-bottom:1px solid #e8ece9}.support:last-child{border:0}.support b{display:block;font-size:13px}.support small{color:var(--muted)}.tag{display:inline-block;font-size:10px;padding:3px 6px;border-radius:999px;background:#edf5ef;color:var(--g);margin-top:4px}
+.route-dot{width:22px;height:22px;border-radius:50%;background:#2674d8;border:4px solid #fff;box-shadow:0 3px 10px #0005}.leaflet-control-attribution{font-size:8px}.leaflet-popup-content{min-width:220px}.leaflet-popup-content h3{margin:0 0 4px}
+@media(max-width:420px){.panel{left:8px;right:8px;bottom:8px}.stats{gap:5px}.stat{padding:7px}.btn{padding:9px 10px}.top{padding-left:10px;padding-right:10px}}
 </style>
 </head>
 <body>
-<header><div class="title">🥾 Caminho do Centenário</div><div class="sub">Gaia → Fátima · protótipo de navegação pelo KML · dados de apoio 2026</div></header>
-<main>
-<div class="grid">
-<section class="card">
-<div id="map"></div>
-</section>
-<aside class="card panel">
-<div id="status" class="status"><b>GPS desligado</b><br><small>Ativa a localização para testar a navegação real.</small></div>
-<div class="controls">
-<button id="gpsBtn">📍 Ativar GPS</button>
-<button class="secondary" id="simBtn">🧪 Simular posição</button>
-<button class="secondary" id="fitBtn">⤢ Ver percurso</button>
+<div class="app">
+  <header class="top"><div class="brand"><span class="boot">🥾</span><div><b>Caminho do Centenário</b><small>Gaia → Fátima</small></div></div><div class="mode-pill">MODO CAMINHAR</div></header>
+  <main class="main">
+    <div class="map-wrap"><div id="mapStage" class="map-stage"><div id="map"></div></div></div>
+    <div class="menu"><button id="menuBtn">☰</button></div>
+    <div class="toolbar">
+      <button class="floating" id="followBtn" title="Centrar posição">⌖</button>
+      <button class="floating" id="rotateBtn" title="Seguir direção">🧭</button>
+      <button class="floating" id="gpsBtn" title="GPS">📍</button>
+    </div>
+    <div class="drawer" id="drawer"><b>⛺ Apoios no percurso</b><div id="supportList"></div></div>
+    <section class="panel">
+      <div class="row"><div class="status" id="status"><b>GPS desligado</b><small>Ativa o GPS para acompanhar o percurso.</small></div><button class="btn" id="startBtn">▶ Iniciar</button></div>
+      <div class="stats"><div class="stat"><b id="kmDone">0,0</b><small>km no percurso</small></div><div class="stat"><b id="kmLeft">216,1</b><small>km até Fátima</small></div><div class="stat"><b id="offRoute">—</b><small>distância ao traçado</small></div></div>
+      <div class="next"><div class="label">PRÓXIMO APOIO</div><b id="nextName">—</b><small id="nextInfo">Inicia o modo caminhada para acompanhar o percurso.</small></div>
+    </section>
+  </main>
 </div>
-<div class="stats">
-<div class="stat"><b id="kmDone">0,0</b><small>km percorridos</small></div>
-<div class="stat"><b id="kmLeft">216,1</b><small>km até Fátima</small></div>
-<div class="stat"><b id="offRoute">—</b><small>distância ao caminho</small></div>
-</div>
-<hr>
-<div id="nextSupport" class="panel" style="padding:12px;border-radius:12px">
-<small>PRÓXIMO APOIO</small><h3 id="nextName" style="margin:4px 0">—</h3>
-<div id="nextInfo">Ativa o GPS ou usa a simulação.</div>
-</div>
-<hr>
-<b>Filtros</b>
-<div class="filters" style="margin-top:8px">
-<label><input type="checkbox" class="filter" value="gratuito" checked> ⛺ Gratuito</label>
-<label><input type="checkbox" class="filter" value="apoio" checked> 🆘 Institucional</label>
-</div>
-<div class="legend" style="margin-top:10px">
-<span><i class="dot routeDot"></i> percurso KML</span>
-<span><i class="dot freeDot"></i> apoio gratuito</span>
-<span><i class="dot supportDot"></i> apoio institucional</span>
-</div>
-<hr>
-<b>Lista de apoios</b>
-<div id="list" class="list"></div>
-<div class="footer">
-<b>Nota de teste:</b> o traçado é o do KML fornecido. Vários marcadores institucionais de 2026 estão
-<strong>posicionados de forma aproximada no traçado</strong> para testar a interface; não devem ser usados como coordenadas oficiais.
-Os apoios temporários e gratuitos devem ser reconfirmados antes da caminhada de 2027.
-</div>
-</aside>
-</div>
-</main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const ROUTE_URL='data/route.geojson', SUPPORT_URL='data/apoios-2026.json';
-let map, routeLayers=[], supportItems=[], supportMarkers=[], userMarker=null, accuracyCircle=null, watchId=null;
-let routeCoords=[], routePoints=[]; // [lon,lat]
-let totalKm=216.1, simulated=false, simKm=0;
-
-function fmt(n){return n.toLocaleString('pt-PT',{minimumFractionDigits:1,maximumFractionDigits:1})}
-function hav(a,b){const R=6371000,p1=a[1]*Math.PI/180,p2=b[1]*Math.PI/180,dp=(b[1]-a[1])*Math.PI/180,dl=(b[0]-a[0])*Math.PI/180;const h=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(Math.max(0,Math.min(1,h))))}
-function pointSegDistance(p,a,b){
-  const lat=p[1]*Math.PI/180, k=111320, cos=Math.cos(lat);
-  const ax=a[0]*k*cos, ay=a[1]*k, bx=b[0]*k*cos, by=b[1]*k, px=p[0]*k*cos, py=p[1]*k;
-  const dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy||1)));
-  const qx=ax+t*dx,qy=ay+t*dy; const d=Math.hypot(px-qx,py-qy);
-  return {d, q:[(qx/(k*cos)), qy/k]};
-}
-function nearestOnRoute(p){
-  let best={d:Infinity,km:0,q:null},km=0;
-  for(const line of routeCoords){
-    for(let i=1;i<line.length;i++){
-      const a=line[i-1],b=line[i], r=pointSegDistance(p,a,b);
-      if(r.d<best.d) best={d:r.d,km:km+hav(a,b)/1000*(Math.hypot(r.q[0]-a[0],r.q[1]-a[1])/Math.hypot(b[0]-a[0],b[1]-a[1])),q:r.q};
-      km+=hav(a,b)/1000;
-    }
-  }
-  return best;
-}
-function markerIcon(kind){
-  const bg=kind==='gratuito'?'#176b3a':'#2878c8';
-  return L.divIcon({className:'',html:`<div style="width:28px;height:28px;border-radius:50%;background:${bg};border:3px solid white;box-shadow:0 2px 6px #0006;color:white;display:flex;align-items:center;justify-content:center;font-size:14px">${kind==='gratuito'?'⛺':'ℹ️'}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
-}
-function popupHtml(s){
-  const nav=`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=walking`;
-  return `<h3>${s.name}</h3><b>${s.municipality}</b><p>${s.description}</p><p><b>Km do percurso:</b> ${fmt(s.km)} km</p><p style="font-size:12px;color:#667">${s.note}</p><a href="${nav}" target="_blank" rel="noopener">🚶 Navegar até este ponto</a>`;
-}
-function renderSupports(){
-  supportMarkers.forEach(m=>map.removeLayer(m)); supportMarkers=[];
-  const active=[...document.querySelectorAll('.filter:checked')].map(x=>x.value);
-  supportItems.filter(s=>active.includes(s.category)).forEach(s=>{
-    const m=L.marker([s.lat,s.lon],{icon:markerIcon(s.category)}).addTo(map).bindPopup(popupHtml(s));
-    supportMarkers.push(m);
-  });
-  const list=document.getElementById('list'); list.innerHTML='';
-  supportItems.filter(s=>active.includes(s.category)).sort((a,b)=>a.km-b.km).forEach(s=>{
-    const d=document.createElement('div');d.className='item';
-    d.innerHTML=`<b>${s.name}</b><small>${s.municipality} · km ${fmt(s.km)}</small><br><span class="badge">${s.description}</span>`;
-    d.onclick=()=>{map.setView([s.lat,s.lon],16);supportMarkers.find(m=>m.getPopup()?.getContent().includes(s.name))?.openPopup()};
-    list.appendChild(d);
-  });
-}
-function updatePosition(lat,lon,acc=0){
-  if(!userMarker) userMarker=L.marker([lat,lon],{zIndexOffset:1000}).addTo(map).bindPopup('📍 Tu estás aqui');
-  else userMarker.setLatLng([lat,lon]);
-  if(!accuracyCircle) accuracyCircle=L.circle([lat,lon],{radius:acc||20,fillOpacity:.08,weight:1}).addTo(map);
-  else accuracyCircle.setLatLng([lat,lon]).setRadius(acc||20);
-  const n=nearestOnRoute([lon,lat]), km=Math.min(totalKm,Math.max(0,n.km));
-  document.getElementById('kmDone').textContent=fmt(km);
-  document.getElementById('kmLeft').textContent=fmt(totalKm-km);
-  document.getElementById('offRoute').textContent=fmt(n.d/1000)+' km';
-  const st=document.getElementById('status');
-  if(n.d<50){st.className='status';st.innerHTML=`<b>✓ Estás no caminho</b><br><small>${Math.round(n.d)} m do traçado oficial do KML</small>`}
-  else {st.className='status warn';st.innerHTML=`<b>⚠ Estás fora do caminho</b><br><small>${Math.round(n.d)} m do traçado. Usa a direção do mapa para regressar.</small>`}
-  const next=supportItems.filter(s=>s.km>km+0.1).sort((a,b)=>a.km-b.km)[0];
-  if(next){document.getElementById('nextName').textContent=next.name;document.getElementById('nextInfo').innerHTML=`${fmt(next.km-km)} km à frente · ${next.description}`;}
-  map.panTo([lat,lon],{animate:true,duration:.3});
-}
-function simulate(){
-  simulated=true; simKm=simKm>=totalKm?0:simKm+5;
-  const n=nearestRouteAtKm(simKm); updatePosition(n[1],n[0],10);
-  document.getElementById('simBtn').textContent=`🧪 Simular +5 km (${fmt(simKm)})`;
-}
-function nearestRouteAtKm(km){
-  let acc=0;
-  for(const line of routeCoords){
-    for(let i=1;i<line.length;i++){
-      const d=hav(line[i-1],line[i])/1000;
-      if(acc+d>=km){const t=(km-acc)/(d||1);return [line[i-1][0]+t*(line[i][0]-line[i-1][0]),line[i-1][1]+t*(line[i][1]-line[i-1][1])]}
-      acc+=d;
-    }
-  }
-  const l=routeCoords[routeCoords.length-1];return l[l.length-1];
-}
-async function init(){
-  const [r,s]=await Promise.all([fetch(ROUTE_URL).then(x=>x.json()),fetch(SUPPORT_URL).then(x=>x.json())]);
-  supportItems=s.items; totalKm=s.route_km;
-  map=L.map('map',{zoomControl:true}).setView([40.5,-8.6],9);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
-  routeCoords=r.features.map(f=>f.geometry.coordinates);
-  routeCoords.forEach(line=>L.polyline(line.map(p=>[p[1],p[0]]),{color:'#f1c40f',weight:5,opacity:.9}).addTo(map));
-  const all=[];routeCoords.forEach(l=>l.forEach(p=>all.push([p[1],p[0]])));
-  map.fitBounds(L.latLngBounds(all),{padding:[20,20]});
-  renderSupports();
-  document.querySelectorAll('.filter').forEach(x=>x.addEventListener('change',renderSupports));
-  document.getElementById('fitBtn').onclick=()=>map.fitBounds(L.latLngBounds(all),{padding:[20,20]});
-  document.getElementById('simBtn').onclick=simulate;
-  document.getElementById('gpsBtn').onclick=()=>{
-    if(!navigator.geolocation){alert('Este navegador não disponibiliza GPS.');return}
-    if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;document.getElementById('gpsBtn').textContent='📍 Ativar GPS';return}
-    watchId=navigator.geolocation.watchPosition(p=>updatePosition(p.coords.latitude,p.coords.longitude,p.coords.accuracy||20),
-      e=>alert('Não foi possível obter a localização: '+e.message),{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
-    document.getElementById('gpsBtn').textContent='⛔ Desligar GPS';
-  };
-}
+const ROUTE='data/route.geojson', SUPPORTS='data/apoios-2026.json';
+let map, routeCoords=[], supportItems=[], supportMarkers=[], userMarker=null, accuracyCircle=null, watchId=null;
+let totalKm=216.1, currentKm=0, following=false, rotateMode=false, lastHeading=0, simKm=0;
+function fmt(n){return Number(n||0).toLocaleString('pt-PT',{minimumFractionDigits:1,maximumFractionDigits:1})}
+function hav(a,b){const R=6371000,p1=a[1]*Math.PI/180,p2=b[1]*Math.PI/180,dp=(b[1]-a[1])*Math.PI/180,dl=(b[0]-a[0])*Math.PI/180;const h=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+function bearing(a,b){const p1=a[1]*Math.PI/180,p2=b[1]*Math.PI/180,dl=(b[0]-a[0])*Math.PI/180;const y=Math.sin(dl)*Math.cos(p2),x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);return (Math.atan2(y,x)*180/Math.PI+360)%360}
+function pointSegDistance(p,a,b){const lat=p[1]*Math.PI/180,k=111320,cos=Math.cos(lat);const ax=a[0]*k*cos,ay=a[1]*k,bx=b[0]*k*cos,by=b[1]*k,px=p[0]*k*cos,py=p[1]*k;const dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy||1)));const qx=ax+t*dx,qy=ay+t*dy;return {d:Math.hypot(px-qx,py-qy),t,q:[qx/(k*cos),qy/k]}}
+function nearest(p){let best={d:Infinity,km:0,heading:lastHeading};let km=0;for(const line of routeCoords){for(let i=1;i<line.length;i++){const a=line[i-1],b=line[i],r=pointSegDistance(p,a,b),len=hav(a,b)/1000;if(r.d<best.d)best={d:r.d,km:km+len*r.t,heading:bearing(a,b)};km+=len}}return best}
+function pointAtKm(km){let acc=0;for(const line of routeCoords){for(let i=1;i<line.length;i++){const d=hav(line[i-1],line[i])/1000;if(acc+d>=km){const t=(km-acc)/d;return [line[i-1][0]+t*(line[i][0]-line[i-1][0]),line[i-1][1]+t*(line[i][1]-line[i-1][1])}acc+=d}}const l=routeCoords.at(-1);return l.at(-1)}
+function markerIcon(){return L.divIcon({className:'',html:'<div class="route-dot"></div>',iconSize:[22,22],iconAnchor:[11,11]})}
+function popupHtml(s){const nav=`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=walking`;return `<h3>${s.name}</h3><b>${s.municipality}</b><p>${s.description}</p><p><b>Km:</b> ${fmt(s.km)}</p><p style="font-size:11px;color:#667">${s.note}</p><a href="${nav}" target="_blank">🚶 Ir para este local</a>`}
+function updateSupportUI(){const list=document.getElementById('supportList');list.innerHTML='';supportItems.sort((a,b)=>a.km-b.km).forEach(s=>{const d=document.createElement('div');d.className='support';d.innerHTML=`<b>${s.name}</b><small>${s.municipality} · km ${fmt(s.km)}</small><br><span class="tag">${s.description}</span>`;d.onclick=()=>{map.setView([s.lat,s.lon],16);};list.appendChild(d)})}
+function renderSupports(){supportMarkers.forEach(m=>map.removeLayer(m));supportMarkers=[];supportItems.forEach(s=>supportMarkers.push(L.marker([s.lat,s.lon]).setIcon(markerIcon()).addTo(map).bindPopup(popupHtml(s))))}
+function updateRotation(heading){if(!rotateMode)return;lastHeading=heading;document.getElementById('mapStage').style.transform=`rotate(${-heading}deg)`;document.getElementById('mapStage').classList.add('follow')}
+function updatePosition(lat,lon,acc=20,course=null){if(!userMarker)userMarker=L.marker([lat,lon]).setIcon(markerIcon()).addTo(map);else userMarker.setLatLng([lat,lon]);if(!accuracyCircle)accuracyCircle=L.circle([lat,lon],{radius:acc,fillOpacity:.07,weight:1}).addTo(map);else accuracyCircle.setLatLng([lat,lon]).setRadius(acc);const n=nearest([lon,lat]);currentKm=Math.max(0,Math.min(totalKm,n.km));document.getElementById('kmDone').textContent=fmt(currentKm);document.getElementById('kmLeft').textContent=fmt(totalKm-currentKm);document.getElementById('offRoute').textContent=fmt(n.d/1000)+' km';const st=document.getElementById('status');if(n.d<60){st.className='status';st.innerHTML='<b>✓ No percurso</b><small>'+Math.round(n.d)+' m do traçado</small>'}else{st.className='status warn';st.innerHTML='<b>⚠ Fora do percurso</b><small>'+Math.round(n.d)+' m do traçado</small>'}const next=supportItems.find(s=>s.km>currentKm+0.2);if(next){document.getElementById('nextName').textContent=next.name;document.getElementById('nextInfo').textContent=fmt(next.km-currentKm)+' km à frente · '+next.description}else{document.getElementById('nextName').textContent='Fátima';document.getElementById('nextInfo').textContent='Chegada ao destino'}if(course!=null&&course>=0)updateRotation(course);else updateRotation(n.heading);if(following)map.setView([lat,lon],17,{animate:false})}
+function startGPS(){if(!navigator.geolocation)return alert('Este Android não disponibiliza geolocalização.');if(watchId!==null)return;navigator.geolocation.getCurrentPosition(p=>updatePosition(p.coords.latitude,p.coords.longitude,p.coords.accuracy||20,p.coords.heading),e=>console.log(e),{enableHighAccuracy:true,timeout:15000,maximumAge:5000});watchId=navigator.geolocation.watchPosition(p=>updatePosition(p.coords.latitude,p.coords.longitude,p.coords.accuracy||20,p.coords.heading),e=>{document.getElementById('status').innerHTML='<b>GPS com erro</b><small>'+e.message+'</small>'},{enableHighAccuracy:true,maximumAge:3000,timeout:15000});document.getElementById('gpsBtn').classList.add('active');document.getElementById('startBtn').textContent='⏹ Parar'}
+function stopGPS(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}document.getElementById('gpsBtn').classList.remove('active');document.getElementById('startBtn').textContent='▶ Iniciar';document.getElementById('status').innerHTML='<b>GPS desligado</b><small>Ativa o GPS para acompanhar o percurso.</small>'}
+function simulate(){simKm=simKm>=totalKm?0:simKm+2;const p=pointAtKm(simKm);updatePosition(p[1],p[0],8);document.getElementById('nextInfo').textContent=document.getElementById('nextInfo').textContent+' · simulação';if(userMarker)userMarker.bindPopup('🧪 Posição simulada — km '+fmt(simKm)).openPopup()}
+async function init(){const [r,s]=await Promise.all([fetch(ROUTE).then(x=>x.json()),fetch(SUPPORTS).then(x=>x.json())]);routeCoords=r.features.map(f=>f.geometry.coordinates);supportItems=s.items;totalKm=s.route_km;map=L.map('map',{zoomControl:false}).setView([40.1,-8.6],9);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);const all=[];routeCoords.forEach(line=>{L.polyline(line.map(p=>[p[1],p[0]]),{color:getComputedStyle(document.documentElement).getPropertyValue('--route').trim(),weight:5,opacity:.95}).addTo(map);line.forEach(p=>all.push([p[1],p[0]]))});map.fitBounds(L.latLngBounds(all),{padding:[20,20]});renderSupports();updateSupportUI();document.getElementById('menuBtn').onclick=()=>document.getElementById('drawer').classList.toggle('open');document.getElementById('followBtn').onclick=()=>{following=true;if(userMarker){map.setView(userMarker.getLatLng(),17,{animate:true})}};document.getElementById('rotateBtn').onclick=()=>{rotateMode=!rotateMode;document.getElementById('rotateBtn').classList.toggle('active',rotateMode);if(!rotateMode){document.getElementById('mapStage').style.transform='rotate(0deg)';document.getElementById('mapStage').classList.remove('follow')}};document.getElementById('gpsBtn').onclick=()=>{if(watchId===null)startGPS();else stopGPS()};document.getElementById('startBtn').onclick=()=>{if(watchId===null)startGPS();else stopGPS()};document.getElementById('map').addEventListener('click',()=>{following=false});document.getElementById('map').ondblclick=()=>simulate()}
 init();
 </script>
 </body></html>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}</script>
