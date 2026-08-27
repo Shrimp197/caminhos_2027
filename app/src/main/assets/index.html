@@ -39,6 +39,51 @@ body{overflow:hidden}.app{height:100%;display:flex;flex-direction:column}.top{ba
     </section>
   </main>
 </div>
+
+<script>
+function speak(msg){
+  try {
+    if (window.Android && Android.speak) Android.speak(String(msg));
+    else if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance(String(msg)));
+  } catch(e) {}
+}
+function addStageControls(){
+  const panel=document.querySelector('.panel');
+  if(!panel || document.getElementById('stageBox')) return;
+  const box=document.createElement('div');
+  box.id='stageBox';
+  box.style.cssText='margin-top:9px;padding:9px 10px;border:1px solid #d9e5dc;border-radius:12px;background:#fbfdfb';
+  box.innerHTML='<div style="font-size:10px;letter-spacing:.08em;color:#6a786f">ETAPA / TRECHO</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px">'+
+    '<select id="stageStart" style="padding:8px;border-radius:9px;border:1px solid #d8dfda"></select>'+
+    '<select id="stageEnd" style="padding:8px;border-radius:9px;border:1px solid #d8dfda"></select></div>'+
+    '<div id="stageInfo" style="font-size:12px;margin-top:6px;color:#516158">Escolhe início e fim do percurso.</div>';
+  panel.prepend(box);
+  const places=[
+    ["Porto","0.0"],["São João da Madeira","32.1"],["Cucujães","36.0"],
+    ["Oliveira de Azeméis","41.0"],["Albergaria-a-Velha","56.0"],["Águeda","74.0"],
+    ["Anadia","91.0"],["Mealhada","98.7"],["Coimbra","126.3"],
+    ["Condeixa-a-Nova","145.0"],["Soure","160.0"],["Pombal","188.2"],
+    ["Leiria","201.0"],["Ourém","214.8"],["Fátima","216.1"]
+  ];
+  for(const [name,km] of places){
+    for(const id of ['stageStart','stageEnd']){
+      const o=document.createElement('option');o.value=km;o.textContent=`${name} · km ${km}`;document.getElementById(id).appendChild(o);
+    }
+  }
+  document.getElementById('stageEnd').selectedIndex=1;
+  const update=()=>{
+    const a=parseFloat(document.getElementById('stageStart').value),b=parseFloat(document.getElementById('stageEnd').value);
+    const info=document.getElementById('stageInfo');
+    if(b<=a){info.textContent='O fim tem de estar depois do início.';return}
+    info.textContent=`Trecho selecionado: ${fmt(b-a)} km`;
+  };
+  document.getElementById('stageStart').onchange=update;
+  document.getElementById('stageEnd').onchange=update;
+  update();
+}
+</script>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const ROUTE='data/route.geojson', SUPPORTS='data/apoios-2026.json';
@@ -58,8 +103,16 @@ function updateRotation(heading){if(!rotateMode)return;lastHeading=heading;docum
 function updatePosition(lat,lon,acc=20,course=null){if(!userMarker)userMarker=L.marker([lat,lon]).setIcon(markerIcon()).addTo(map);else userMarker.setLatLng([lat,lon]);if(!accuracyCircle)accuracyCircle=L.circle([lat,lon],{radius:acc,fillOpacity:.07,weight:1}).addTo(map);else accuracyCircle.setLatLng([lat,lon]).setRadius(acc);const n=nearest([lon,lat]);currentKm=Math.max(0,Math.min(totalKm,n.km));document.getElementById('kmDone').textContent=fmt(currentKm);document.getElementById('kmLeft').textContent=fmt(totalKm-currentKm);document.getElementById('offRoute').textContent=fmt(n.d/1000)+' km';const st=document.getElementById('status');if(n.d<60){st.className='status';st.innerHTML='<b>✓ No percurso</b><small>'+Math.round(n.d)+' m do traçado</small>'}else{st.className='status warn';st.innerHTML='<b>⚠ Fora do percurso</b><small>'+Math.round(n.d)+' m do traçado</small>'}const next=supportItems.find(s=>s.km>currentKm+0.2);if(next){document.getElementById('nextName').textContent=next.name;document.getElementById('nextInfo').textContent=fmt(next.km-currentKm)+' km à frente · '+next.description}else{document.getElementById('nextName').textContent='Fátima';document.getElementById('nextInfo').textContent='Chegada ao destino'}if(course!=null&&course>=0)updateRotation(course);else updateRotation(n.heading);if(following)map.setView([lat,lon],17,{animate:false})}
 function startGPS(){if(!navigator.geolocation)return alert('Este Android não disponibiliza geolocalização.');if(watchId!==null)return;navigator.geolocation.getCurrentPosition(p=>updatePosition(p.coords.latitude,p.coords.longitude,p.coords.accuracy||20,p.coords.heading),e=>console.log(e),{enableHighAccuracy:true,timeout:15000,maximumAge:5000});watchId=navigator.geolocation.watchPosition(p=>updatePosition(p.coords.latitude,p.coords.longitude,p.coords.accuracy||20,p.coords.heading),e=>{document.getElementById('status').innerHTML='<b>GPS com erro</b><small>'+e.message+'</small>'},{enableHighAccuracy:true,maximumAge:3000,timeout:15000});document.getElementById('gpsBtn').classList.add('active');document.getElementById('startBtn').textContent='⏹ Parar'}
 function stopGPS(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}document.getElementById('gpsBtn').classList.remove('active');document.getElementById('startBtn').textContent='▶ Iniciar';document.getElementById('status').innerHTML='<b>GPS desligado</b><small>Ativa o GPS para acompanhar o percurso.</small>'}
-function simulate(){simKm=simKm>=totalKm?0:simKm+2;const p=pointAtKm(simKm);updatePosition(p[1],p[0],8);document.getElementById('nextInfo').textContent=document.getElementById('nextInfo').textContent+' · simulação';if(userMarker)userMarker.bindPopup('🧪 Posição simulada — km '+fmt(simKm)).openPopup()}
-async function init(){const [r,s]=await Promise.all([fetch(ROUTE).then(x=>x.json()),fetch(SUPPORTS).then(x=>x.json())]);routeCoords=r.features.map(f=>f.geometry.coordinates);supportItems=s.items;totalKm=s.route_km;map=L.map('map',{zoomControl:false}).setView([40.1,-8.6],9);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);const all=[];routeCoords.forEach(line=>{L.polyline(line.map(p=>[p[1],p[0]]),{color:getComputedStyle(document.documentElement).getPropertyValue('--route').trim(),weight:5,opacity:.95}).addTo(map);line.forEach(p=>all.push([p[1],p[0]]))});map.fitBounds(L.latLngBounds(all),{padding:[20,20]});renderSupports();updateSupportUI();document.getElementById('menuBtn').onclick=()=>document.getElementById('drawer').classList.toggle('open');document.getElementById('followBtn').onclick=()=>{following=true;if(userMarker){map.setView(userMarker.getLatLng(),17,{animate:true})}};document.getElementById('rotateBtn').onclick=()=>{rotateMode=!rotateMode;document.getElementById('rotateBtn').classList.toggle('active',rotateMode);if(!rotateMode){document.getElementById('mapStage').style.transform='rotate(0deg)';document.getElementById('mapStage').classList.remove('follow')}};document.getElementById('gpsBtn').onclick=()=>{if(watchId===null)startGPS();else stopGPS()};document.getElementById('startBtn').onclick=()=>{if(watchId===null)startGPS();else stopGPS()};document.getElementById('map').addEventListener('click',()=>{following=false});document.getElementById('map').ondblclick=()=>simulate()}
+function simulate(){
+simKm=simKm>=totalKm?0:simKm+2;
+speak('Quilómetro '+fmt(simKm));
+const p=pointAtKm(simKm);updatePosition(p[1],p[0],8);document.getElementById('nextInfo').textContent=document.getElementById('nextInfo').textContent+' · simulação';
+if(userMarker){const n=nearest([p[0],p[1]]); if(n.d<60) speak('Está no percurso.');} 
+if(userMarker)userMarker.bindPopup('🧪 Posição simulada — km '+fmt(simKm)).openPopup()}
+async function init(){
+try {
+const [r,s]=await Promise.all([fetch(ROUTE).then(x=>x.json()),fetch(SUPPORTS).then(x=>x.json())]);
+routeCoords=r.features.map(f=>f.geometry.coordinates);supportItems=s.items;totalKm=s.route_km;map=L.map('map',{zoomControl:false}).setView([40.1,-8.6],9);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);const all=[];routeCoords.forEach(line=>{L.polyline(line.map(p=>[p[1],p[0]]),{color:getComputedStyle(document.documentElement).getPropertyValue('--route').trim(),weight:5,opacity:.95}).addTo(map);line.forEach(p=>all.push([p[1],p[0]]))});map.fitBounds(L.latLngBounds(all),{padding:[20,20]});renderSupports();updateSupportUI();addStageControls();document.getElementById('menuBtn').onclick=()=>document.getElementById('drawer').classList.toggle('open');document.getElementById('followBtn').onclick=()=>{following=true;if(userMarker){map.setView(userMarker.getLatLng(),17,{animate:true})}};document.getElementById('rotateBtn').onclick=()=>{rotateMode=!rotateMode;document.getElementById('rotateBtn').classList.toggle('active',rotateMode);if(!rotateMode){document.getElementById('mapStage').style.transform='rotate(0deg)';document.getElementById('mapStage').classList.remove('follow')}};document.getElementById('gpsBtn').onclick=()=>{if(watchId===null)startGPS();else stopGPS()};document.getElementById('startBtn').onclick=()=>{if(watchId===null)startGPS();else stopGPS()};document.getElementById('map').addEventListener('click',()=>{following=false});document.getElementById('map').ondblclick=()=>simulate()}
 init();
 </script>
 </body></html>
