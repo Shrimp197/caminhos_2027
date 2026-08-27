@@ -15,7 +15,7 @@
 .fabbar{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:9px;z-index:1200}.fab{width:52px;height:52px;border-radius:50%;font-size:21px}.fab.active{background:var(--green);color:#fff}
 .drawer{display:none;position:absolute;left:10px;right:10px;top:72px;max-height:50vh;overflow:auto;z-index:1250;background:#fff;border-radius:16px;padding:12px;box-shadow:0 8px 28px #0003}.drawer.open{display:block}
 .support{padding:8px 0;border-bottom:1px solid #edf0ee}.support b{display:block}.support small{color:var(--muted)}.routeItem{padding:8px;border:1px solid #dfe6e1;border-radius:10px;margin:6px 0}.routeItem.active{border:2px solid var(--green);background:#eef7ef}.routeItem button{margin-top:5px;padding:6px 8px;border:0;border-radius:8px;background:var(--green);color:#fff;font-weight:750}
-.panel{position:absolute;left:10px;right:10px;bottom:10px;z-index:1100;background:#fff;border-radius:20px;padding:10px;box-shadow:0 8px 28px #0002}.row{display:flex;gap:8px}.status{flex:1;background:#eef7ef;border-radius:14px;padding:10px 11px;min-width:0}.status.warn{background:#fff0ed;color:#7d231d}.status b{display:block;font-size:16px}.status small{display:block;margin-top:2px;color:var(--muted)}
+.panel{position:absolute;left:10px;right:10px;bottom:10px;z-index:1100;background:#fff;border-radius:20px;padding:8px 10px 10px;box-shadow:0 8px 28px #0002;transition:transform .22s ease;touch-action:none}.panel.collapsed{transform:translateY(calc(100% - 58px))}.dragHandle{width:46px;height:5px;background:#cbd6cf;border-radius:5px;margin:0 auto 6px}.panelBar{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}.collapseBtn{border:0;background:#edf3ef;color:var(--green);border-radius:9px;padding:4px 9px;font-weight:800}.panel.collapsed .collapseBtn{transform:rotate(180deg)}.row{display:flex;gap:8px}.status{flex:1;background:#eef7ef;border-radius:14px;padding:10px 11px;min-width:0}.status.warn{background:#fff0ed;color:#7d231d}.status b{display:block;font-size:16px}.status small{display:block;margin-top:2px;color:var(--muted)}
 .start{border:0;border-radius:14px;background:var(--green2);color:#fff;font-size:15px;font-weight:850;padding:0 14px}.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:7px}.stat{background:#f5f7f5;border-radius:11px;padding:8px}.stat b{display:block;font-size:20px}.stat small{color:var(--muted)}
 .next{margin-top:7px;border:1px solid #dce6df;border-radius:12px;padding:9px 11px}.label{font-size:10px;letter-spacing:.08em;color:var(--muted)}.next b{display:block;font-size:15px;margin:2px 0}.next small{color:var(--muted)}
 .voice{display:flex;align-items:center;justify-content:space-between;margin-top:7px;background:#f5f7f5;border-radius:11px;padding:7px 9px;font-size:11px;color:var(--muted)}.voice button{border:0;background:transparent;color:var(--green);font-weight:800}
@@ -55,7 +55,9 @@
       <button id="startHereBtn" class="smallbtn">📍 Iniciar onde estou</button>
     </div>
   </div>
-  <section class="panel">
+  <section class="panel" id="infoPanel">
+  <div id="panelHandle" class="dragHandle" aria-label="Deslizar painel"></div>
+  <div class="panelBar"><span>Informação da caminhada</span><button id="collapseBtn" class="collapseBtn" type="button">⌄</button></div>
     <div class="row">
       <div id="status" class="status"><b>GPS desligado</b><small>Ativa o GPS ou o modo Caminhar.</small></div>
       <button id="startBtn" class="start">▶ Iniciar</button>
@@ -120,16 +122,75 @@ function simulate(){if(!routeCoords.length)return;if(!walkingMode)toggleWalk();s
 function importFile(file){const rd=new FileReader();rd.onload=()=>{try{const text=String(rd.result||'');const fc=file.name.toLowerCase().endsWith('.gpx')?parseGpx(text):parseKml(text);saveImported(fc,file.name);document.getElementById('drawer').classList.remove('open')}catch(e){say('Não foi possível importar. '+e.message,true)}};rd.readAsText(file)}
 function clearRoutes(){if(!confirm('Apagar todos os percursos importados?'))return;localStorage.removeItem('centenarioRoutes');routeLibrary();selectRoute('centenario')}
 
+function applyVisualHeading(heading){
+  if(!rotateMode || !isFinite(heading) || !map) return;
+  const deg=-Number(heading);
+  ['tilePane','overlayPane','markerPane'].forEach(function(name){
+    const pane=map.getPane(name);
+    if(pane){
+      pane.style.transformOrigin='50% 50%';
+      pane.style.transform='rotate('+deg+'deg)';
+    }
+  });
+}
+window.setDeviceHeading=function(h){ applyVisualHeading(Number(h)); };
+function clearVisualHeading(){
+  if(!map) return;
+  ['tilePane','overlayPane','markerPane'].forEach(function(name){
+    const pane=map.getPane(name);
+    if(pane) pane.style.transform='';
+  });
+}
+function toggleRotation(){
+  rotateMode=!rotateMode;
+  document.getElementById('rotateBtn').classList.toggle('active',rotateMode);
+  if(rotateMode){
+    if(window.Android && Android.startCompass) Android.startCompass();
+    following=true;
+    say('Orientação ativada. A direção da caminhada fica para cima.',true);
+  }else{
+    if(window.Android && Android.stopCompass) Android.stopCompass();
+    clearVisualHeading();
+    say('Orientação desativada.',true);
+  }
+}
+function setupFloatingPanel(){
+  const panel=document.getElementById('infoPanel');
+  const handle=document.getElementById('panelHandle');
+  const btn=document.getElementById('collapseBtn');
+  let dragging=false,startY=0;
+  function collapsed(v){
+    panel.classList.toggle('collapsed',v);
+    panel.style.transform='';
+  }
+  btn.addEventListener('click',function(){collapsed(!panel.classList.contains('collapsed'));});
+  handle.addEventListener('click',function(){collapsed(!panel.classList.contains('collapsed'));});
+  handle.addEventListener('touchstart',function(e){dragging=true;startY=e.touches[0].clientY;panel.style.transition='none';},{passive:true});
+  handle.addEventListener('touchmove',function(e){
+    if(!dragging)return;
+    const dy=e.touches[0].clientY-startY;
+    panel.style.transform='translateY('+Math.max(-25,Math.min(window.innerHeight*.55,dy))+'px)';
+  },{passive:true});
+  handle.addEventListener('touchend',function(e){
+    if(!dragging)return;
+    const dy=e.changedTouches[0].clientY-startY;
+    panel.style.transition='';
+    dragging=false;
+    if(dy>55)collapsed(true);
+    else if(dy<-55)collapsed(false);
+    else panel.style.transform='';
+  },{passive:true});
+}
 function init(){
   Promise.all([fetch(DEFAULT_ROUTE).then(r=>r.json()),fetch(DEFAULT_SUPPORTS).then(r=>r.json())]).then(([r,s])=>{
     routeCoords=r.features.map(f=>f.geometry.coordinates);supportItems=s.items.slice().sort((a,b)=>a.km-b.km);totalKm=Number(s.route_km||216.1);
     map=L.map('map',{zoomControl:false}).setView([40.2,-8.6],9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
-    renderRoute();renderSupports();stageOptions();routeLibrary();
+    renderRoute();renderSupports();stageOptions();routeLibrary();setupFloatingPanel();
     document.getElementById('menuBtn').onclick=()=>document.getElementById('drawer').classList.toggle('open');
     document.getElementById('modeBtn').onclick=toggleWalk;
     document.getElementById('followBtn').onclick=()=>{following=true;if(userMarker)map.setView(userMarker.getLatLng(),17,{animate:true})};
-    document.getElementById('rotateBtn').onclick=()=>{rotateMode=!rotateMode;document.getElementById('rotateBtn').classList.toggle('active',rotateMode);if(rotateMode)say('Orientação ativada.',true);else document.getElementById('mapRot').style.transform='rotate(0deg)'};
+    document.getElementById('rotateBtn').addEventListener('click',toggleRotation);
     document.getElementById('gpsBtn').onclick=()=>watchId?stopGPS():startGPS();
     document.getElementById('startBtn').onclick=()=>watchId?stopGPS():startGPS();
     document.getElementById('testAudioBtn').onclick=()=>say('Teste de áudio imersivo. Percurso, apoios, desvios e pausas ativos.',true);

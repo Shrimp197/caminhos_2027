@@ -3,10 +3,13 @@ package com.caminhos2027;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.GeolocationPermissions;
@@ -15,13 +18,14 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
 import androidx.webkit.WebViewAssetLoader;
 
 import java.util.Locale;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements SensorEventListener {
     private static final int LOCATION_REQ = 1001;
     private static final int FILE_PICKER_REQ = 2001;
 
@@ -29,6 +33,10 @@ public class MainActivity extends Activity {
     private TextToSpeech tts;
     private ValueCallback<Uri[]> pendingFileCallback;
     private WebViewAssetLoader assetLoader;
+
+    private SensorManager sensorManager;
+    private Sensor rotationSensor;
+    private boolean compassRunning = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -41,12 +49,17 @@ public class MainActivity extends Activity {
             }
         });
 
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        if (sensorManager != null) {
+            rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        }
+
         webView = new WebView(this);
         setContentView(webView);
         configureWebView();
 
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{
+            requestPermissions(new String[] {
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION
             }, LOCATION_REQ);
@@ -77,23 +90,30 @@ public class MainActivity extends Activity {
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
-            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+            public void onGeolocationPermissionsShowPrompt(
+                    String origin,
+                    GeolocationPermissions.Callback callback) {
                 callback.invoke(origin, true, false);
             }
 
             @Override
-            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+            public boolean onShowFileChooser(
+                    WebView view,
+                    ValueCallback<Uri[]> callback,
+                    FileChooserParams params) {
                 if (pendingFileCallback != null) pendingFileCallback.onReceiveValue(null);
                 pendingFileCallback = callback;
+
                 Intent intent = params.createIntent();
                 intent.setType("*/*");
-                intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
+                intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {
                         "application/gpx+xml",
                         "application/vnd.google-earth.kml+xml",
                         "application/xml",
                         "text/xml"
                 });
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
+
                 try {
                     startActivityForResult(intent, FILE_PICKER_REQ);
                     return true;
@@ -120,13 +140,51 @@ public class MainActivity extends Activity {
         @android.webkit.JavascriptInterface
         public void setKeepScreenOn(boolean enabled) {
             runOnUiThread(() -> {
-                if (enabled) {
-                    getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                } else {
-                    getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                }
+                if (enabled) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             });
         }
+
+        @android.webkit.JavascriptInterface
+        public void startCompass() {
+            if (sensorManager == null || rotationSensor == null || compassRunning) return;
+            compassRunning = sensorManager.registerListener(
+                    MainActivity.this,
+                    rotationSensor,
+                    SensorManager.SENSOR_DELAY_GAME
+            );
+        }
+
+        @android.webkit.JavascriptInterface
+        public void stopCompass() {
+            if (sensorManager != null && compassRunning) {
+                sensorManager.unregisterListener(MainActivity.this);
+            }
+            compassRunning = false;
+        }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (!compassRunning || event.sensor.getType() != Sensor.TYPE_ROTATION_VECTOR || webView == null) {
+            return;
+        }
+        float[] matrix = new float[9];
+        float[] orientation = new float[3];
+        SensorManager.getRotationMatrixFromVector(matrix, event.values);
+        SensorManager.getOrientation(matrix, orientation);
+
+        double heading = Math.toDegrees(orientation[0]);
+        if (heading < 0) heading += 360.0;
+        final double h = heading;
+
+        runOnUiThread(() -> webView.evaluateJavascript(
+                "window.setDeviceHeading && window.setDeviceHeading(" + h + ")", null
+        ));
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
     @Override
@@ -134,7 +192,7 @@ public class MainActivity extends Activity {
         if (requestCode == FILE_PICKER_REQ && pendingFileCallback != null) {
             Uri[] results = null;
             if (resultCode == RESULT_OK && data != null && data.getData() != null) {
-                results = new Uri[]{data.getData()};
+                results = new Uri[] { data.getData() };
             }
             pendingFileCallback.onReceiveValue(results);
             pendingFileCallback = null;
@@ -144,6 +202,9 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (sensorManager != null && compassRunning) {
+            sensorManager.unregisterListener(this);
+        }
         if (tts != null) {
             tts.stop();
             tts.shutdown();
