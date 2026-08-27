@@ -14,7 +14,7 @@
 .map{position:absolute;inset:0}.menu{position:absolute;left:10px;top:10px;z-index:1200}.menu button,.fab{border:0;background:#fff;color:var(--green);box-shadow:0 4px 16px #0002}.menu button{width:52px;height:52px;border-radius:17px;font-size:22px}
 .fabbar{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:9px;z-index:1200}.fab{width:52px;height:52px;border-radius:50%;font-size:21px}.fab.active{background:var(--green);color:#fff}
 .drawer{display:none;position:absolute;left:10px;right:10px;top:72px;max-height:50vh;overflow:auto;z-index:1250;background:#fff;border-radius:16px;padding:12px;box-shadow:0 8px 28px #0003}.drawer.open{display:block}
-.support{padding:8px 0;border-bottom:1px solid #edf0ee}.support b{display:block}.support small{color:var(--muted)}
+.support{padding:8px 0;border-bottom:1px solid #edf0ee}.support b{display:block}.support small{color:var(--muted)}.routeItem{padding:8px;border:1px solid #dfe6e1;border-radius:10px;margin:6px 0}.routeItem.active{border:2px solid var(--green);background:#eef7ef}.routeItem button{margin-top:5px;padding:6px 8px;border:0;border-radius:8px;background:var(--green);color:#fff;font-weight:750}
 .panel{position:absolute;left:10px;right:10px;bottom:10px;z-index:1100;background:#fff;border-radius:20px;padding:10px;box-shadow:0 8px 28px #0002}.row{display:flex;gap:8px}.status{flex:1;background:#eef7ef;border-radius:14px;padding:10px 11px;min-width:0}.status.warn{background:#fff0ed;color:#7d231d}.status b{display:block;font-size:16px}.status small{display:block;margin-top:2px;color:var(--muted)}
 .start{border:0;border-radius:14px;background:var(--green2);color:#fff;font-size:15px;font-weight:850;padding:0 14px}.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:7px}.stat{background:#f5f7f5;border-radius:11px;padding:8px}.stat b{display:block;font-size:20px}.stat small{color:var(--muted)}
 .next{margin-top:7px;border:1px solid #dce6df;border-radius:12px;padding:9px 11px}.label{font-size:10px;letter-spacing:.08em;color:var(--muted)}.next b{display:block;font-size:15px;margin:2px 0}.next small{color:var(--muted)}
@@ -39,6 +39,15 @@
     <button id="gpsBtn" class="fab" title="GPS">📍</button>
   </div>
   <div id="drawer" class="drawer">
+    <b>🧭 Percurso ativo</b>
+    <div id="routeLibrary" class="support"></div>
+    <div class="smallrow">
+      <button id="importRouteBtn" class="smallbtn" type="button">＋ Importar KML/GPX</button>
+      <button id="clearRoutesBtn" class="smallbtn" type="button">🗑️ Gerir</button>
+    </div>
+    <input id="routeFile" type="file" accept=".kml,.gpx,application/vnd.google-earth.kml+xml,application/gpx+xml,application/xml,text/xml" style="display:none">
+    <hr>
+
     <b>⛺ Apoios identificados (2026)</b>
     <div id="supportList"></div>
     <div class="smallrow">
@@ -67,94 +76,73 @@
 </main>
 </div>
 
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function(){
 'use strict';
+const DEFAULT_ROUTE='data/route.geojson', DEFAULT_SUPPORTS='data/apoios-2026.json';
+let map=null, routeCoords=[], supportItems=[], markers=[], routeLayer=[];
+let userMarker=null, accCircle=null, watchId=null;
+let following=false, rotateMode=false, walkingMode=false;
+let totalKm=216.1, currentKm=0, simKm=0, stageStartKm=0, stageEndKm=216.1;
+let activeRouteId='centenario', activeRouteName='Caminho do Centenário', walkStartedAt=0, lastPauseAt=0, lastOffRoute=false;
+let lastSpeech='', lastSpeechAt=0, announced={};
 
-const ROUTE='data/route.geojson', SUPPORTS='data/apoios-2026.json';
-let map,routeCoords=[],supportItems=[],markers=[],userMarker=null,accCircle=null,watchId=null;
-let following=false,rotateMode=false,walkingMode=false,totalKm=216.1,currentKm=0,simKm=0;
-let stageStartKm=0,stageEndKm=216.1,lastStageAnnouncement=false,lastOffRoute=false;
-let announcedSupport={},lastProgressBucket=-1,walkStartedAt=0,lastPauseAt=0,lastSpeech='',lastSpeechAt=0,lastSupportArrival=null;
-
-const places=[
-['Porto',0],['São João da Madeira',32.1],['Cucujães',36],['Oliveira de Azeméis',41],
-['Albergaria-a-Velha',56],['Águeda',74],['Anadia',91],['Mealhada',98.7],
-['Coimbra',126.3],['Condeixa-a-Nova',145],['Soure',160],['Pombal',188.2],
-['Leiria',201],['Ourém',214.8],['Fátima',216.1]
-];
+const places=[['Porto',0],['São João da Madeira',32.1],['Cucujães',36],['Oliveira de Azeméis',41],['Albergaria-a-Velha',56],['Águeda',74],['Anadia',91],['Mealhada',98.7],['Coimbra',126.3],['Condeixa-a-Nova',145],['Soure',160],['Pombal',188.2],['Leiria',201],['Ourém',214.8],['Fátima',216.1]];
 
 function fmt(n){return Number(n||0).toLocaleString('pt-PT',{minimumFractionDigits:1,maximumFractionDigits:1})}
-function say(text,force){try{const msg=String(text||'').trim(),now=Date.now();if(!msg)return;if(!force&&msg===lastSpeech&&now-lastSpeechAt<15000)return;if(!force&&now-lastSpeechAt<3000)return;lastSpeech=msg;lastSpeechAt=now;if(window.Android&&Android.speak)Android.speak(msg);else if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(msg);u.lang='pt-PT';u.rate=.96;speechSynthesis.speak(u)}}catch(e){}}
-function vibrate(pattern){try{if(navigator.vibrate)navigator.vibrate(pattern)}catch(e){}}
+function say(text,force){try{const msg=String(text||'').trim(),now=Date.now();if(!msg)return;if(!force&&msg===lastSpeech&&now-lastSpeechAt<15000)return;if(!force&&now-lastSpeechAt<2500)return;lastSpeech=msg;lastSpeechAt=now;if(window.Android&&Android.speak)Android.speak(msg);else if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(msg);u.lang='pt-PT';u.rate=.96;speechSynthesis.speak(u)}}catch(e){}}
+function vibrate(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
 function hav(a,b){const R=6371000,p1=a[1]*Math.PI/180,p2=b[1]*Math.PI/180,dp=(b[1]-a[1])*Math.PI/180,dl=(b[0]-a[0])*Math.PI/180,h=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(Math.max(0,Math.min(1,h))))}
 function bearing(a,b){const p1=a[1]*Math.PI/180,p2=b[1]*Math.PI/180,dl=(b[0]-a[0])*Math.PI/180,y=Math.sin(dl)*Math.cos(p2),x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);return(180/Math.PI*Math.atan2(y,x)+360)%360}
-function pointSegDistance(p,a,b){const lat=p[1]*Math.PI/180,k=111320,c=Math.cos(lat),ax=a[0]*k*c,ay=a[1]*k,bx=b[0]*k*c,by=b[1]*k,px=p[0]*k*c,py=p[1]*k,dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy||1))),qx=ax+t*dx,qy=ay+t*dy;return{d:Math.hypot(px-qx,py-qy),t}}
-function nearest(p){let best={d:Infinity,km:0,heading:0},km=0;for(const line of routeCoords){for(let i=1;i<line.length;i++){const a=line[i-1],b=line[i],r=pointSegDistance(p,a,b),len=hav(a,b)/1000;if(r.d<best.d)best={d:r.d,km:km+len*r.t,heading:bearing(a,b)};km+=len}}return best}
+function pointSeg(p,a,b){const lat=p[1]*Math.PI/180,k=111320,c=Math.cos(lat),ax=a[0]*k*c,ay=a[1]*k,bx=b[0]*k*c,by=b[1]*k,px=p[0]*k*c,py=p[1]*k,dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy||1))),qx=ax+t*dx,qy=ay+t*dy;return{d:Math.hypot(px-qx,py-qy),t}}
+function nearest(p){let best={d:Infinity,km:0,heading:0},km=0;for(const line of routeCoords){for(let i=1;i<line.length;i++){const a=line[i-1],b=line[i],r=pointSeg(p,a,b),len=hav(a,b)/1000;if(r.d<best.d)best={d:r.d,km:km+len*r.t,heading:bearing(a,b)};km+=len}}return best}
 function pointAtKm(target){let km=0;for(const line of routeCoords){for(let i=1;i<line.length;i++){const d=hav(line[i-1],line[i])/1000;if(km+d>=target){const t=(target-km)/(d||1),a=line[i-1],b=line[i];return[a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])]}km+=d}}const last=routeCoords[routeCoords.length-1];return last[last.length-1]}
-function supportText(s){let t=s.description||'apoio';if(s.free)t+='; gratuito';return t}
-function renderSupports(){markers.forEach(m=>map.removeLayer(m));markers=[];supportItems.slice().sort((a,b)=>a.km-b.km).forEach(s=>{const m=L.marker([s.lat,s.lon],{icon:icon(s.category)}).addTo(map).bindPopup('<b>'+s.name+'</b><br>'+s.municipality+'<br>'+supportText(s)+'<br><small>Km '+fmt(s.km)+'</small>');markers.push(m)});const list=document.getElementById('supportList');list.innerHTML='';supportItems.slice().sort((a,b)=>a.km-b.km).forEach(s=>{const d=document.createElement('div');d.className='support';d.innerHTML='<b>'+s.name+'</b><small>'+s.municipality+' · km '+fmt(s.km)+'</small>';d.addEventListener('click',()=>{map.setView([s.lat,s.lon],16);document.getElementById('drawer').classList.remove('open')});list.appendChild(d)})}
-function icon(kind){const bg=kind==='gratuito'?'#176b4b':'#2474db',s=kind==='gratuito'?'⛺':'ℹ️';return L.divIcon({className:'',html:'<div style="width:27px;height:27px;border-radius:50%;background:'+bg+';border:3px solid #fff;box-shadow:0 2px 7px #0005;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px">'+s+'</div>',iconSize:[27,27],iconAnchor:[13,13]})}
-function stageOptions(){const a=document.getElementById('stageStart'),b=document.getElementById('stageEnd');a.innerHTML='';b.innerHTML='';places.forEach(p=>{const o=document.createElement('option');o.value=p[1];o.textContent=p[0]+' · km '+fmt(p[1]);a.appendChild(o);const q=document.createElement('option');q.value=p[1];q.textContent=p[0]+' · km '+fmt(p[1]);b.appendChild(q)});a.value=localStorage.getItem('stageStartKm')||0;b.value=localStorage.getItem('stageEndKm')||216.1;applyStage();a.addEventListener('change',applyStage);b.addEventListener('change',applyStage)}
-function applyStage(){const a=Number(document.getElementById('stageStart').value),b=Number(document.getElementById('stageEnd').value);stageStartKm=a;stageEndKm=b;localStorage.setItem('stageStartKm',a);localStorage.setItem('stageEndKm',b);document.getElementById('stageInfo').textContent=b>a?'Trecho selecionado: '+fmt(b-a)+' km':'O fim tem de estar depois do início.';document.getElementById('kmDone').textContent='0,0';document.getElementById('kmLeft').textContent=fmt(Math.max(0,b-a));lastStageAnnouncement=false}
+function supportIcon(s){return L.divIcon({className:'',html:'<div style="width:27px;height:27px;border-radius:50%;background:'+(s.free?'#176b4b':'#2474db')+';border:3px solid #fff;box-shadow:0 2px 7px #0005;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px">'+(s.free?'⛺':'ℹ️')+'</div>',iconSize:[27,27],iconAnchor:[13,13]})}
+function renderRoute(){routeLayer.forEach(x=>map.removeLayer(x));routeLayer=[];const bounds=[];routeCoords.forEach(line=>{const l=L.polyline(line.map(p=>[p[1],p[0]]),{color:'#f0c419',weight:5,opacity:.95}).addTo(map);routeLayer.push(l);line.forEach(p=>bounds.push([p[1],p[0]]))});if(bounds.length)map.fitBounds(L.latLngBounds(bounds),{padding:[20,20]})}
+function renderSupports(){markers.forEach(x=>map.removeLayer(x));markers=[];supportItems.forEach(s=>markers.push(L.marker([s.lat,s.lon],{icon:supportIcon(s)}).addTo(map).bindPopup('<b>'+s.name+'</b><br>'+s.municipality+'<br>'+s.description+'<br><small>Km '+fmt(s.km)+'</small>')));const list=document.getElementById('supportList');if(!list)return;list.innerHTML='';supportItems.slice().sort((a,b)=>a.km-b.km).forEach(s=>{const d=document.createElement('div');d.className='support';d.innerHTML='<b>'+s.name+'</b><small>'+s.municipality+' · km '+fmt(s.km)+'</small>';d.onclick=()=>{map.setView([s.lat,s.lon],16);document.getElementById('drawer').classList.remove('open')};list.appendChild(d)})}
+function routeLibrary(){const box=document.getElementById('routeLibrary');if(!box)return;box.innerHTML='';const saved=JSON.parse(localStorage.getItem('centenarioRoutes')||'[]');const all=[{id:'centenario',name:'Caminho do Centenário',distance:216.1}].concat(saved);all.forEach(r=>{const d=document.createElement('div');d.className='routeItem'+(r.id===activeRouteId?' active':'');d.innerHTML='<b>'+r.name+'</b><small>'+fmt(r.distance)+' km</small><br><button type="button">'+(r.id===activeRouteId?'✓ Ativo':'Usar este percurso')+'</button>';d.querySelector('button').onclick=()=>selectRoute(r.id);box.appendChild(d)})}
+function parseKml(text){const doc=new DOMParser().parseFromString(text,'application/xml'),nodes=doc.getElementsByTagName('coordinates'),features=[];for(let i=0;i<nodes.length;i++){const pts=[];(nodes[i].textContent||'').trim().split(/\s+/).forEach(tok=>{const a=tok.split(',');if(a.length>=2){const lon=Number(a[0]),lat=Number(a[1]);if(isFinite(lon)&&isFinite(lat))pts.push([lon,lat])}});if(pts.length>=2)features.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:pts}})}if(!features.length)throw Error('KML sem linhas utilizáveis');return{type:'FeatureCollection',features}}
+function parseGpx(text){const doc=new DOMParser().parseFromString(text,'application/xml'),nodes=doc.getElementsByTagName('trkpt'),pts=[];for(let i=0;i<nodes.length;i++){const lat=Number(nodes[i].getAttribute('lat')),lon=Number(nodes[i].getAttribute('lon'));if(isFinite(lat)&&isFinite(lon))pts.push([lon,lat])}if(pts.length<2)throw Error('GPX sem pontos de track');return{type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'LineString',coordinates:pts}}]}}
+function routeDistance(fc){let d=0;fc.features.forEach(f=>{const c=f.geometry.coordinates;for(let i=1;i<c.length;i++)d+=hav(c[i-1],c[i])/1000});return d}
+function saveImported(fc,name){const list=JSON.parse(localStorage.getItem('centenarioRoutes')||'[]');const obj={id:'r'+Date.now(),name:name.replace(/\.(kml|gpx)$/i,''),distance:routeDistance(fc),features:fc.features};list.push(obj);localStorage.setItem('centenarioRoutes',JSON.stringify(list));selectRoute(obj.id)}
+function selectRoute(id){if(id==='centenario'){activeRouteId=id;activeRouteName='Caminho do Centenário';fetch(DEFAULT_ROUTE).then(r=>r.json()).then(x=>{routeCoords=x.features.map(f=>f.geometry.coordinates);totalKm=216.1;stageStartKm=0;stageEndKm=totalKm;renderRoute();routeLibrary();stageOptions();say('Caminho do Centenário selecionado.',true)})}else{const r=JSON.parse(localStorage.getItem('centenarioRoutes')||'[]').find(x=>x.id===id);if(!r)return;activeRouteId=id;activeRouteName=r.name;routeCoords=r.features.map(f=>f.geometry.coordinates);totalKm=r.distance||routeDistance(r);stageStartKm=0;stageEndKm=totalKm;renderRoute();routeLibrary();stageOptions();say(r.name+' selecionado.',true)}}
+function stageOptions(){const a=document.getElementById('stageStart'),b=document.getElementById('stageEnd');a.innerHTML='';b.innerHTML='';const list=activeRouteId==='centenario'?places:[['Início',0],['25% do percurso',totalKm*.25],['50% do percurso',totalKm*.5],['75% do percurso',totalKm*.75],['Fim',totalKm]];list.forEach(p=>{const o=document.createElement('option');o.value=p[1];o.textContent=p[0]+' · km '+fmt(p[1]);a.appendChild(o);const q=document.createElement('option');q.value=p[1];q.textContent=p[0]+' · km '+fmt(p[1]);b.appendChild(q)});b.value=String(totalKm);a.onchange=applyStage;b.onchange=applyStage;applyStage()}
+function applyStage(){stageStartKm=Number(document.getElementById('stageStart').value);stageEndKm=Number(document.getElementById('stageEnd').value);document.getElementById('stageInfo').textContent=stageEndKm>stageStartKm?'Trecho selecionado: '+fmt(stageEndKm-stageStartKm)+' km':'O fim tem de estar depois do início.';document.getElementById('kmDone').textContent='0,0';document.getElementById('kmLeft').textContent=fmt(Math.max(0,stageEndKm-stageStartKm));window._stageDone=0}
 function updateRotation(h){if(rotateMode&&typeof h==='number'&&isFinite(h))document.getElementById('mapRot').style.transform='rotate('+(-h)+'deg)'}
-window.setDeviceHeading=function(h){if(rotateMode)updateRotation(Number(h))}
-function audioEvents(d,next){
-  if(d>=60&&!lastOffRoute){say('Atenção. Está fora do percurso.');vibrate([150,100,150]);lastOffRoute=true}
-  else if(d<45&&lastOffRoute){say('Percurso reencontrado.');vibrate(120);lastOffRoute=false}
-  if(next){
-    const delta=next.km-currentKm;
-    [[5,'5 quilómetros'],[2,'2 quilómetros'],[.5,'500 metros']].forEach(t=>{
-      const k=next.id+'-'+t[0];
-      if(delta<=t[0]&&delta>0&&!announcedSupport[k]){announcedSupport[k]=1;say('Ponto de apoio a '+t[1]+'. '+supportText(next)+'.')}
-    });
-    if(delta<=.2&&lastSupportArrival!==next.id){lastSupportArrival=next.id;say('Está a chegar ao ponto de apoio '+next.name+'.',true);vibrate([80,70,80])}
-  }
-  const progress=Math.floor(currentKm/5);
-  if(progress>0&&progress>lastProgressBucket&&progress*5<=stageEndKm-stageStartKm){lastProgressBucket=progress;say('Já percorreu '+progress*5+' quilómetros nesta etapa.')}
-  if(walkStartedAt&&Date.now()-walkStartedAt>=120*60*1000&&Date.now()-lastPauseAt>=120*60*1000){lastPauseAt=Date.now();say('Já caminha há duas horas. Considere fazer uma pausa.')}
-  if(currentKm>=stageEndKm-.08&&!lastStageAnnouncement&&stageEndKm>stageStartKm){lastStageAnnouncement=true;say('Chegou ao destino da etapa.',true);vibrate([200,100,200,100,400])}
-}
-function updatePosition(lat,lon,acc,course){if(!userMarker)userMarker=L.marker([lat,lon],{zIndexOffset:1000,icon:L.divIcon({className:'',html:'<div style="width:20px;height:20px;border-radius:50%;background:#2474db;border:4px solid #fff;box-shadow:0 2px 7px #0005"></div>',iconSize:[20,20],iconAnchor:[10,10]})}).addTo(map);else userMarker.setLatLng([lat,lon]);if(!accCircle)accCircle=L.circle([lat,lon],{radius:acc||20,fillOpacity:.08,weight:1}).addTo(map);else accCircle.setLatLng([lat,lon]).setRadius(acc||20);
-  const n=nearest([lon,lat]);currentKm=Math.max(0,Math.min(totalKm,n.km));
-  const stageKm=Math.max(0,currentKm-stageStartKm),stageRemaining=Math.max(0,stageEndKm-currentKm);
-  document.getElementById('kmDone').textContent=fmt(stageKm);document.getElementById('kmLeft').textContent=fmt(stageRemaining);document.getElementById('offRoute').textContent=fmt(n.d/1000)+' km';
-  const st=document.getElementById('status');if(n.d<60){st.className='status';st.innerHTML='<b>✓ No percurso</b><small>'+Math.round(n.d)+' m do traçado</small>'}else{st.className='status warn';st.innerHTML='<b>⚠ Fora do percurso</b><small>'+Math.round(n.d)+' m do traçado</small>'}
-  const next=supportItems.filter(s=>s.km>currentKm+.2&&s.km<=stageEndKm+.1).sort((a,b)=>a.km-b.km)[0];
-  if(next){document.getElementById('nextName').textContent=next.name;document.getElementById('nextInfo').textContent=fmt(next.km-currentKm)+' km à frente · '+supportText(next)}else{document.getElementById('nextName').textContent='Destino da etapa';document.getElementById('nextInfo').textContent=fmt(Math.max(0,stageEndKm-currentKm))+' km até '+placeName(stageEndKm)}
-  audioEvents(n.d,next);if(typeof course==='number'&&course>=0)updateRotation(course);if(following)map.setView([lat,lon],17,{animate:false})
-}
-function placeName(km){let best=places[0][0],dd=Math.abs(places[0][1]-km);places.forEach(p=>{const d=Math.abs(p[1]-km);if(d<dd){dd=d;best=p[0]}});return best}
-function startGPS(){if(!navigator.geolocation){say('O GPS não está disponível neste dispositivo.',true);return}if(watchId!==null)return;navigator.geolocation.getCurrentPosition(p=>updatePosition(p.coords.latitude,p.coords.longitude,p.coords.accuracy||20,p.coords.heading),e=>{document.getElementById('status').innerHTML='<b>Erro de GPS</b><small>'+e.message+'</small>'},{enableHighAccuracy:true,timeout:15000,maximumAge:3000});watchId=navigator.geolocation.watchPosition(p=>updatePosition(p.coords.latitude,p.coords.longitude,p.coords.accuracy||20,p.coords.heading),e=>{document.getElementById('status').innerHTML='<b>Erro de GPS</b><small>'+e.message+'</small>'},{enableHighAccuracy:true,maximumAge:3000,timeout:15000});if(!walkStartedAt)walkStartedAt=Date.now();if(window.Android&&Android.setKeepScreenOn)Android.setKeepScreenOn(true);document.getElementById('gpsBtn').classList.add('active');document.getElementById('startBtn').textContent='⏹ Parar';say('GPS ligado. Acompanhe o traçado do Caminho do Centenário.',true)}
-function stopGPS(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}if(window.Android&&Android.setKeepScreenOn)Android.setKeepScreenOn(false);document.getElementById('gpsBtn').classList.remove('active');document.getElementById('startBtn').textContent='▶ Iniciar';say('GPS desligado.',true)}
-function activateWalk(){walkingMode=true;following=true;document.getElementById('modeBtn').classList.add('active');document.getElementById('modeBtn').textContent='CAMINHAR ATIVO';if(!walkStartedAt)walkStartedAt=Date.now();if(window.Android&&Android.setKeepScreenOn)Android.setKeepScreenOn(true);say('Modo Caminhar ativo. Vou acompanhar a sua posição e o percurso.',true);if(watchId===null)startGPS()}
-function deactivateWalk(){walkingMode=false;following=false;document.getElementById('modeBtn').classList.remove('active');document.getElementById('modeBtn').textContent='MODO CAMINHAR';say('Modo Caminhar pausado.',true)}
-function simulate(){if(!routeCoords.length)return;if(!walkingMode)activateWalk();const min=Math.min(stageStartKm,stageEndKm),max=Math.max(stageStartKm,stageEndKm);simKm=simKm<min?min:simKm+2;if(simKm>max)simKm=min;const p=pointAtKm(simKm);updatePosition(p[1],p[0],8,null);say('Quilómetro '+fmt(Math.max(0,simKm-stageStartKm))+ ' da etapa.',true)}
-function startHere(){if(!routeCoords.length||!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{const n=nearest([p.coords.longitude,p.coords.latitude]);const near=n.km;let end=stageEndKm;if(end<=near){end=Math.min(totalKm,near+30)}document.getElementById('stageStart').value=near;stageStartKm=near;document.getElementById('stageEnd').value=end;stageEndKm=end;localStorage.setItem('stageStartKm',near);localStorage.setItem('stageEndKm',end);document.getElementById('stageInfo').textContent='Início aproximado na posição atual: km '+fmt(near);say('Início ajustado para o ponto mais próximo do percurso.',true);activateWalk()},()=>say('Não foi possível obter a localização atual.',true),{enableHighAccuracy:true,timeout:15000,maximumAge:3000})}
-async function init(){
-  try{
-    const [r,s]=await Promise.all([fetch(ROUTE).then(x=>{if(!x.ok)throw Error('Falha ao carregar o percurso');return x.json()}),fetch(SUPPORTS).then(x=>{if(!x.ok)throw Error('Falha ao carregar os apoios');return x.json()})]);
+function updatePosition(lat,lon,acc,course){if(!userMarker)userMarker=L.marker([lat,lon],{zIndexOffset:1000,icon:L.divIcon({className:'',html:'<div style="width:20px;height:20px;border-radius:50%;background:#2474db;border:4px solid #fff;box-shadow:0 2px 7px #0005"></div>',iconSize:[20,20],iconAnchor:[10,10]})}).addTo(map);else userMarker.setLatLng([lat,lon]);if(!accCircle)accCircle=L.circle([lat,lon],{radius:acc||20,fillOpacity:.08,weight:1}).addTo(map);else accCircle.setLatLng([lat,lon]).setRadius(acc||20);const n=nearest([lon,lat]);currentKm=Math.max(0,Math.min(totalKm,n.km));const stageKm=Math.max(0,currentKm-stageStartKm),remaining=Math.max(0,stageEndKm-currentKm);document.getElementById('kmDone').textContent=fmt(stageKm);document.getElementById('kmLeft').textContent=fmt(remaining);document.getElementById('offRoute').textContent=fmt(n.d/1000)+' km';const st=document.getElementById('status');if(n.d<60){st.className='status';st.innerHTML='<b>✓ No percurso</b><small>'+Math.round(n.d)+' m do traçado</small>';if(lastOffRoute){say('Percurso reencontrado.',true);vibrate(120);lastOffRoute=false}}else{st.className='status warn';st.innerHTML='<b>⚠ Fora do percurso</b><small>'+Math.round(n.d)+' m do traçado</small>';if(!lastOffRoute){say('Atenção. Está fora do percurso.',true);vibrate([150,100,150]);lastOffRoute=true}}const next=supportItems.filter(s=>s.km>currentKm+.2&&s.km<=stageEndKm+.1).sort((a,b)=>a.km-b.km)[0];if(next){document.getElementById('nextName').textContent=next.name;document.getElementById('nextInfo').textContent=fmt(next.km-currentKm)+' km à frente · '+(next.description||'apoio');const delta=next.km-currentKm;[[5,'5 quilómetros'],[2,'2 quilómetros'],[.5,'500 metros']].forEach(t=>{const k=next.id+'-'+t[0];if(delta<=t[0]&&delta>0&&!announced[k]){announced[k]=1;say('Ponto de apoio a '+t[1]+'. '+supportText(next));}})}else{document.getElementById('nextName').textContent='Destino da etapa';document.getElementById('nextInfo').textContent=fmt(remaining)+' km restantes'}if(walkingMode&&walkStartedAt&&Date.now()-walkStartedAt>120*60*1000&&Date.now()-lastPauseAt>120*60*1000){lastPauseAt=Date.now();say('Já caminha há duas horas. Considere fazer uma pausa.')}if(remaining<=.1&&stageEndKm>stageStartKm&&!window._stageDone){window._stageDone=1;say('Chegou ao destino da etapa.',true);vibrate([200,100,200,100,400])}if(typeof course==='number'&&course>=0)updateRotation(course);if(following)map.setView([lat,lon],17,{animate:false})}
+function supportText(s){let t=s.description||'apoio';if(s.free)t+='; gratuito';return t}
+function startGPS(){if(!navigator.geolocation){say('O GPS não está disponível.',true);return}if(watchId)return;watchId=navigator.geolocation.watchPosition(p=>updatePosition(p.coords.latitude,p.coords.longitude,p.coords.accuracy||20,p.coords.heading),e=>say('Erro de GPS. '+e.message,true),{enableHighAccuracy:true,maximumAge:3000,timeout:15000});walkStartedAt=walkStartedAt||Date.now();if(window.Android&&Android.setKeepScreenOn)Android.setKeepScreenOn(true);document.getElementById('gpsBtn').classList.add('active');document.getElementById('startBtn').textContent='⏹ Parar';say('GPS ligado. Acompanhe o percurso.',true)}
+function stopGPS(){if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null}if(window.Android&&Android.setKeepScreenOn)Android.setKeepScreenOn(false);document.getElementById('gpsBtn').classList.remove('active');document.getElementById('startBtn').textContent='▶ Iniciar';say('GPS desligado.',true)}
+function toggleWalk(){walkingMode=!walkingMode;document.getElementById('modeBtn').classList.toggle('active',walkingMode);document.getElementById('modeBtn').textContent=walkingMode?'CAMINHAR ATIVO':'MODO CAMINHAR';if(walkingMode){following=true;walkStartedAt=walkStartedAt||Date.now();say('Modo Caminhar ativo. Vou acompanhar o percurso e os apoios.',true);if(!watchId)startGPS()}else{following=false;say('Modo Caminhar pausado.',true)}}
+function simulate(){if(!routeCoords.length)return;if(!walkingMode)toggleWalk();simKm=simKm<stageStartKm?stageStartKm:simKm+2;if(simKm>stageEndKm)simKm=stageStartKm;const p=pointAtKm(simKm);updatePosition(p[1],p[0],8,null);say('Quilómetro '+fmt(simKm-stageStartKm)+' da etapa.',true)}
+function importFile(file){const rd=new FileReader();rd.onload=()=>{try{const text=String(rd.result||'');const fc=file.name.toLowerCase().endsWith('.gpx')?parseGpx(text):parseKml(text);saveImported(fc,file.name);document.getElementById('drawer').classList.remove('open')}catch(e){say('Não foi possível importar. '+e.message,true)}};rd.readAsText(file)}
+function clearRoutes(){if(!confirm('Apagar todos os percursos importados?'))return;localStorage.removeItem('centenarioRoutes');routeLibrary();selectRoute('centenario')}
+
+function init(){
+  Promise.all([fetch(DEFAULT_ROUTE).then(r=>r.json()),fetch(DEFAULT_SUPPORTS).then(r=>r.json())]).then(([r,s])=>{
     routeCoords=r.features.map(f=>f.geometry.coordinates);supportItems=s.items.slice().sort((a,b)=>a.km-b.km);totalKm=Number(s.route_km||216.1);
-    map=L.map('map',{zoomControl:false}).setView([40.2,-8.6],9);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
-    const bounds=[];routeCoords.forEach(line=>{L.polyline(line.map(p=>[p[1],p[0]]),{color:'#f0c419',weight:5,opacity:.95}).addTo(map);line.forEach(p=>bounds.push([p[1],p[0]]))});if(bounds.length)map.fitBounds(L.latLngBounds(bounds),{padding:[20,20]});
-    renderSupports();stageOptions();
-    document.getElementById('menuBtn').addEventListener('click',()=>document.getElementById('drawer').classList.toggle('open'));
-    document.getElementById('modeBtn').addEventListener('click',()=>walkingMode?deactivateWalk():activateWalk());
-    document.getElementById('followBtn').addEventListener('click',()=>{following=true;if(userMarker)map.setView(userMarker.getLatLng(),17,{animate:true})});
-    document.getElementById('rotateBtn').addEventListener('click',()=>{rotateMode=!rotateMode;document.getElementById('rotateBtn').classList.toggle('active',rotateMode);if(rotateMode){if(window.Android&&Android.startCompass)Android.startCompass();say('Orientação pela direção ativada.',true)}else{if(window.Android&&Android.stopCompass)Android.stopCompass();document.getElementById('mapRot').style.transform='rotate(0deg)';say('Orientação desativada.',true)}});
-    document.getElementById('gpsBtn').addEventListener('click',()=>watchId===null?startGPS():stopGPS());
-    document.getElementById('startBtn').addEventListener('click',()=>watchId===null?startGPS():stopGPS());
-    document.getElementById('testAudioBtn').addEventListener('click',()=>say('Teste de áudio. O Caminho do Centenário está pronto. Ponto de apoio a 5 quilómetros.',true));
-    document.getElementById('voiceTestInline').addEventListener('click',()=>say('Áudio imersivo ativo. Vamos avisá-lo sobre percurso, apoios, pausas e destino.',true));
-    document.getElementById('startHereBtn').addEventListener('click',startHere);
-    document.getElementById('map').addEventListener('dblclick',simulate);
-    document.getElementById('map').addEventListener('click',()=>{following=false});
-    document.getElementById('status').addEventListener('dblclick',simulate);
-  }catch(e){
-    console.error(e);document.getElementById('status').className='status warn';document.getElementById('status').innerHTML='<b>Erro ao carregar</b><small>'+String(e.message||e)+'</small>'
-  }
+    map=L.map('map',{zoomControl:false}).setView([40.2,-8.6],9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+    renderRoute();renderSupports();stageOptions();routeLibrary();
+    document.getElementById('menuBtn').onclick=()=>document.getElementById('drawer').classList.toggle('open');
+    document.getElementById('modeBtn').onclick=toggleWalk;
+    document.getElementById('followBtn').onclick=()=>{following=true;if(userMarker)map.setView(userMarker.getLatLng(),17,{animate:true})};
+    document.getElementById('rotateBtn').onclick=()=>{rotateMode=!rotateMode;document.getElementById('rotateBtn').classList.toggle('active',rotateMode);if(rotateMode)say('Orientação ativada.',true);else document.getElementById('mapRot').style.transform='rotate(0deg)'};
+    document.getElementById('gpsBtn').onclick=()=>watchId?stopGPS():startGPS();
+    document.getElementById('startBtn').onclick=()=>watchId?stopGPS():startGPS();
+    document.getElementById('testAudioBtn').onclick=()=>say('Teste de áudio imersivo. Percurso, apoios, desvios e pausas ativos.',true);
+    document.getElementById('voiceTestInline').onclick=()=>say('Áudio imersivo ativo.',true);
+    document.getElementById('startHereBtn').onclick=()=>{if(!navigator.geolocation)return;say('A obter localização.',true);navigator.geolocation.getCurrentPosition(p=>{const n=nearest([p.coords.longitude,p.coords.latitude]);stageStartKm=n.km;document.getElementById('stageStart').innerHTML='<option value="'+n.km+'">Minha posição · km '+fmt(n.km)+'</option>';document.getElementById('stageEnd').value=String(totalKm);applyStage();toggleWalk()},()=>say('Não foi possível obter a localização.',true),{enableHighAccuracy:true,timeout:15000,maximumAge:3000});
+    };
+    document.getElementById('importRouteBtn').onclick=()=>document.getElementById('routeFile').click();
+    document.getElementById('routeFile').onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)importFile(f);e.target.value=''};
+    document.getElementById('clearRoutesBtn').onclick=clearRoutes;
+    document.getElementById('map').ondblclick=simulate;
+  }).catch(e=>{document.getElementById('status').className='status warn';document.getElementById('status').innerHTML='<b>Erro ao carregar</b><small>'+String(e.message||e)+'</small>'});
 }
+window._announced={};
 document.addEventListener('DOMContentLoaded',init);
 })();
 </script>
