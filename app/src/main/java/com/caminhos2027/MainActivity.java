@@ -13,8 +13,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.Nullable;
-import androidx.webkit.WebResourceRequest;
-import androidx.webkit.WebResourceResponse;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import androidx.webkit.WebViewAssetLoader;
 
 import java.util.Locale;
