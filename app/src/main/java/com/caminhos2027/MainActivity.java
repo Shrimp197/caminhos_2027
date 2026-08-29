@@ -96,13 +96,8 @@ public class MainActivity extends Activity implements SensorEventListener {
             }
 
             @Override
-            public boolean onShowFileChooser(
-                    WebView view,
-                    ValueCallback<Uri[]> callback,
-                    FileChooserParams params) {
-                if (pendingFileCallback != null) {
-                    pendingFileCallback.onReceiveValue(null);
-                }
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (pendingFileCallback != null) pendingFileCallback.onReceiveValue(null);
                 pendingFileCallback = callback;
                 Intent intent = params.createIntent();
                 intent.setType("*/*");
@@ -132,7 +127,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             if (tts == null || text == null || text.trim().isEmpty()) return;
             runOnUiThread(() -> {
                 tts.stop();
-                tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "centenario");
+                tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "peregrino");
             });
         }
 
@@ -162,9 +157,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (!compassRunning || event.sensor.getType() != Sensor.TYPE_ROTATION_VECTOR || webView == null) {
-            return;
-        }
+        if (!compassRunning || event.sensor.getType() != Sensor.TYPE_ROTATION_VECTOR || webView == null) return;
+
         float[] matrix = new float[9];
         float[] orientation = new float[3];
         SensorManager.getRotationMatrixFromVector(matrix, event.values);
@@ -178,9 +172,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                 "window.setDeviceHeading && window.setDeviceHeading(" + h + ")", null));
     }
 
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    }
+    @Override public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {

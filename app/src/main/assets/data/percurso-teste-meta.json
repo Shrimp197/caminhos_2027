@@ -1,0 +1,10 @@
+{
+  "name": "2026-08-28_20-50_Fri",
+  "asset": "data/percurso-teste-casa-trabalho.gpx",
+  "points": 437,
+  "distance_km": 3.042,
+  "elevation_points": 437,
+  "elevation_min_m": 64.1,
+  "elevation_max_m": 71.8,
+  "description": "GPX fornecido para teste funcional da aplicação; não é o percurso oficial da peregrinação."
+}
