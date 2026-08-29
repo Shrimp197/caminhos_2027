@@ -3,207 +3,277 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Caminho do Centenário</title>
+<title>Caminhos do Peregrino</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-:root{--green:#0e4e37;--green2:#176b4b;--cream:#eef4ef;--route:#f0c419;--blue:#2474db;--danger:#c94136;--text:#173126;--muted:#64776c}
+:root{--green:#0e4e37;--green2:#176b4b;--cream:#eef4ef;--blue:#2474db;--route:#f0c419;--danger:#b92f28;--text:#173126;--muted:#687a70}
 *{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--cream);color:var(--text)}
-.app{height:100%;display:flex;flex-direction:column}.top{height:72px;background:var(--green);color:#fff;padding:8px 12px;display:flex;align-items:center;justify-content:space-between}.brand{display:flex;gap:9px;align-items:center}.boot{font-size:29px}.brand b{display:block;font-size:18px;white-space:nowrap}.brand small{display:block;font-size:12px;opacity:.82}.mode{border:1px solid #ffffff55;border-radius:24px;padding:9px 11px;background:transparent;color:#fff;font-weight:800;font-size:12px}
-.mode.active{background:#fff;color:var(--green)}
-.main{position:relative;flex:1;min-height:0}.maprot{position:absolute;inset:0;transform-origin:50% 50%;pointer-events:none}.maprot #map{pointer-events:auto}.leaflet-container{background:#e6eee8}.leaflet-control-attribution{font-size:9px}
-.map{position:absolute;inset:0}.menu{position:absolute;left:10px;top:10px;z-index:1200}.menu button,.fab{border:0;background:#fff;color:var(--green);box-shadow:0 4px 16px #0002}.menu button{width:52px;height:52px;border-radius:17px;font-size:22px}
-.fabbar{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:9px;z-index:1200}.fab{width:52px;height:52px;border-radius:50%;font-size:21px}.fab.active{background:var(--green);color:#fff}
-.drawer{display:none;position:absolute;left:10px;right:10px;top:72px;max-height:50vh;overflow:auto;z-index:1250;background:#fff;border-radius:16px;padding:12px;box-shadow:0 8px 28px #0003}.drawer.open{display:block}
-.support{padding:8px 0;border-bottom:1px solid #edf0ee}.support b{display:block}.support small{color:var(--muted)}.routeItem{padding:8px;border:1px solid #dfe6e1;border-radius:10px;margin:6px 0}.routeItem.active{border:2px solid var(--green);background:#eef7ef}.routeItem button{margin-top:5px;padding:6px 8px;border:0;border-radius:8px;background:var(--green);color:#fff;font-weight:750}
-.panel{position:absolute;left:10px;right:10px;bottom:10px;z-index:1100;background:#fff;border-radius:20px;padding:8px 10px 10px;box-shadow:0 8px 28px #0002;transition:transform .22s ease;touch-action:none}.panel.collapsed{transform:translateY(calc(100% - 58px))}.dragHandle{width:46px;height:5px;background:#cbd6cf;border-radius:5px;margin:0 auto 6px}.panelBar{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}.collapseBtn{border:0;background:#edf3ef;color:var(--green);border-radius:9px;padding:4px 9px;font-weight:800}.panel.collapsed .collapseBtn{transform:rotate(180deg)}.row{display:flex;gap:8px}.status{flex:1;background:#eef7ef;border-radius:14px;padding:10px 11px;min-width:0}.status.warn{background:#fff0ed;color:#7d231d}.status b{display:block;font-size:16px}.status small{display:block;margin-top:2px;color:var(--muted)}
-.start{border:0;border-radius:14px;background:var(--green2);color:#fff;font-size:15px;font-weight:850;padding:0 14px}.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:7px}.stat{background:#f5f7f5;border-radius:11px;padding:8px}.stat b{display:block;font-size:20px}.stat small{color:var(--muted)}
-.next{margin-top:7px;border:1px solid #dce6df;border-radius:12px;padding:9px 11px}.label{font-size:10px;letter-spacing:.08em;color:var(--muted)}.next b{display:block;font-size:15px;margin:2px 0}.next small{color:var(--muted)}
-.voice{display:flex;align-items:center;justify-content:space-between;margin-top:7px;background:#f5f7f5;border-radius:11px;padding:7px 9px;font-size:11px;color:var(--muted)}.voice button{border:0;background:transparent;color:var(--green);font-weight:800}
-.stage{margin-top:7px;border-top:1px solid #edf0ee;padding-top:7px}.stage-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.stage select{width:100%;padding:8px;border:1px solid #d8e0da;border-radius:9px;background:#fff}.stage small{color:var(--muted)}
-.smallrow{display:flex;gap:6px;margin-top:7px}.smallbtn{flex:1;padding:8px 9px;border-radius:10px;border:1px solid #d8e0da;background:#fff;color:var(--green);font-weight:750}
-@media(max-width:480px){.top{height:70px}.panel{left:7px;right:7px;bottom:7px}.menu{left:7px}.fabbar{right:7px}.mode{padding:8px 9px}.brand b{font-size:17px}}
+button,select{font:inherit}.hidden{display:none!important}
+.app{height:100%;display:flex;flex-direction:column}.top{height:70px;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;z-index:50}.brand{display:flex;gap:9px;align-items:center}.brandmark{width:42px;height:42px;border-radius:11px;background:#fff2;object-fit:cover}.brand b{display:block;font-size:17px}.brand small{display:block;font-size:11px;opacity:.82}.modeBtn{border:1px solid #ffffff66;background:transparent;color:#fff;border-radius:22px;padding:9px 11px;font-weight:850;font-size:11px}
+.screen{position:absolute;inset:70px 0 0;overflow:auto}.prep{padding:16px 13px 28px}.hero{background:#fff;border-radius:20px;padding:18px;box-shadow:0 5px 20px #0002}.hero h1{margin:0 0 2px;font-size:24px}.hero p{margin:0;color:var(--muted)}.card{background:#fff;border-radius:16px;padding:13px;margin-top:10px;box-shadow:0 3px 14px #0001}.field{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #edf0ee}.field:last-child{border-bottom:0}.field b{font-size:13px}.field select{width:58%;padding:8px;border:1px solid #d5ded8;border-radius:9px;background:#fff}.sectionTitle{font-size:11px;color:var(--muted);letter-spacing:.08em;margin-bottom:7px;font-weight:850}.seg{display:flex;gap:6px;flex-wrap:wrap}.seg button{border:1px solid #d5ded8;background:#fff;color:var(--green);padding:8px 10px;border-radius:10px;font-weight:750}.seg button.active{background:var(--green);color:#fff}.pausegrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.pausegrid select{width:100%;padding:9px;border:1px solid #d5ded8;border-radius:9px;background:#fff}
+.primary{width:100%;border:0;background:var(--green2);color:#fff;border-radius:16px;padding:15px;font-size:17px;font-weight:900;margin-top:12px}.secondary{width:100%;border:1px solid #d5ded8;background:#fff;color:var(--green);border-radius:12px;padding:10px;font-weight:800;margin-top:7px}.resume{background:#eef7ef;border:1px solid #d6e7d9;border-radius:13px;padding:11px;margin-top:10px}.resume b{display:block}.resume small{color:var(--muted)}
+.nav{position:absolute;inset:70px 0 0;background:#e6eee8}.maprot{position:absolute;inset:0;transform-origin:50% 50%;pointer-events:none}.maprot #map{pointer-events:auto}.map{position:absolute;inset:0}.leaflet-container{background:#e6eee8}.leaflet-control-attribution{font-size:9px}
+.controls{position:absolute;left:8px;right:8px;top:10px;z-index:1200;display:flex;justify-content:space-between;pointer-events:none}.controlGroup{display:flex;flex-direction:column;gap:8px;pointer-events:auto}.fab{width:50px;height:50px;border:0;border-radius:16px;background:#fff;color:var(--green);box-shadow:0 4px 15px #0002;font-size:20px}.fab.round{border-radius:50%}.fab.active{background:var(--green);color:#fff}
+.emergency{position:absolute;left:9px;bottom:10px;z-index:1220;width:50px;height:50px;border:0;border-radius:50%;background:#fff;color:var(--danger);box-shadow:0 4px 15px #0002;font-size:20px}.navPanel{position:absolute;left:8px;right:8px;bottom:8px;z-index:1210;background:#fff;border-radius:20px;padding:7px 10px 10px;box-shadow:0 7px 25px #0002;transition:transform .22s ease;touch-action:none}.navPanel.collapsed{transform:translateY(calc(100% - 57px))}.handle{width:46px;height:5px;background:#cbd6cf;border-radius:4px;margin:1px auto 6px}.panelbar{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted)}.collapse{border:0;background:#edf3ef;color:var(--green);border-radius:8px;padding:4px 8px;font-weight:900}.statusrow{display:flex;gap:7px;margin-top:5px}.status{flex:1;min-width:0;background:#eef7ef;border-radius:13px;padding:9px 10px}.status.warn{background:#fff0ed}.status b{display:block;font-size:15px}.status small{display:block;color:var(--muted)}.stop{border:0;border-radius:13px;background:var(--green2);color:#fff;font-weight:900;padding:0 12px}.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:7px}.stat{background:#f5f7f5;border-radius:10px;padding:7px}.stat b{display:block;font-size:19px}.stat small{color:var(--muted);font-size:10px}.next{margin-top:7px;border:1px solid #dbe5de;border-radius:11px;padding:8px 10px}.next b{display:block}.next small{color:var(--muted)}.voicebar{display:flex;align-items:center;justify-content:space-between;margin-top:7px;background:#f5f7f5;border-radius:10px;padding:7px 9px;font-size:11px;color:var(--muted)}.voicebar button{border:0;background:transparent;color:var(--green);font-weight:850}.routebar{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}.routebar select{width:100%;padding:8px;border:1px solid #d5ded8;border-radius:9px;background:#fff}.drawer{display:none;position:absolute;left:8px;right:8px;top:80px;max-height:63vh;overflow:auto;z-index:1300;background:#fff;border-radius:17px;padding:12px;box-shadow:0 10px 30px #0003}.drawer.open{display:block}.drawTitle{font-weight:900}.routeItem{border:1px solid #dfe7e1;border-radius:11px;padding:8px;margin:6px 0}.routeItem.active{border:2px solid var(--green);background:#eef7ef}.routeItem button,.mini{border:0;background:var(--green);color:#fff;border-radius:8px;padding:6px 8px;font-weight:800}.support{padding:8px 0;border-bottom:1px solid #edf0ee}.support b{display:block}.support small{color:var(--muted)}.tag{display:inline-block;margin-top:3px;padding:3px 6px;border-radius:8px;background:#eef3ef;color:var(--green);font-size:10px}.support.missing{background:#fffaf2}.modal{position:absolute;inset:0;background:#0006;z-index:2000;display:none;align-items:flex-end}.modal.open{display:flex}.sheet{background:#fff;width:100%;border-radius:20px 20px 0 0;padding:16px;max-height:75vh;overflow:auto}.sheet h2{margin:0 0 8px}.sheet button{width:100%;padding:12px;border-radius:11px;border:0;margin-top:7px;font-weight:850}.dangerBtn{background:#c94136;color:#fff}.cancelBtn{background:#eef3ef;color:var(--green)}
+@media(max-width:480px){.prep{padding:12px 8px 22px}.hero{padding:15px}.primary{margin-top:10px}.navPanel{left:6px;right:6px;bottom:6px}.emergency{left:7px;bottom:66px}}
 </style>
 </head>
 <body>
 <div class="app">
 <header class="top">
-  <div class="brand"><span class="boot">🥾</span><div><b>Caminho do Centenário</b><small>Gaia → Fátima</small></div></div>
-  <button id="modeBtn" class="mode" type="button">MODO CAMINHAR</button>
-</header>
-<main class="main">
-  <div id="mapRot" class="maprot"><div id="map" class="map"></div></div>
-  <div class="menu"><button id="menuBtn" aria-label="Apoios">☰</button></div>
-  <div class="fabbar">
-    <button id="followBtn" class="fab" title="Centrar posição">⌖</button>
-    <button id="rotateBtn" class="fab" title="Seguir direção">🧭</button>
-    <button id="gpsBtn" class="fab" title="GPS">📍</button>
+  <div class="brand">
+    <img class="brandmark" src="res_icon/ic_launcher_source.png" onerror="this.style.display='none'">
+    <div><b>Caminhos do Peregrino</b><small id="headerRoute">Caminho do Centenário</small></div>
   </div>
+  <button id="topModeBtn" class="modeBtn" type="button">PREPARAR</button>
+</header>
+
+<section id="prepScreen" class="screen">
+  <div class="prep">
+    <div class="hero">
+      <h1>Preparar caminhada</h1>
+      <p>Define a caminhada antes de entrar na navegação.</p>
+    </div>
+
+    <div id="resumeCard" class="resume hidden">
+      <b>↩ Continuar caminhada</b>
+      <small id="resumeText">Existe uma caminhada guardada.</small>
+      <button id="resumeBtn" class="secondary">Continuar</button>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">PERCURSO</div>
+      <div class="field"><b>Percurso</b><select id="prepRoute"></select></div>
+      <div class="field"><b>Início</b><select id="prepStart"></select></div>
+      <div class="field"><b>Fim</b><select id="prepEnd"></select></div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">ÁUDIO</div>
+      <div class="seg" id="audioSeg">
+        <button data-audio="normal">🔊 Normal</button>
+        <button data-audio="immersive" class="active">🎧 Imersivo</button>
+        <button data-audio="silent">🔇 Silencioso</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">ORIENTAÇÃO</div>
+      <div class="seg" id="orientationSeg">
+        <button data-orientation="north" class="active">🧭 Norte</button>
+        <button data-orientation="heading">↟ Direção da caminhada</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">PAUSAS INTELIGENTES</div>
+      <div class="pausegrid">
+        <div><small style="color:var(--muted)">Por tempo</small><select id="pauseTime"><option value="0">Sem aviso</option><option value="60">A cada 60 min</option><option value="90" selected>A cada 90 min</option><option value="120">A cada 120 min</option></select></div>
+        <div><small style="color:var(--muted)">Por distância</small><select id="pauseDistance"><option value="0">Sem aviso</option><option value="5">A cada 5 km</option><option value="8" selected>A cada 8 km</option><option value="10">A cada 10 km</option></select></div>
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:9px;font-size:12px">
+        <input type="checkbox" id="pauseSupport" checked> Avisar quando existir um local adequado para pausa
+      </label>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">APOIOS</div>
+      <div class="seg" id="supportFilters">
+        <button data-filter="all" class="active">Todos</button>
+        <button data-filter="overnight">🛏️ Pernoita</button>
+        <button data-filter="water">💧 Água</button>
+        <button data-filter="shower">🚿 Banho</button>
+        <button data-filter="health">🚑 Saúde</button>
+      </div>
+    </div>
+
+    <button id="startWalkBtn" class="primary">🥾 INICIAR CAMINHADA</button>
+    <button id="manageBtn" class="secondary">🧭 Gerir percursos e apoios</button>
+  </div>
+</section>
+
+<section id="navScreen" class="nav hidden">
+  <div id="mapRot" class="maprot"><div id="map" class="map"></div></div>
+
+  <div class="controls">
+    <div class="controlGroup">
+      <button id="menuBtn" class="fab" type="button">☰</button>
+    </div>
+    <div class="controlGroup">
+      <button id="followBtn" class="fab round" type="button">⌖</button>
+      <button id="rotateBtn" class="fab round" type="button">🧭</button>
+      <button id="gpsBtn" class="fab round" type="button">📍</button>
+    </div>
+  </div>
+
+  <button id="emergencyBtn" class="emergency" type="button" title="Emergência">🆘</button>
+
   <div id="drawer" class="drawer">
-    <b>🧭 Percurso ativo</b>
-    <div id="routeLibrary" class="support"></div>
-    <div class="smallrow">
-      <button id="importRouteBtn" class="smallbtn" type="button">＋ Importar KML/GPX</button>
-      <button id="clearRoutesBtn" class="smallbtn" type="button">🗑️ Gerir</button>
+    <div class="drawTitle">🧭 Percurso ativo</div>
+    <div id="routeLibrary"></div>
+    <div class="smallrow" style="display:flex;gap:6px;margin-top:7px">
+      <button id="importRouteBtn" class="mini">＋ Importar KML/GPX</button>
+      <button id="backPrepBtn" class="mini" style="background:#eef3ef;color:var(--green)">← Preparar</button>
     </div>
     <input id="routeFile" type="file" accept=".kml,.gpx,application/vnd.google-earth.kml+xml,application/gpx+xml,application/xml,text/xml" style="display:none">
     <hr>
-
-    <b>⛺ Apoios identificados (2026)</b>
+    <div class="drawTitle">⛺ Apoios</div>
+    <small style="display:block;color:var(--muted);margin:4px 0 7px">Os pontos sem coordenada não aparecem no mapa. Estados diferenciam confirmação e informação histórica/sazonal.</small>
     <div id="supportList"></div>
-    <div class="smallrow">
-      <button id="testAudioBtn" class="smallbtn">🔊 Testar áudio</button>
-      <button id="startHereBtn" class="smallbtn">📍 Iniciar onde estou</button>
+    <div class="smallrow" style="display:flex;gap:6px;margin-top:7px">
+      <button id="next10Btn" class="mini">🔭 Próximos 10 km</button>
+      <button id="sleepBtn" class="mini">🛏️ Onde dormir?</button>
+    </div>
+    <div id="next10List"></div>
+    <div class="smallrow" style="display:flex;gap:6px;margin-top:7px">
+      <button id="testAudioBtn" class="mini">🔊 Testar áudio</button>
+      <button id="addNoteBtn" class="mini">📝 Nota</button>
     </div>
   </div>
-  <section class="panel" id="infoPanel">
-  <div id="panelHandle" class="dragHandle" aria-label="Deslizar painel"></div>
-  <div class="panelBar"><span>Informação da caminhada</span><button id="collapseBtn" class="collapseBtn" type="button">⌄</button></div>
-    <div class="row">
-      <div id="status" class="status"><b>GPS desligado</b><small>Ativa o GPS ou o modo Caminhar.</small></div>
-      <button id="startBtn" class="start">▶ Iniciar</button>
+
+  <section id="navPanel" class="navPanel">
+    <div id="panelHandle" class="handle"></div>
+    <div class="panelbar"><span>Informação da caminhada</span><button id="collapseBtn" class="collapse">⌄</button></div>
+    <div class="statusrow">
+      <div id="status" class="status"><b>Preparado</b><small>Inicia o GPS para acompanhar o percurso.</small></div>
+      <button id="stopBtn" class="stop">⏹ Parar</button>
     </div>
     <div class="stats">
       <div class="stat"><b id="kmDone">0,0</b><small>km na etapa</small></div>
       <div class="stat"><b id="kmLeft">216,1</b><small>km até destino</small></div>
       <div class="stat"><b id="offRoute">—</b><small>distância ao traçado</small></div>
     </div>
-    <div class="next"><div class="label">PRÓXIMO APOIO</div><b id="nextName">—</b><small id="nextInfo">Define o trecho e inicia.</small></div>
-    <div class="voice">🔊 Áudio: <b id="voiceStatus">Imersivo</b><button id="voiceTestInline">Testar</button></div>
-    <div class="stage">
-      <div class="label">ETAPA / TRECHO</div>
-      <div class="stage-grid"><select id="stageStart"></select><select id="stageEnd"></select></div>
-      <small id="stageInfo">Seleciona início e fim.</small>
-    </div>
+    <div class="next"><div class="label">PRÓXIMO APOIO</div><b id="nextName">—</b><small id="nextInfo">—</small></div>
+    <div class="voicebar">🔊 Áudio: <b id="voiceStatus">Imersivo</b><button id="voiceTest">Testar</button></div>
+    <div class="routebar"><select id="navStart"></select><select id="navEnd"></select></div>
   </section>
-</main>
-</div>
+</section>
 
+<div id="emergencyModal" class="modal">
+  <div class="sheet">
+    <h2>🆘 Emergência</h2>
+    <p style="color:var(--muted)">Usa esta área para consultar rapidamente a tua localização ou contactar emergência.</p>
+    <button id="call112Btn" class="dangerBtn">📞 Ligar 112</button>
+    <button id="shareLocationBtn" class="cancelBtn">📍 Partilhar localização</button>
+    <button id="openLocationBtn" class="cancelBtn">🗺️ Abrir localização</button>
+    <button id="closeEmergencyBtn" class="cancelBtn">Cancelar</button>
+  </div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function(){
 'use strict';
-const DEFAULT_ROUTE='data/route.geojson', DEFAULT_SUPPORTS='data/apoios-2026.json';
-let map=null, routeCoords=[], supportItems=[], markers=[], routeLayer=[];
-let userMarker=null, accCircle=null, watchId=null;
-let following=false, rotateMode=false, walkingMode=false;
-let totalKm=216.1, currentKm=0, simKm=0, stageStartKm=0, stageEndKm=216.1;
-let activeRouteId='centenario', activeRouteName='Caminho do Centenário', walkStartedAt=0, lastPauseAt=0, lastOffRoute=false;
-let lastSpeech='', lastSpeechAt=0, announced={};
+
+const DEFAULT_ROUTE='data/route.geojson';
+const DEFAULT_SUPPORTS='data/apoios-2026.json';
+const SETTINGS_KEY='caminhosPeregrino.settings';
+const RESUME_KEY='caminhosPeregrino.resume';
+
+let map=null,routeCoords=[],routeLines=[],routeLayer=[],supportItems=[],markers=[],userMarker=null,accCircle=null;
+let watchId=null,following=false,rotateMode=false,walking=false,activeRouteId='centenario';
+let totalKm=216.1,currentKm=0,stageStartKm=0,stageEndKm=216.1,simKm=0;
+let audioMode='immersive',orientation='north',supportFilter='all';
+let lastOff=false,lastSpeech='',lastSpeechAt=0,lastPauseMinute=0,lastPauseKm=0,walkStartedAt=0;
 
 const places=[['Porto',0],['São João da Madeira',32.1],['Cucujães',36],['Oliveira de Azeméis',41],['Albergaria-a-Velha',56],['Águeda',74],['Anadia',91],['Mealhada',98.7],['Coimbra',126.3],['Condeixa-a-Nova',145],['Soure',160],['Pombal',188.2],['Leiria',201],['Ourém',214.8],['Fátima',216.1]];
 
 function fmt(n){return Number(n||0).toLocaleString('pt-PT',{minimumFractionDigits:1,maximumFractionDigits:1})}
-function say(text,force){try{const msg=String(text||'').trim(),now=Date.now();if(!msg)return;if(!force&&msg===lastSpeech&&now-lastSpeechAt<15000)return;if(!force&&now-lastSpeechAt<2500)return;lastSpeech=msg;lastSpeechAt=now;if(window.Android&&Android.speak)Android.speak(msg);else if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(msg);u.lang='pt-PT';u.rate=.96;speechSynthesis.speak(u)}}catch(e){}}
+function settings(){try{return JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')}catch(e){return{}}}
+function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify({audioMode,orientation,pauseTime:Number(document.getElementById('pauseTime').value),pauseDistance:Number(document.getElementById('pauseDistance').value),pauseSupport:document.getElementById('pauseSupport').checked}))}
+function say(text,force){if(audioMode==='silent')return;let msg=String(text||'').trim();if(!msg)return;const now=Date.now();if(!force&&msg===lastSpeech&&now-lastSpeechAt<15000)return;if(!force&&now-lastSpeechAt<2500)return;lastSpeech=msg;lastSpeechAt=now;try{if(window.Android&&Android.speak)Android.speak(msg);else if('speechSynthesis'in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(msg);u.lang='pt-PT';u.rate=.96;speechSynthesis.speak(u)}}catch(e){}}
 function vibrate(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
 function hav(a,b){const R=6371000,p1=a[1]*Math.PI/180,p2=b[1]*Math.PI/180,dp=(b[1]-a[1])*Math.PI/180,dl=(b[0]-a[0])*Math.PI/180,h=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(Math.max(0,Math.min(1,h))))}
+function segDist(p,a,b){const lat=p[1]*Math.PI/180,k=111320,c=Math.cos(lat),ax=a[0]*k*c,ay=a[1]*k,bx=b[0]*k*c,by=b[1]*k,px=p[0]*k*c,py=p[1]*k,dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy||1))),qx=ax+t*dx,qy=ay+t*dy;return{d:Math.hypot(px-qx,py-qy),t}}
 function bearing(a,b){const p1=a[1]*Math.PI/180,p2=b[1]*Math.PI/180,dl=(b[0]-a[0])*Math.PI/180,y=Math.sin(dl)*Math.cos(p2),x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);return(180/Math.PI*Math.atan2(y,x)+360)%360}
-function pointSeg(p,a,b){const lat=p[1]*Math.PI/180,k=111320,c=Math.cos(lat),ax=a[0]*k*c,ay=a[1]*k,bx=b[0]*k*c,by=b[1]*k,px=p[0]*k*c,py=p[1]*k,dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy||1))),qx=ax+t*dx,qy=ay+t*dy;return{d:Math.hypot(px-qx,py-qy),t}}
-function nearest(p){let best={d:Infinity,km:0,heading:0},km=0;for(const line of routeCoords){for(let i=1;i<line.length;i++){const a=line[i-1],b=line[i],r=pointSeg(p,a,b),len=hav(a,b)/1000;if(r.d<best.d)best={d:r.d,km:km+len*r.t,heading:bearing(a,b)};km+=len}}return best}
-function pointAtKm(target){let km=0;for(const line of routeCoords){for(let i=1;i<line.length;i++){const d=hav(line[i-1],line[i])/1000;if(km+d>=target){const t=(target-km)/(d||1),a=line[i-1],b=line[i];return[a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])]}km+=d}}const last=routeCoords[routeCoords.length-1];return last[last.length-1]}
-function supportIcon(s){return L.divIcon({className:'',html:'<div style="width:27px;height:27px;border-radius:50%;background:'+(s.free?'#176b4b':'#2474db')+';border:3px solid #fff;box-shadow:0 2px 7px #0005;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px">'+(s.free?'⛺':'ℹ️')+'</div>',iconSize:[27,27],iconAnchor:[13,13]})}
-function renderRoute(){routeLayer.forEach(x=>map.removeLayer(x));routeLayer=[];const bounds=[];routeCoords.forEach(line=>{const l=L.polyline(line.map(p=>[p[1],p[0]]),{color:'#f0c419',weight:5,opacity:.95}).addTo(map);routeLayer.push(l);line.forEach(p=>bounds.push([p[1],p[0]]))});if(bounds.length)map.fitBounds(L.latLngBounds(bounds),{padding:[20,20]})}
-function renderSupports(){markers.forEach(x=>map.removeLayer(x));markers=[];supportItems.forEach(s=>markers.push(L.marker([s.lat,s.lon],{icon:supportIcon(s)}).addTo(map).bindPopup('<b>'+s.name+'</b><br>'+s.municipality+'<br>'+s.description+'<br><small>Km '+fmt(s.km)+'</small>')));const list=document.getElementById('supportList');if(!list)return;list.innerHTML='';supportItems.slice().sort((a,b)=>a.km-b.km).forEach(s=>{const d=document.createElement('div');d.className='support';d.innerHTML='<b>'+s.name+'</b><small>'+s.municipality+' · km '+fmt(s.km)+'</small>';d.onclick=()=>{map.setView([s.lat,s.lon],16);document.getElementById('drawer').classList.remove('open')};list.appendChild(d)})}
-function routeLibrary(){const box=document.getElementById('routeLibrary');if(!box)return;box.innerHTML='';const saved=JSON.parse(localStorage.getItem('centenarioRoutes')||'[]');const all=[{id:'centenario',name:'Caminho do Centenário',distance:216.1}].concat(saved);all.forEach(r=>{const d=document.createElement('div');d.className='routeItem'+(r.id===activeRouteId?' active':'');d.innerHTML='<b>'+r.name+'</b><small>'+fmt(r.distance)+' km</small><br><button type="button">'+(r.id===activeRouteId?'✓ Ativo':'Usar este percurso')+'</button>';d.querySelector('button').onclick=()=>selectRoute(r.id);box.appendChild(d)})}
-function parseKml(text){const doc=new DOMParser().parseFromString(text,'application/xml'),nodes=doc.getElementsByTagName('coordinates'),features=[];for(let i=0;i<nodes.length;i++){const pts=[];(nodes[i].textContent||'').trim().split(/\s+/).forEach(tok=>{const a=tok.split(',');if(a.length>=2){const lon=Number(a[0]),lat=Number(a[1]);if(isFinite(lon)&&isFinite(lat))pts.push([lon,lat])}});if(pts.length>=2)features.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:pts}})}if(!features.length)throw Error('KML sem linhas utilizáveis');return{type:'FeatureCollection',features}}
-function parseGpx(text){const doc=new DOMParser().parseFromString(text,'application/xml'),nodes=doc.getElementsByTagName('trkpt'),pts=[];for(let i=0;i<nodes.length;i++){const lat=Number(nodes[i].getAttribute('lat')),lon=Number(nodes[i].getAttribute('lon'));if(isFinite(lat)&&isFinite(lon))pts.push([lon,lat])}if(pts.length<2)throw Error('GPX sem pontos de track');return{type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'LineString',coordinates:pts}}]}}
-function routeDistance(fc){let d=0;fc.features.forEach(f=>{const c=f.geometry.coordinates;for(let i=1;i<c.length;i++)d+=hav(c[i-1],c[i])/1000});return d}
-function saveImported(fc,name){const list=JSON.parse(localStorage.getItem('centenarioRoutes')||'[]');const obj={id:'r'+Date.now(),name:name.replace(/\.(kml|gpx)$/i,''),distance:routeDistance(fc),features:fc.features};list.push(obj);localStorage.setItem('centenarioRoutes',JSON.stringify(list));selectRoute(obj.id)}
-function selectRoute(id){if(id==='centenario'){activeRouteId=id;activeRouteName='Caminho do Centenário';fetch(DEFAULT_ROUTE).then(r=>r.json()).then(x=>{routeCoords=x.features.map(f=>f.geometry.coordinates);totalKm=216.1;stageStartKm=0;stageEndKm=totalKm;renderRoute();routeLibrary();stageOptions();say('Caminho do Centenário selecionado.',true)})}else{const r=JSON.parse(localStorage.getItem('centenarioRoutes')||'[]').find(x=>x.id===id);if(!r)return;activeRouteId=id;activeRouteName=r.name;routeCoords=r.features.map(f=>f.geometry.coordinates);totalKm=r.distance||routeDistance(r);stageStartKm=0;stageEndKm=totalKm;renderRoute();routeLibrary();stageOptions();say(r.name+' selecionado.',true)}}
-function stageOptions(){const a=document.getElementById('stageStart'),b=document.getElementById('stageEnd');a.innerHTML='';b.innerHTML='';const list=activeRouteId==='centenario'?places:[['Início',0],['25% do percurso',totalKm*.25],['50% do percurso',totalKm*.5],['75% do percurso',totalKm*.75],['Fim',totalKm]];list.forEach(p=>{const o=document.createElement('option');o.value=p[1];o.textContent=p[0]+' · km '+fmt(p[1]);a.appendChild(o);const q=document.createElement('option');q.value=p[1];q.textContent=p[0]+' · km '+fmt(p[1]);b.appendChild(q)});b.value=String(totalKm);a.onchange=applyStage;b.onchange=applyStage;applyStage()}
-function applyStage(){stageStartKm=Number(document.getElementById('stageStart').value);stageEndKm=Number(document.getElementById('stageEnd').value);document.getElementById('stageInfo').textContent=stageEndKm>stageStartKm?'Trecho selecionado: '+fmt(stageEndKm-stageStartKm)+' km':'O fim tem de estar depois do início.';document.getElementById('kmDone').textContent='0,0';document.getElementById('kmLeft').textContent=fmt(Math.max(0,stageEndKm-stageStartKm));window._stageDone=0}
-function updateRotation(h){if(rotateMode&&typeof h==='number'&&isFinite(h))document.getElementById('mapRot').style.transform='rotate('+(-h)+'deg)'}
-function updatePosition(lat,lon,acc,course){if(!userMarker)userMarker=L.marker([lat,lon],{zIndexOffset:1000,icon:L.divIcon({className:'',html:'<div style="width:20px;height:20px;border-radius:50%;background:#2474db;border:4px solid #fff;box-shadow:0 2px 7px #0005"></div>',iconSize:[20,20],iconAnchor:[10,10]})}).addTo(map);else userMarker.setLatLng([lat,lon]);if(!accCircle)accCircle=L.circle([lat,lon],{radius:acc||20,fillOpacity:.08,weight:1}).addTo(map);else accCircle.setLatLng([lat,lon]).setRadius(acc||20);const n=nearest([lon,lat]);currentKm=Math.max(0,Math.min(totalKm,n.km));const stageKm=Math.max(0,currentKm-stageStartKm),remaining=Math.max(0,stageEndKm-currentKm);document.getElementById('kmDone').textContent=fmt(stageKm);document.getElementById('kmLeft').textContent=fmt(remaining);document.getElementById('offRoute').textContent=fmt(n.d/1000)+' km';const st=document.getElementById('status');if(n.d<60){st.className='status';st.innerHTML='<b>✓ No percurso</b><small>'+Math.round(n.d)+' m do traçado</small>';if(lastOffRoute){say('Percurso reencontrado.',true);vibrate(120);lastOffRoute=false}}else{st.className='status warn';st.innerHTML='<b>⚠ Fora do percurso</b><small>'+Math.round(n.d)+' m do traçado</small>';if(!lastOffRoute){say('Atenção. Está fora do percurso.',true);vibrate([150,100,150]);lastOffRoute=true}}const next=supportItems.filter(s=>s.km>currentKm+.2&&s.km<=stageEndKm+.1).sort((a,b)=>a.km-b.km)[0];if(next){document.getElementById('nextName').textContent=next.name;document.getElementById('nextInfo').textContent=fmt(next.km-currentKm)+' km à frente · '+(next.description||'apoio');const delta=next.km-currentKm;[[5,'5 quilómetros'],[2,'2 quilómetros'],[.5,'500 metros']].forEach(t=>{const k=next.id+'-'+t[0];if(delta<=t[0]&&delta>0&&!announced[k]){announced[k]=1;say('Ponto de apoio a '+t[1]+'. '+supportText(next));}})}else{document.getElementById('nextName').textContent='Destino da etapa';document.getElementById('nextInfo').textContent=fmt(remaining)+' km restantes'}if(walkingMode&&walkStartedAt&&Date.now()-walkStartedAt>120*60*1000&&Date.now()-lastPauseAt>120*60*1000){lastPauseAt=Date.now();say('Já caminha há duas horas. Considere fazer uma pausa.')}if(remaining<=.1&&stageEndKm>stageStartKm&&!window._stageDone){window._stageDone=1;say('Chegou ao destino da etapa.',true);vibrate([200,100,200,100,400])}if(typeof course==='number'&&course>=0)updateRotation(course);if(following)map.setView([lat,lon],17,{animate:false})}
-function supportText(s){let t=s.description||'apoio';if(s.free)t+='; gratuito';return t}
-function startGPS(){if(!navigator.geolocation){say('O GPS não está disponível.',true);return}if(watchId)return;watchId=navigator.geolocation.watchPosition(p=>updatePosition(p.coords.latitude,p.coords.longitude,p.coords.accuracy||20,p.coords.heading),e=>say('Erro de GPS. '+e.message,true),{enableHighAccuracy:true,maximumAge:3000,timeout:15000});walkStartedAt=walkStartedAt||Date.now();if(window.Android&&Android.setKeepScreenOn)Android.setKeepScreenOn(true);document.getElementById('gpsBtn').classList.add('active');document.getElementById('startBtn').textContent='⏹ Parar';say('GPS ligado. Acompanhe o percurso.',true)}
-function stopGPS(){if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null}if(window.Android&&Android.setKeepScreenOn)Android.setKeepScreenOn(false);document.getElementById('gpsBtn').classList.remove('active');document.getElementById('startBtn').textContent='▶ Iniciar';say('GPS desligado.',true)}
-function toggleWalk(){walkingMode=!walkingMode;document.getElementById('modeBtn').classList.toggle('active',walkingMode);document.getElementById('modeBtn').textContent=walkingMode?'CAMINHAR ATIVO':'MODO CAMINHAR';if(walkingMode){following=true;walkStartedAt=walkStartedAt||Date.now();say('Modo Caminhar ativo. Vou acompanhar o percurso e os apoios.',true);if(!watchId)startGPS()}else{following=false;say('Modo Caminhar pausado.',true)}}
-function simulate(){if(!routeCoords.length)return;if(!walkingMode)toggleWalk();simKm=simKm<stageStartKm?stageStartKm:simKm+2;if(simKm>stageEndKm)simKm=stageStartKm;const p=pointAtKm(simKm);updatePosition(p[1],p[0],8,null);say('Quilómetro '+fmt(simKm-stageStartKm)+' da etapa.',true)}
-function importFile(file){const rd=new FileReader();rd.onload=()=>{try{const text=String(rd.result||'');const fc=file.name.toLowerCase().endsWith('.gpx')?parseGpx(text):parseKml(text);saveImported(fc,file.name);document.getElementById('drawer').classList.remove('open')}catch(e){say('Não foi possível importar. '+e.message,true)}};rd.readAsText(file)}
-function clearRoutes(){if(!confirm('Apagar todos os percursos importados?'))return;localStorage.removeItem('centenarioRoutes');routeLibrary();selectRoute('centenario')}
+function nearest(p){let best={d:Infinity,km:0,heading:0};for(const part of routeLines){for(let i=1;i<part.length;i++){const r=segDist(p,part[i-1],part[i]),d=hav(part[i-1],part[i])/1000;if(r.d<best.d)best={d:r.d,km:part._startKm+d*r.t,heading:bearing(part[i-1],part[i])}}}return best}
+function pointAtKm(t){for(const part of routeLines){if(part._startKm+part._len>=t){let km=part._startKm;for(let i=1;i<part.length;i++){let d=hav(part[i-1],part[i])/1000;if(km+d>=t){let f=(t-km)/(d||1),a=part[i-1],b=part[i];return[a[0]+f*(b[0]-a[0]),a[1]+f*(b[1]-a[1])]}km+=d}}}const l=routeLines[routeLines.length-1];return l[l.length-1]}
+function supportText(s){let a=[];if(s.overnight)a.push('pernoita');if(s.shower)a.push('duche');if(s.wc)a.push('WC');if(s.water)a.push('água');if(s.medical)a.push('saúde');if(typeof s.price_eur==='number')a.push(s.price_eur===0?'gratuito':s.price_eur+'€');if(s.reservation===true)a.push('reserva');if(s.reservation===false)a.push('sem reserva');return a.join(' · ')||s.description||'apoio'}
+function supportIcon(s){let sym=s.overnight?'⛺':s.water?'💧':s.medical?'🚑':'ℹ️';return L.divIcon({className:'',html:'<div style="width:27px;height:27px;border-radius:50%;background:'+(s.validation_state==='confirmed'?'#176b4b':'#2474db')+';border:3px solid #fff;box-shadow:0 2px 7px #0005;display:flex;align-items:center;justify-content:center;font-size:13px">'+sym+'</div>',iconSize:[27,27],iconAnchor:[13,13]})}
+function renderRoute(){routeLayer.forEach(x=>map.removeLayer(x));routeLayer=[];const all=[];routeLines.forEach(line=>{const l=L.polyline(line.map(p=>[p[1],p[0]]),{color:'#f0c419',weight:5,opacity:.95}).addTo(map);routeLayer.push(l);line.forEach(p=>all.push([p[1],p[0]]))});if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[15,15]})}
+function renderSupports(){markers.forEach(x=>map.removeLayer(x));markers=[];supportItems.forEach(s=>{if(Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lon))){markers.push(L.marker([s.lat,s.lon],{icon:supportIcon(s)}).addTo(map).bindPopup('<b>'+s.name+'</b><br>'+s.municipality+'<br>'+supportText(s)+'<br><small>'+statusLabel(s.validation_state)+(s.km!=null?' · km '+fmt(s.km):'')+'</small>'))}});const list=document.getElementById('supportList');list.innerHTML='';const arr=supportItems.filter(s=>filterSupport(s)).sort((a,b)=>(a.km??9999)-(b.km??9999));arr.forEach(s=>{const d=document.createElement('div');d.className='support'+((s.lat==null||s.lon==null)?' missing':'');d.innerHTML='<b>'+s.name+'</b><small>'+s.municipality+(s.km!=null?' · km '+fmt(s.km):' · localização por validar')+'</small><br><span class="tag">'+statusLabel(s.validation_state)+'</span>';d.onclick=()=>{if(s.lat!=null&&s.lon!=null){map.setView([s.lat,s.lon],16);document.getElementById('drawer').classList.remove('open')}};list.appendChild(d)})}
+function statusLabel(v){return ({confirmed:'🟢 Confirmado',confirmed_seasonal:'🟠 Confirmado sazonal',identified_needs_confirmation:'🟡 A confirmar',historical_secondary:'🔴 Histórico/secundário',candidate:'⚫ Candidato'})[v]||'⚫ Não classificado'}
+function filterSupport(s){switch(supportFilter){case'overnight':return s.overnight===true;case'water':return s.water===true;case'shower':return s.shower===true;case'health':return s.medical===true;default:return true}}
+function routeLibraryData(){let list=[];try{list=JSON.parse(localStorage.getItem('caminhosPeregrino.routes')||'[]')}catch(e){}return[{id:'centenario',name:'Caminho do Centenário',distance:totalKm,builtin:true},...list]}
+function renderRouteLibrary(){const box=document.getElementById('routeLibrary');box.innerHTML='';routeLibraryData().forEach(r=>{const d=document.createElement('div');d.className='routeItem'+(r.id===activeRouteId?' active':'');d.innerHTML='<b>'+r.name+'</b><small style="display:block;color:var(--muted)">'+fmt(r.distance)+' km</small><button type="button">'+(r.id===activeRouteId?'✓ Ativo':'Usar percurso')+'</button>';d.querySelector('button').onclick=()=>selectStoredRoute(r.id);box.appendChild(d)})}
+function saveImported(fc,name){let list=JSON.parse(localStorage.getItem('caminhosPeregrino.routes')||'[]'),dist=0;for(const f of fc.features){const c=f.geometry.coordinates;for(let i=1;i<c.length;i++)dist+=hav(c[i-1],c[i])/1000}const obj={id:'r'+Date.now(),name:name.replace(/\.(kml|gpx)$/i,''),distance:dist,features:fc.features};list.push(obj);localStorage.setItem('caminhosPeregrino.routes',JSON.stringify(list));selectStoredRoute(obj.id)}
+function parseKml(text){const doc=new DOMParser().parseFromString(text,'application/xml'),nodes=doc.getElementsByTagName('coordinates'),features=[];for(let i=0;i<nodes.length;i++){let pts=[];(nodes[i].textContent||'').trim().split(/\s+/).forEach(t=>{let a=t.split(',');if(a.length>=2){let x=Number(a[0]),y=Number(a[1]);if(isFinite(x)&&isFinite(y))pts.push([x,y])}});if(pts.length>=2)features.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:pts}})}if(!features.length)throw Error('KML sem linhas utilizáveis');return{type:'FeatureCollection',features}}
+function parseGpx(text){const doc=new DOMParser().parseFromString(text,'application/xml'),nodes=doc.getElementsByTagName('trkpt'),pts=[];for(let i=0;i<nodes.length;i++){let lat=Number(nodes[i].getAttribute('lat')),lon=Number(nodes[i].getAttribute('lon'));if(isFinite(lat)&&isFinite(lon))pts.push([lon,lat])}if(pts.length<2)throw Error('GPX sem pontos de track');return{type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'LineString',coordinates:pts}}]}}
+function buildRouteLines(features){routeLines=[];let km=0;features.forEach(f=>{let c=f.geometry.coordinates;if(c.length<2)return;c._startKm=km;c._len=0;for(let i=1;i<c.length;i++)c._len+=hav(c[i-1],c[i])/1000;routeLines.push(c);km+=c._len});return km}
+async function loadBuiltin(){const r=await fetch(DEFAULT_ROUTE).then(x=>x.json());totalKm=await fetch(DEFAULT_SUPPORTS).then(x=>x.json()).then(x=>Number(x.route_distance_km||x.route_km||216.1));routeCoords=r.features.map(f=>f.geometry.coordinates);totalKm=buildRouteLines(r.features);activeRouteId='centenario';activeRouteName='Caminho do Centenário';renderRoute();stageOptions();}
+function stageOptions(){const a=document.getElementById('prepStart'),b=document.getElementById('prepEnd'),ns=document.getElementById('navStart'),ne=document.getElementById('navEnd');[a,b,ns,ne].forEach(x=>x.innerHTML='');const list=activeRouteId==='centenario'?places:[['Início',0],['25% do percurso',totalKm*.25],['50% do percurso',totalKm*.5],['75% do percurso',totalKm*.75],['Fim',totalKm]];[a,b,ns,ne].forEach((sel,i)=>list.forEach(p=>{let o=document.createElement('option');o.value=p[1];o.textContent=p[0]+' · km '+fmt(p[1]);sel.appendChild(o)}));b.value=String(totalKm);ne.value=String(totalKm);a.onchange=applyStagePrep;b.onchange=applyStagePrep;ns.onchange=applyStageNav;ne.onchange=applyStageNav;applyStagePrep()}
+function applyStagePrep(){stageStartKm=Number(document.getElementById('prepStart').value);stageEndKm=Number(document.getElementById('prepEnd').value);document.getElementById('navStart').value=String(stageStartKm);document.getElementById('navEnd').value=String(stageEndKm)}
+function applyStageNav(){stageStartKm=Number(document.getElementById('navStart').value);stageEndKm=Number(document.getElementById('navEnd').value);document.getElementById('prepStart').value=String(stageStartKm);document.getElementById('prepEnd').value=String(stageEndKm)}
+async function loadSupports(){const s=await fetch(DEFAULT_SUPPORTS).then(x=>x.json());supportItems=(s.items||[]).slice().sort((a,b)=>(a.km??9999)-(b.km??9999));renderSupports()}
+function selectStoredRoute(id){if(id==='centenario'){loadBuiltin().then(()=>{renderRouteLibrary();renderSupports();say('Caminho do Centenário selecionado.',true)})}else{let r=routeLibraryData().find(x=>x.id===id);if(!r)return;activeRouteId=id;activeRouteName=r.name;totalKm=buildRouteLines(r.features);routeCoords=r.features.map(f=>f.geometry.coordinates);renderRoute();stageOptions();renderRouteLibrary();renderSupports();say(r.name+' selecionado.',true)}}
+function showPrep(){document.getElementById('prepScreen').classList.remove('hidden');document.getElementById('navScreen').classList.add('hidden');document.getElementById('topModeBtn').textContent='PREPARAR';document.getElementById('headerRoute').textContent=activeRouteName}
+function showNav(){document.getElementById('prepScreen').classList.add('hidden');document.getElementById('navScreen').classList.remove('hidden');document.getElementById('topModeBtn').textContent='CAMINHAR';document.getElementById('headerRoute').textContent=activeRouteName;setTimeout(()=>map.invalidateSize(),100)}
+function setAudioMode(v){audioMode=v;document.querySelectorAll('#audioSeg button').forEach(b=>b.classList.toggle('active',b.dataset.audio===v));document.getElementById('voiceStatus').textContent=v==='normal'?'Normal':v==='silent'?'Silencioso':'Imersivo';saveSettings()}
+function setOrientation(v){orientation=v;document.querySelectorAll('#orientationSeg button').forEach(b=>b.classList.toggle('active',b.dataset.orientation===v));if(v==='north'){rotateMode=false;clearVisualRotation()};saveSettings()}
+function clearVisualRotation(){['tilePane','overlayPane','markerPane'].forEach(n=>{let p=map&&map.getPane(n);if(p)p.style.transform=''})}
+function applyRotation(h){if(!rotateMode||orientation!=='heading'||!map||!isFinite(h))return;let deg=-Number(h);['tilePane','overlayPane','markerPane'].forEach(n=>{let p=map.getPane(n);if(p){p.style.transformOrigin='50% 50%';p.style.transform='rotate('+deg+'deg)'}})}
+window.setDeviceHeading=function(h){applyRotation(Number(h))}
+function startGPS(){if(!navigator.geolocation){say('O GPS não está disponível neste dispositivo.',true);return}if(watchId)return;watchId=navigator.geolocation.watchPosition(p=>updatePosition(p.coords.latitude,p.coords.longitude,p.coords.accuracy||20,p.coords.heading),e=>say('Erro de GPS. '+e.message,true),{enableHighAccuracy:true,maximumAge:3000,timeout:15000});walking=true;following=true;walkStartedAt=walkStartedAt||Date.now();if(window.Android&&Android.setKeepScreenOn)Android.setKeepScreenOn(true);document.getElementById('gpsBtn').classList.add('active');say('GPS ligado. Caminhada iniciada.',true)}
+function stopGPS(){if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null}walking=false;following=false;if(window.Android&&Android.setKeepScreenOn)Android.setKeepScreenOn(false);document.getElementById('gpsBtn').classList.remove('active');say('Caminhada em pausa.',true)}
+function updatePosition(lat,lon,acc,course){if(!map)return;if(!userMarker)userMarker=L.marker([lat,lon],{zIndexOffset:1500,icon:L.divIcon({className:'',html:'<div style="width:21px;height:21px;border-radius:50%;background:#2474db;border:4px solid #fff;box-shadow:0 2px 8px #0005"></div>',iconSize:[21,21],iconAnchor:[10,10]})}).addTo(map);else userMarker.setLatLng([lat,lon]);if(!accCircle)accCircle=L.circle([lat,lon],{radius:acc||20,fillOpacity:.08,weight:1}).addTo(map);else accCircle.setLatLng([lat,lon]).setRadius(acc||20);const n=nearest([lon,lat]);currentKm=Math.max(0,Math.min(totalKm,n.km));const done=Math.max(0,currentKm-stageStartKm),left=Math.max(0,stageEndKm-currentKm);document.getElementById('kmDone').textContent=fmt(done);document.getElementById('kmLeft').textContent=fmt(left);document.getElementById('offRoute').textContent=fmt(n.d/1000)+' km';const st=document.getElementById('status');if(n.d<60){st.className='status';st.innerHTML='<b>✓ No percurso</b><small>'+Math.round(n.d)+' m do traçado</small>';if(lastOff){say('Percurso reencontrado.',true);vibrate(120);lastOff=false}}else{st.className='status warn';st.innerHTML='<b>⚠ Fora do percurso</b><small>'+Math.round(n.d)+' m do traçado</small>';if(!lastOff){say('Atenção. Está fora do percurso.',true);vibrate([160,100,160]);lastOff=true}}const next=supportItems.filter(s=>s.km!=null&&s.km>currentKm+.15&&s.km<=stageEndKm+.1&&filterSupport(s)).sort((a,b)=>a.km-b.km)[0];if(next){document.getElementById('nextName').textContent=next.name;document.getElementById('nextInfo').textContent=fmt(next.km-currentKm)+' km · '+supportText(next);let delta=next.km-currentKm;[[5,'5 quilómetros'],[2,'2 quilómetros'],[.5,'500 metros']].forEach(t=>{let k=next.id+'-'+t[0];if(delta<=t[0]&&delta>0&&!window._spAnn[k]){window._spAnn[k]=1;say('Ponto de apoio a '+t[1]+'. '+supportText(next))}})}else{document.getElementById('nextName').textContent='Destino da etapa';document.getElementById('nextInfo').textContent=fmt(left)+' km restantes'}const set=settings();if(set.pauseDistance>0&&done-lastPauseKm>=set.pauseDistance){lastPauseKm=done;say('Está na hora de fazer uma pausa.',true);vibrate(150)}if(set.pauseTime>0&&walkStartedAt&&Date.now()-walkStartedAt>=set.pauseTime*60000&&Math.floor((Date.now()-walkStartedAt)/60000)>lastPauseMinute){lastPauseMinute=Math.floor((Date.now()-walkStartedAt)/60000);say('Está na hora de fazer uma pausa.');vibrate(150)}if(set.pauseSupport&&next&&supportText(next).match(/pernoita|duche|WC|água/i)&&delta<.6&&delta>.1){say('Há um local adequado para uma pausa a '+Math.round(delta*1000)+' metros.')}if(typeof course==='number'&&course>=0){applyRotation(course)}if(following)map.setView([lat,lon],17,{animate:false});localStorage.setItem(RESUME_KEY,JSON.stringify({routeId:activeRouteId,routeName:activeRouteName,stageStartKm,stageEndKm,currentKm,startedAt:walkStartedAt}))}
+function simulate(){if(!routeLines.length)return;if(!walking)startGPS();simKm=simKm<stageStartKm?stageStartKm:simKm+2;if(simKm>stageEndKm)simKm=stageStartKm;let p=pointAtKm(simKm);updatePosition(p[1],p[0],8,bearing(p,pointAtKm(Math.min(totalKm,simKm+.1))));say('Quilómetro '+fmt(simKm-stageStartKm)+' da etapa.',true)}
+function supportFiltersInit(){document.querySelectorAll('#supportFilters button').forEach(b=>b.onclick=()=>{supportFilter=b.dataset.filter;document.querySelectorAll('#supportFilters button').forEach(x=>x.classList.toggle('active',x===b));renderSupports()})}
+function next10(){const arr=supportItems.filter(s=>s.km!=null&&s.km>currentKm&&s.km<=currentKm+10&&filterSupport(s)).sort((a,b)=>a.km-b.km);document.getElementById('next10List').innerHTML='<div class="card" style="margin-top:7px">'+(arr.length?arr.map(s=>'<div class="support"><b>'+s.name+'</b><small>'+fmt(s.km-currentKm)+' km · '+supportText(s)+'</small></div>').join(''):'<small>Não há pontos nesta janela com o filtro atual.</small>')+'</div>'}
+function sleepOptions(){supportFilter='overnight';next10();supportFilter='all'}
+function openEmergency(){document.getElementById('emergencyModal').classList.add('open')}
+function closeEmergency(){document.getElementById('emergencyModal').classList.remove('open')}
+function initResume(){const r=localStorage.getItem(RESUME_KEY);if(!r)return;try{let x=JSON.parse(r);document.getElementById('resumeCard').classList.remove('hidden');document.getElementById('resumeText').textContent=(x.routeName||'Percurso')+' · km '+fmt(x.currentKm)+' · etapa até km '+fmt(x.stageEndKm)}catch(e){}}
+function resumeWalk(){const r=JSON.parse(localStorage.getItem(RESUME_KEY)||'{}');if(r.routeId&&r.routeId!=='centenario'){selectStoredRoute(r.routeId)}stageStartKm=Number(r.stageStartKm||0);stageEndKm=Number(r.stageEndKm||totalKm);currentKm=Number(r.currentKm||0);document.getElementById('prepStart').value=String(stageStartKm);document.getElementById('prepEnd').value=String(stageEndKm);applyStagePrep();showNav();startGPS();say('Caminhada retomada.',true)}
+function addNote(){const n=prompt('Escreve uma nota para este momento:');if(n)alert('Nota guardada nesta sessão: '+n)}
+function importFile(f){let rd=new FileReader();rd.onload=()=>{try{const text=String(rd.result||''),fc=f.name.toLowerCase().endsWith('.gpx')?parseGpx(text):parseKml(text);saveImported(fc,f.name);document.getElementById('drawer').classList.remove('open')}catch(e){say('Não foi possível importar o percurso. '+e.message,true)}};rd.readAsText(f)}
 
-function applyVisualHeading(heading){
-  if(!rotateMode || !isFinite(heading) || !map) return;
-  const deg=-Number(heading);
-  ['tilePane','overlayPane','markerPane'].forEach(function(name){
-    const pane=map.getPane(name);
-    if(pane){
-      pane.style.transformOrigin='50% 50%';
-      pane.style.transform='rotate('+deg+'deg)';
-    }
-  });
-}
-window.setDeviceHeading=function(h){ applyVisualHeading(Number(h)); };
-function clearVisualHeading(){
-  if(!map) return;
-  ['tilePane','overlayPane','markerPane'].forEach(function(name){
-    const pane=map.getPane(name);
-    if(pane) pane.style.transform='';
-  });
-}
-function toggleRotation(){
-  rotateMode=!rotateMode;
-  document.getElementById('rotateBtn').classList.toggle('active',rotateMode);
-  if(rotateMode){
-    if(window.Android && Android.startCompass) Android.startCompass();
-    following=true;
-    say('Orientação ativada. A direção da caminhada fica para cima.',true);
-  }else{
-    if(window.Android && Android.stopCompass) Android.stopCompass();
-    clearVisualHeading();
-    say('Orientação desativada.',true);
-  }
-}
-function setupFloatingPanel(){
-  const panel=document.getElementById('infoPanel');
-  const handle=document.getElementById('panelHandle');
-  const btn=document.getElementById('collapseBtn');
-  let dragging=false,startY=0;
-  function collapsed(v){
-    panel.classList.toggle('collapsed',v);
-    panel.style.transform='';
-  }
-  btn.addEventListener('click',function(){collapsed(!panel.classList.contains('collapsed'));});
-  handle.addEventListener('click',function(){collapsed(!panel.classList.contains('collapsed'));});
-  handle.addEventListener('touchstart',function(e){dragging=true;startY=e.touches[0].clientY;panel.style.transition='none';},{passive:true});
-  handle.addEventListener('touchmove',function(e){
-    if(!dragging)return;
-    const dy=e.touches[0].clientY-startY;
-    panel.style.transform='translateY('+Math.max(-25,Math.min(window.innerHeight*.55,dy))+'px)';
-  },{passive:true});
-  handle.addEventListener('touchend',function(e){
-    if(!dragging)return;
-    const dy=e.changedTouches[0].clientY-startY;
-    panel.style.transition='';
-    dragging=false;
-    if(dy>55)collapsed(true);
-    else if(dy<-55)collapsed(false);
-    else panel.style.transform='';
-  },{passive:true});
-}
-function init(){
-  Promise.all([fetch(DEFAULT_ROUTE).then(r=>r.json()),fetch(DEFAULT_SUPPORTS).then(r=>r.json())]).then(([r,s])=>{
-    routeCoords=r.features.map(f=>f.geometry.coordinates);supportItems=s.items.slice().sort((a,b)=>a.km-b.km);totalKm=Number(s.route_km||216.1);
+async function init(){
+  try{
+    const [r,s]=await Promise.all([fetch(DEFAULT_ROUTE).then(x=>x.json()),fetch(DEFAULT_SUPPORTS).then(x=>x.json())]);
+    routeCoords=r.features.map(f=>f.geometry.coordinates);
+    supportItems=(s.items||[]).slice().sort((a,b)=>(a.km??9999)-(b.km??9999));
+    totalKm=buildRouteLines(r.features);
     map=L.map('map',{zoomControl:false}).setView([40.2,-8.6],9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
-    renderRoute();renderSupports();stageOptions();routeLibrary();setupFloatingPanel();
+    renderRoute();renderSupports();stageOptions();renderRouteLibrary();supportFiltersInit();
+    const set=settings();if(set.audioMode)setAudioMode(set.audioMode);if(set.orientation)setOrientation(set.orientation);if(set.pauseTime!=null)document.getElementById('pauseTime').value=String(set.pauseTime);if(set.pauseDistance!=null)document.getElementById('pauseDistance').value=String(set.pauseDistance);if(set.pauseSupport!=null)document.getElementById('pauseSupport').checked=!!set.pauseSupport;initResume();
+
+    document.getElementById('startWalkBtn').onclick=()=>{applyStagePrep();saveSettings();showNav();walking=true;following=true;startGPS();say('A caminhada está pronta. O percurso e os apoios estão ativos.',true)};
+    document.getElementById('manageBtn').onclick=()=>{showNav();document.getElementById('drawer').classList.add('open')};
+    document.getElementById('resumeBtn').onclick=resumeWalk;
+    document.querySelectorAll('#audioSeg button').forEach(b=>b.onclick=()=>setAudioMode(b.dataset.audio));
+    document.querySelectorAll('#orientationSeg button').forEach(b=>b.onclick=()=>setOrientation(b.dataset.orientation));
+    document.getElementById('pauseTime').onchange=saveSettings;document.getElementById('pauseDistance').onchange=saveSettings;document.getElementById('pauseSupport').onchange=saveSettings;
+
     document.getElementById('menuBtn').onclick=()=>document.getElementById('drawer').classList.toggle('open');
-    document.getElementById('modeBtn').onclick=toggleWalk;
-    document.getElementById('followBtn').onclick=()=>{following=true;if(userMarker)map.setView(userMarker.getLatLng(),17,{animate:true})};
-    document.getElementById('rotateBtn').addEventListener('click',toggleRotation);
+    document.getElementById('backPrepBtn').onclick=()=>{showPrep();document.getElementById('drawer').classList.remove('open')};
+    document.getElementById('followBtn').onclick=()=>{following=true;if(userMarker)map.setView(userMarker.getLatLng(),17,{animate:true});else say('Ainda não tenho uma posição GPS.',true)};
+    document.getElementById('rotateBtn').onclick=()=>{rotateMode=!rotateMode;document.getElementById('rotateBtn').classList.toggle('active',rotateMode);if(rotateMode){orientation='heading';document.querySelectorAll('#orientationSeg button').forEach(b=>b.classList.toggle('active',b.dataset.orientation==='heading'));if(window.Android&&Android.startCompass)Android.startCompass();say('Orientação pela direção ativada.',true)}else{if(window.Android&&Android.stopCompass)Android.stopCompass();clearVisualRotation();say('Orientação desativada.',true)}};
     document.getElementById('gpsBtn').onclick=()=>watchId?stopGPS():startGPS();
-    document.getElementById('startBtn').onclick=()=>watchId?stopGPS():startGPS();
+    document.getElementById('stopBtn').onclick=()=>{stopGPS();showPrep()};
+    document.getElementById('voiceTest').onclick=()=>say('Áudio '+(audioMode==='normal'?'normal':audioMode==='silent'?'silencioso':'imersivo')+' ativo.',true);
+    
+    document.getElementById('collapseBtn').onclick=()=>document.getElementById('navPanel').classList.toggle('collapsed');
+    document.getElementById('panelHandle').onclick=()=>document.getElementById('navPanel').classList.toggle('collapsed');
+    document.getElementById('panelHandle').ontouchstart=e=>{window._py=e.touches[0].clientY};
+    document.getElementById('panelHandle').ontouchend=e=>{let dy=e.changedTouches[0].clientY-window._py;if(dy>55)document.getElementById('navPanel').classList.add('collapsed');if(dy<-55)document.getElementById('navPanel').classList.remove('collapsed')};
+    document.getElementById('next10Btn').onclick=next10;document.getElementById('sleepBtn').onclick=sleepOptions;
     document.getElementById('testAudioBtn').onclick=()=>say('Teste de áudio imersivo. Percurso, apoios, desvios e pausas ativos.',true);
-    document.getElementById('voiceTestInline').onclick=()=>say('Áudio imersivo ativo.',true);
-    document.getElementById('startHereBtn').onclick=()=>{if(!navigator.geolocation)return;say('A obter localização.',true);navigator.geolocation.getCurrentPosition(p=>{const n=nearest([p.coords.longitude,p.coords.latitude]);stageStartKm=n.km;document.getElementById('stageStart').innerHTML='<option value="'+n.km+'">Minha posição · km '+fmt(n.km)+'</option>';document.getElementById('stageEnd').value=String(totalKm);applyStage();toggleWalk()},()=>say('Não foi possível obter a localização.',true),{enableHighAccuracy:true,timeout:15000,maximumAge:3000});
-    };
+    document.getElementById('addNoteBtn').onclick=addNote;
+    document.getElementById('emergencyBtn').onclick=openEmergency;
+    document.getElementById('closeEmergencyBtn').onclick=closeEmergency;
+    document.getElementById('call112Btn').onclick=()=>location.href='tel:112';
+    document.getElementById('shareLocationBtn').onclick=()=>{if(userMarker&&navigator.share)navigator.share({title:'Localização — Caminhos do Peregrino',text:'Estou aqui.',url:'https://maps.google.com/?q='+userMarker.getLatLng().lat+','+userMarker.getLatLng().lng});else say('Obtenha primeiro a posição GPS.',true)};
+    document.getElementById('openLocationBtn').onclick=()=>{if(userMarker)location.href='https://www.google.com/maps/search/?api=1&query='+userMarker.getLatLng().lat+','+userMarker.getLatLng().lng;else say('Obtenha primeiro a posição GPS.',true)};
     document.getElementById('importRouteBtn').onclick=()=>document.getElementById('routeFile').click();
-    document.getElementById('routeFile').onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)importFile(f);e.target.value=''};
-    document.getElementById('clearRoutesBtn').onclick=clearRoutes;
+    document.getElementById('routeFile').onchange=e=>{if(e.target.files&&e.target.files[0])importFile(e.target.files[0]);e.target.value=''};
     document.getElementById('map').ondblclick=simulate;
-  }).catch(e=>{document.getElementById('status').className='status warn';document.getElementById('status').innerHTML='<b>Erro ao carregar</b><small>'+String(e.message||e)+'</small>'});
+    document.getElementById('topModeBtn').onclick=()=>walking?showNav():showPrep();
+  }catch(e){
+    console.error(e);document.getElementById('status').className='status warn';document.getElementById('status').innerHTML='<b>Erro ao carregar</b><small>'+String(e.message||e)+'</small>';
+  }
 }
-window._announced={};
+window._spAnn={};
 document.addEventListener('DOMContentLoaded',init);
 })();
 </script>
