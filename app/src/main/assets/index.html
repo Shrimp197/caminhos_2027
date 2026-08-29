@@ -10,7 +10,7 @@
 *{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--cream);color:var(--text)}
 button,select{font:inherit}.hidden{display:none!important}
 .app{height:100%;display:flex;flex-direction:column}.top{height:70px;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;z-index:50}.brand{display:flex;gap:9px;align-items:center}.brandmark{width:42px;height:42px;border-radius:11px;background:#fff2;object-fit:cover}.brand b{display:block;font-size:17px}.brand small{display:block;font-size:11px;opacity:.82}.modeBtn{border:1px solid #ffffff66;background:transparent;color:#fff;border-radius:22px;padding:9px 11px;font-weight:850;font-size:11px}
-.screen{position:absolute;inset:70px 0 0;overflow:auto}.prep{padding:16px 13px 28px}.hero{background:#fff;border-radius:20px;padding:18px;box-shadow:0 5px 20px #0002}.hero h1{margin:0 0 2px;font-size:24px}.hero p{margin:0;color:var(--muted)}.card{background:#fff;border-radius:16px;padding:13px;margin-top:10px;box-shadow:0 3px 14px #0001}.field{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #edf0ee}.field:last-child{border-bottom:0}.field b{font-size:13px}.field select{width:58%;padding:8px;border:1px solid #d5ded8;border-radius:9px;background:#fff}.sectionTitle{font-size:11px;color:var(--muted);letter-spacing:.08em;margin-bottom:7px;font-weight:850}.seg{display:flex;gap:6px;flex-wrap:wrap}.seg button{border:1px solid #d5ded8;background:#fff;color:var(--green);padding:8px 10px;border-radius:10px;font-weight:750}.seg button.active{background:var(--green);color:#fff}.pausegrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.pausegrid select{width:100%;padding:9px;border:1px solid #d5ded8;border-radius:9px;background:#fff}
+.screen{position:absolute;inset:70px 0 0;overflow:auto}.prep{padding:16px 13px 28px}.hero{background:#fff;border-radius:20px;padding:18px;box-shadow:0 5px 20px #0002}.hero h1{margin:0 0 4px;font-size:24px}.hero p{margin:0;color:var(--muted)}.prepHero{text-align:center}.card{background:#fff;border-radius:16px;padding:13px;margin-top:10px;box-shadow:0 3px 14px #0001}.field{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #edf0ee}.field:last-child{border-bottom:0}.field b{font-size:13px}.field select{width:58%;padding:8px;border:1px solid #d5ded8;border-radius:9px;background:#fff}.sectionTitle{font-size:11px;color:var(--muted);letter-spacing:.08em;margin-bottom:7px;font-weight:850}.seg{display:flex;gap:6px;flex-wrap:wrap}.seg button{border:1px solid #d5ded8;background:#fff;color:var(--green);padding:8px 10px;border-radius:10px;font-weight:750}.seg button.active{background:var(--green);color:#fff}.pausegrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.pausegrid select{width:100%;padding:9px;border:1px solid #d5ded8;border-radius:9px;background:#fff}
 .primary{width:100%;border:0;background:var(--green2);color:#fff;border-radius:16px;padding:15px;font-size:17px;font-weight:900;margin-top:12px}.secondary{width:100%;border:1px solid #d5ded8;background:#fff;color:var(--green);border-radius:12px;padding:10px;font-weight:800;margin-top:7px}.resume{background:#eef7ef;border:1px solid #d6e7d9;border-radius:13px;padding:11px;margin-top:10px}.resume b{display:block}.resume small{color:var(--muted)}
 .nav{position:absolute;inset:70px 0 0;background:#e6eee8}.maprot{position:absolute;inset:0;transform-origin:50% 50%;pointer-events:none}.maprot #map{pointer-events:auto}.map{position:absolute;inset:0}.leaflet-container{background:#e6eee8}.leaflet-control-attribution{font-size:9px}
 .controls{position:absolute;left:8px;right:8px;top:10px;z-index:1200;display:flex;justify-content:space-between;pointer-events:none}.controlGroup{display:flex;flex-direction:column;gap:8px;pointer-events:auto}.fab{width:50px;height:50px;border:0;border-radius:16px;background:#fff;color:var(--green);box-shadow:0 4px 15px #0002;font-size:20px}.fab.round{border-radius:50%}.fab.active{background:var(--green);color:#fff}
@@ -25,14 +25,13 @@ button,select{font:inherit}.hidden{display:none!important}
     <img class="brandmark" src="res_icon/ic_launcher_source.png" onerror="this.style.display='none'">
     <div><b>Caminhos do Peregrino</b><small id="headerRoute">Caminho do Centenário</small></div>
   </div>
-  <button id="topModeBtn" class="modeBtn" type="button">PREPARAR</button>
 </header>
 
 <section id="prepScreen" class="screen">
   <div class="prep">
-    <div class="hero">
+    <div class="hero prepHero">
       <h1>Preparar caminhada</h1>
-      <p>Define a caminhada antes de entrar na navegação.</p>
+      <p>Define a tua caminhada antes de começar.</p>
     </div>
 
     <div id="resumeCard" class="resume hidden">
@@ -50,10 +49,13 @@ button,select{font:inherit}.hidden{display:none!important}
 
     <div class="card">
       <div class="sectionTitle">ÁUDIO</div>
-      <div class="seg" id="audioSeg">
-        <button data-audio="normal">🔊 Normal</button>
-        <button data-audio="immersive" class="active">🎧 Imersivo</button>
-        <button data-audio="silent">🔇 Silencioso</button>
+      <div class="field">
+        <b>Modo</b>
+        <select id="audioSelect">
+          <option value="normal">🔊 Normal</option>
+          <option value="immersive" selected>🎧 Imersivo</option>
+          <option value="silent">🔇 Silencioso</option>
+        </select>
       </div>
     </div>
 
