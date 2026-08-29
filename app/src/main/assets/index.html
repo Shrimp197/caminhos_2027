@@ -154,19 +154,41 @@ function loadSupports(){return fetch(SUPPORTS).then(r=>r.json()).then(x=>{suppor
 function buildLines(fs){lines=[];let km=0;for(const f of fs){let c=f.geometry.coordinates;if(!Array.isArray(c)||c.length<2)continue;c._start=km;c._len=0;for(let i=1;i<c.length;i++)c._len+=hav(c[i-1],c[i])/1000;lines.push(c);km+=c._len}totalKm=km}
 function nearest(p){let best={d:1e99,km:0};for(const l of lines){let local=0;for(let i=1;i<l.length;i++){let len=hav(l[i-1],l[i])/1000,r=segDist(p,l[i-1],l[i]);if(r.d<best.d)best={d:r.d,km:l._start+local+len*r.t};local+=len}}return best}
 function pointAt(km){for(const l of lines){if(km>=l._start&&km<=l._start+l._len){let k=l._start;for(let i=1;i<l.length;i++){let d=hav(l[i-1],l[i])/1000;if(k+d>=km){let f=(km-k)/(d||1),a=l[i-1],b=l[i];return[a[0]+f*(b[0]-a[0]),a[1]+f*(b[1]-a[1])]}k+=d}}}return lines[lines.length-1][lines[lines.length-1].length-1]}
-function renderRoute(){routeLayers.forEach(x=>map.removeLayer(x));routeLayers=[];let all=[];lines.forEach(l=>{let x=L.polyline(l.map(p=>[p[1],p[0]]),{color:'#f0c419',weight:5,opacity:.95}).addTo(map);routeLayers.push(x);l.forEach(p=>all.push([p[1],p[0]]))});if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[12,12]})}
+function renderRoute(){
+  routeLayers.forEach(x=>{try{map.removeLayer(x)}catch(e){}});
+  routeLayers=[];
+  const all=[];
+  lines.forEach(function(l){
+    const pts=[];
+    l.forEach(function(p){
+      if(Array.isArray(p)&&p.length>=2&&Number.isFinite(Number(p[0]))&&Number.isFinite(Number(p[1]))){
+        pts.push([Number(p[1]),Number(p[0])]); all.push([Number(p[1]),Number(p[0])]);
+      }
+    });
+    if(pts.length>=2){
+      const x=L.polyline(pts,{color:'#f0c419',weight:5,opacity:.95}).addTo(map);
+      routeLayers.push(x);
+    }
+  });
+  if(all.length>=2){
+    const bounds=L.latLngBounds([]);
+    all.forEach(function(p){ bounds.extend(L.latLng(p[0],p[1])); });
+    if(bounds.isValid()) map.fitBounds(bounds,{padding:[12,12]});
+  }
+}
 function supportIcon(s){return L.divIcon({className:'',html:'<div style="width:27px;height:27px;border-radius:50%;background:'+(s.validation_state==='confirmed'?'#176b4b':'#2474db')+';border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:13px">'+(s.overnight?'⛺':s.medical?'🚑':'ℹ️')+'</div>',iconSize:[27,27],iconAnchor:[13,13]})}
 function renderSupports(){
+  if(!map) return;
   markers.forEach(m=>map.removeLayer(m));markers=[];
-  supports.filter(s=>s.km>=Math.min(stageStart,stageEnd)&&s.km<=Math.max(stageStart,stageEnd)).forEach(s=>{
-    if(Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lon))){
+  supports.filter(s=>s&&s.km!=null&&Number.isFinite(Number(s.km))&&s.km>=Math.min(stageStart,stageEnd)&&s.km<=Math.max(stageStart,stageEnd)).forEach(s=>{
+    if(s&&s.lat!=null&&s.lon!=null&&Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lon))){
       const m=L.marker([s.lat,s.lon],{icon:supportIcon(s)}).addTo(map);
       m.bindPopup('<b>'+s.name+'</b><br>'+s.municipality+'<br>'+supportText(s)+'<br><small>'+statusLabel(s.validation_state)+(s.km!=null?' · km '+fmt(s.km):'')+'</small>');
       markers.push(m)
     }
   });
   const list=$('supportList');list.innerHTML='';
-  supports.filter(s=>s.km!=null&&s.km>=Math.min(stageStart,stageEnd)&&s.km<=Math.max(stageStart,stageEnd)&&filterSupport(s)).sort((a,b)=>a.km-b.km).forEach(s=>{
+  supports.filter(s=>s&&s.km!=null&&Number.isFinite(Number(s.km))&&s.km>=Math.min(stageStart,stageEnd)&&s.km<=Math.max(stageStart,stageEnd)&&filterSupport(s)).sort((a,b)=>a.km-b.km).forEach(s=>{
     let d=document.createElement('div');d.className='support';d.innerHTML='<b>'+s.name+'</b><small>'+s.municipality+' · km '+fmt(s.km)+'</small><br><span class="tag">'+statusLabel(s.validation_state)+'</span>';
     if(s.lat!=null&&s.lon!=null)d.onclick=()=>{map.setView([s.lat,s.lon],16);$('drawer').classList.remove('open')};
     list.appendChild(d)
@@ -210,43 +232,152 @@ function updatePosition(lat,lon,acc,course){
 function startGPS(){if(!navigator.geolocation){say('O GPS não está disponível.',true);return}if(gpsWatch)return;gpsWatch=navigator.geolocation.watchPosition(p=>updatePosition(p.coords.latitude,p.coords.longitude,p.coords.accuracy||20,p.coords.heading),e=>say('Erro de GPS. '+e.message,true),{enableHighAccuracy:true,maximumAge:3000,timeout:15000});walking=true;following=true;walkStartedAt=walkStartedAt||Date.now();if(window.Android&&Android.setKeepScreenOn)Android.setKeepScreenOn(true);$('gpsBtn').classList.add('active');say('GPS ligado. Caminhada iniciada.',true)}
 function stopGPS(){if(gpsWatch){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null}walking=false;following=false;if(window.Android&&Android.setKeepScreenOn)Android.setKeepScreenOn(false);$('gpsBtn').classList.remove('active');say('Caminhada em pausa.',true)}
 function simulate(){if(!lines.length)return;if(!walking)startGPS();simKm=simKm<stageStart?stageStart:simKm+1;if(simKm>stageEnd)simKm=stageStart;const p=pointAt(simKm);updatePosition(p[1],p[0],8,0);say('Quilómetro '+fmt(simKm-stageStart)+' da etapa.',true)}
+
+function ensureMap(){
+  if(map) return;
+  if(!$('map')) throw new Error('Área do mapa não encontrada.');
+  map=L.map('map',{zoomControl:false}).setView([40.2,-8.6],9);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,attribution:'© OpenStreetMap contributors'
+  }).addTo(map);
+  renderRoute();
+  renderSupports();
+}
 function showPrep(){$('prepScreen').classList.remove('hidden');$('navScreen').classList.add('hidden')}
-function showNav(){$('prepScreen').classList.add('hidden');$('navScreen').classList.remove('hidden');setTimeout(()=>map.invalidateSize(),80)}
+function showNav(){$('prepScreen').classList.add('hidden');$('navScreen').classList.remove('hidden');if(map)setTimeout(()=>map.invalidateSize(),80)}
 function openNote(){let c=currentKm?('km '+fmt(currentKm)+' · '+activeName):activeName;$('noteContext').textContent='Registo: '+c;$('noteInput').value='';$('noteModal').classList.add('open')}
-function saveNote(){const text=$('noteInput').value.trim();if(!text)return;let type=document.querySelector('input[name="noteType"]:checked')?.value||'other',notes=[];try{notes=JSON.parse(localStorage.getItem(NOTES)||'[]')}catch(e){};notes.push({id:Date.now(),type,text,route:activeName,km:currentKm,lat:userMarker?.getLatLng().lat||null,lon:userMarker?.getLatLng().lng||null,createdAt:new Date().toISOString()});localStorage.setItem(NOTES,JSON.stringify(notes));$('noteModal').classList.remove('open');say('Nota guardada.',true)}
+function saveNote(){const text=$('noteInput').value.trim();if(!text)return;let type=document.querySelector('input[name="noteType"]:checked')?.value||'other',notes=[];try{notes=JSON.parse(localStorage.getItem(NOTES)||'[]')}catch(e){};const pos=userMarker?userMarker.getLatLng():null;notes.push({id:Date.now(),type,text,route:activeName,km:currentKm,lat:pos?pos.lat:null,lon:pos?pos.lng:null,createdAt:new Date().toISOString()});localStorage.setItem(NOTES,JSON.stringify(notes));$('noteModal').classList.remove('open');say('Nota guardada.',true)}
+
+function bindControls(){
+  document.querySelectorAll('#supportFilters input').forEach(function(inp){
+    inp.onchange=function(){setSupportFilter(inp.dataset.filter,inp.checked)};
+  });
+
+  $('audioSelect').onchange=function(){setAudio($('audioSelect').value)};
+  $('orientationSelect').onchange=function(){setOrientation($('orientationSelect').value)};
+  $('pauseTime').onchange=syncPause;
+  $('pauseDistance').onchange=syncPause;
+  $('pauseTimeCustom').oninput=function(){saveSettings()};
+  $('pauseDistanceCustom').oninput=function(){saveSettings()};
+  $('pauseSupport').onchange=saveSettings;
+
+  $('startWalkBtn').onclick=function(){
+    applyPrep();
+    showNav();
+    ensureMap();
+    renderSupports();
+    walking=true;
+    startGPS();
+  };
+
+  $('resumeBtn').onclick=function(){
+    let r={};try{r=JSON.parse(localStorage.getItem(RES)||'{}')}catch(e){}
+    if(r.routeId&&r.routeId!=='centenario'){
+      selectRoute(r.routeId).then(function(){
+        stageStart=Number(r.stageStart||0);stageEnd=Number(r.stageEnd||totalKm);
+        showNav();ensureMap();walking=true;startGPS();
+      });
+    }else{
+      stageStart=Number(r.stageStart||0);stageEnd=Number(r.stageEnd||totalKm);
+      showNav();ensureMap();walking=true;startGPS();
+    }
+  };
+
+  $('manageBtn').onclick=function(){showNav();ensureMap();renderRouteLibrary();renderSupports();$('drawer').classList.add('open')};
+  $('menuBtn').onclick=function(){ensureMap();$('drawer').classList.toggle('open');renderSupports()};
+  $('backPrepBtn').onclick=function(){stopGPS();showPrep();$('drawer').classList.remove('open')};
+  $('followBtn').onclick=function(){
+    ensureMap();following=true;
+    if(userMarker&&map)map.setView(userMarker.getLatLng(),17,{animate:true});
+    else say('Ainda não tenho posição GPS.',true);
+  };
+  $('gpsBtn').onclick=function(){ensureMap();gpsWatch?stopGPS():startGPS()};
+  $('stopBtn').onclick=function(){stopGPS();showPrep()};
+  $('rotateBtn').onclick=function(){setOrientation(orientation==='north'?'heading':'north')};
+  $('collapseBtn').onclick=function(){$('navPanel').classList.toggle('collapsed')};
+  $('panelHandle').onclick=function(){$('navPanel').classList.toggle('collapsed')};
+  $('voiceTest').onclick=function(){say('Áudio '+(audio==='normal'?'normal':audio==='silent'?'silencioso':'imersivo')+' ativo.',true)};
+  $('testAudioBtn').onclick=function(){say('Teste de áudio. Percurso, apoios, desvios e pausas ativos.',true)};
+  $('next10Btn').onclick=next10;
+  $('sleepBtn').onclick=sleepList;
+
+  $('emergencyBtn').onclick=function(){$('emergencyModal').classList.add('open')};
+  $('closeEmergencyBtn').onclick=function(){$('emergencyModal').classList.remove('open')};
+  $('call112Btn').onclick=function(){location.href='tel:112'};
+  $('openLocationBtn').onclick=function(){
+    if(userMarker&&map){const p=userMarker.getLatLng();location.href='https://www.google.com/maps/search/?api=1&query='+p.lat+','+p.lng}
+    else say('Obtenha primeiro a posição GPS.',true);
+  };
+  $('shareLocationBtn').onclick=function(){
+    if(userMarker&&navigator.share){const p=userMarker.getLatLng();navigator.share({title:'Localização — Caminhos do Peregrino',text:'Estou aqui.',url:'https://www.google.com/maps/search/?api=1&query='+p.lat+','+p.lng})}
+    else say('Obtenha primeiro a posição GPS.',true);
+  };
+
+  $('addNoteBtn').onclick=openNote;
+  $('cancelNoteBtn').onclick=function(){$('noteModal').classList.remove('open')};
+  $('saveNoteBtn').onclick=saveNote;
+
+  document.querySelectorAll('#noteTypes label').forEach(function(l){
+    l.onclick=function(){
+      document.querySelectorAll('#noteTypes label').forEach(function(x){x.classList.remove('selected')});
+      l.classList.add('selected');
+    }
+  });
+
+  $('importPrepBtn').onclick=function(){$('routeFilePrep').click()};
+  $('routeFilePrep').onchange=function(e){if(e.target.files&&e.target.files[0])importFile(e.target.files[0]);e.target.value=''};
+  $('importNavBtn').onclick=function(){$('routeFileNav').click()};
+  $('routeFileNav').onchange=function(e){if(e.target.files&&e.target.files[0])importFile(e.target.files[0]);e.target.value=''};
+  $('map').ondblclick=simulate;
+}
 function init(){
-  Promise.all([fetch(ROUTE).then(r=>r.json()),loadSupports()]).then(([r])=>{
-    map=L.map('map',{zoomControl:false}).setView([40.2,-8.6],9);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
-    buildLines(r.features);features=r.features;renderRoute();renderSupports();fillRouteSelectors();renderRouteLibrary();
-    const s=settings();
-    if(s.audio)setAudio(s.audio);if(s.audioMode)setAudio(s.audioMode);if(s.orientation)setOrientation(s.orientation);
-    if(s.pauseTimeMode)$('pauseTime').value=s.pauseTimeMode;if(s.pauseDistanceMode)$('pauseDistance').value=s.pauseDistanceMode;if(s.pauseTimeCustom)$('pauseTimeCustom').value=s.pauseTimeCustom;if(s.pauseDistanceCustom)$('pauseDistanceCustom').value=s.pauseDistanceCustom;if(typeof s.pauseSupport==='boolean')$('pauseSupport').checked=s.pauseSupport;if(typeof s.reverse==='boolean')$('reverseRoute').checked=s.reverse;syncPause();
-    document.querySelectorAll('#supportFilters input').forEach(inp=>inp.onchange=()=>setSupportFilter(inp.dataset.filter,inp.checked));
-    $('audioSelect').onchange=()=>setAudio($('audioSelect').value);$('orientationSelect').onchange=()=>setOrientation($('orientationSelect').value);
-    $('pauseTime').onchange=syncPause;$('pauseDistance').onchange=syncPause;$('pauseTimeCustom').oninput=()=>{$('pauseTimeCustom').value=normalizeTime($('pauseTimeCustom').value);saveSettings()};$('pauseDistanceCustom').oninput=saveSettings;$('pauseSupport').onchange=saveSettings;
-    $('reverseRoute').onchange=()=>{reverse=$('reverseRoute').checked;saveSettings(); if(reverse){stageStart=totalKm;stageEnd=0}else{stageStart=0;stageEnd=totalKm} $('prepStart').value=String(stageStart);$('prepEnd').value=String(stageEnd);$('navStart').value=String(stageStart);$('navEnd').value=String(stageEnd)};
-    $('startWalkBtn').onclick=()=>{applyPrep();showNav();walking=true;startGPS()};
-    $('manageBtn').onclick=()=>{showNav();$('drawer').classList.add('open')};
-    $('menuBtn').onclick=()=>{$('drawer').classList.toggle('open');renderSupports()};
-    $('backPrepBtn').onclick=()=>{showPrep();$('drawer').classList.remove('open')};
-    $('followBtn').onclick=()=>{following=true;if(userMarker)map.setView(userMarker.getLatLng(),17,{animate:true});else say('Ainda não tenho posição GPS.',true)};
-    $('gpsBtn').onclick=()=>gpsWatch?stopGPS():startGPS();$('stopBtn').onclick=()=>{stopGPS();showPrep()};
-    $('rotateBtn').onclick=()=>setOrientation(orientation==='north'?'heading':'north');
-    $('collapseBtn').onclick=()=>$('navPanel').classList.toggle('collapsed');$('panelHandle').onclick=()=>$('navPanel').classList.toggle('collapsed');
-    $('voiceTest').onclick=()=>say('Áudio '+(audio==='normal'?'normal':audio==='silent'?'silencioso':'imersivo')+' ativo.',true);$('testAudioBtn').onclick=()=>say('Teste de áudio. Percurso, apoios, desvios e pausas ativos.',true);
-    $('next10Btn').onclick=next10;$('sleepBtn').onclick=sleepList;
-    $('emergencyBtn').onclick=()=>$('emergencyModal').classList.add('open');$('closeEmergencyBtn').onclick=()=>$('emergencyModal').classList.remove('open');$('call112Btn').onclick=()=>location.href='tel:112';
-    $('openLocationBtn').onclick=()=>userMarker?location.href='https://www.google.com/maps/search/?api=1&query='+userMarker.getLatLng().lat+','+userMarker.getLatLng().lng:say('Obtenha primeiro a posição GPS.',true);
-    $('shareLocationBtn').onclick=()=>{if(userMarker&&navigator.share){let p=userMarker.getLatLng();navigator.share({title:'Localização — Caminhos do Peregrino',text:'Estou aqui.',url:'https://www.google.com/maps/search/?api=1&query='+p.lat+','+p.lng})}else say('Obtenha primeiro a posição GPS.',true)};
-    $('addNoteBtn').onclick=openNote;$('cancelNoteBtn').onclick=()=>$('noteModal').classList.remove('open');$('saveNoteBtn').onclick=saveNote;
-    document.querySelectorAll('#noteTypes label').forEach(l=>l.onclick=()=>{document.querySelectorAll('#noteTypes label').forEach(x=>x.classList.remove('selected'));l.classList.add('selected')});
-    $('importPrepBtn').onclick=()=>$('routeFilePrep').click();$('routeFilePrep').onchange=e=>{if(e.target.files&&e.target.files[0])importFile(e.target.files[0]);e.target.value=''};
-    $('importNavBtn').onclick=()=>$('routeFileNav').click();$('routeFileNav').onchange=e=>{if(e.target.files&&e.target.files[0])importFile(e.target.files[0]);e.target.value=''};
-    $('map').ondblclick=simulate;
-    $('resumeBtn').onclick=()=>{let r=JSON.parse(localStorage.getItem(RES)||'{}');if(r.routeId&&r.routeId!=='centenario'){selectRoute(r.routeId).then(()=>{stageStart=r.stageStart;stageEnd=r.stageEnd;showNav();startGPS()})}else{stageStart=r.stageStart||0;stageEnd=r.stageEnd||totalKm;showNav();startGPS()}};
-    const rr=localStorage.getItem(RES);if(rr){try{let x=JSON.parse(rr);$('resumeText').textContent=(x.routeName||'Caminhada')+' · km '+fmt(x.currentKm);$('resumeCard').classList.remove('hidden')}catch(e){}}
-  }).catch(e=>{console.error(e);alert('Erro ao iniciar aplicação: '+e.message)})
+  Promise.all([
+    fetch(ROUTE).then(function(r){if(!r.ok)throw new Error('Percurso não encontrado');return r.json()}),
+    fetch(SUPPORTS).then(function(r){if(!r.ok)throw new Error('Base de apoios não encontrada');return r.json()})
+  ]).then(function(result){
+    const routeData=result[0], supportData=result[1];
+    if(!routeData || !Array.isArray(routeData.features) || !routeData.features.length)
+      throw new Error('Percurso sem dados utilizáveis.');
+
+    supports=Array.isArray(supportData.items)?supportData.items.filter(Boolean):[];
+    buildLines(routeData.features);
+
+    if(!lines.length || !totalKm) throw new Error('Não foi possível preparar o percurso.');
+
+    // Important: startup never touches Leaflet, map markers, GPS or user coordinates.
+    stageStart=0;
+    stageEnd=totalKm;
+    fillRouteSelectors();
+    renderRouteLibrary();
+    bindControls();
+
+    const st=settings();
+    if(st.audioMode) setAudio(st.audioMode);
+    else if(st.audio) setAudio(st.audio);
+    if(st.orientation) setOrientation(st.orientation);
+    if(st.pauseTimeMode) $('pauseTime').value=st.pauseTimeMode;
+    if(st.pauseDistanceMode) $('pauseDistance').value=st.pauseDistanceMode;
+    if(st.pauseTimeCustom!=null) $('pauseTimeCustom').value=st.pauseTimeCustom;
+    if(st.pauseDistanceCustom!=null) $('pauseDistanceCustom').value=st.pauseDistanceCustom;
+    if(typeof st.pauseSupport==='boolean') $('pauseSupport').checked=st.pauseSupport;
+    if(typeof st.reverse==='boolean') $('reverseRoute').checked=st.reverse;
+    syncPause();
+
+    const rr=localStorage.getItem(RES);
+    if(rr){
+      try{
+        const x=JSON.parse(rr);
+        $('resumeText').textContent=(x.routeName||'Caminhada')+' · km '+fmt(x.currentKm);
+        $('resumeCard').classList.remove('hidden');
+      }catch(e){}
+    }
+  }).catch(function(e){
+    console.error(e);
+    const msg=document.createElement('div');
+    msg.style.cssText='position:absolute;inset:18px;padding:18px;background:#fff;border-radius:18px;z-index:9999;box-shadow:0 8px 30px #0002;font-family:system-ui';
+    msg.innerHTML='<b>Não foi possível iniciar a aplicação.</b><p style="color:#687a70">'+String(e.message||e)+'</p>';
+    document.body.appendChild(msg);
+  });
 }
 function applyPrep(){stageStart=Number($('prepStart').value);stageEnd=Number($('prepEnd').value);$('navStart').value=String(stageStart);$('navEnd').value=String(stageEnd);renderSupports()}
 document.addEventListener('DOMContentLoaded',init);
