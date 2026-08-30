@@ -1,16 +1,10 @@
 from pathlib import Path
-import base64, gzip, hashlib, re, urllib.request, xml.etree.ElementTree as ET
+import hashlib, re, urllib.request, xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / 'app/src/main/assets'
 DATA = ASSETS / 'data'
 ROUTES = DATA / 'routes'
-
-
-def decode_gz_b64(src: Path, dst: Path) -> None:
-    raw = base64.b64decode(src.read_text(encoding='utf-8'))
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.write_bytes(gzip.decompress(raw))
 
 
 def download(url: str, dst: Path) -> None:
@@ -72,7 +66,8 @@ def patch_index() -> None:
     path.write_text(html, encoding='utf-8')
 
 patch_index()
-decode_gz_b64(ROOT / 'scripts/assets/hf-full.gpx.gz.b64', DATA / 'percurso-teste-hf.gpx')
+validate_route(DATA / 'percurso-teste-hf.gpx')
+validate_route(DATA / 'percurso-teste-casa-trabalho.gpx')
 
 route_sources = {
     'caminho-tejo.gpx': 'https://caminhosdefatima.org/_cf/wp-content/uploads/2023/11/CaminhoTejo_05_04_2023.gpx',
