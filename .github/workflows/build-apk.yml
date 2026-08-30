@@ -11,20 +11,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Validate application JavaScript
+      - name: Validate application JavaScript and requirements
         shell: bash
         run: |
           python3 - <<'PY'
@@ -32,22 +29,22 @@ jobs:
           p=pathlib.Path('app/src/main/assets/index.html')
           s=p.read_text(encoding='utf-8')
           blocks=re.findall(r'<script[^>]*>(.*?)</script>', s, re.S)
-          if not blocks:
-              raise SystemExit('No inline JavaScript found')
+          if not blocks: raise SystemExit('No inline JavaScript found')
           pathlib.Path('/tmp/index-app.js').write_text('\n'.join(blocks), encoding='utf-8')
           required=[
-            'Caminho do Centenário',
-            'Percurso de teste — casa/trabalho',
-            'parseGpx', 'parseKml', 'pauseCfg', 'setSupportFilter',
-            'next10', 'sleepList', 'startGPS'
+            'Caminho do Centenário','Caminho do Norte ao Centro','Caminho do Tejo',
+            'Caminho da Nazaré','Caminho dos Candeeiros','Rota Carmelita',
+            'Rota de Tomar','Rota da Sertã','Rota de Abrantes',
+            'Percurso de teste — casa/trabalho','Carregar KML/GPX',
+            'pauseTimeCustom','pauseDistanceCustom','format', 'supportFilters',
+            'Próximos 10 km','Pernoitas na etapa','notifyWatch','startGPS','emergencyBtn'
           ]
           missing=[x for x in required if x not in s]
-          if missing:
-              raise SystemExit('Missing expected application features: '+', '.join(missing))
+          if missing: raise SystemExit('Missing expected features: '+', '.join(missing))
+          assert '95:00' not in s or 'timeFmt' in s
           print('HTML/feature structure: OK')
           PY
           node --check /tmp/index-app.js
-
       - name: Validate bundled data
         shell: bash
         run: |
@@ -62,15 +59,20 @@ jobs:
           assert isinstance(d.get('items'), list)
           print('Bundled route/support data: OK')
           PY
-
+      - name: Validate Android integration
+        shell: bash
+        run: |
+          grep -q 'POST_NOTIFICATIONS' app/src/main/AndroidManifest.xml
+          grep -q 'notifyWatch' app/src/main/java/com/caminhos2027/MainActivity.java
+          grep -q 'downloadRoute' app/src/main/java/com/caminhos2027/MainActivity.java
+          grep -q 'ACTION_OPEN_DOCUMENT' app/src/main/java/com/caminhos2027/MainActivity.java
+          echo 'Android integration: OK'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
