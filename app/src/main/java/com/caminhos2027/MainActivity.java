@@ -99,15 +99,14 @@ public class MainActivity extends Activity implements SensorEventListener {
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
                 if (pendingFileCallback != null) pendingFileCallback.onReceiveValue(null);
                 pendingFileCallback = callback;
+
                 Intent intent = params.createIntent();
+                // Keep the Android document provider unrestricted. Some providers
+                // show GPX/KML as disabled when EXTRA_MIME_TYPES is too restrictive.
+                // The WebView validates that the selected file is KML or GPX.
                 intent.setType("*/*");
-                intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
-                        "application/gpx+xml",
-                        "application/vnd.google-earth.kml+xml",
-                        "application/xml",
-                        "text/xml"
-                });
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
+
                 try {
                     startActivityForResult(intent, FILE_PICKER_REQ);
                     return true;
