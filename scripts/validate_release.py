@@ -14,8 +14,9 @@ java = java_path.read_text(encoding='utf-8')
 required = [
     'Trajeto teste do SR', 'Trajecto teste do HF', 'Caminho do Centenário',
     'notificationBtn', 'notificationsGranted', 'requestNotificationPermission',
-    'openNotificationSettings', 'notifyUser', 'Próximos 10 km', 'Onde dormir?',
-    'Carregar KML/GPX', 'function say', 'function notify'
+    'openNotificationSettings', 'notify(', 'say(', 'Próximos 10 km',
+    'Onde dormir?', 'Carregar KML/GPX', 'percurso-teste-casa-trabalho.gpx',
+    'percurso-teste-hf.gpx'
 ]
 missing = [item for item in required if item not in html]
 if missing:
