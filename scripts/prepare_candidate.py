@@ -1,10 +1,16 @@
 from pathlib import Path
-import hashlib, re, urllib.request, xml.etree.ElementTree as ET
+import base64, gzip, hashlib, re, urllib.request, xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / 'app/src/main/assets'
 DATA = ASSETS / 'data'
 ROUTES = DATA / 'routes'
+
+
+def decode_gz_b64(src: Path, dst: Path) -> None:
+    raw = base64.b64decode(src.read_text(encoding='utf-8'))
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_bytes(gzip.decompress(raw))
 
 
 def download(url: str, dst: Path) -> None:
@@ -25,8 +31,6 @@ def validate_route(path: Path) -> None:
         if len(pts) < 2:
             raise RuntimeError(f'GPX has fewer than 2 track points: {path}')
     else:
-        # Some official KML snapshots contain prefixes without a local xmlns declaration.
-        # For release validation we only need to prove there is a usable coordinates payload.
         coords = re.findall(r'<coordinates[^>]*>(.*?)</coordinates>', text, flags=re.S | re.I)
         count = sum(len(re.findall(r'-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?', c)) for c in coords)
         if count < 2:
@@ -68,6 +72,7 @@ def patch_index() -> None:
     path.write_text(html, encoding='utf-8')
 
 patch_index()
+decode_gz_b64(ROOT / 'scripts/assets/hf-full.gpx.gz.b64', DATA / 'percurso-teste-hf.gpx')
 
 route_sources = {
     'caminho-tejo.gpx': 'https://caminhosdefatima.org/_cf/wp-content/uploads/2023/11/CaminhoTejo_05_04_2023.gpx',
