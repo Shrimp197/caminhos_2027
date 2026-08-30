@@ -36,12 +36,11 @@ jobs:
             'Caminho da Nazaré','Caminho dos Candeeiros','Rota Carmelita',
             'Rota de Tomar','Rota da Sertã','Rota de Abrantes',
             'Percurso de teste — casa/trabalho','Carregar KML/GPX',
-            'pauseTimeCustom','pauseDistanceCustom','format', 'supportFilters',
-            'Próximos 10 km','Pernoitas na etapa','notifyWatch','startGPS','emergencyBtn'
+            'pauseTimeCustom','pauseDistanceCustom','timeFmt','supportFilters',
+            'Próximos 10 km','Onde dormir?','notifyWatch','startGPS','emergencyBtn'
           ]
           missing=[x for x in required if x not in s]
           if missing: raise SystemExit('Missing expected features: '+', '.join(missing))
-          assert '95:00' not in s or 'timeFmt' in s
           print('HTML/feature structure: OK')
           PY
           node --check /tmp/index-app.js
