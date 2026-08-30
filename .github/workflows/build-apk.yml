@@ -3,12 +3,11 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, "v1.1-complete-audit-fix" ]
 
 jobs:
-  build:
+  validate-and-build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,16 +19,60 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate application JavaScript
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re, pathlib
+          p=pathlib.Path('app/src/main/assets/index.html')
+          s=p.read_text(encoding='utf-8')
+          blocks=re.findall(r'<script[^>]*>(.*?)</script>', s, re.S)
+          if not blocks:
+              raise SystemExit('No inline JavaScript found')
+          pathlib.Path('/tmp/index-app.js').write_text('\n'.join(blocks), encoding='utf-8')
+          required=[
+            'Caminho do Centenário',
+            'Percurso de teste — casa/trabalho',
+            'parseGpx', 'parseKml', 'pauseCfg', 'setSupportFilter',
+            'next10', 'sleepList', 'startGPS'
+          ]
+          missing=[x for x in required if x not in s]
+          if missing:
+              raise SystemExit('Missing expected application features: '+', '.join(missing))
+          print('HTML/feature structure: OK')
+          PY
+          node --check /tmp/index-app.js
+
+      - name: Validate bundled data
+        shell: bash
+        run: |
+          test -s app/src/main/assets/data/route.geojson
+          test -s app/src/main/assets/data/apoios-2026.json
+          test -s app/src/main/assets/data/percurso-teste-casa-trabalho.gpx
+          test -s app/src/main/assets/caminho-do-centenario.kml
+          python3 - <<'PY'
+          import json, pathlib
+          json.loads(pathlib.Path('app/src/main/assets/data/route.geojson').read_text())
+          d=json.loads(pathlib.Path('app/src/main/assets/data/apoios-2026.json').read_text())
+          assert isinstance(d.get('items'), list)
+          print('Bundled route/support data: OK')
+          PY
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
 
-      - name: Build APK
+      - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Caminho-do-Centenario-debug
+          name: Caminhos-do-Peregrino-v1.1.0-debug
           path: app/build/outputs/apk/debug/app-debug.apk
