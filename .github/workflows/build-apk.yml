@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ main, master, "v1.1-complete-audit-fix" ]
+  pull_request:
+    branches: [ main, master ]
 
 jobs:
   validate-and-build:
