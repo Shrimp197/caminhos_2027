@@ -38,7 +38,11 @@ def validate_route(path: Path) -> None:
 
 
 decode_gz_b64(ROOT / 'scripts/assets/index.html.gz.b64', ASSETS / 'index.html')
-decode_gz_b64(ROOT / 'scripts/assets/hf.gpx.gz.b64', DATA / 'percurso-teste-hf.gpx')
+
+# The HF track is a user-supplied test asset. Preserve the validated repository copy
+# rather than silently replacing it with a generated/simplified track.
+validate_route(DATA / 'percurso-teste-hf.gpx')
+validate_route(DATA / 'percurso-teste-casa-trabalho.gpx')
 
 route_sources = {
     'caminho-tejo.gpx': 'https://caminhosdefatima.org/_cf/wp-content/uploads/2023/11/CaminhoTejo_05_04_2023.gpx',
