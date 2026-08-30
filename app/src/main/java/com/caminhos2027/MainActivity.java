@@ -97,6 +97,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                installWebCompat();
                 syncNotificationUi();
             }
         });
@@ -130,6 +131,15 @@ public class MainActivity extends Activity implements SensorEventListener {
         });
 
         webView.addJavascriptInterface(new AndroidBridge(), "Android");
+    }
+
+    private void installWebCompat() {
+        if (webView == null) return;
+        String js = "(function(){"
+                + "if(typeof window.say!=='function'){window.say=function(text,important){if(!text)return;if(window.Android&&Android.speak){Android.speak(String(text));return;}if('speechSynthesis' in window){try{window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(String(text));u.lang='pt-PT';u.rate=.96;window.speechSynthesis.speak(u)}catch(e){}}};}"
+                + "if(typeof window.notify!=='function'){window.notify=function(title,text){try{if(window.Android&&Android.notifyUser&&(!Android.notificationsGranted||Android.notificationsGranted()))Android.notifyUser(String(title||'Caminhos do Peregrino'),String(text||''))}catch(e){}};}"
+                + "})();";
+        webView.evaluateJavascript(js, null);
     }
 
     public class AndroidBridge {
@@ -234,6 +244,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     protected void onResume() {
         super.onResume();
+        installWebCompat();
         syncNotificationUi();
     }
 
