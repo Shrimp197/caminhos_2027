@@ -1,5 +1,5 @@
 from pathlib import Path
-import hashlib, urllib.request, xml.etree.ElementTree as ET
+import hashlib, re, urllib.request, xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / 'app/src/main/assets'
@@ -25,9 +25,11 @@ def validate_route(path: Path) -> None:
         if len(pts) < 2:
             raise RuntimeError(f'GPX has fewer than 2 track points: {path}')
     else:
-        root = ET.fromstring(text)
-        coords = root.findall('.//{http://www.opengis.net/kml/2.2}coordinates')
-        if not coords or sum(len((c.text or '').split()) for c in coords) < 2:
+        # Some official KML snapshots contain prefixes without a local xmlns declaration.
+        # For release validation we only need to prove there is a usable coordinates payload.
+        coords = re.findall(r'<coordinates[^>]*>(.*?)</coordinates>', text, flags=re.S | re.I)
+        count = sum(len(re.findall(r'-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?', c)) for c in coords)
+        if count < 2:
             raise RuntimeError(f'KML has fewer than 2 coordinate tuples: {path}')
 
 
@@ -61,7 +63,6 @@ def patch_index() -> None:
             raise RuntimeError('renderSupports marker not found')
         html = html.replace(marker, injected + marker, 1)
 
-    # Align labels with the exact agreed names, while retaining the existing prototype controls.
     html = html.replace('Percurso de teste — casa/trabalho', 'Trajeto teste do SR')
     html = html.replace("activeRoute='teste';activeName='Percurso de teste — casa/trabalho'", "activeRoute='teste-sr';activeName='Trajeto teste do SR'")
     path.write_text(html, encoding='utf-8')
