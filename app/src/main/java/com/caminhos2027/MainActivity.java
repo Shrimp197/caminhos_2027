@@ -2,7 +2,11 @@ package com.caminhos2027;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.os.Build;
 import android.content.Intent;
+import android.provider.Settings;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -29,6 +33,7 @@ import java.util.Locale;
 public class MainActivity extends Activity implements SensorEventListener {
     private static final int LOCATION_REQ = 1001;
     private static final int FILE_PICKER_REQ = 2001;
+    private static final int NOTIFICATION_REQ = 3001;
 
     private WebView webView;
     private TextToSpeech tts;
@@ -67,6 +72,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
 
         webView.loadUrl("https://appassets.androidplatform.net/assets/index.html");
+        createNotificationChannel();
     }
 
     private void configureWebView() {
@@ -87,6 +93,12 @@ public class MainActivity extends Activity implements SensorEventListener {
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 return assetLoader.shouldInterceptRequest(request.getUrl());
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                syncNotificationUi();
+            }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
@@ -99,15 +111,14 @@ public class MainActivity extends Activity implements SensorEventListener {
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
                 if (pendingFileCallback != null) pendingFileCallback.onReceiveValue(null);
                 pendingFileCallback = callback;
-                Intent intent = params.createIntent();
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
                 intent.setType("*/*");
                 intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
-                        "application/gpx+xml",
+                        "application/gpx+xml", "application/gpx",
                         "application/vnd.google-earth.kml+xml",
-                        "application/xml",
-                        "text/xml"
+                        "application/xml", "text/xml", "text/plain"
                 });
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
                 try {
                     startActivityForResult(intent, FILE_PICKER_REQ);
                     return true;
@@ -153,6 +164,77 @@ public class MainActivity extends Activity implements SensorEventListener {
             }
             compassRunning = false;
         }
+
+        @android.webkit.JavascriptInterface
+        public void requestNotificationPermission() {
+            if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_REQ);
+            } else {
+                syncNotificationUi();
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public boolean notificationsGranted() {
+            return Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+        }
+
+        @android.webkit.JavascriptInterface
+        public void openNotificationSettings() {
+            try {
+                Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                startActivity(intent);
+            } catch (Exception ignored) {
+                startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName())));
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void notifyUser(String title, String text) {
+            if (Build.VERSION.SDK_INT >= 33 && !notificationsGranted()) return;
+            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            android.app.Notification.Builder b = Build.VERSION.SDK_INT >= 26
+                    ? new android.app.Notification.Builder(MainActivity.this, "peregrino")
+                    : new android.app.Notification.Builder(MainActivity.this);
+            b.setSmallIcon(com.caminhos2027.R.mipmap.ic_launcher)
+                    .setContentTitle(title == null ? "Caminhos do Peregrino" : title)
+                    .setContentText(text == null ? "" : text)
+                    .setAutoCancel(true)
+                    .setPriority(android.app.Notification.PRIORITY_DEFAULT);
+            nm.notify((int)(System.currentTimeMillis() & 0x7fffffff), b.build());
+        }
+    }
+
+    private void syncNotificationUi() {
+        if (webView == null) return;
+        boolean granted = Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+        final String js = "(function(){var b=document.getElementById('notificationBtn');if(!b)return;var g=" + granted + ";b.style.background=g?'#eef7ef':'';b.style.borderColor=g?'#cfe3d2':'';b.style.color=g?'#0e4e37':'';b.textContent=g?'✅ Ativos':'🔔 Ativar';b.title=g?'Abrir definições de notificações':'Ativar alertas da caminhada';b.onclick=function(){if(g&&window.Android&&Android.openNotificationSettings){Android.openNotificationSettings();}else if(window.Android&&Android.requestNotificationPermission){Android.requestNotificationPermission();}};})()";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (nm != null) {
+                NotificationChannel ch = new NotificationChannel("peregrino", "Caminhada", NotificationManager.IMPORTANCE_DEFAULT);
+                ch.setDescription("Alertas de navegação, pausas, apoios e condições da caminhada");
+                nm.createNotificationChannel(ch);
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == NOTIFICATION_REQ) syncNotificationUi();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        syncNotificationUi();
     }
 
     @Override
