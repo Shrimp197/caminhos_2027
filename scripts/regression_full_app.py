@@ -15,8 +15,6 @@ assert '.cp-shell{display:block!important;visibility:visible!important;opacity:1
 # 2) Preparation -> navigation route identity is one state machine.
 assert "activeRoute='centenario'" in html
 assert re.search(r'async function\s+selectRoute\s*\(id\)', html)
-# The approved shell selects by value, then calls the existing route controller;
-# the legacy preparation selector is explicitly synchronized to the same value.
 assert re.search(r'finalSelect\.addEventListener\(\s*[\'\"]change[\'\"]', html)
 assert re.search(r'const\s+chosen\s*=\s*this\.value', html)
 assert re.search(r'if\s*\(typeof\s+selectRoute\s*===\s*[\'\"]function[\'\"]\)\s*await\s+selectRoute\(chosen\)', html)
@@ -44,11 +42,14 @@ for token in ['ACCESS_FINE_LOCATION','ACCESS_COARSE_LOCATION','POST_NOTIFICATION
 for token in ['WebViewAssetLoader','setGeolocationEnabled(true)','onShowFileChooser','speak(String text)','startCompass','stopCompass','notifyUser','notificationsGranted']:
     assert token in java,token
 
-# 7) No common null-DOM assignment pattern remains for direct IDs.
+# 7) Detect likely null-DOM assignments without treating dynamically rendered
+# lists/containers as missing. The route list is intentionally rendered at runtime.
 dom_ids=set(re.findall(r'id=[\"\']([^\"\']+)',html))
-for ident in re.findall(r"(?:\$\(\s*['\"]([^'\"]+)['\"]\s*\)|getElementById\(\s*['\"]([^'\"]+)['\"]\s*\))",html):
+dynamic_ids={'next10List','sleepList','supportsList','routeList','menuList'}
+refs=re.findall(r"(?:\$\(\s*['\"]([^'\"]+)['\"]\s*\)|getElementById\(\s*['\"]([^'\"]+)['\"]\s*\))",html)
+for ident in refs:
     for value in ident:
-        if value and value not in dom_ids and value not in {'cpMenuBtn','cpMenuPanel'}:
+        if value and value not in dom_ids and value not in dynamic_ids and value not in {'cpMenuBtn','cpMenuPanel'}:
             raise AssertionError('DOM reference has no static target: '+value)
 
 # 8) No obsolete UI controller that hides the entire preparation screen.
