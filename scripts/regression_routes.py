@@ -6,10 +6,11 @@ html=(ROOT/'app/src/main/assets/index.html').read_text(encoding='utf-8')
 
 assert len(re.findall(r'async function\s+selectRoute\s*\(id\)',html))==1
 assert 'id="prepRoute"' in html and 'id="cpRouteSelect"' in html
-assert 'finalSelect.onchange=function()' in html
-assert "prepSelect.value=chosen" in html
-assert "prepSelect.dispatchEvent(new Event('change',{bubbles:true}))" in html
-assert "finalSelect.value=prepSelect.value" in html
+
+# The route bridge is canonical even though the visible UI now synchronizes the two selectors directly.
+assert 'prepRoute.value=finalRoute.value;dispatch(prepRoute)' in html
+assert 'function dispatch(el)' in html
+assert 'prepRoute' in html and 'finalRoute' in html
 
 for label in ('Trajeto teste do SR','Trajecto teste do HF'):
     assert label in html,label
@@ -18,6 +19,12 @@ for name in ('caminho-tejo.gpx','caminho-norte.gpx','caminho-nazare.kml','caminh
 
 handlers=re.findall(r"\$\(['\"]startWalkBtn['\"]\)\.onclick",html)
 assert len(handlers)<=1,f'unexpected start handler count: {len(handlers)}'
-assert "byId('cpStart').onclick=function(){legacyStart.click()};" in html
+assert "if(cpStart)cpStart.onclick=function(){if(legacyStart)legacyStart.click()};" in html
+
+# Início/Fim is a dedicated modal and must not route through the full legacy route card.
+assert "title='Início e fim'" in html
+assert "id=\"cpModalStart\"" in html and "id=\"cpModalEnd\"" in html
+assert 'detail.appendChild' not in html
+assert 'openConfig(kind)' not in html
 
 print('Route regression: OK')
