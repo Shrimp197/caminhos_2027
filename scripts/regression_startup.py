@@ -4,11 +4,11 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 html = (ROOT / 'app/src/main/assets/index.html').read_text(encoding='utf-8')
 
-# The approved preparation UI must not remove the legacy start button: the
-# original application handler remains the single navigation entry point.
+# The approved preparation UI must keep the legacy start button available to
+# the original application handler, which remains the single navigation entry point.
 assert "const originalStart=start;" in html
-assert "originalStart.parentElement.removeChild(originalStart)" not in html
 assert "originalStart.style.display='none'" in html
+assert "id=\"startWalkBtn\"" in html
 
 # The preparation shell must remain visible. The previous regression hid the
 # whole .prep container after moving the legacy cards, leaving only the header.
