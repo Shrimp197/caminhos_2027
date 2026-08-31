@@ -14,6 +14,8 @@ assert "originalStart.style.display='none'" in html
 # whole .prep container after moving the legacy cards, leaving only the header.
 assert "legacyPrep.style.display='none'" not in html
 assert "id=\"cpFinalShell\"" in html
+assert "const legacyPrep=prep.querySelector(':scope > .prep')||prep;" in html
+assert "const oldCards=[...legacyPrep.querySelectorAll(':scope > .card')];" in html
 
 # The redundant route subtitle in the top bar must not be visible.
 assert "headerRoute.style.display='none'" in html
