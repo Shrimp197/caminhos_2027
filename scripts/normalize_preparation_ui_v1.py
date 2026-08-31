@@ -6,7 +6,7 @@ HTML = ROOT / 'app/src/main/assets/index.html'
 html = HTML.read_text(encoding='utf-8')
 
 # The approved rebuild supplies the visible preparation screen. The final UI
-# architecture supplies the interaction runtime. Remove only the rebuild-local
+# architecture supplies the interaction runtime. Remove the rebuild-local
 # controller, then normalize its modal markup into the single canonical modal
 # expected by the final controller.
 html = re.sub(r'\n<script id="cp-prep-v1-controller">.*?</script>\n?', '\n', html, flags=re.S)
@@ -33,5 +33,15 @@ html, count = re.subn(
 if count != 1:
     raise SystemExit('Canonical preparation modal container not found exactly once')
 
+# The canonical runtime is applied earlier in the workflow and contains show()
+# and closeModal(). Keep an explicit openModal() helper for the established
+# interaction contract without creating a second modal implementation.
+if 'function openModal(' not in html:
+    html = html.replace(
+        'function closeModal(){modal.classList.remove(\'open\');body.innerHTML=\'\'}',
+        'function openModal(){modal.classList.add(\'open\')}\n    function closeModal(){modal.classList.remove(\'open\');body.innerHTML=\'\'}',
+        1,
+    )
+
 HTML.write_text(html, encoding='utf-8')
-print('Preparation UI normalization: single canonical modal and interaction runtime preserved')
+print('Preparation UI normalization: single canonical modal, controller, and openModal helper preserved')
