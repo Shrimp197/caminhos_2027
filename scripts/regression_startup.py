@@ -4,30 +4,36 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 html = (ROOT / 'app/src/main/assets/index.html').read_text(encoding='utf-8')
 
-# The approved preparation UI must keep the legacy start button available to
-# the original application handler, which remains the single navigation entry point.
-assert "const originalStart=start;" in html
-assert "originalStart.style.display='none'" in html
-assert "id=\"startWalkBtn\"" in html
+required = [
+    'id="prepScreen"','id="cpFinalShell"','id="cpRouteSelect"','id="cpStart"',
+    'id="startWalkBtn"','id="prepRoute"','id="headerRoute"'
+]
+for token in required:
+    assert token in html, token
 
-# The preparation shell must remain visible. The previous regression hid the
-# whole .prep container after moving the legacy cards, leaving only the header.
-assert "legacyPrep.style.display='none'" not in html
-assert "id=\"cpFinalShell\"" in html
-assert "const legacyPrep=prep.querySelector(':scope > .prep')||prep;" in html
-assert "const oldCards=[...legacyPrep.querySelectorAll(':scope > .card')];" in html
+# The visible preparation shell is never hidden. The legacy start button may be
+# visually hidden only because cpStart forwards to its original handler.
+assert '.cp-shell{display:block!important;visibility:visible!important;opacity:1!important}' in html
+assert "legacyStart.style.display='none'" in html
+assert "document.getElementById('cpStart').addEventListener('click',()=>legacyStart.click())" in html
 
-# The redundant route subtitle in the top bar must not be visible.
-assert "headerRoute.style.display='none'" in html
+# The top-bar route subtitle is deliberately not rendered.
+assert '<small id="headerRoute" style="display:none">' in html
 
-# Every static $('id').onclick target must still exist in the generated HTML.
-ids = set(re.findall(r'id=[\"\']([^\"\']+)', html))
-for element_id in re.findall(r"\$\('([^']+)'\)\.onclick", html):
-    assert element_id in ids, f'missing onclick target: {element_id}'
+# No obsolete code may hide the complete preparation container.
+for bad in ("legacyPrep.style.display='none'", "prep.style.display='none'", "originalStart.style.display='none'"):
+    assert bad not in html, bad
 
-# The final preparation selector must synchronize with the real route selector
-# even when the asynchronous route data arrives after the UI runtime.
-assert "function syncRoutesWhenReady()" in html
-assert "const routeSyncTimer=setInterval" in html
+# DOM ids referenced by the compact $ helper must exist in the source document.
+dom_ids=set(re.findall(r'id=[\"\']([^\"\']+)',html))
+used_ids=set(re.findall(r"\$\('([^']+)'\)",html))
+missing=sorted(x for x in used_ids if x not in dom_ids)
+assert not missing, 'missing DOM ids: '+', '.join(missing)
+
+# Route selector synchronization must survive asynchronous route loading.
+assert 'function syncRoutesWhenReady()' in html
+assert 'const routeSyncTimer=setInterval' in html
+assert "finalSelect.addEventListener('change',async function(){" in html
+assert "if(typeof selectRoute==='function')await selectRoute(chosen)" in html
 
 print('Startup regression: OK')
