@@ -5,13 +5,33 @@ ROOT = Path(__file__).resolve().parents[1]
 HTML = ROOT / 'app/src/main/assets/index.html'
 html = HTML.read_text(encoding='utf-8')
 
-# rebuild_preparation_screen_v1.py is responsible for the approved visible HTML.
-# apply_final_ui_architecture.py is responsible for the canonical interaction runtime.
-# Remove the rebuild-local runtime/modal so there is exactly one canonical modal runtime.
+# The approved rebuild supplies the visible preparation screen. The final UI
+# architecture supplies the interaction runtime. Remove only the rebuild-local
+# controller, then normalize its modal markup into the single canonical modal
+# expected by the final controller.
 html = re.sub(r'\n<script id="cp-prep-v1-controller">.*?</script>\n?', '\n', html, flags=re.S)
-html = re.sub(r'\n\s*<div id="cpConfigModal" class="cp-modal" hidden>.*?</div>\s*(?=<div id="cpGlobalDrawer")', '\n', html, count=1, flags=re.S)
 
-# The rebuild template may also include its own static style rules for the removed modal.
-# Keep the visual rules harmless, but do not allow an extra modal container to be recreated.
+canonical_modal = '''<div id="cpConfigModal" class="cp-modal-backdrop" role="dialog" aria-modal="true">
+  <div class="cp-modal-sheet">
+    <h2 id="cpModalTitle"></h2>
+    <p id="cpModalSubtitle"></p>
+    <div id="cpModalBody"></div>
+    <div class="cp-modal-actions">
+      <button type="button" id="cpModalCancel" class="secondary">Cancelar</button>
+      <button type="button" id="cpModalSave" class="primary">Guardar</button>
+    </div>
+  </div>
+</div>'''
+
+html, count = re.subn(
+    r'<div id="cpConfigModal".*?(?=\s*<div id="cpGlobalDrawer")',
+    canonical_modal + '\n',
+    html,
+    count=1,
+    flags=re.S,
+)
+if count != 1:
+    raise SystemExit('Canonical preparation modal container not found exactly once')
+
 HTML.write_text(html, encoding='utf-8')
-print('Preparation UI normalization: single canonical interaction runtime preserved')
+print('Preparation UI normalization: single canonical modal and interaction runtime preserved')
