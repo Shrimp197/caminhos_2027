@@ -33,12 +33,22 @@ jobs:
         run: python3 scripts/fix_route_selection.py
       - name: Fix generated index runtime
         run: python3 scripts/fix_index_runtime.py
-      - name: Apply preparation interactions
+      - name: Apply preparation interactions compatibility
         run: python3 scripts/apply_ui_interactions.py
+      - name: Unify preparation UI architecture
+        run: python3 scripts/apply_final_ui_architecture.py
       - name: Route selection regression
         run: python3 scripts/regression_routes.py
       - name: Startup regression
         run: python3 scripts/regression_startup.py
+      - name: Preparation behavior regression
+        run: python3 scripts/regression_preparation_behavior.py
+      - name: Support filter regression
+        run: python3 scripts/regression_support_filters.py
+      - name: Route state regression
+        run: python3 scripts/regression_route_state.py
+      - name: No duplicate UI regression
+        run: python3 scripts/regression_no_duplicate_ui.py
       - name: Full application regression
         run: python3 scripts/regression_full_app.py
       - name: UI configuration regression
