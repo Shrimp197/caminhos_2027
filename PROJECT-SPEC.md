@@ -35,6 +35,9 @@ Esta especificação reúne as decisões funcionais aprovadas. Não remover requ
 - Menu global: Percursos, Caminhada, Apoios/POI, Diário, Definições, Ajuda, Contacto, Sobre.
 - Todo o percurso tem imagem adequada e utilizável; respeitar origem/licença.
 - Dados de teste devem estar explicitamente identificados.
+- Ecrã de preparação aprovado: cabeçalho verde com menu, marca/título do produto, título “Prepare a sua caminhada”, subtítulo explicativo, cartão visual do percurso selecionado, grelha de seis funções (Início e fim, Áudio, Orientação, Pausas, Apoios, Notas) e botão verde “INICIAR CAMINHADA”.
+- O cartão do percurso é a representação principal do percurso selecionado; a seleção feita nele deve atualizar imediatamente o estado central usado pela caminhada.
+- O percurso mostrado no cabeçalho, cartão, menu e navegação deve ser sempre o mesmo percurso ativo.
 
 ## Notificações / áudio / smartwatch
 - Notificações Android para alertas de caminhada.
