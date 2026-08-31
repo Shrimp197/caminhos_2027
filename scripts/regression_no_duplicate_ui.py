@@ -31,11 +31,13 @@ for kind in ('route','audio','orientation','pause','support','notes'):
 assert 'cp-legacy-prep-card' in html
 assert '#functionGrid{display:none!important}' in html
 
-# Modal is a single DOM component; its controls may be instantiated/reused by the canonical controller.
-assert 'id="cpConfigModal"' in html
+# The canonical controller owns one runtime modal. It may be created dynamically,
+# so the source DOM must not contain a second static modal implementation.
+assert 'id="cpConfigModal"' not in html
+assert "modal=document.createElement('div');modal.id='cpConfigModal'" in html
 assert 'function show(kind)' in html
 assert 'function closeModal()' in html
-assert 'function openModal(' in html
+assert 'function openModal(' not in html or html.count('function openModal(')<=1
 assert 'detail.appendChild' not in html
 assert 'openConfig(kind)' not in html
 
