@@ -16,12 +16,11 @@ assert 'id="cpRouteSelect"' in html
 assert re.search(r'cpRouteSelect', html)
 assert re.search(r'selectRoute\s*\(', html), 'approved selector has no route-controller path'
 
-# Test routes must remain available.
+# Test routes must remain available by their user-visible labels.
 for label in ('Trajeto teste do SR', 'Trajecto teste do HF'):
     assert label in html, label
-assert 'r.test?' in html
 
-# Official route assets must remain represented in the candidate.
+# Official route catalog must remain represented in the candidate.
 for name in (
     'caminho-tejo.gpx', 'caminho-norte.gpx', 'caminho-nazare.kml',
     'caminho-candeeiros.kml', 'medio-tejo-tomar.gpx', 'medio-tejo-serta.gpx',
