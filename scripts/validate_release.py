@@ -12,10 +12,31 @@ java = java_path.read_text(encoding='utf-8')
 required_html = [
     'Trajeto teste do SR', 'Trajecto teste do HF', 'Caminho do Centenário',
     'notificationBtn', 'Próximos 10 km', 'Onde dormir?', 'Carregar KML/GPX',
+    'cpFinalShell', 'cpRouteSelect', 'cpStart', 'cp-ui-runtime-v115',
 ]
 missing = [item for item in required_html if item not in html]
 if missing:
     raise SystemExit('Missing required generated UI/features: ' + ', '.join(missing))
+
+# Route-selection invariants: the visible preparation selector, active route and
+# navigation library must converge on the same state before a walk can start.
+route_invariants = [
+    'async function selectRoute(id)',
+    "$('prepRoute').value=activeRoute",
+    "$('headerRoute').textContent=activeName",
+    "const chosen=$('prepRoute').value",
+    "if(chosen!==activeRoute)",
+    'await selectRoute(chosen)',
+    "sel.onchange=async()=>",
+]
+missing_route_invariants = [item for item in route_invariants if item not in html]
+if missing_route_invariants:
+    raise SystemExit('Route-selection hardening missing: ' + ', '.join(missing_route_invariants))
+
+# The approved visual selector must call the same central route selector, not
+# maintain a second independent navigation state.
+if "finalSelect.addEventListener('change',async function(){" not in html or 'await selectRoute(chosen)' not in html:
+    raise SystemExit('Approved preparation selector is not bound to central route state')
 
 if 'android.permission.POST_NOTIFICATIONS' not in manifest:
     raise SystemExit('POST_NOTIFICATIONS permission missing')
