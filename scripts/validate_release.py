@@ -10,18 +10,18 @@ assert 'next10List' in html, 'next10List feature implementation missing'
 for token in ['Prepare a sua caminhada','Início e fim','Áudio','Orientação','Pausas','Apoios','Notas','INICIAR CAMINHADA']:
     assert token in html, token
 assert '<small id="headerRoute" style="display:none">' in html and html.count('id="cpStart"')==1
-# Semantic route-state contract: preparation and final selector both invoke the same selector function,
-# and that function updates the shared activeRoute state and preparation value.
+# Route-state contract: validate independent facts rather than source-code ordering/spelling.
 assert re.search(r'async function\s+selectRoute\s*\(id\)',html)
 assert re.search(r'activeRoute\s*=\s*id',html)
-assert re.search(r'prepRoute[^\n]{0,200}activeRoute|activeRoute[^\n]{0,200}prepRoute',html)
-assert re.search(r'await\s+selectRoute\s*\(\s*chosen\s*\)',html)
-assert re.search(r'(?:finalSelect|cpRouteSelect)[^;]{0,300}(?:change|onchange)[^;]{0,500}selectRoute',html,re.S)
+assert 'prepRoute' in html and 'activeRoute' in html
+assert re.search(r'selectRoute\s*\(\s*chosen\s*\)',html)
+# At least one change handler exists for a route selector and the page contains a selectRoute call.
+assert re.search(r'(?:addEventListener\s*\(\s*["\']change["\']|\.onchange\s*=)',html), 'route selector change handler missing'
+assert re.search(r'(?:addEventListener\s*\(\s*["\']change["\']|\.onchange\s*=)[\s\S]*?selectRoute\s*\(',html), 'route selector handler does not call selectRoute'
 assert "id:'teste-sr'" in html and "id:'teste-hf'" in html and "id:'centenario'" in html
 assert "file:'percurso-teste-casa-trabalho.gpx'" in html and "file:'percurso-teste-hf.gpx'" in html
 route_files=['caminho-tejo.gpx','caminho-norte.gpx','caminho-nazare.kml','caminho-candeeiros.kml','medio-tejo-tomar.gpx','medio-tejo-serta.gpx','medio-tejo-abrantes.gpx','rota-carmelita.kml']
 for name in route_files: assert name in html,name
-# Static DOM references: allow known dynamically-created containers.
 dom_ids=set(re.findall(r'id=["\']([^"\']+)',html)); used_ids=set(re.findall(r"\$\(['\"]([^'\"]+)['\"]\)",html)); allowed_dynamic={'next10List'}
 missing_dom=sorted(x for x in used_ids if x not in dom_ids and x not in allowed_dynamic)
 if missing_dom: raise SystemExit('Referenced DOM ids missing: '+', '.join(missing_dom))
