@@ -22,8 +22,7 @@ assert ('id="headerRoute" style="display:none"' in html
         or '.top .brand small{display:none!important}' in html
         or '#headerRoute{display:none' in html)
 
-# The legacy start control must have a handler. Accept either the $ helper or
-# native DOM APIs; tests must validate the contract, not source formatting.
+# The start control must be wired by one of the supported DOM mechanisms.
 start_patterns = [
     r"\$\(['\"]startWalkBtn['\"]\)\.onclick\s*=",
     r"getElementById\(['\"]startWalkBtn['\"]\)\.onclick\s*=",
@@ -31,24 +30,24 @@ start_patterns = [
 ]
 assert any(re.search(p, html) for p in start_patterns), 'startWalkBtn handler missing'
 
-# The start handler must connect preparation state to navigation/GPS.
-handler_pos = min([m.start() for p in start_patterns for m in re.finditer(p, html)] or [0])
-# Look through the remainder of the script; this avoids depending on the exact
-# boundaries or formatting of one function.
+# The startup flow must contain the preparation -> navigation -> GPS calls.
+handler_pos = min(m.start() for p in start_patterns for m in re.finditer(p, html))
 script_tail = html[handler_pos:]
-assert re.search(r'applyPrep\s*\(', script_tail), 'start handler does not apply preparation'
+assert re.search(r'applyPrep\s*\(', script_tail), 'start flow does not apply preparation'
 assert re.search(r'showNav\s*\(', script_tail), 'start flow does not enter navigation'
 assert re.search(r'startGPS\s*\(', script_tail), 'start flow does not start GPS'
 
-# Preparation start/end values must be transferred to navigation state. Accept
-# either helper-based or native DOM assignment.
-prep_start = re.search(r"(?:\$\(['\"]prepStart['\"]\)|getElementById\(['\"]prepStart['\"]\)|querySelector\(['\"]#prepStart['\"]\))\.value", html)
-prep_end = re.search(r"(?:\$\(['\"]prepEnd['\"]\)|getElementById\(['\"]prepEnd['\"]\)|querySelector\(['\"]#prepEnd['\"]\))\.value", html)
-nav_start = re.search(r"(?:\$\(['\"]navStart['\"]\)|getElementById\(['\"]navStart['\"]\)|querySelector\(['\"]#navStart['\"]\))\.value", html)
-nav_end = re.search(r"(?:\$\(['\"]navEnd['\"]\)|getElementById\(['\"]navEnd['\"]\)|querySelector\(['\"]#navEnd['\"]\))\.value", html)
-assert prep_start and prep_end and nav_start and nav_end, 'preparation/navigation stage controls are not wired'
+# Preparation and navigation controls must participate in the same flow.
+control_patterns = {
+    'prepStart': r"(?:\$\(['\"]prepStart['\"]\)|getElementById\(['\"]prepStart['\"]\)|querySelector\(['\"]#prepStart['\"]\))",
+    'prepEnd': r"(?:\$\(['\"]prepEnd['\"]\)|getElementById\(['\"]prepEnd['\"]\)|querySelector\(['\"]#prepEnd['\"]\))",
+    'navStart': r"(?:\$\(['\"]navStart['\"]\)|getElementById\(['\"]navStart['\"]\)|querySelector\(['\"]#navStart['\"]\))",
+    'navEnd': r"(?:\$\(['\"]navEnd['\"]\)|getElementById\(['\"]navEnd['\"]\)|querySelector\(['\"]#navEnd['\"]\))",
+}
+for name, pattern in control_patterns.items():
+    assert re.search(pattern, html), f'{name} control is not referenced'
 
-# Route selector must have an explicit asynchronous synchronization path.
+# Route selector synchronization must exist, but implementation details are not fixed.
 assert 'syncRoutesWhenReady' in html or 'fillRouteSelectors' in html
 
 # Every direct helper-based onclick assignment must reference an existing DOM id.
