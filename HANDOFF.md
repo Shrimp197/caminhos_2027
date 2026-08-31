@@ -7,8 +7,7 @@ Data: 2026-08-31
 - Branch principal: `main`
 - Último commit observado em `main` antes desta candidata: `8da1d532340eab270d46f323d48ba51b6caaea39` (`Remove temporary CI trigger from main`).
 - PR #5 (`V1.1.5 candidate — approved preparation UI`) está aberto e não merged; a sua branch é `ci/v1.1.5-candidate`.
-- O PR #5 não representa, por si só, uma versão integrada concluída: contém apenas o marcador `CI-V1.1.5-CANDIDATE.md` no commit final observado.
-- A última execução CI observada para esse marcador terminou com sucesso e produziu o artifact `Caminhos-do-Peregrino-v1.1.5-debug`, mas isso não equivale a integração em `main`.
+- O PR #5 não representa, por si só, uma versão integrada concluída.
 
 ## Candidata em desenvolvimento
 - Branch: `candidate/v1.1.6-integrated`
@@ -29,23 +28,33 @@ Data: 2026-08-31
 ## Correções consolidadas nesta candidata
 - Workflow passa a executar em branches `candidate/**`.
 - Artifact passa a identificar `v1.1.6`.
-- Foi adicionada uma regressão automática dedicada à seleção de percurso (`scripts/regression_routes.py`).
-- `scripts/validate_release.py` passou a verificar invariantes da seleção de percurso e da UI aprovada.
-- A pipeline continua a aplicar a UI aprovada, a correção de carregamento SR/HF e a validação antes da compilação.
+- Regressão automática dedicada à seleção de percurso (`scripts/regression_routes.py`).
+- Regressão automática de arranque (`scripts/regression_startup.py`).
+- `scripts/validate_release.py` verifica invariantes da seleção de percurso e da UI aprovada.
+- A pipeline aplica a UI aprovada, a correção de carregamento SR/HF e as validações antes da compilação.
+
+## Incidente encontrado após instalação da primeira APK V1.1.6
+- Sintoma reportado no telefone: `Cannot set properties of null (setting "onclick")` ao iniciar.
+- Causa confirmada no `assets/index.html` gerado pela pipeline: o runtime da UI aprovada removia o `startWalkBtn` do DOM depois de capturar uma referência a ele. O `bindControls()` original corria depois e tentava atribuir `.onclick` ao elemento já removido.
+- Correção aplicada: o botão original deixou de ser removido; fica oculto e continua no DOM para preservar o handler original. O runtime também trata explicitamente o wrapper da preparação e move os cartões legados para a área de detalhe.
+- Foi acrescentada regressão que verifica ausência do `removeChild` indevido e confirma que todos os destinos estáticos de `.onclick` existem.
 
 ## Testes técnicos
-- A CI anterior da candidata V1.1.5 foi observada como `success` (run `33379620522`), com APK não expirada.
-- A candidata V1.1.6 deve ser considerada válida apenas após a nova execução CI terminar com sucesso, incluindo regressão, `node --check`, Gradle assembleDebug e verificação do ficheiro APK.
-- Não foi possível executar um clone local nesta sessão porque o ambiente sem acesso DNS à Internet não resolve `github.com`; a validação/build desta candidata deve ser feita pelo GitHub Actions.
+- Run CI V1.1.6 corrigido: `33394368466`, commit `89ff80d1d4f0e3955d561a02f4ae9847ae6aeda3`.
+- Resultado: sucesso em todas as etapas, incluindo Harden startup UI, Route selection regression, Startup regression, Validate application structure, Build debug APK, Verify APK e Upload APK.
+- Artifact corrigido: `Caminhos-do-Peregrino-v1.1.6-debug`, artifact id `9758746227`.
+- SHA-256 do APK corrigido: `dbae11427f3a42bc3fe9282e7ab156c3d9645df78f620e07c04632e0fca5a012`.
+- `node --check` do JavaScript extraído da APK corrigida: OK.
+- Inspeção da APK corrigida: o `startWalkBtn` permanece no DOM, o `removeChild` indevido desapareceu e não existem destinos `.onclick` estáticos em falta.
 
 ## Testes físicos ainda pendentes
-- Telefone Android real: GPS, acompanhamento do track, afastamento, bateria e comportamento de ecrã.
+- Telefone Android real: confirmar arranque sem erro, seleção SR/HF/Centenário, início da caminhada com a rota selecionada, GPS, acompanhamento do track, afastamento, bateria e comportamento de ecrã.
 - Bluetooth/áudio.
 - Huawei Watch GT 2.
 - Amazfit Active 2.
 
 ## Próxima tarefa
-Auditar a execução CI da `candidate/v1.1.6-integrated`; se passar, criar/atualizar PR para `main`, rever o diff e só então considerar a APK como candidata integrada.
+Instalar a APK do artifact corrigido e confirmar o arranque e, depois, a seleção de percurso. Só após essa confirmação deve ser considerado o merge para `main`.
 
 ## Regra de entrega
 Uma build intermédia de CI não deve ser apresentada como candidata. A entrega deve conter versão, commit exato, artifact/APK, validações concluídas, testes físicos dependentes do utilizador e limitações conhecidas.
