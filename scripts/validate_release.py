@@ -21,9 +21,12 @@ assert 'function openConfig(kind)' in html
 assert "Object.keys(cards).forEach(function(k){if(cards[k])cards[k].style.display=k===kind?'block':'none'})" in html
 assert ("byId('addNoteBtn').click()" in html) or ("const n=byId('addNoteBtn');if(n)n.click();" in html)
 assert "byId('cpStart').onclick=function(){legacyStart.click()};" in html
-assert ('const sf=byId(\'supportFilters\')' in html) or ('const sf=byId("supportFilters")' in html)
-assert 'const everySelected=' in html
-assert 'all.checked=true' in html and 'all.checked=false' in html
+# Support filter implementation is behaviorally covered by regression_support_filters.py;
+# validate the canonical control + handler/render path without requiring a specific local variable spelling.
+assert 'id="supportFilters"' in html
+assert 'function setSupportFilter(key,checked)' in html
+assert 'renderSupports()' in html
+assert 'all.checked' in html
 assert "id:'centenario'" in html and "id:'teste-sr'" in html and "id:'teste-hf'" in html
 assert "file:'percurso-teste-casa-trabalho.gpx'" in html and "file:'percurso-teste-hf.gpx'" in html
 route_files=['caminho-tejo.gpx','caminho-norte.gpx','caminho-nazare.kml','caminho-candeeiros.kml','medio-tejo-tomar.gpx','medio-tejo-serta.gpx','medio-tejo-abrantes.gpx','rota-carmelita.kml']
