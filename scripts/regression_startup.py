@@ -5,19 +5,27 @@ ROOT = Path(__file__).resolve().parents[1]
 html = (ROOT / 'app/src/main/assets/index.html').read_text(encoding='utf-8')
 
 # The approved preparation UI must not remove the legacy start button: the
-# original application handler is the single navigation entry point.
+# original application handler remains the single navigation entry point.
 assert "const originalStart=start;" in html
 assert "originalStart.parentElement.removeChild(originalStart)" not in html
 assert "originalStart.style.display='none'" in html
+
+# The preparation shell must remain visible. The previous regression hid the
+# whole .prep container after moving the legacy cards, leaving only the header.
+assert "legacyPrep.style.display='none'" not in html
+assert "id=\"cpFinalShell\"" in html
+
+# The redundant route subtitle in the top bar must not be visible.
+assert "headerRoute.style.display='none'" in html
 
 # Every static $('id').onclick target must still exist in the generated HTML.
 ids = set(re.findall(r'id=[\"\']([^\"\']+)', html))
 for element_id in re.findall(r"\$\('([^']+)'\)\.onclick", html):
     assert element_id in ids, f'missing onclick target: {element_id}'
 
-# The preparation shell is allowed to wrap the legacy preparation markup, but
-# the runtime must explicitly handle that wrapper and move legacy cards out.
-assert "const legacyPrep=prep.querySelector(':scope > .prep')||prep;" in html
-assert "legacyPrep.style.display='none'" in html
+# The final preparation selector must synchronize with the real route selector
+# even when the asynchronous route data arrives after the UI runtime.
+assert "function syncRoutesWhenReady()" in html
+assert "const routeSyncTimer=setInterval" in html
 
 print('Startup regression: OK')
