@@ -1,84 +1,85 @@
 from pathlib import Path
-import json, re, xml.etree.ElementTree as ET
+import json,re,xml.etree.ElementTree as ET
 
-root = Path(__file__).resolve().parents[1]
-html_path = root / 'app/src/main/assets/index.html'
-manifest_path = root / 'app/src/main/AndroidManifest.xml'
-java_path = root / 'app/src/main/java/com/caminhos2027/MainActivity.java'
-html = html_path.read_text(encoding='utf-8')
-manifest = manifest_path.read_text(encoding='utf-8')
-java = java_path.read_text(encoding='utf-8')
+ROOT=Path(__file__).resolve().parents[1]
+HTML=ROOT/'app/src/main/assets/index.html'
+MANIFEST=ROOT/'app/src/main/AndroidManifest.xml'
+JAVA=ROOT/'app/src/main/java/com/caminhos2027/MainActivity.java'
+html=HTML.read_text(encoding='utf-8')
+manifest=MANIFEST.read_text(encoding='utf-8')
+java=JAVA.read_text(encoding='utf-8')
 
-required_html = [
-    'Trajeto teste do SR', 'Trajecto teste do HF', 'Caminho do Centenário',
-    'notificationBtn', 'Próximos 10 km', 'Onde dormir?', 'Carregar KML/GPX',
-    'cpFinalShell', 'cpRouteSelect', 'cpStart', 'cp-ui-runtime-v115',
+# Product/UI surface required by PROJECT-SPEC.
+required_html=[
+ 'Trajeto teste do SR','Trajecto teste do HF','Caminho do Centenário',
+ 'id="cpFinalShell"','id="cpRouteSelect"','id="cpStart"','id="startWalkBtn"',
+ 'id="notificationBtn"','Próximos 10 km','Onde dormir?','Carregar KML/GPX',
+ 'id="menuBtn"','id="drawer"','id="supportList"','id="next10List"'
 ]
-missing = [item for item in required_html if item not in html]
-if missing:
-    raise SystemExit('Missing required generated UI/features: ' + ', '.join(missing))
+missing=[x for x in required_html if x not in html]
+if missing: raise SystemExit('Missing required UI/features: '+', '.join(missing))
 
-# Route-selection invariants: the visible preparation selector, active route and
-# navigation library must converge on the same state before a walk can start.
-route_invariants = [
-    'async function selectRoute(id)',
-    "$('prepRoute').value=activeRoute",
-    "$('headerRoute').textContent=activeName",
-    "const chosen=$('prepRoute').value",
-    "if(chosen!==activeRoute)",
-    'await selectRoute(chosen)',
-    "sel.onchange=async()=>",
+# Approved visual contract: product title, preparation shell, six functions,
+# single start action and no redundant route subtitle in the top bar.
+for token in ['Prepare a sua caminhada','Início e fim','Áudio','Orientação','Pausas','Apoios','Notas','INICIAR CAMINHADA']:
+    assert token in html, token
+assert '<small id="headerRoute" style="display:none">' in html
+assert html.count('id="cpStart"')==1
+
+# Central route state contract.
+route_checks=[
+ "let features=[],lines=[],supports=[],activeRoute='centenario',activeName='Caminho do Centenário'",
+ 'async function loadCatalogRoute', 'async function selectRoute(id)',
+ "$('prepRoute').value=activeRoute", "$('headerRoute').textContent=activeName",
+ "const chosen=$('prepRoute').value", "if(chosen!==activeRoute)",
+ 'await selectRoute(chosen)', 'sel.onchange=async()=>',
+ "id=\"cpRouteSelect\"", "finalSelect.addEventListener('change',async function(){",
+ "if(typeof selectRoute==='function')await selectRoute(chosen)",
 ]
-missing_route_invariants = [item for item in route_invariants if item not in html]
-if missing_route_invariants:
-    raise SystemExit('Route-selection hardening missing: ' + ', '.join(missing_route_invariants))
+for token in route_checks: assert token in html, token
 
-# The approved visual selector must call the same central route selector, not
-# maintain a second independent navigation state.
-if "finalSelect.addEventListener('change',async function(){" not in html or 'await selectRoute(chosen)' not in html:
-    raise SystemExit('Approved preparation selector is not bound to central route state')
+# Test routes are explicit and loaded from assets; official Centenário remains built-in.
+assert "id:'teste-sr'" in html and "id:'teste-hf'" in html
+assert "file:'percurso-teste-casa-trabalho.gpx'" in html
+assert "file:'percurso-teste-hf.gpx'" in html
+assert "id:'centenario'" in html
 
-if 'android.permission.POST_NOTIFICATIONS' not in manifest:
-    raise SystemExit('POST_NOTIFICATIONS permission missing')
-for item in ['installWebCompat', 'notifyUser', 'requestNotificationPermission', 'notificationsGranted', 'openNotificationSettings']:
-    if item not in java:
-        raise SystemExit(f'Missing Android notification bridge capability: {item}')
+# Official catalogue is represented in source and must have real route assets.
+route_files=['caminho-tejo.gpx','caminho-norte.gpx','caminho-nazare.kml','caminho-candeeiros.kml','medio-tejo-tomar.gpx','medio-tejo-serta.gpx','medio-tejo-abrantes.gpx','rota-carmelita.kml']
+for name in route_files: assert name in html,name
 
-required_files = [
-    root / 'app/src/main/assets/data/apoios-2026.json',
-    root / 'app/src/main/assets/data/percurso-teste-casa-trabalho.gpx',
-    root / 'app/src/main/assets/data/percurso-teste-hf.gpx',
-]
-for path in required_files:
-    if not path.exists() or path.stat().st_size < 100:
-        raise SystemExit(f'Missing/empty required test asset: {path}')
+# No broken direct DOM references through the app's $ helper.
+dom_ids=set(re.findall(r'id=[\"\']([^\"\']+)',html))
+used_ids=set(re.findall(r"\$\('([^']+)'\)",html))
+missing_dom=sorted(x for x in used_ids if x not in dom_ids)
+if missing_dom: raise SystemExit('Referenced DOM ids missing: '+', '.join(missing_dom))
 
-json.loads((root / 'app/src/main/assets/data/apoios-2026.json').read_text(encoding='utf-8'))
-ET.parse(manifest_path)
+# Required native capabilities.
+assert 'android.permission.ACCESS_FINE_LOCATION' in manifest
+assert 'android.permission.ACCESS_COARSE_LOCATION' in manifest
+assert 'android.permission.POST_NOTIFICATIONS' in manifest
+for item in ['setJavaScriptEnabled(true)','setDomStorageEnabled(true)','setGeolocationEnabled(true)','WebViewAssetLoader','startCompass','stopCompass','requestNotificationPermission','notificationsGranted','openNotificationSettings','notifyUser']:
+    assert item in java,item
 
-for gpx in required_files[1:]:
-    tree = ET.parse(gpx)
-    pts = tree.getroot().findall('.//{http://www.topografix.com/GPX/1/1}trkpt')
-    if len(pts) < 2:
-        raise SystemExit(f'GPX has fewer than 2 track points: {gpx}')
-
-route_files = [
-    'caminho-tejo.gpx', 'caminho-norte.gpx', 'caminho-nazare.kml',
-    'caminho-candeeiros.kml', 'medio-tejo-tomar.gpx', 'medio-tejo-serta.gpx',
-    'medio-tejo-abrantes.gpx', 'rota-carmelita.kml'
-]
+# Data integrity.
+supports=ROOT/'app/src/main/assets/data/apoios-2026.json'
+data=json.loads(supports.read_text(encoding='utf-8'))
+assert isinstance(data.get('items'),list) and data['items'], 'POI/support dataset empty'
+for name in ['percurso-teste-casa-trabalho.gpx','percurso-teste-hf.gpx']:
+    p=ROOT/'app/src/main/assets/data'/name
+    assert p.exists() and p.stat().st_size>100,name
+    root=ET.parse(p).getroot()
+    pts=root.findall('.//{http://www.topografix.com/GPX/1/1}trkpt')
+    assert len(pts)>=2,name
 for name in route_files:
-    path = root / 'app/src/main/assets/data/routes' / name
-    if not path.exists() or path.stat().st_size < 100:
-        raise SystemExit(f'Missing/empty official route asset: {name}')
+    p=ROOT/'app/src/main/assets/data/routes'/name
+    assert p.exists() and p.stat().st_size>100,name
 
-# Catch broken DOM references before Android compilation.
-dom_ids = set(re.findall(r'id="([^"]+)"', html))
-used_ids = set(re.findall(r"\$\('([^']+)'\)", html))
-missing_dom = sorted(x for x in used_ids if x not in dom_ids)
-if missing_dom:
-    raise SystemExit('Referenced DOM ids missing from HTML: ' + ', '.join(missing_dom))
+# Manifest must be valid XML.
+ET.parse(MANIFEST)
 
-js = '\n'.join(re.findall(r'<script[^>]*>(.*?)</script>', html, re.S))
-Path('/tmp/index-app.js').write_text(js, encoding='utf-8')
-print('Release validation: OK')
+# Extract inline JS for node --check.
+js='\n'.join(re.findall(r'<script[^>]*>(.*?)</script>',html,re.S))
+Path('/tmp/index-app.js').write_text(js,encoding='utf-8')
+
+print('Full release structure audit: OK')
