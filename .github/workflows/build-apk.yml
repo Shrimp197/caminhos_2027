@@ -38,6 +38,9 @@ jobs:
       - name: Harden route selection
         run: python3 scripts/fix_route_selection.py
 
+      - name: Fix generated index runtime
+        run: python3 scripts/fix_index_runtime.py
+
       - name: Route selection regression
         run: python3 scripts/regression_routes.py
 
