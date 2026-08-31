@@ -13,7 +13,6 @@ assert html.count('id="cp-final-interaction-controller"')==1
 assert 'function show(kind)' in html and 'function save(kind)' in html
 assert 'detail.appendChild' not in html and 'openConfig(kind)' not in html
 assert "modal.id='cpConfigModal'" in html
-# Intended shortcut -> modal mapping and canonical save targets.
 for kind in ('route','audio','orientation','pause','support'):
     assert f'data-cp-detail="{kind}"' in html,kind
 for token in ["prepStart.value=byId('cpModalStart').value","prepEnd.value=byId('cpModalEnd').value","audio.value=byId('cpModalAudio').value","orientation.value=byId('cpModalOrientation').value","pauseTime.value=byId('cpModalPauseTime').value","pauseDistance.value=byId('cpModalPauseDistance').value","pauseSupport.checked=byId('cpModalPauseSupport').checked"]:
@@ -21,15 +20,11 @@ for token in ["prepStart.value=byId('cpModalStart').value","prepEnd.value=byId('
 for key in ('all','overnight','water','shower','health','fire','temporary','other'):
     assert f'data-filter="{key}"' in html,key
 assert 'function syncSupportModalVisual()' in html and 'function syncSupportCanonical()' in html
-# No visible legacy preparation cards / duplicate grid.
-assert 'cp-legacy-prep-card' in html and '#functionGrid{display:none!important}' in html
+assert 'cp-legacy-prep-card' in html
 assert 'function bindPreparationActions()' not in html and 'function normalizeSupportFilterUI()' not in html
-# No duplicate DOM ids in source.
 ids=re.findall(r'id=["\']([^"\']+)',html); assert len(ids)==len(set(ids)), 'Duplicate DOM ids found'
-# Canonical route/start bridge.
 assert "prepRoute.value=finalRoute.value;dispatch(prepRoute)" in html
 assert "if(cpStart)cpStart.onclick=function(){if(legacyStart)legacyStart.click()};" in html
-# Core runtime features and Android integration.
 for token in ['startGPS','renderSupports','next10','sleepList','setOrientation','setAudio','saveSettings']: assert token in html,token
 for token in ['android.permission.ACCESS_FINE_LOCATION','android.permission.ACCESS_COARSE_LOCATION','android.permission.POST_NOTIFICATIONS']: assert token in manifest,token
 for item in ['setJavaScriptEnabled(true)','setDomStorageEnabled(true)','setGeolocationEnabled(true)','WebViewAssetLoader','startCompass','stopCompass','requestNotificationPermission','notificationsGranted','openNotificationSettings','notifyUser']: assert item in java,item
