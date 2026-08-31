@@ -57,6 +57,7 @@ PREP = '''<section id="prepScreen" class="screen cp-prep-screen">
       <input id="pauseTimeCustom"><input id="pauseDistanceCustom"><input id="pauseSupport" type="checkbox">
       <div id="supportFilters"></div><button id="startWalkBtn" type="button"></button><button id="manageBtn" type="button"></button>
       <div id="resumeCard"><span id="resumeText"></span><button id="resumeBtn" type="button"></button></div><small id="routeHint"></small>
+      <button id="notificationBtn" type="button" tabindex="-1" aria-hidden="true"></button>
     </div>
   </div>
 
