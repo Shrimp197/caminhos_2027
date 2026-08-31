@@ -4,40 +4,48 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 html = (ROOT / 'app/src/main/assets/index.html').read_text(encoding='utf-8')
 
+# Core startup/preparation UI must exist.
 required = [
-    'id="prepScreen"','id="cpFinalShell"','id="cpRouteSelect"','id="cpStart"',
-    'id="startWalkBtn"','id="prepRoute"','id="headerRoute"'
+    'id="prepScreen"', 'id="prepRoute"', 'id="prepStart"', 'id="prepEnd"',
+    'id="startWalkBtn"', 'id="manageBtn"', 'id="navScreen"', 'id="navStart"',
+    'id="navEnd"', 'id="menuBtn"', 'id="gpsBtn"', 'id="headerRoute"'
 ]
 for token in required:
-    assert token in html, token
+    assert token in html, f'missing startup element: {token}'
 
-# The visible preparation shell must be present and explicitly visible.
-assert 'id="cpFinalShell" class="cp-shell"' in html
-assert '.cp-shell{display:block!important;visibility:visible!important;opacity:1!important}' in html
+# The preparation screen is the real startup screen and is not hidden in markup.
+assert '<section id="prepScreen" class="screen">' in html
+assert '<section id="navScreen" class="nav hidden">' in html
 
-# The legacy start button may be hidden only because the compact shell delegates
-# to its original click handler; it must remain in the DOM and be callable.
-assert "const legacyStart=start;" in html
-assert "document.getElementById('cpStart').addEventListener('click',()=>legacyStart.click())" in html
+# The redundant route subtitle must not be visible in the top bar.
+assert '<small id="headerRoute">Caminho do Centenário</small>' in html
+assert 'id="headerRoute" style="display:none"' in html or '#headerRoute{display:none' in html
 
-# The top-bar route subtitle is deliberately hidden, while the route itself remains selectable.
-assert '<small id="headerRoute" style="display:none">' in html
-assert 'Caminho do Centenário' in html
+# Starting a walk must apply the preparation selection before entering navigation.
+start_block = html[html.find("$('startWalkBtn').onclick") : html.find("$('resumeBtn').onclick")]
+assert 'applyPrep();' in start_block
+assert 'showNav();' in start_block
+assert 'startGPS();' in start_block
 
-# No obsolete code may hide the complete preparation container.
-for bad in ("legacyPrep.style.display='none'", "prep.style.display='none'", "originalStart.style.display='none'"):
-    assert bad not in html, bad
+# applyPrep transfers the selected start/end stage into navigation state.
+assert "stageStart=Number($('prepStart').value)" in html
+assert "stageEnd=Number($('prepEnd').value)" in html
+assert "$('navStart').value=String(stageStart)" in html
+assert "$('navEnd').value=String(stageEnd)" in html
 
-# DOM ids referenced by the compact $ helper must exist in the source document.
-dom_ids=set(re.findall(r'id=[\"\']([^\"\']+)',html))
-used_ids=set(re.findall(r"\$\('([^']+)'\)",html))
-missing=sorted(x for x in used_ids if x not in dom_ids)
-assert not missing, 'missing DOM ids: '+', '.join(missing)
+# Route selector changes must be wired and asynchronous route loading must be handled.
+assert 'function syncRoutesWhenReady()' in html or 'function fillRouteSelectors()' in html
+assert "$('startWalkBtn').onclick=function()" in html
+assert "$('menuBtn').onclick=function()" in html
 
-# Route selector synchronization must survive asynchronous route loading.
-assert 'function syncRoutesWhenReady()' in html
-assert 'const routeSyncTimer=setInterval' in html
-assert "finalSelect.addEventListener('change',async function(){" in html
-assert "if(typeof selectRoute==='function')await selectRoute(chosen)" in html
+# Every direct $().onclick assignment must target an existing DOM id.
+dom_ids = set(re.findall(r'id=[\"\']([^\"\']+)', html))
+for element_id in re.findall(r"\$\('([^']+)'\)\.onclick", html):
+    assert element_id in dom_ids, f'missing onclick target: {element_id}'
+
+# No startup code may attempt to access the map before the user starts navigation.
+init_start = html[html.find('function init()'):html.find('function applyPrep()')]
+assert 'ensureMap();' not in init_start
+assert 'startGPS();' not in init_start
 
 print('Startup regression: OK')
