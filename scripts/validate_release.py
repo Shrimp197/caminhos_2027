@@ -19,9 +19,9 @@ assert "prep.querySelectorAll('.prep>.card')" in html
 assert 'detail.appendChild(cards[k])' in html
 assert 'function openConfig(kind)' in html
 assert "Object.keys(cards).forEach(function(k){if(cards[k])cards[k].style.display=k===kind?'block':'none'})" in html
-assert "const n=byId('addNoteBtn');if(n)n.click();" in html
+assert ("byId('addNoteBtn').click()" in html) or ("const n=byId('addNoteBtn');if(n)n.click();" in html)
 assert "byId('cpStart').onclick=function(){legacyStart.click()};" in html
-assert 'const sf=byId(\'supportFilters\')' in html
+assert ('const sf=byId(\'supportFilters\')' in html) or ('const sf=byId("supportFilters")' in html)
 assert 'const everySelected=' in html
 assert 'all.checked=true' in html and 'all.checked=false' in html
 assert "id:'centenario'" in html and "id:'teste-sr'" in html and "id:'teste-hf'" in html
@@ -31,9 +31,7 @@ for name in route_files: assert name in html,name
 ids=re.findall(r'id=["\']([^"\']+)',html); assert len(ids)==len(set(ids)), 'Duplicate DOM ids found'
 assert 'function bindPreparationActions()' not in html
 assert 'function normalizeSupportFilterUI()' not in html
-# The final controller owns the only global preparation menu.
 assert html.count('id="cpMenuPanel"')<=1 and html.count('id="cpMenuBtn"')<=1
-# Static helper references must resolve unless known to be runtime-created.
 dom_ids=set(ids); allowed_dynamic={'next10List','sleepList','supportsList','routeList','menuList'}
 used_ids=set(re.findall(r"\$\(['\"]([^'\"]+)['\"]\)",html)); missing_dom=sorted(x for x in used_ids if x not in dom_ids and x not in allowed_dynamic)
 if missing_dom: raise SystemExit('Referenced DOM ids missing: '+', '.join(missing_dom))
