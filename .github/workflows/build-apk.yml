@@ -32,11 +32,17 @@ jobs:
       - name: Apply integrated UI refresh
         run: python3 scripts/apply_ui_refresh.py
 
+      - name: Harden startup UI
+        run: python3 scripts/fix_ui_startup.py
+
       - name: Harden route selection
         run: python3 scripts/fix_route_selection.py
 
       - name: Route selection regression
         run: python3 scripts/regression_routes.py
+
+      - name: Startup regression
+        run: python3 scripts/regression_startup.py
 
       - name: Validate application structure
         run: |
