@@ -49,7 +49,7 @@ if 'id="cpFinalShell"' not in html:
         <button class="cp-tile" type="button" data-cp-detail="audio"><span class="ico">🔊</span><span>Áudio</span></button>
         <button class="cp-tile" type="button" data-cp-detail="orientation"><span class="ico">🧭</span><span>Orientação</span></button>
         <button class="cp-tile" type="button" data-cp-detail="pause"><span class="ico">⏸️</span><span>Pausas</span></button>
-        <button class="cp-tile" type="button" data-cp-detail="support"><span class="ico">💙</span><span>Apoios</span></button>
+        <button class="cp-tile" type="button" data-cp-detail="support" aria-label="Apoios e Onde dormir"><span class="ico">💙</span><span>Apoios</span><small>Onde dormir?</small></button>
         <button class="cp-tile" type="button" data-cp-detail="notes"><span class="ico">📝</span><span>Notas</span></button>
       </div>
       <div id="cpStatus" class="cp-status">Percurso selecionado: <b>Caminho do Centenário</b></div>
@@ -62,7 +62,6 @@ if 'id="cpFinalShell"' not in html:
         raise SystemExit('Preparation container marker not found')
     html = html.replace(marker, shell, 1)
 
-# Replace any previous runtime block so the generated page has exactly one deterministic UI controller.
 start = html.find('<script id="cp-ui-runtime-v115">')
 if start >= 0:
     end = html.find('</script>', start)
@@ -81,14 +80,8 @@ runtime = r'''<script id="cp-ui-runtime-v115">
     const legacyStart=document.getElementById('startWalkBtn');
     if(!prep||!shell||!detail||!notes||!prepSelect||!finalSelect||!legacyStart)return;
 
-    shell.style.display='block';
-    shell.style.visibility='visible';
-    shell.style.opacity='1';
-
-    // Keep the original controls in the DOM. They remain the single source of
-    // application behaviour while the approved shell is only their visual front-end.
-    legacyStart.style.display='none';
-    legacyStart.setAttribute('aria-hidden','true');
+    shell.style.display='block';shell.style.visibility='visible';shell.style.opacity='1';
+    legacyStart.style.display='none';legacyStart.setAttribute('aria-hidden','true');
 
     function syncText(){
       const o=finalSelect.options[finalSelect.selectedIndex];
@@ -102,38 +95,24 @@ runtime = r'''<script id="cp-ui-runtime-v115">
       if(!prepSelect.options.length)return false;
       finalSelect.innerHTML='';
       [...prepSelect.options].forEach(o=>{const n=document.createElement('option');n.value=o.value;n.textContent=o.textContent;finalSelect.appendChild(n)});
-      finalSelect.value=prepSelect.value;
-      syncText();
-      return true;
+      finalSelect.value=prepSelect.value;syncText();return true;
     }
     syncRoutesWhenReady();
-    const routeSyncTimer=setInterval(()=>{if(syncRoutesWhenReady())clearInterval(routeSyncTimer)},200);
-    setTimeout(()=>clearInterval(routeSyncTimer),10000);
+    const routeSyncTimer=setInterval(()=>{if(syncRoutesWhenReady())clearInterval(routeSyncTimer)},200);setTimeout(()=>clearInterval(routeSyncTimer),10000);
 
     finalSelect.addEventListener('change',async function(){
       const chosen=this.value;
-      try{
-        if(typeof selectRoute==='function')await selectRoute(chosen);
-        else prepSelect.value=chosen;
-        prepSelect.value=chosen;
-        syncText();
-      }catch(e){
-        this.value=prepSelect.value;
-        syncText();
-        if(typeof say==='function')say('Não foi possível carregar o percurso selecionado.',true);
-      }
+      try{if(typeof selectRoute==='function')await selectRoute(chosen);else prepSelect.value=chosen;prepSelect.value=chosen;syncText();}
+      catch(e){this.value=prepSelect.value;syncText();if(typeof say==='function')say('Não foi possível carregar o percurso selecionado.',true)}
     });
 
     document.querySelectorAll('[data-cp-detail]').forEach(b=>b.addEventListener('click',()=>{
-      const kind=b.dataset.cpDetail;
-      shell.style.display='none';detail.classList.add('open');notes.classList.remove('open');
+      const kind=b.dataset.cpDetail;shell.style.display='none';detail.classList.add('open');notes.classList.remove('open');
       detail.querySelectorAll('.card').forEach(c=>c.style.display='none');
-      const cards=[...detail.querySelectorAll('.card')];
-      const map={route:'PERCURSO',audio:'ÁUDIO',orientation:'ORIENTAÇÃO',pause:'PAUSAS',support:'APOIOS'};
+      const cards=[...detail.querySelectorAll('.card')];const map={route:'PERCURSO',audio:'ÁUDIO',orientation:'ORIENTAÇÃO',pause:'PAUSAS',support:'APOIOS'};
       if(kind==='notes'){detail.classList.remove('open');notes.classList.add('open');return}
-      const target=cards.find(c=>(c.querySelector('.title')?.textContent||'').includes(map[kind]||''));
-      if(target)target.style.display='block';
-    });
+      const target=cards.find(c=>(c.querySelector('.title')?.textContent||'').includes(map[kind]||''));if(target)target.style.display='block';
+    }));
     document.getElementById('cpBack').addEventListener('click',()=>{detail.classList.remove('open');notes.classList.remove('open');shell.style.display='block';window.scrollTo(0,0)});
     document.getElementById('cpStart').addEventListener('click',()=>legacyStart.click());
     document.getElementById('cpNotesSave').addEventListener('click',()=>{const v=document.getElementById('cpNotesInput').value.trim();if(v)localStorage.setItem('cp.prep.note',v)});
@@ -143,8 +122,7 @@ runtime = r'''<script id="cp-ui-runtime-v115">
     if(top&&!document.getElementById('cpMenuBtn')){
       const b=document.createElement('button');b.id='cpMenuBtn';b.className='cp-menu';b.type='button';b.textContent='☰';b.setAttribute('aria-label','Menu');top.appendChild(b);
       const panel=document.createElement('div');panel.id='cpMenuPanel';panel.className='cp-menu-panel';panel.innerHTML='<button type="button" data-menu="routes">Percursos</button><button type="button" data-menu="walk">Caminhada</button><button type="button" data-menu="support">Apoios / POI</button><button type="button" data-menu="diary">Diário</button><button type="button" data-menu="settings">Definições</button><button type="button" data-menu="help">Ajuda</button><button type="button" data-menu="contact">Contacto</button><button type="button" data-menu="about">Sobre</button>';
-      document.getElementById('prepScreen').appendChild(panel);
-      b.addEventListener('click',()=>panel.classList.toggle('open'));
+      document.getElementById('prepScreen').appendChild(panel);b.addEventListener('click',()=>panel.classList.toggle('open'));
       panel.addEventListener('click',e=>{const m=e.target.dataset.menu;if(!m)return;panel.classList.remove('open');if(m==='routes')document.querySelector('[data-cp-detail="route"]').click();if(m==='support')document.querySelector('[data-cp-detail="support"]').click();if(m==='walk')document.getElementById('cpStart').click()});
     }
   }
@@ -152,9 +130,7 @@ runtime = r'''<script id="cp-ui-runtime-v115">
 })();
 </script>
 '''
-html = html.replace('</body>', runtime + '</body>', 1)
-
-# Remove the redundant Centenário subtitle from the header at source level.
-html = html.replace('<small id="headerRoute">Caminho do Centenário</small>','<small id="headerRoute" style="display:none">Caminho do Centenário</small>',1)
+html=html.replace('</body>',runtime+'</body>',1)
+html=html.replace('<small id="headerRoute">Caminho do Centenário</small>','<small id="headerRoute" style="display:none">Caminho do Centenário</small>',1)
 path.write_text(html,encoding='utf-8')
 print('Approved preparation UI: deterministic startup-safe controller installed')
