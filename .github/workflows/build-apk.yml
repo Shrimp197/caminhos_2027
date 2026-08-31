@@ -35,6 +35,9 @@ jobs:
       - name: Harden route selection
         run: python3 scripts/fix_route_selection.py
 
+      - name: Route selection regression
+        run: python3 scripts/regression_routes.py
+
       - name: Validate application structure
         run: |
           python3 scripts/validate_release.py
