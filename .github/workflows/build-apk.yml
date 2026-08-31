@@ -39,6 +39,8 @@ jobs:
         run: python3 scripts/apply_final_ui_architecture.py
       - name: Rebuild approved preparation screen
         run: python3 scripts/rebuild_preparation_screen_v1.py
+      - name: Ensure preparation contract
+        run: python3 scripts/ensure_preparation_contract_v1.py
       - name: Route selection regression
         run: python3 scripts/regression_routes.py
       - name: Startup regression
