@@ -9,9 +9,9 @@ assert html.count('<html')==1 and html.count('</html>')==1
 assert html.count('id="cpFinalShell"')==1 and html.count('id="cpRouteSelect"')==1 and html.count('id="cpStart"')==1
 assert html.count('id="cp-ui-runtime-v115"')==1
 assert 'function openConfig(kind)' in html
-assert "detail.appendChild(cards[k])" in html
+assert 'detail.appendChild(cards[k])' in html
 assert "byId('cpStart').onclick=function(){legacyStart.click()};" in html
-assert "byId('addNoteBtn').click()" in html
+assert "const n=byId('addNoteBtn');if(n)n.click();" in html
 
 # Canonical route state and real start path.
 assert len(re.findall(r"let features=\[\],lines=\[\],supports=\[\],activeRoute=",html))==1
@@ -21,7 +21,7 @@ start=re.search(r"\$\('startWalkBtn'\)\.onclick=function\(\)\{",html)
 assert start,'canonical start handler missing'
 block=html[start.start():]
 for token in ('applyPrep();','showNav();','startGPS()'):
-    assert token in block, token
+    assert token in block,token
 
 # Required routes and native integration.
 for token in ("id:'centenario'","id:'teste-sr'","id:'teste-hf'",'Trajeto teste do SR','Trajecto teste do HF'):
