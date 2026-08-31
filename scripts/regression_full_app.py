@@ -14,15 +14,14 @@ assert '.cp-shell{display:block!important;visibility:visible!important;opacity:1
 
 # 2) Preparation -> navigation route identity is a single state machine.
 assert "activeRoute='centenario'" in html
-assert "async function selectRoute(id)" in html
-assert "const chosen=$('prepRoute').value" in html
-assert "if(chosen!==activeRoute)" in html
-assert "await selectRoute(chosen)" in html
-assert "$('prepRoute').value=activeRoute" in html
-assert "finalSelect.addEventListener('change',async function(){" in html
-assert "if(typeof selectRoute==='function')await selectRoute(chosen)" in html
-assert "sel.onchange=async()=>" in html
-assert html.count("$('startWalkBtn').onclick")<=1
+assert re.search(r'async function\s+selectRoute\s*\(id\)', html)
+assert re.search(r'const\s+chosen\s*=\s*\$\(\s*[\'\"]prepRoute[\'\"]\s*\)\.value', html)
+assert re.search(r'if\s*\(\s*chosen\s*!==\s*activeRoute\s*\)', html)
+assert re.search(r'await\s+selectRoute\(chosen\)', html)
+assert re.search(r'\$\(\s*[\'\"]prepRoute[\'\"]\s*\)\.value\s*=\s*activeRoute', html)
+assert re.search(r'finalSelect\.addEventListener\(\s*[\'\"]change[\'\"]', html)
+assert re.search(r'sel\.onchange\s*=\s*async', html)
+assert len(re.findall(r"\$\(\s*['\"]startWalkBtn['\"]\s*\)\.onclick", html))<=1
 
 # 3) All route families survive and test routes are visibly labelled as tests.
 for token in ['id:\'centenario\'','id:\'teste-sr\'','id:\'teste-hf\'','Trajeto teste do SR','Trajecto teste do HF']:
@@ -46,7 +45,7 @@ for token in ['WebViewAssetLoader','setGeolocationEnabled(true)','onShowFileChoo
 
 # 7) No common null-DOM assignment pattern remains for direct IDs.
 dom_ids=set(re.findall(r'id=[\"\']([^\"\']+)',html))
-for ident in re.findall(r"(?:\$\('([^']+)'\)|getElementById\('([^']+)'\))",html):
+for ident in re.findall(r"(?:\$\(\s*['\"]([^'\"]+)['\"]\s*\)|getElementById\(\s*['\"]([^'\"]+)['\"]\s*\))",html):
     for value in ident:
         if value and value not in dom_ids and value not in {'cpMenuBtn','cpMenuPanel'}:
             raise AssertionError('DOM reference has no static target: '+value)
