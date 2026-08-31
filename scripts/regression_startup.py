@@ -17,12 +17,18 @@ for token in required:
 assert '<section id="prepScreen" class="screen">' in html
 assert '<section id="navScreen" class="nav hidden">' in html
 
-# The redundant route subtitle must not be visible in the top bar.
-assert '<small id="headerRoute">Caminho do Centenário</small>' in html
-assert 'id="headerRoute" style="display:none"' in html or '#headerRoute{display:none' in html
+# The redundant route subtitle exists only as an internal state mirror and must
+# be hidden by the generated UI controller/CSS before the user sees the header.
+assert 'id="headerRoute"' in html
+assert ('id="headerRoute" style="display:none"' in html
+        or '.top .brand small{display:none!important}' in html
+        or '#headerRoute{display:none' in html)
 
 # Starting a walk must apply the preparation selection before entering navigation.
-start_block = html[html.find("$('startWalkBtn').onclick") : html.find("$('resumeBtn').onclick")]
+start_pos = html.find("$('startWalkBtn').onclick")
+resume_pos = html.find("$('resumeBtn').onclick")
+assert start_pos >= 0 and resume_pos > start_pos
+start_block = html[start_pos:resume_pos]
 assert 'applyPrep();' in start_block
 assert 'showNav();' in start_block
 assert 'startGPS();' in start_block
