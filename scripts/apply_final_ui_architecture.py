@@ -1,107 +1,119 @@
 from pathlib import Path
 import re
 
-ROOT=Path(__file__).resolve().parents[1]
-p=ROOT/'app/src/main/assets/index.html'
-s=p.read_text(encoding='utf-8')
+ROOT = Path(__file__).resolve().parents[1]
+p = ROOT / 'app/src/main/assets/index.html'
+s = p.read_text(encoding='utf-8')
 
-required=['id="cpFinalShell"','id="cpDetail"','id="cpRouteSelect"','id="cpStart"','id="startWalkBtn"','id="prepRoute"','id="audioSelect"','id="orientationSelect"','id="pauseTime"','id="supportFilters"','id="addNoteBtn"']
-missing=[x for x in required if x not in s]
-if missing: raise SystemExit('Missing canonical preparation elements: '+', '.join(missing))
+required = ['id="cpFinalShell"','id="cpDetail"','id="cpRouteSelect"','id="cpStart"','id="startWalkBtn"','id="prepRoute"','id="prepStart"','id="prepEnd"','id="audioSelect"','id="orientationSelect"','id="pauseTime"','id="pauseDistance"','id="pauseSupport"','id="supportFilters"','id="addNoteBtn"']
+missing = [x for x in required if x not in s]
+if missing:
+    raise SystemExit('Missing canonical preparation elements: ' + ', '.join(missing))
 
-# Remove legacy interaction helpers. There must be one canonical preparation controller.
-s=re.sub(r'function bindPreparationActions\(\)\{.*?\n\}\n\n', '', s, count=1, flags=re.S)
-s=re.sub(r'function normalizeSupportFilterUI\(\)\{.*?\n\}\n\n', '', s, count=1, flags=re.S)
-s=s.replace('bindPreparationActions();normalizeSupportFilterUI();','',1)
-if '#functionGrid{display:none!important}' not in s:
-    s=s.replace('</style>','\n#functionGrid{display:none!important}\n</style>',1)
+# Remove the previous runtime, including any older duplicate controller with the same marker.
+s = re.sub(r'<script id="cp-ui-runtime-v115">.*?</script>', '', s, flags=re.S)
+s = re.sub(r'<script id="cp-final-interaction-controller">.*?</script>', '', s, flags=re.S)
 
-# Normalize support state in the canonical application controller. The visible
-# filter controls already have their canonical onchange handlers; this function
-# makes their behavior symmetric without installing a second listener system.
-start_filter=s.find('function setSupportFilter(key,checked){')
-end_filter=s.find('function next10(){',start_filter)
-if start_filter<0 or end_filter<0: raise SystemExit('Canonical support filter function not found')
-filter_fn="""function setSupportFilter(key,checked){const root=$('supportFilters'),all=root&&root.querySelector('input[data-filter=\\\"all\\\"]'),others=root?Array.from(root.querySelectorAll('input:not([data-filter=\\\"all\\\"])')):[];const keys=others.map(i=>i.dataset.filter).filter(Boolean);if(key==='all'){supportFilters=checked?new Set(['all']):new Set()}else{if(supportFilters.has('all'))supportFilters=new Set(keys);checked?supportFilters.add(key):supportFilters.delete(key)}const everySelected=keys.length>0&&keys.every(k=>supportFilters.has(k));if(!supportFilters.size||everySelected)supportFilters=new Set(['all']);root?.querySelectorAll('input').forEach(i=>{const isAll=i.dataset.filter==='all';i.checked=isAll?supportFilters.has('all'):supportFilters.has('all')||supportFilters.has(i.dataset.filter);i.parentElement?.classList.toggle('selected',i.checked)});renderSupports()}\n"""
-s=s[:start_filter]+filter_fn+s[end_filter:]
+# Legacy preparation cards remain the source-of-truth controls for the core app, but
+# must never be shown as a second configuration surface. They are hidden by title.
+legacy_css = r'''
+.cp-legacy-prep-card{display:none!important}
+.cp-modal-backdrop{position:fixed;inset:68px 0 0;background:#0006;z-index:2200;display:none;align-items:flex-end}
+.cp-modal-backdrop.open{display:flex}
+.cp-modal-sheet{width:100%;max-height:86vh;overflow:auto;background:#fff;border-radius:20px 20px 0 0;padding:16px;box-shadow:0 -8px 28px #0003}
+.cp-modal-sheet h2{margin:0 0 4px;font-size:19px}.cp-modal-sheet p{margin:0 0 10px;color:var(--muted);font-size:12px}
+.cp-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cp-modal-field{display:flex;flex-direction:column;gap:5px}.cp-modal-field.full{grid-column:1/-1}.cp-modal-field label{font-size:12px;font-weight:800}.cp-modal-field select,.cp-modal-field input{width:100%;padding:9px;border:1px solid #d5ded8;border-radius:9px;background:#fff}.cp-modal-seg{display:flex;gap:7px;flex-wrap:wrap}.cp-modal-seg label{display:flex;align-items:center;gap:6px;border:1px solid #d5ded8;border-radius:10px;padding:8px 10px;font-size:12px}.cp-modal-seg label.selected{background:var(--g);border-color:var(--g);color:#fff}.cp-modal-seg input{display:none}.cp-modal-actions{display:flex;gap:8px;margin-top:12px}.cp-modal-actions button{flex:1}.cp-modal-actions .primary{margin-top:0}.cp-modal-note{font-size:11px;color:var(--muted)}
+@media(max-width:480px){.cp-modal-grid{grid-template-columns:1fr}}
+'''
+s = s.replace('</style>', legacy_css + '</style>', 1)
 
-# Replace the previous final UI runtime with one controller. It moves the real
-# configuration cards into one detail area instead of cloning functionality.
-start=s.find('<script id="cp-ui-runtime-v115">')
-if start<0: raise SystemExit('cp-ui-runtime-v115 marker not found')
-end=s.find('</script>',start)
-if end<0: raise SystemExit('Unclosed cp-ui-runtime-v115')
-
-runtime=r'''<script id="cp-ui-runtime-v115">
+controller = r'''<script id="cp-final-interaction-controller">
 (function(){
   function byId(id){return document.getElementById(id)}
+  function dispatch(el){if(!el)return;el.dispatchEvent(new Event('change',{bubbles:true}))}
+  function textOf(id){var el=byId(id);return el&&el.options[el.selectedIndex]?el.options[el.selectedIndex].textContent:''}
+  function escapeHtml(v){return String(v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]})}
   function boot(){
-    const prep=byId('prepScreen'),shell=byId('cpFinalShell'),detail=byId('cpDetail'),notes=byId('cpNotes');
-    const prepSelect=byId('prepRoute'),finalSelect=byId('cpRouteSelect'),legacyStart=byId('startWalkBtn');
-    if(!prep||!shell||!detail||!notes||!prepSelect||!finalSelect||!legacyStart)return;
-
-    legacyStart.style.display='none';legacyStart.setAttribute('aria-hidden','true');
-    const manage=byId('manageBtn');if(manage)manage.style.display='none';
-
-    const cards={};
-    Array.from(prep.querySelectorAll('.prep>.card')).forEach(function(card){
-      const title=(card.querySelector('.title')?.textContent||'').trim().toUpperCase();
-      if(title==='PERCURSO')cards.route=card;
-      else if(title==='ÁUDIO')cards.audio=card;
-      else if(title==='ORIENTAÇÃO')cards.orientation=card;
-      else if(title.indexOf('PAUSAS')===0)cards.pause=card;
-      else if(title.indexOf('APOIOS')===0)cards.support=card;
-      else if(title==='NOTIFICAÇÕES')cards.notifications=card;
+    var shell=byId('cpFinalShell'), detail=byId('cpDetail'), buttons=document.querySelectorAll('#cpFinalShell [data-cp-detail]');
+    if(!shell||!buttons.length)return;
+    var prepRoute=byId('prepRoute'),prepStart=byId('prepStart'),prepEnd=byId('prepEnd'),audio=byId('audioSelect'),orientation=byId('orientationSelect'),pauseTime=byId('pauseTime'),pauseDistance=byId('pauseDistance'),pauseSupport=byId('pauseSupport'),support=byId('supportFilters'),note=byId('addNoteBtn'),legacyStart=byId('startWalkBtn'),finalRoute=byId('cpRouteSelect'),cpStart=byId('cpStart');
+    if(detail)detail.style.display='none';
+    if(legacyStart){legacyStart.style.display='none';legacyStart.setAttribute('aria-hidden','true')}
+    var manage=byId('manageBtn');if(manage)manage.style.display='none';
+    document.querySelectorAll('#prepScreen .prep>.card').forEach(function(card){
+      var title=(card.querySelector('.title')?.textContent||'').trim().toUpperCase();
+      if(['PERCURSO','ÁUDIO','ORIENTAÇÃO','PAUSAS INTELIGENTES','APOIOS & POI','APOIOS & POI'].indexOf(title)>=0)card.classList.add('cp-legacy-prep-card');
     });
-    Object.keys(cards).forEach(function(k){detail.appendChild(cards[k]);cards[k].dataset.cpConfig=k;cards[k].style.display='none'});
+    document.querySelectorAll('#prepScreen #cpMenuBtn,#prepScreen #cpMenuPanel').forEach(function(el){el.remove()});
 
-    function syncRouteView(){
-      const o=finalSelect.options[finalSelect.selectedIndex],text=o?o.textContent:'Caminho do Centenário';
-      const name=byId('cpRouteName'),status=byId('cpStatus')?.querySelector('b'),meta=byId('cpRouteMeta');
-      if(name)name.textContent=text;if(status)status.textContent=text;
-      if(meta)meta.textContent=text.indexOf('Centenário')>=0?'216 km · Porto → Fátima':text.indexOf('SR')>=0?'Trajeto de teste · SR':text.indexOf('HF')>=0?'Trajecto de teste · HF':'Percurso selecionado';
+    var modal=byId('cpConfigModal');
+    if(!modal){
+      modal=document.createElement('div');modal.id='cpConfigModal';modal.className='cp-modal-backdrop';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
+      modal.innerHTML='<div class="cp-modal-sheet"><h2 id="cpModalTitle"></h2><p id="cpModalSubtitle"></p><div id="cpModalBody"></div><div class="cp-modal-actions"><button type="button" id="cpModalCancel" class="secondary">Cancelar</button><button type="button" id="cpModalSave" class="primary">Guardar</button></div></div>';
+      document.body.appendChild(modal);
+      byId('cpModalCancel').onclick=function(){closeModal()};
+      modal.addEventListener('click',function(e){if(e.target===modal)closeModal()});
     }
-    function syncRoutes(){
-      if(!prepSelect.options.length)return false;
-      if(finalSelect.options.length!==prepSelect.options.length){
-        finalSelect.innerHTML='';Array.from(prepSelect.options).forEach(function(o){const n=document.createElement('option');n.value=o.value;n.textContent=o.textContent;finalSelect.appendChild(n)});
+    var body=byId('cpModalBody');
+    function closeModal(){modal.classList.remove('open');body.innerHTML=''}
+    function copyOptions(src,target){if(!src||!target)return;target.innerHTML='';Array.from(src.options).forEach(function(o){var n=document.createElement('option');n.value=o.value;n.textContent=o.textContent;target.appendChild(n)});target.value=src.value}
+    function show(kind){
+      var title='',sub='',html='';
+      if(kind==='route'){
+        title='Início e fim';sub='Define o início e o fim da etapa. O percurso selecionado permanece separado desta configuração.';
+        html='<div class="cp-modal-grid"><div class="cp-modal-field"><label for="cpModalStart">Início</label><select id="cpModalStart"></select></div><div class="cp-modal-field"><label for="cpModalEnd">Fim</label><select id="cpModalEnd"></select></div></div>';
+      } else if(kind==='audio'){
+        title='Áudio';sub='Escolhe o comportamento das indicações de áudio durante a caminhada.';
+        html='<div class="cp-modal-field full"><label for="cpModalAudio">Modo de áudio</label><select id="cpModalAudio"><option value="normal">🔊 Normal</option><option value="immersive">🎧 Imersivo</option><option value="silent">🔇 Silencioso</option></select></div>';
+      } else if(kind==='orientation'){
+        title='Orientação';sub='Define como o mapa deve orientar a caminhada.';
+        html='<div class="cp-modal-field full"><label for="cpModalOrientation">Modo de orientação</label><select id="cpModalOrientation"><option value="north">🧭 Norte</option><option value="heading">↟ Direção da caminhada</option></select></div>';
+      } else if(kind==='pause'){
+        title='Pausas inteligentes';sub='Configura lembretes por tempo, distância e locais adequados para pausa.';
+        html='<div class="cp-modal-grid"><div class="cp-modal-field"><label for="cpModalPauseTime">Por tempo</label><select id="cpModalPauseTime"><option value="0">Sem aviso</option><option value="60">A cada 60 min</option><option value="90">A cada 90 min</option><option value="120">A cada 120 min</option><option value="custom">Personalizar…</option></select></div><div class="cp-modal-field"><label for="cpModalPauseDistance">Por distância</label><select id="cpModalPauseDistance"><option value="0">Sem aviso</option><option value="5">A cada 5 km</option><option value="8">A cada 8 km</option><option value="10">A cada 10 km</option><option value="custom">Personalizar…</option></select></div><div class="cp-modal-field full"><label><input id="cpModalPauseSupport" type="checkbox"> Avisar quando existir um local adequado para pausa</label><div class="cp-modal-note">O valor personalizado por tempo é em minutos.</div></div></div>';
+      } else if(kind==='support'){
+        title='Apoios & POI';sub='Seleciona as categorias de apoio que pretendes ver durante a caminhada.';
+        html='<div class="cp-modal-seg" id="cpModalSupport"></div><div class="cp-modal-note" style="margin-top:8px">“Todos” fica selecionado quando todas as categorias estão selecionadas.</div>';
       }
-      finalSelect.value=prepSelect.value;syncRouteView();return true;
+      byId('cpModalTitle').textContent=title;byId('cpModalSubtitle').textContent=sub;body.innerHTML=html;
+      if(kind==='route'){copyOptions(prepStart,byId('cpModalStart'));copyOptions(prepEnd,byId('cpModalEnd'))}
+      if(kind==='audio'){byId('cpModalAudio').value=audio.value}
+      if(kind==='orientation'){byId('cpModalOrientation').value=orientation.value}
+      if(kind==='pause'){byId('cpModalPauseTime').value=pauseTime.value;byId('cpModalPauseDistance').value=pauseDistance.value;byId('cpModalPauseSupport').checked=!!pauseSupport.checked}
+      if(kind==='support'){buildSupportModal()}
+      byId('cpModalSave').onclick=function(){save(kind)};
+      modal.classList.add('open');
     }
-    syncRoutes();const timer=setInterval(function(){if(syncRoutes())clearInterval(timer)},150);setTimeout(function(){clearInterval(timer)},10000);
-
-    // Route selection uses the canonical preparation select and its existing
-    // route controller, so there is exactly one route state machine.
-    finalSelect.onchange=function(){const chosen=this.value;prepSelect.value=chosen;prepSelect.dispatchEvent(new Event('change',{bubbles:true}));setTimeout(function(){finalSelect.value=prepSelect.value;syncRouteView()},150)};
-
-    function openConfig(kind){
-      shell.style.display='none';notes.classList.remove('open');detail.classList.add('open');
-      Object.keys(cards).forEach(function(k){if(cards[k])cards[k].style.display=k===kind?'block':'none'});
-      detail.scrollIntoView({behavior:'smooth',block:'start'});
+    function buildSupportModal(){
+      var root=byId('cpModalSupport');if(!root)return;root.innerHTML='';
+      var src=support?support.querySelectorAll('input[data-filter]'):[];
+      Array.from(src).forEach(function(i){var l=document.createElement('label'),x=document.createElement('input');x.type='checkbox';x.dataset.filter=i.dataset.filter;x.checked=i.checked;l.appendChild(x);l.appendChild(document.createTextNode(i.parentElement.textContent.trim()));l.className=i.parentElement.className||'';x.onchange=function(){syncSupportModalVisual()};root.appendChild(l)});
+      syncSupportModalVisual();
     }
-    document.querySelectorAll('#cpFinalShell [data-cp-detail]').forEach(function(btn){btn.onclick=function(){const kind=btn.dataset.cpDetail;if(kind==='notes'){const n=byId('addNoteBtn');if(n)n.click();return}openConfig(kind)}});
-    byId('cpBack').onclick=function(){detail.classList.remove('open');shell.style.display='block';window.scrollTo(0,0)};
-    byId('cpStart').onclick=function(){legacyStart.click()};
-
-    // Support filters are governed solely by the canonical bindControls()
-    // handlers in the main application IIFE. There is no second listener system.
-
-    // One global menu. It never creates a second preparation configuration grid.
-    const top=document.querySelector('.top');
-    if(top&&!byId('cpMenuBtn')){
-      const b=document.createElement('button');b.id='cpMenuBtn';b.className='cp-menu';b.type='button';b.textContent='☰';b.setAttribute('aria-label','Menu');top.appendChild(b);
-      const panel=document.createElement('div');panel.id='cpMenuPanel';panel.className='cp-menu-panel';panel.innerHTML='<button type="button" data-menu="routes">Percursos</button><button type="button" data-menu="walk">Caminhada</button><button type="button" data-menu="support">Apoios / POI</button><button type="button" data-menu="diary">Diário</button><button type="button" data-menu="settings">Definições</button><button type="button" data-menu="help">Ajuda</button><button type="button" data-menu="contact">Contacto</button><button type="button" data-menu="about">Sobre</button>';
-      prep.appendChild(panel);
-      b.onclick=function(){panel.classList.toggle('open')};
-      panel.addEventListener('click',function(e){const m=e.target.dataset.menu;if(!m)return;panel.classList.remove('open');if(m==='routes')openConfig('route');if(m==='support')openConfig('support');if(m==='walk')byId('cpStart').click();if(m==='diary'){const n=byId('addNoteBtn');if(n)n.click()}if(m==='settings'){openConfig('notifications')}if(m==='help')showInfo('Ajuda','Consulte a preparação, o GPS e os apoios antes de iniciar.');if(m==='contact')showInfo('Contacto','Use o formulário de contacto da aplicação.');if(m==='about')showInfo('Sobre','Caminhos do Peregrino — aplicação de apoio à caminhada.')});
+    function syncSupportModalVisual(){var root=byId('cpModalSupport');if(!root)return;var all=root.querySelector('input[data-filter="all"]'),others=Array.from(root.querySelectorAll('input:not([data-filter="all"])'));var every=others.length>0&&others.every(function(i){return i.checked});if(all)all.checked=every||(!others.some(function(i){return i.checked})&&support&&support.querySelector('input[data-filter="all"]')?.checked);root.querySelectorAll('label').forEach(function(l){var c=l.querySelector('input');l.classList.toggle('selected',!!c&&c.checked)})}
+    function syncSupportCanonical(){
+      var src=Array.from(support.querySelectorAll('input[data-filter]')),modalInputs=Array.from(byId('cpModalSupport').querySelectorAll('input[data-filter]'));modalInputs.forEach(function(mi){var si=src.find(function(x){return x.dataset.filter===mi.dataset.filter});if(si&&si.checked!==mi.checked){si.checked=mi.checked;dispatch(si)}});
+      // Canonical handler determines final All state; synchronize modal back to it.
+      src.forEach(function(si){var mi=modalInputs.find(function(x){return x.dataset.filter===si.dataset.filter});if(mi)mi.checked=si.checked});
     }
-    function showInfo(title,text){let d=byId('cpInfo');if(!d){d=document.createElement('div');d.id='cpInfo';d.className='dialog';d.innerHTML='<div class="sheet"><h2></h2><p></p><button class="cancel" type="button">Fechar</button></div>';document.body.appendChild(d);d.querySelector('button').onclick=function(){d.classList.remove('open')}}d.querySelector('h2').textContent=title;d.querySelector('p').textContent=text;d.classList.add('open')}
-
-    shell.style.display='block';shell.style.visibility='visible';shell.style.opacity='1';
+    function save(kind){
+      if(kind==='route'){prepStart.value=byId('cpModalStart').value;dispatch(prepStart);prepEnd.value=byId('cpModalEnd').value;dispatch(prepEnd)}
+      if(kind==='audio'){audio.value=byId('cpModalAudio').value;dispatch(audio)}
+      if(kind==='orientation'){orientation.value=byId('cpModalOrientation').value;dispatch(orientation)}
+      if(kind==='pause'){pauseTime.value=byId('cpModalPauseTime').value;dispatch(pauseTime);pauseDistance.value=byId('cpModalPauseDistance').value;dispatch(pauseDistance);pauseSupport.checked=byId('cpModalPauseSupport').checked;dispatch(pauseSupport)}
+      if(kind==='support'){syncSupportCanonical()}
+      closeModal();
+    }
+    buttons.forEach(function(btn){btn.onclick=function(){var kind=btn.dataset.cpDetail;if(kind==='notes'){if(note)note.click();return}show(kind)}});
+    if(cpStart)cpStart.onclick=function(){if(legacyStart)legacyStart.click()};
+    if(finalRoute&&prepRoute)finalRoute.onchange=function(){prepRoute.value=finalRoute.value;dispatch(prepRoute)};
+    // Restore final selector synchronization after route option population.
+    if(finalRoute&&prepRoute){var sync=function(){if(prepRoute.options.length){copyOptions(prepRoute,finalRoute);finalRoute.value=prepRoute.value;return true}return false};sync();var t=setInterval(function(){if(sync())clearInterval(t)},150);setTimeout(function(){clearInterval(t)},10000)}
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,0)},{once:true});else setTimeout(boot,0);
 })();
 </script>'''
-s=s[:start]+runtime+s[end+len('</script>'):]
-p.write_text(s,encoding='utf-8')
-print('Final preparation UI architecture applied')
+
+s = s.replace('</body>', controller + '\n</body>', 1)
+p.write_text(s, encoding='utf-8')
+print('Final preparation interaction controller: modal-based, no legacy duplicate configuration surface')
