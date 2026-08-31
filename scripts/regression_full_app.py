@@ -7,16 +7,16 @@ java=(ROOT/'app/src/main/java/com/caminhos2027/MainActivity.java').read_text(enc
 
 assert html.count('<html')==1 and html.count('</html>')==1
 assert html.count('id="cpFinalShell"')==1 and html.count('id="cpRouteSelect"')==1 and html.count('id="cpStart"')==1
-assert html.count('id="cp-ui-runtime-v115"')==1
-assert 'function openConfig(kind)' in html
-assert 'detail.appendChild(cards[k])' in html
-assert "byId('cpStart').onclick=function(){legacyStart.click()};" in html
-assert "const n=byId('addNoteBtn');if(n)n.click();" in html
+assert html.count('id="cp-final-interaction-controller"')==1
+assert 'function show(kind)' in html and 'function save(kind)' in html
+assert 'detail.appendChild' not in html and 'openConfig(kind)' not in html
+assert "if(cpStart)cpStart.onclick=function(){if(legacyStart)legacyStart.click()};" in html
+assert "if(kind==='notes'){if(note)note.click();return}show(kind)" in html
 
 # Canonical route state and real start path.
 assert len(re.findall(r"let features=\[\],lines=\[\],supports=\[\],activeRoute=",html))==1
 assert re.search(r'async function\s+selectRoute\s*\(id\)',html)
-assert "prepSelect.dispatchEvent(new Event('change',{bubbles:true}))" in html
+assert 'prepRoute.value=finalRoute.value;dispatch(prepRoute)' in html
 start=re.search(r"\$\('startWalkBtn'\)\.onclick=function\(\)\{",html)
 assert start,'canonical start handler missing'
 block=html[start.start():]
@@ -37,7 +37,7 @@ for token in ['WebViewAssetLoader','setGeolocationEnabled(true)','onShowFileChoo
 
 # Static DOM references used by the canonical app helper must resolve.
 dom_ids=set(re.findall(r'id=[\"\']([^\"\']+)',html))
-dynamic_ids={'next10List','sleepList','supportsList','routeList','menuList'}
+dynamic_ids={'next10List','sleepList','supportsList','routeList','menuList','cpConfigModal'}
 refs=re.findall(r"(?:\$\(\s*['\"]([^'\"]+)['\"]\s*\)|getElementById\(\s*['\"]([^'\"]+)['\"]\s*\))",html)
 for ident in refs:
     for value in ident:
