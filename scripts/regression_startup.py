@@ -11,14 +11,18 @@ required = [
 for token in required:
     assert token in html, token
 
-# The visible preparation shell is never hidden. The legacy start button may be
-# visually hidden only because cpStart forwards to its original handler.
+# The visible preparation shell must be present and explicitly visible.
+assert 'id="cpFinalShell" class="cp-shell"' in html
 assert '.cp-shell{display:block!important;visibility:visible!important;opacity:1!important}' in html
-assert "legacyStart.style.display='none'" in html
+
+# The legacy start button may be hidden only because the compact shell delegates
+# to its original click handler; it must remain in the DOM and be callable.
+assert "const legacyStart=start;" in html
 assert "document.getElementById('cpStart').addEventListener('click',()=>legacyStart.click())" in html
 
-# The top-bar route subtitle is deliberately not rendered.
+# The top-bar route subtitle is deliberately hidden, while the route itself remains selectable.
 assert '<small id="headerRoute" style="display:none">' in html
+assert 'Caminho do Centenário' in html
 
 # No obsolete code may hide the complete preparation container.
 for bad in ("legacyPrep.style.display='none'", "prep.style.display='none'", "originalStart.style.display='none'"):
