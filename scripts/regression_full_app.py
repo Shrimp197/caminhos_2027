@@ -12,15 +12,16 @@ assert html.count('id="cpStart"')==1
 assert html.count('id="cp-ui-runtime-v115"')==1
 assert '.cp-shell{display:block!important;visibility:visible!important;opacity:1!important}' in html
 
-# 2) Preparation -> navigation route identity is a single state machine.
+# 2) Preparation -> navigation route identity is one state machine.
 assert "activeRoute='centenario'" in html
 assert re.search(r'async function\s+selectRoute\s*\(id\)', html)
-assert re.search(r'const\s+chosen\s*=\s*\$\(\s*[\'\"]prepRoute[\'\"]\s*\)\.value', html)
-assert re.search(r'if\s*\(\s*chosen\s*!==\s*activeRoute\s*\)', html)
-assert re.search(r'await\s+selectRoute\(chosen\)', html)
-assert re.search(r'\$\(\s*[\'\"]prepRoute[\'\"]\s*\)\.value\s*=\s*activeRoute', html)
+# The approved shell selects by value, then calls the existing route controller;
+# the legacy preparation selector is explicitly synchronized to the same value.
 assert re.search(r'finalSelect\.addEventListener\(\s*[\'\"]change[\'\"]', html)
-assert re.search(r'sel\.onchange\s*=\s*async', html)
+assert re.search(r'const\s+chosen\s*=\s*this\.value', html)
+assert re.search(r'if\s*\(typeof\s+selectRoute\s*===\s*[\'\"]function[\'\"]\)\s*await\s+selectRoute\(chosen\)', html)
+assert re.search(r'prepSelect\.value\s*=\s*chosen', html)
+assert re.search(r'finalSelect\.value\s*=\s*prepSelect\.value', html)
 assert len(re.findall(r"\$\(\s*['\"]startWalkBtn['\"]\s*\)\.onclick", html))<=1
 
 # 3) All route families survive and test routes are visibly labelled as tests.
