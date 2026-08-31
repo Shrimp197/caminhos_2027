@@ -25,10 +25,11 @@ assert ('id="headerRoute" style="display:none"' in html
         or '#headerRoute{display:none' in html)
 
 # Starting a walk must apply the preparation selection before entering navigation.
-start_pos = html.find("$('startWalkBtn').onclick")
-resume_pos = html.find("$('resumeBtn').onclick")
-assert start_pos >= 0 and resume_pos > start_pos
-start_block = html[start_pos:resume_pos]
+start_match = re.search(r"\$\('startWalkBtn'\)\.onclick\s*=\s*function\s*\(\)", html)
+resume_match = re.search(r"\$\('resumeBtn'\)\.onclick\s*=\s*function\s*\(\)", html)
+assert start_match, 'startWalkBtn handler missing'
+assert resume_match and resume_match.start() > start_match.start()
+start_block = html[start_match.start():resume_match.start()]
 assert 'applyPrep();' in start_block
 assert 'showNav();' in start_block
 assert 'startGPS();' in start_block
@@ -41,8 +42,7 @@ assert "$('navEnd').value=String(stageEnd)" in html
 
 # Route selector changes must be wired and asynchronous route loading must be handled.
 assert 'function syncRoutesWhenReady()' in html or 'function fillRouteSelectors()' in html
-assert "$('startWalkBtn').onclick=function()" in html
-assert "$('menuBtn').onclick=function()" in html
+assert re.search(r"\$\('menuBtn'\)\.onclick\s*=\s*function", html)
 
 # Every direct $().onclick assignment must target an existing DOM id.
 dom_ids = set(re.findall(r'id=[\"\']([^\"\']+)', html))
