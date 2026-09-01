@@ -1,5 +1,6 @@
 from pathlib import Path
 import json,re,xml.etree.ElementTree as ET
+from html.parser import HTMLParser
 ROOT=Path(__file__).resolve().parents[1]
 HTML=ROOT/'app/src/main/assets/index.html'; MANIFEST=ROOT/'app/src/main/AndroidManifest.xml'; JAVA=ROOT/'app/src/main/java/com/caminhos2027/MainActivity.java'
 html=HTML.read_text(encoding='utf-8'); manifest=MANIFEST.read_text(encoding='utf-8'); java=JAVA.read_text(encoding='utf-8')
@@ -22,7 +23,18 @@ for key in ('all','overnight','water','shower','health','fire','temporary','othe
 assert 'function syncSupportModalVisual()' in html and 'function syncSupportCanonical()' in html
 assert 'cp-legacy-prep-card' in html
 assert 'function bindPreparationActions()' not in html and 'function normalizeSupportFilterUI()' not in html
-ids=re.findall(r'id=["\']([^"\']+)',html); assert len(ids)==len(set(ids)), 'Duplicate DOM ids found'
+
+# Parse actual DOM start tags so id-like text inside JavaScript strings is not
+# mistaken for a second DOM element.
+class IdParser(HTMLParser):
+    def __init__(self):
+        super().__init__(); self.ids=[]
+    def handle_starttag(self, tag, attrs):
+        attrs=dict(attrs)
+        if attrs.get('id'): self.ids.append(attrs['id'])
+p=IdParser(); p.feed(html)
+assert len(p.ids)==len(set(p.ids)), 'Duplicate DOM ids found: '+', '.join(sorted({x for x in p.ids if p.ids.count(x)>1}))
+
 assert "prepRoute.value=finalRoute.value;dispatch(prepRoute)" in html
 assert "if(cpStart)cpStart.onclick=function(){if(legacyStart)legacyStart.click()};" in html
 for token in ['startGPS','renderSupports','next10','sleepList','setOrientation','setAudio','saveSettings']: assert token in html,token
