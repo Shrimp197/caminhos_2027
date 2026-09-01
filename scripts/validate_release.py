@@ -6,7 +6,7 @@ html=HTML.read_text(encoding='utf-8'); manifest=MANIFEST.read_text(encoding='utf
 required_html=['Trajeto teste do SR','Trajecto teste do HF','Caminho do Centenário','id="cpFinalShell"','id="cpRouteSelect"','id="cpStart"','id="startWalkBtn"','id="notificationBtn"','Próximos 10 km','Onde dormir?','Carregar KML/GPX','id="menuBtn"','id="drawer"','id="supportList"']
 missing=[x for x in required_html if x not in html]
 if missing: raise SystemExit('Missing required UI/features: '+', '.join(missing))
-for token in ['Prepare a sua caminhada','Início e fim','Áudio','Orientação','Pausas','Apoios','Notas','INICIAR CAMINHADA']:
+for token in ['Preparar a sua caminhada','Início e fim','Áudio','Orientação','Pausas','Apoios','Notas','INICIAR CAMINHADA']:
     assert token in html,token
 assert html.count('id="cpFinalShell"')==1 and html.count('id="cpRouteSelect"')==1 and html.count('id="cpStart"')==1
 assert html.count('id="cp-final-interaction-controller"')==1
