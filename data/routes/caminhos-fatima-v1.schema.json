@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Caminhos de Fátima V1 Route Dataset",
+  "type": "object",
+  "required": ["id", "name", "official_name", "geometry", "total_distance_km", "stages", "source", "updated_at"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "name": {"type": "string", "minLength": 1},
+    "official_name": {"type": "string", "minLength": 1},
+    "geometry": {"type": "object"},
+    "total_distance_km": {"type": "number", "exclusiveMinimum": 0},
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "route_id", "number", "name", "start_route_km", "end_route_km", "distance_km", "start_name", "end_name", "source"],
+        "properties": {
+          "id": {"type": "string"},
+          "route_id": {"type": "string"},
+          "number": {"type": "integer", "minimum": 1},
+          "name": {"type": "string"},
+          "start_route_km": {"type": "number", "minimum": 0},
+          "end_route_km": {"type": "number", "minimum": 0},
+          "distance_km": {"type": "number", "exclusiveMinimum": 0},
+          "start_name": {"type": "string"},
+          "end_name": {"type": "string"},
+          "source": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "source": {"type": "string", "minLength": 1},
+    "updated_at": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": false
+}
