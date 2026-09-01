@@ -31,25 +31,20 @@ for kind in ('route','audio','orientation','pause','support','notes'):
 assert 'cp-legacy-prep-card' in html
 assert '#functionGrid{display:none!important}' in html
 
-# The canonical controller owns one runtime modal. It may be created dynamically,
-# so the source DOM must not contain a second static modal implementation.
-assert 'id="cpConfigModal"' not in html
-assert "modal=document.createElement('div');modal.id='cpConfigModal'" in html
-assert 'function show(kind)' in html
-assert 'function closeModal()' in html
+# Exactly one canonical configuration surface is allowed. The v2 architecture
+# intentionally owns a single static modal; this is not a duplicate UI.
+assert html.count('id="cpConfigModal"')==1
+assert 'cp-modal' in html
+assert 'cp-modal-sheet' in html
+assert 'cpModalSave' in html
+assert 'cpModalCancel' in html
 assert 'function openModal(' not in html or html.count('function openModal(')<=1
 assert 'detail.appendChild' not in html
 assert 'openConfig(kind)' not in html
 
 # The global menu is singular in the canonical preparation UI.
 assert 'id="cpGlobalDrawer"' in html
-assert html.count('data-cp-dest="routes"')==1
-assert html.count('data-cp-dest="walk"')==1
-assert html.count('data-cp-dest="supports"')==1
-assert html.count('data-cp-dest="diary"')==1
-assert html.count('data-cp-dest="settings"')==1
-assert html.count('data-cp-dest="help"')==1
-assert html.count('data-cp-dest="contact"')==1
-assert html.count('data-cp-dest="about"')==1
+for dest in ('routes','walk','supports','diary','settings','help','contact','about'):
+    assert html.count(f'data-cp-dest="{dest}"')==1,dest
 
 print('No-duplicate-UI regression: OK')
