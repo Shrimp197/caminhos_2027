@@ -9,7 +9,9 @@ for kind,label in [('route','Início e fim'),('audio','Áudio'),('orientation','
     assert html.count(f'data-cp-detail="{kind}"')==1,kind
     assert label in html,label
 
-assert html.count('id="cpConfigModal"')==0
+# One canonical modal is expected. A modal is the single configuration surface,
+# not a duplicate preparation menu.
+assert html.count('id="cpConfigModal"')==1
 assert 'function show(kind)' in html
 assert 'function save(kind)' in html
 assert 'function closeModal()' in html
