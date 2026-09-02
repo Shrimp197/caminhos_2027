@@ -32,17 +32,19 @@ fun SrPreparationFlowV1(
     var startKm by remember { mutableStateOf(0.0) }
     var destinationKm by remember { mutableStateOf(route.totalDistanceKm) }
     var preparation by remember { mutableStateOf<WalkingPreparation?>(null) }
+    var planSaved by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(route.officialName)
         Text("Preparação SR — ambiente de teste")
         Text("As etapas oficiais servem de referência; o início e o destino podem ficar dentro de uma etapa.")
 
-        KmEditor("Início", startKm, 0.0, route.totalDistanceKm) { startKm = it }
-        KmEditor("Destino", destinationKm, 0.0, route.totalDistanceKm) { destinationKm = it }
+        KmEditor("Início", startKm, 0.0, route.totalDistanceKm) { startKm = it; planSaved = false }
+        KmEditor("Destino", destinationKm, 0.0, route.totalDistanceKm) { destinationKm = it; planSaved = false }
 
         Button(onClick = {
             preparation = preparationService.preview("sr-walk", startKm, destinationKm)
+            planSaved = false
         }, modifier = Modifier.fillMaxWidth()) {
             Text("Rever plano")
         }
@@ -54,10 +56,12 @@ fun SrPreparationFlowV1(
                     Text("Etapas: ${plan.stages.joinToString { it.name }}")
                     Text("APOI relevantes: ${plan.relevantApoi.size}")
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { onSaved(preparationService.save("sr-walk", startKm, destinationKm)) }) {
-                            Text("Guardar plano")
-                        }
-                        Button(onClick = { onStart(plan) }) {
+                        Button(onClick = {
+                            preparation = preparationService.save("sr-walk", startKm, destinationKm)
+                            planSaved = true
+                            onSaved(preparation!!)
+                        }) { Text("Guardar plano") }
+                        Button(enabled = planSaved, onClick = { onStart(plan) }) {
                             Text("Iniciar caminhada")
                         }
                     }
@@ -69,8 +73,6 @@ fun SrPreparationFlowV1(
 
 @Composable
 private fun KmEditor(label: String, value: Double, min: Double, max: Double, onChange: (Double) -> Unit) {
-    // SR deliberately keeps this control simple and deterministic; a production slider/input
-    // will be designed only after the end-to-end flow is validated with users.
     Column {
         Text("$label: %.1f km".format(value))
         Spacer(Modifier.height(4.dp))
