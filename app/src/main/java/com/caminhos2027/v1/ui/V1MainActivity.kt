@@ -207,6 +207,11 @@ private fun ActiveWalkingScreen(state: WalkingState) {
             GpsStatusChip(gpsState, modifier = Modifier.align(Alignment.TopCenter).padding(top = 78.dp))
         }
 
+        PositionContextCard(
+            state,
+            modifier = Modifier.align(Alignment.TopStart).padding(top = 126.dp, start = 12.dp, end = 12.dp)
+        )
+
         Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(12.dp)) {
             NextSupportCard(nextApoi, state.nextApoiDistanceKm)
             Spacer(Modifier.height(8.dp))
@@ -229,6 +234,34 @@ private fun GpsStatusChip(gpsState: GpsState, modifier: Modifier = Modifier) {
     }
     Card(modifier = modifier, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)) {
         Text(text, modifier = Modifier.padding(horizontal = 13.dp, vertical = 8.dp), style = MaterialTheme.typography.labelMedium, color = if (gpsState == GpsState.PROBABLE_DEVIATION) Warning else Ink)
+    }
+}
+
+@Composable
+private fun PositionContextCard(state: WalkingState, modifier: Modifier = Modifier) {
+    val position = state.routePosition ?: return
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .94f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 13.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.LocationOn, contentDescription = null, tint = Forest, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Está aqui", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Text("${formatKm(position.routeKm)} km no caminho", style = MaterialTheme.typography.bodyMedium)
+            }
+            Text(
+                "±${position.distanceToRouteMeters.toInt()} m",
+                style = MaterialTheme.typography.labelSmall,
+                color = Muted
+            )
+        }
     }
 }
 
