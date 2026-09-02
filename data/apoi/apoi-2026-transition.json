@@ -1,0 +1,21 @@
+{
+  "dataset_version": "v1-transition-2026",
+  "environment": "review",
+  "purpose": "Transição interna da base APOI 2026 para qualificação V1. NÃO publicar como dataset de produção.",
+  "source_dataset": "app/src/main/assets/data/apoios-2026.json",
+  "production_ready": false,
+  "records": [
+    {"source_id":"apoio_2026_001","qualification":"review","target_status":"awaiting_confirmation","notes":"Bombeiros Voluntários da Arrifana. Migrar emergência; não inferir pernoita ou outros serviços."},
+    {"source_id":"apoio_2026_002","qualification":"review","target_status":"awaiting_confirmation","notes":"Bombeiros Voluntários de Lourosa. Migrar emergência; não inferir outros serviços."},
+    {"source_id":"apoio_2026_003","qualification":"review","target_status":"awaiting_confirmation","notes":"Albergue do Apeadeiro. Pernoita/duche/WC e dados de 2026 preservados; confirmar 2027."},
+    {"source_id":"apoio_2026_004","qualification":"review","target_status":"awaiting_confirmation","notes":"Albergue Albergaria-a-Nova. Pernoita/duche/WC e preço de 2026 preservados; confirmar 2027."},
+    {"source_id":"apoio_2026_005","qualification":"review","target_status":"awaiting_confirmation","notes":"Albergue Rainha D. Teresa. Pernoita/duche/WC; preço, horário e sazonalidade precisam reconfirmação."},
+    {"source_id":"apoio_2026_006","qualification":"review","target_status":"awaiting_confirmation","notes":"Albergue Santo António. Pernoita/duche/WC; capacidade conflitante não deve ser publicada sem resolução."},
+    {"source_id":"apoio_2026_007","qualification":"historical","target_status":"historical","notes":"Albergue-Residencial Hilário. Preservar como histórico; não assumir funcionamento atual."},
+    {"source_id":"apoio_2026_008","qualification":"historical","target_status":"historical","notes":"Albergue Rainha Santa Isabel. Preservar histórico até nova confirmação de funcionamento."},
+    {"source_id":"apoio_2026_009","qualification":"review","target_status":"awaiting_confirmation","route_relation":"distant_potential_support","notes":"Bombeiros de Ansião. Apoio potencial distante; não tratar como próximo APOI nem inferir pernoita."},
+    {"source_id":"apoio_2026_010","qualification":"review","target_status":"awaiting_confirmation","notes":"Posto de Apoio ao Peregrino — Ribeiro da Vide. Apoio sazonal de 2026; serviços e período de 2027 por confirmar."},
+    {"source_id":"apoio_2026_011","qualification":"review","target_status":"awaiting_confirmation","notes":"Acolhimento de peregrinos a pé — Santuário de Fátima. Informação de 2026 preservada; regras de 2027 devem ser confirmadas e localização não deve ser inventada."},
+    {"source_id":"apoio_2026_012","qualification":"candidate","target_status":"candidate","notes":"Centro Social de São José de Cluny. Instituição identificada, mas sem prova suficiente de apoio específico ao peregrino."}
+  ]
+}
