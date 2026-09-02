@@ -4,7 +4,7 @@
 
 **Em revisão — sem dataset de produção do percurso.**
 
-Data da auditoria: 2026-09-02
+Data da auditoria: 2026-09-02  
 Branch: `v1-route-import`
 
 ## Fonte oficial pretendida
@@ -28,6 +28,17 @@ Por isso:
 - não é usado para inventar ou reconstruir etapas;
 - não é usado para declarar uma geometria V1 como oficial;
 - permanece disponível apenas como referência histórica do primeiro protótipo.
+
+## Validação já implementada
+
+A branch já contém uma camada determinística para medir o comprimento da geometria e validar discrepâncias grosseiras entre a geometria e a distância declarada.
+
+- `RouteGeometryMetrics.lengthKm(...)` mede a distância acumulada entre pontos consecutivos usando Haversine.
+- `RouteValidator` rejeita uma discrepância superior a uma tolerância documentada no código.
+- Existem testes com dados `TEST/FICTITIOUS` para a métrica e para a rejeição de uma discrepância grosseira.
+- Foi adicionada uma workflow isolada de CI para executar testes e build da branch sem os scripts de reescrita do protótipo legado.
+
+Esta validação é deliberadamente **pré-importação**: ainda não é aplicada a uma geometria oficial real.
 
 ## Regra de importação
 
