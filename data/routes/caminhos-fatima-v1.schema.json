@@ -7,7 +7,24 @@
     "id": {"type": "string", "minLength": 1},
     "name": {"type": "string", "minLength": 1},
     "official_name": {"type": "string", "minLength": 1},
-    "geometry": {"type": "object"},
+    "geometry": {
+      "type": "object",
+      "required": ["type", "coordinates"],
+      "properties": {
+        "type": {"const": "LineString"},
+        "coordinates": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 3,
+            "items": {"type": "number"}
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "total_distance_km": {"type": "number", "exclusiveMinimum": 0},
     "stages": {
       "type": "array",
