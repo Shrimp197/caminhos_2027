@@ -1,5 +1,5 @@
 {
-  "dataset_version": "TEST-FICTITIOUS-v1",
+  "dataset_version": "TEST-FICTITIOUS-v2",
   "environment": "sr",
   "apoi": [
     {
@@ -23,7 +23,54 @@
       "publication": {
         "status": "PUBLISHED",
         "reason": "TEST/FICTITIOUS"
-      }
+      },
+      "availability": {
+        "status": "RECURRING",
+        "valid_from": "2026-01-01",
+        "recurrence": "annual",
+        "season": "spring",
+        "opening_hours": "08:00-22:00"
+      },
+      "cost": {
+        "model": "OPTIONAL_CONTRIBUTION",
+        "amount": 5.0,
+        "currency": "EUR",
+        "description": "TEST/FICTITIOUS contribution"
+      },
+      "reservation": {
+        "policy": "RECOMMENDED",
+        "contact": "TEST/FICTITIOUS contact"
+      },
+      "support": {
+        "pilgrim_support_confirmed": true,
+        "capacity": 12,
+        "sleeping_type": "MATTRESS",
+        "shower": true,
+        "hot_water": true,
+        "water_available": true,
+        "water_potable": true,
+        "water_potable_confirmed": true,
+        "charging_available": true,
+        "wc": true,
+        "laundry": true,
+        "drying": true
+      },
+      "confidence": {
+        "overall": "HIGH",
+        "location": "HIGH",
+        "support": "HIGH",
+        "availability": "MEDIUM",
+        "critical_information": "MEDIUM"
+      },
+      "sources": [
+        {
+          "id": "TEST-SOURCE-001",
+          "type": "field_visit",
+          "name": "TEST/FICTITIOUS source",
+          "collected_at": "2026-09-01",
+          "method": "TEST/FICTITIOUS"
+        }
+      ]
     }
   ]
 }
