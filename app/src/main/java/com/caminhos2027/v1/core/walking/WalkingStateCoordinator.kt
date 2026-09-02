@@ -31,6 +31,20 @@ class WalkingStateCoordinator(
     )
         private set
 
+    /** Seeds the state with the route position selected when the walk starts. No fake GPS coordinates are used. */
+    fun seedStartPosition(position: RoutePosition): WalkingState {
+        require(position.routeId == route.id) { "Start position route must match route" }
+        state = WalkingStateBuilder.build(
+            route = route,
+            walk = walk,
+            gpsState = GpsState.ACQUIRING,
+            routePosition = position,
+            publishedApoi = publishedApoi,
+            offline = state.isOffline
+        )
+        return state
+    }
+
     fun accept(position: RawGpsPosition): WalkingState {
         val tracking = locationPipeline.accept(position)
         return rebuild(
