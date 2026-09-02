@@ -27,6 +27,39 @@ class RouteValidatorTest {
         assertFalse(RouteValidator.validate(route).isEmpty())
     }
 
+    @Test
+    fun geometryWithOnlyOnePointIsRejected() {
+        val route = fixture().copy(geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0))))
+        assertTrue(RouteValidator.validate(route).any { it.contains("at least two points") })
+    }
+
+    @Test
+    fun geometryWithInvalidLatitudeIsRejected() {
+        val route = fixture().copy(
+            geometry = RouteGeometry(
+                listOf(GeoPoint(91.0, -8.0), GeoPoint(40.1, -8.1))
+            )
+        )
+        assertTrue(RouteValidator.validate(route).any { it.contains("latitude") })
+    }
+
+    @Test
+    fun geometryWithInvalidLongitudeIsRejected() {
+        val route = fixture().copy(
+            geometry = RouteGeometry(
+                listOf(GeoPoint(40.0, -181.0), GeoPoint(40.1, -8.1))
+            )
+        )
+        assertTrue(RouteValidator.validate(route).any { it.contains("longitude") })
+    }
+
+    @Test
+    fun consecutiveDuplicateGeometryPointIsRejected() {
+        val point = GeoPoint(40.0, -8.0)
+        val route = fixture().copy(geometry = RouteGeometry(listOf(point, point)))
+        assertTrue(RouteValidator.validate(route).any { it.contains("duplicates previous point") })
+    }
+
     private fun fixture() = Route(
         id = "test-route",
         name = "TEST/FICTITIOUS route",
