@@ -108,8 +108,8 @@ class V1MainActivity : ComponentActivity() {
         if (locationSource == null) {
             locationSource = AndroidLocationSource(
                 context = this,
-                onPosition = { /* Raw GPS enters the domain pipeline in the next integration step. */ },
-                onAvailabilityChanged = { /* Availability is handled by the walking state layer. */ }
+                onPosition = { /* Raw GPS is connected after a validated route is available. */ },
+                onAvailabilityChanged = { /* Availability is represented by the walking state. */ }
             )
         }
         locationSource?.start()
@@ -131,43 +131,86 @@ private fun CaminhosTheme(content: @Composable () -> Unit) {
     )
 }
 
+/** Walking experience shell. Null means there is no active walk; no route data is fabricated. */
 @Composable
 private fun WalkingScreenV1(state: WalkingState? = null) {
-    val gpsState = state?.gpsState ?: GpsState.ACQUIRING
-    val progress = state?.progress
-    val nextApoi = state?.nextApoi
-
     Surface(modifier = Modifier.fillMaxSize(), color = Sand) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            RouteMapPreview(modifier = Modifier.fillMaxSize(), gpsState = gpsState)
+        if (state == null) NoActiveWalkScreen() else ActiveWalkingScreen(state)
+    }
+}
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
-                        Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(7.dp))
-                        Column {
-                            Text("Caminhada atual", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                            Text(stageLabel(progress), style = MaterialTheme.typography.labelSmall, color = Muted)
-                        }
+@Composable
+private fun NoActiveWalkScreen() {
+    Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Caminhos de Fátima", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+            IconButton(onClick = {}) { Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Ink) }
+        }
+
+        Card(
+            modifier = Modifier.align(Alignment.Center).fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        ) {
+            Column(modifier = Modifier.padding(22.dp)) {
+                Text("Nenhuma caminhada ativa", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Prepare uma caminhada para começar a acompanhar a sua posição, progresso e APOI.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Muted
+                )
+                Spacer(Modifier.height(16.dp))
+                Text("Preparar caminhada", color = Forest, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActiveWalkingScreen(state: WalkingState) {
+    val gpsState = state.gpsState
+    val progress = state.progress
+    val nextApoi = state.nextApoi
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        RouteMapPreview(modifier = Modifier.fillMaxSize(), gpsState = gpsState, hasPosition = state.routePosition != null)
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
+                    Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(7.dp))
+                    Column {
+                        Text("Caminhada atual", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        Text(stageLabel(progress), style = MaterialTheme.typography.labelSmall, color = Muted)
                     }
                 }
-                IconButton(onClick = {}) { Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Ink) }
             }
+            IconButton(onClick = {}) { Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Ink) }
+        }
 
-            if (gpsState != GpsState.ON_ROUTE) {
-                GpsStatusChip(gpsState, modifier = Modifier.align(Alignment.TopCenter).padding(top = 78.dp))
-            }
+        if (gpsState != GpsState.ON_ROUTE) {
+            GpsStatusChip(gpsState, modifier = Modifier.align(Alignment.TopCenter).padding(top = 78.dp))
+        }
 
-            Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(12.dp)) {
-                NextSupportCard(nextApoi, state?.nextApoiDistanceKm)
-                Spacer(Modifier.height(8.dp))
-                ProgressCard(progress)
-            }
+        Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(12.dp)) {
+            NextSupportCard(nextApoi, state.nextApoiDistanceKm)
+            Spacer(Modifier.height(8.dp))
+            ProgressCard(progress)
         }
     }
 }
@@ -244,7 +287,11 @@ private fun ProgressCard(progress: WalkingProgress?) {
 private fun formatKm(value: Double): String = String.format(Locale("pt", "PT"), "%.1f", value)
 
 @Composable
-private fun RouteMapPreview(modifier: Modifier = Modifier, gpsState: GpsState = GpsState.ON_ROUTE) {
+private fun RouteMapPreview(
+    modifier: Modifier = Modifier,
+    gpsState: GpsState = GpsState.ON_ROUTE,
+    hasPosition: Boolean = false
+) {
     Canvas(modifier = modifier.background(Color(0xFFE9E7E0))) {
         val route = Path().apply {
             moveTo(size.width * .15f, size.height * .25f)
@@ -252,11 +299,13 @@ private fun RouteMapPreview(modifier: Modifier = Modifier, gpsState: GpsState = 
             cubicTo(size.width * .72f, size.height * .56f, size.width * .65f, size.height * .70f, size.width * .84f, size.height * .82f)
         }
         drawPath(route, color = RouteLine, style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round))
-        val position = Offset(size.width * .47f, size.height * .30f)
-        drawCircle(color = Forest, radius = 12.dp.toPx(), center = position)
-        drawCircle(color = Color.White, radius = 5.dp.toPx(), center = position)
-        if (gpsState == GpsState.POSSIBLE_DEVIATION || gpsState == GpsState.PROBABLE_DEVIATION) {
-            drawCircle(color = Warning.copy(alpha = .18f), radius = 25.dp.toPx(), center = position)
+        if (hasPosition) {
+            val position = Offset(size.width * .47f, size.height * .30f)
+            drawCircle(color = Forest, radius = 12.dp.toPx(), center = position)
+            drawCircle(color = Color.White, radius = 5.dp.toPx(), center = position)
+            if (gpsState == GpsState.POSSIBLE_DEVIATION || gpsState == GpsState.PROBABLE_DEVIATION) {
+                drawCircle(color = Warning.copy(alpha = .18f), radius = 25.dp.toPx(), center = position)
+            }
         }
     }
 }
