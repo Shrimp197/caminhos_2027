@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://caminhosdefatima.app/schema/apoi-transition-v1.json",
+  "title": "APOI 2026 to V1 Transition Dataset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dataset_version", "environment", "purpose", "source_dataset", "production_ready", "records"],
+  "properties": {
+    "dataset_version": {"type":"string","minLength":1},
+    "environment": {"const":"review"},
+    "purpose": {"type":"string","minLength":1},
+    "source_dataset": {"type":"string","minLength":1},
+    "production_ready": {"const":false},
+    "records": {
+      "type":"array",
+      "items": {
+        "type":"object",
+        "additionalProperties": false,
+        "required":["source_id","qualification","target_status","notes"],
+        "properties": {
+          "source_id":{"type":"string","pattern":"^apoio_2026_[0-9]{3}$"},
+          "qualification":{"enum":["candidate","review","historical"]},
+          "target_status":{"enum":["candidate","awaiting_confirmation","historical"]},
+          "route_relation":{"enum":["distant_potential_support"]},
+          "notes":{"type":"string","minLength":1}
+        }
+      }
+    }
+  }
+}
