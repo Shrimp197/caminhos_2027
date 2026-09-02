@@ -2,26 +2,40 @@ package com.caminhos2027.v1.core.data
 
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.Stage
-import org.junit.Assert.assertSame
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RouteRepositoryTest {
     @Test
     fun repositoryReturnsValidatedRoute() {
         val route = testRoute()
-        val repository = RouteRepository(object : RouteDataSource {
+        val repository = ValidatingRouteRepository(object : RouteDataSource {
             override fun loadRoute(): Route = route
         })
 
-        assertSame(route, repository.getRoute())
+        val result = repository.getRoute("test-route")
+        assertTrue(result.isSuccess)
+        assertEquals(route, result.getOrThrow())
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun repositoryRejectsInvalidRoute() {
         val invalid = testRoute().copy(totalDistanceKm = 0.0)
-        RouteRepository(object : RouteDataSource {
+        val repository = ValidatingRouteRepository(object : RouteDataSource {
             override fun loadRoute(): Route = invalid
-        }).getRoute()
+        })
+
+        assertTrue(repository.getRoute("test-route").isFailure)
+    }
+
+    @Test
+    fun repositoryRejectsUnexpectedRouteId() {
+        val repository = ValidatingRouteRepository(object : RouteDataSource {
+            override fun loadRoute(): Route = testRoute()
+        })
+
+        assertTrue(repository.getRoute("other-route").isFailure)
     }
 
     private fun testRoute() = Route(
