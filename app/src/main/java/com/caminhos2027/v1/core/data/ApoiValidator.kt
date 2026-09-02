@@ -61,7 +61,7 @@ object ApoiValidator {
     }
 
     fun validatePublicationCandidate(apoi: Apoi): List<String> {
-        val errors = validate(apoi, "production")
+        val errors = validate(apoi, "production").toMutableList()
         if (apoi.mainCategory !in ApoiCategory.entries) errors += "invalid category"
         return errors
     }
