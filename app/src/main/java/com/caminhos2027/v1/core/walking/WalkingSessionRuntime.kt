@@ -51,20 +51,17 @@ class WalkingSessionRuntime(
 
     fun stop(position: RoutePosition, now: Instant = Instant.now()): Walk {
         val active = requireNotNull(coordinator) { "Walking session has not been started" }
-        val walkId = active.state.walk.id
-        val stopped = sessionService.stop(walkId, position, now)
+        val stopped = sessionService.stop(active.state.walk.id, position, now)
         coordinator = null
         return stopped
     }
 
+    /** Rebuilds derived progress/APOI information from the persisted walk and checkpoint. */
     fun resume(): WalkingState? {
         val walk = sessionService.resume() ?: return null
-        val saved = sessionService.resumeState(walk.id)
         val nextCoordinator = WalkingStateCoordinator(route, walk, publishedApoi, policy)
         coordinator = nextCoordinator
-        if (saved != null) {
-            return saved
-        }
-        return nextCoordinator.state
+        val checkpoint = sessionService.resumeCheckpoint(walk.id) ?: return nextCoordinator.state
+        return nextCoordinator.restoreCheckpoint(checkpoint)
     }
 }
