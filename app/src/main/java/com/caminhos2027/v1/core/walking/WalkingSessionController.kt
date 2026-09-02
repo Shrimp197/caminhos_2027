@@ -3,7 +3,6 @@ package com.caminhos2027.v1.core.walking
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
-import com.caminhos2027.v1.core.route.GpsState
 import java.time.Instant
 
 /** Pure lifecycle rules for a walking session. Persistence and Android location remain outside this class. */
@@ -31,8 +30,4 @@ object WalkingSessionController {
     }
 
     fun canResume(walk: Walk): Boolean = walk.status == WalkStatus.ACTIVE
-
-    fun effectiveGpsState(state: GpsState): GpsState = state
-
-    fun routePositionForProgress(position: RoutePosition?): Double? = position?.routeKm
 }
