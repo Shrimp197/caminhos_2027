@@ -36,5 +36,12 @@ data class Apoi(
     val mainCategory: ApoiCategory,
     val services: Set<ApoiCategory>,
     val location: ApoiLocation,
-    val publication: ApoiPublication
+    val publication: ApoiPublication,
+    val cost: ApoiCost = ApoiCost(),
+    val reservation: ApoiReservation = ApoiReservation(),
+    val availability: ApoiAvailability = ApoiAvailability(),
+    val capacity: ApoiCapacity = ApoiCapacity(),
+    val characteristics: ApoiCharacteristics = ApoiCharacteristics(),
+    val contact: ApoiContact = ApoiContact(),
+    val confidence: ApoiConfidence = ApoiConfidence()
 )
