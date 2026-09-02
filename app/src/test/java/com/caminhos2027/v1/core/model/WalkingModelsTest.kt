@@ -1,14 +1,14 @@
 package com.caminhos2027.v1.core.model
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import org.junit.Assert.assertEquals
+import org.junit.Test
 
 class WalkingModelsTest {
     @Test
     fun walkDefaultsToPlanned() {
         val walk = Walk(id = "w1", routeId = "route1")
         assertEquals(WalkStatus.PLANNED, walk.status)
-        assertEquals(emptyList(), walk.stageIds)
+        assertEquals(emptyList<String>(), walk.stageIds)
     }
 
     @Test
@@ -20,8 +20,8 @@ class WalkingModelsTest {
             stageId = "stage2",
             confidence = PositionConfidence.MEDIUM
         )
-        assertEquals(42.5, position.routeKm)
-        assertEquals(18.0, position.distanceToRouteMeters)
+        assertEquals(42.5, position.routeKm, 0.0)
+        assertEquals(18.0, position.distanceToRouteMeters, 0.0)
     }
 
     @Test
@@ -40,6 +40,6 @@ class WalkingModelsTest {
         )
         assertEquals(NoteType.WALKING, note.type)
         assertEquals("w1", note.walkId)
-        assertEquals(12.0, note.routePosition?.routeKm)
+        assertEquals(12.0, note.routePosition?.routeKm ?: -1.0, 0.0)
     }
 }
