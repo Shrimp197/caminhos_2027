@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "route_id": "caminho-do-centenario",
+  "official_name": "Caminho do Centenário",
+  "scope": "Caminhos de Fátima",
+  "status": "awaiting_official_geometry_validation",
+  "official_reference": {
+    "route_name": "Caminho do Centenário",
+    "origin": "Gaia",
+    "destination": "Fátima",
+    "published_distance_km": 211.87,
+    "published_distance_label": "about 212 km",
+    "municipalities": 14,
+    "source_organization": "Associação Caminhos de Fátima"
+  },
+  "candidate_files": [
+    {
+      "path": "app/src/main/assets/caminho-do-centenario.kml",
+      "classification": "historical_reference",
+      "file_declared_name": "ACF_2020.kml",
+      "sha": "98a1c71f9346f1387b1471117b0e8a0e5ead9ef4",
+      "allowed_for_production": false,
+      "reason": "Existing repository geometry is explicitly identified as ACF_2020 and must not be promoted to the V1 production route without validation against the current official source."
+    }
+  ],
+  "official_source_files": [
+    {
+      "format": "gpx",
+      "publication_context": "ACF documents archive, 2024",
+      "source_url": "https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx",
+      "required_action": "obtain_and_validate_current_official_file"
+    },
+    {
+      "format": "kml",
+      "publication_context": "ACF documents archive, 2024",
+      "source_url": "https://caminhosdefatima.com/wp-content/uploads/2024/09/caminho-do-centenario.kml",
+      "required_action": "obtain_and_validate_current_official_file"
+    }
+  ],
+  "production_rules": [
+    "Do not use the historical repository KML as production geometry.",
+    "Do not invent or infer official stage boundaries from the historical KML.",
+    "Do not replace the official published distance with a third-party track distance.",
+    "Production geometry must be imported from a validated official source and checked for ordered continuity, length, origin, destination and stage compatibility before publication."
+  ]
+}
