@@ -1,7 +1,9 @@
 package com.caminhos2027.v1.core.data
 
 import android.content.Context
+import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.Route
+import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.Stage
 import org.json.JSONObject
 
@@ -20,6 +22,25 @@ class AssetRouteDataSource(
 object RouteJsonParser {
     fun parse(json: String): Route {
         val root = JSONObject(json)
+        val geometryJson = root.getJSONObject("geometry")
+        require(geometryJson.getString("type") == "LineString") {
+            "Route geometry must be a GeoJSON LineString"
+        }
+
+        val coordinates = geometryJson.getJSONArray("coordinates")
+        val points = buildList(coordinates.length()) {
+            for (i in 0 until coordinates.length()) {
+                val coordinate = coordinates.getJSONArray(i)
+                require(coordinate.length() >= 2) { "Geometry coordinate[$i] must contain longitude and latitude" }
+                add(
+                    GeoPoint(
+                        latitude = coordinate.getDouble(1),
+                        longitude = coordinate.getDouble(0)
+                    )
+                )
+            }
+        }
+
         val stagesJson = root.getJSONArray("stages")
         val stages = buildList(stagesJson.length()) {
             for (i in 0 until stagesJson.length()) {
@@ -48,6 +69,7 @@ object RouteJsonParser {
             totalDistanceKm = root.getDouble("total_distance_km"),
             source = root.getString("source"),
             updatedAt = root.getString("updated_at"),
+            geometry = RouteGeometry(points),
             stages = stages
         )
     }
