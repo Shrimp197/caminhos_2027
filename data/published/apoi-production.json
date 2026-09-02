@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0-published",
+  "dataset_id": "caminho_centenario_apoi_production",
+  "route_id": "caminho-centenario",
+  "target_year": 2027,
+  "environment": "production",
+  "publication_policy": "Only qualified APOI records may enter the production dataset. Historical or 2026-only evidence is not a 2027 guarantee.",
+  "source_master": "data/apoi/apoi-master.json",
+  "items": []
+}
