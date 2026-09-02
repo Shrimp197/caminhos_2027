@@ -29,7 +29,7 @@ class WalkingSessionServiceTest {
     }
 
     @Test
-    fun startPersistsActiveWalk() {
+    fun startPersistsActiveWalkAndInitialCheckpoint() {
         service.prepare(planned)
 
         val started = service.start("walk-1", position, startTime)
@@ -37,6 +37,8 @@ class WalkingSessionServiceTest {
         assertEquals(WalkStatus.ACTIVE, started.status)
         assertSame(started, service.get("walk-1"))
         assertSame(started, service.resume())
+        assertEquals(12.5, service.resumeCheckpoint("walk-1")!!.routePosition!!.routeKm, 0.001)
+        assertEquals(GpsState.ACQUIRING, service.resumeCheckpoint("walk-1")!!.gpsState)
     }
 
     @Test
@@ -48,13 +50,15 @@ class WalkingSessionServiceTest {
             routePosition = position.copy(routeKm = 14.0),
             gpsState = GpsState.ON_ROUTE,
             progress = null,
-            nextApoi = null
+            nextApoi = null,
+            nextApoiDistanceKm = null
         )
 
         val updated = service.updatePosition("walk-1", state)
 
         assertEquals(14.0, updated.routePosition!!.routeKm, 0.001)
-        assertSame(updated, service.resumeState("walk-1"))
+        assertEquals(14.0, service.resumeCheckpoint("walk-1")!!.routePosition!!.routeKm, 0.001)
+        assertEquals(GpsState.ON_ROUTE, service.resumeCheckpoint("walk-1")!!.gpsState)
         assertEquals(12.5, updated.walk.actualStartKm!!, 0.001)
     }
 
@@ -67,7 +71,8 @@ class WalkingSessionServiceTest {
             routePosition = position,
             gpsState = GpsState.ON_ROUTE,
             progress = null,
-            nextApoi = null
+            nextApoi = null,
+            nextApoiDistanceKm = null
         )
         service.updatePosition("walk-1", state)
 
@@ -77,7 +82,7 @@ class WalkingSessionServiceTest {
         assertEquals(18.0, stopped.actualEndKm!!, 0.001)
         assertEquals(stopTime, stopped.endedAt)
         assertNull(service.resume())
-        assertNull(service.resumeState("walk-1"))
+        assertNull(service.resumeCheckpoint("walk-1"))
     }
 
     @Test
@@ -89,14 +94,15 @@ class WalkingSessionServiceTest {
             routePosition = position,
             gpsState = GpsState.ON_ROUTE,
             progress = null,
-            nextApoi = null
+            nextApoi = null,
+            nextApoiDistanceKm = null
         )
         service.updatePosition("walk-1", state)
 
         val restartedService = WalkingSessionService(repository, stateRepository)
 
         assertEquals(WalkStatus.ACTIVE, restartedService.resume()!!.status)
-        assertEquals(12.5, restartedService.resumeState("walk-1")!!.routePosition!!.routeKm, 0.001)
+        assertEquals(12.5, restartedService.resumeCheckpoint("walk-1")!!.routePosition!!.routeKm, 0.001)
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -113,7 +119,7 @@ class WalkingSessionServiceTest {
     @Test(expected = IllegalArgumentException::class)
     fun cannotUpdatePlannedWalk() {
         service.prepare(planned)
-        val state = WalkingState(planned, position, GpsState.ON_ROUTE, null, null)
+        val state = WalkingState(planned, position, GpsState.ON_ROUTE, null, null, null)
         service.updatePosition("walk-1", state)
     }
 
@@ -126,6 +132,7 @@ class WalkingSessionServiceTest {
             position.copy(routeId = "other-route"),
             GpsState.ON_ROUTE,
             null,
+            null,
             null
         )
         service.updatePosition("walk-1", state)
@@ -136,7 +143,7 @@ class WalkingSessionServiceTest {
         service.prepare(planned)
         service.start("walk-1", position, startTime)
         val otherWalk = planned.copy(id = "walk-2", status = WalkStatus.ACTIVE)
-        val state = WalkingState(otherWalk, position, GpsState.ON_ROUTE, null, null)
+        val state = WalkingState(otherWalk, position, GpsState.ON_ROUTE, null, null, null)
         service.updatePosition("walk-1", state)
     }
 
