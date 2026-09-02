@@ -7,9 +7,13 @@ interface RouteDataSource {
     fun loadRoute(): Route
 }
 
-/** Repository boundary used by the rest of the app. Validation happens before publication. */
-class RouteRepository(
+/** Repository implementation that validates route data before exposing it to the app. */
+class ValidatingRouteRepository(
     private val dataSource: RouteDataSource
-) {
-    fun getRoute(): Route = RouteValidator.requireValid(dataSource.loadRoute())
+) : RouteRepository {
+    override fun getRoute(routeId: String): Result<Route> = runCatching {
+        val route = RouteValidator.requireValid(dataSource.loadRoute())
+        require(route.id == routeId) { "Route id mismatch: expected $routeId, got ${route.id}" }
+        route
+    }
 }
