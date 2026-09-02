@@ -4,7 +4,6 @@ import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RoutePosition
-import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
@@ -34,9 +33,7 @@ object RouteLocationEngine {
             accumulatedKm += segmentLengthKm
         }
 
-        val stageId = route.stages.firstOrNull { stage ->
-            bestRouteKm >= stage.startRouteKm && bestRouteKm <= stage.endRouteKm
-        }?.id
+        val stageId = StageLocator.currentStage(route, bestRouteKm)?.id
 
         return RoutePosition(
             routeId = route.id,
