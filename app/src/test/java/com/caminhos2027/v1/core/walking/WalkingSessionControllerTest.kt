@@ -4,7 +4,6 @@ import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
-import com.caminhos2027.v1.core.route.GpsState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -55,10 +54,5 @@ class WalkingSessionControllerTest {
     fun cannotCrossRoutesWhenStopping() {
         val started = WalkingSessionController.start(planned, routePosition, startTime)
         WalkingSessionController.stop(started, routePosition.copy(routeId = "other-route"), stopTime)
-    }
-
-    @Test
-    fun lifecycleControllerDoesNotOwnGpsState() {
-        assertEquals(GpsState.PROBABLE_DEVIATION, GpsState.PROBABLE_DEVIATION)
     }
 }
