@@ -8,7 +8,18 @@ data class Route(
     val totalDistanceKm: Double,
     val source: String,
     val updatedAt: String,
+    val geometry: RouteGeometry,
     val stages: List<Stage>
+)
+
+/** Ordered route geometry normalized from the official GPX/KML source. */
+data class RouteGeometry(
+    val points: List<GeoPoint>
+)
+
+data class GeoPoint(
+    val latitude: Double,
+    val longitude: Double
 )
 
 data class Stage(
