@@ -27,14 +27,15 @@ class WalkingModelsTest {
     @Test
     fun walkingNoteCanBeLinkedToWalkAndPosition() {
         val position = RoutePosition("route1", 12.0, 4.0)
+        val instant = java.time.Instant.parse("2026-09-01T14:35:00Z")
         val note = Note(
             id = "n1",
             type = NoteType.WALKING,
             title = "Nota da caminhada — 01/09/2026 14:35",
             content = "Água encontrada.",
-            createdAt = java.time.Instant.parse("2026-09-01T14:35:00Z"),
-            updatedAt = java.time.Instant.parse("2026-09-01T14:35:00Z"),
-            originalDateTime = java.time.Instant.parse("2026-09-01T14:35:00Z"),
+            createdAt = instant,
+            updatedAt = instant,
+            originalDateTime = instant,
             walkId = "w1",
             routePosition = position
         )
