@@ -1,8 +1,11 @@
 package com.caminhos2027.v1.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +51,7 @@ import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.route.WalkingProgress
 import com.caminhos2027.v1.core.walking.WalkingState
+import com.caminhos2027.v1.gps.AndroidLocationSource
 import java.util.Locale
 
 private val Forest = Color(0xFF165B43)
@@ -59,9 +63,56 @@ private val RouteLine = Color(0xFF6E8E7F)
 private val Warning = Color(0xFF8A6412)
 
 class V1MainActivity : ComponentActivity() {
+    private var locationSource: AndroidLocationSource? = null
+
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        ) {
+            startRawLocationSource()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent { CaminhosTheme { WalkingScreenV1() } }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (hasLocationPermission()) startRawLocationSource()
+        else requestLocationPermission()
+    }
+
+    override fun onStop() {
+        locationSource?.stop()
+        super.onStop()
+    }
+
+    private fun hasLocationPermission(): Boolean =
+        checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    private fun requestLocationPermission() {
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
+    private fun startRawLocationSource() {
+        if (locationSource == null) {
+            locationSource = AndroidLocationSource(
+                context = this,
+                onPosition = { /* Raw GPS enters the domain pipeline in the next integration step. */ },
+                onAvailabilityChanged = { /* Availability is handled by the walking state layer. */ }
+            )
+        }
+        locationSource?.start()
     }
 }
 
