@@ -1,0 +1,73 @@
+package com.caminhos2027.v1.core.walking
+
+import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.RawGpsPosition
+import com.caminhos2027.v1.core.model.RoutePosition
+import com.caminhos2027.v1.core.model.Walk
+import com.caminhos2027.v1.core.route.GpsState
+import com.caminhos2027.v1.core.route.GpsTrackingPolicy
+import com.caminhos2027.v1.gps.WalkingLocationPipeline
+import java.time.Instant
+
+/**
+ * Single coordinator for the active walking read model.
+ * Raw GPS is projected and evaluated by the domain pipeline; the UI only consumes WalkingState.
+ */
+class WalkingStateCoordinator(
+    private val route: com.caminhos2027.v1.core.model.Route,
+    private val walk: Walk,
+    publishedApoi: List<Apoi>,
+    policy: GpsTrackingPolicy = GpsTrackingPolicy()
+) {
+    private val publishedApoi = publishedApoi.toList()
+    private val locationPipeline = WalkingLocationPipeline(route, policy)
+
+    var state: WalkingState = WalkingStateBuilder.build(
+        route = route,
+        walk = walk,
+        gpsState = GpsState.NO_SIGNAL,
+        routePosition = null,
+        publishedApoi = this.publishedApoi
+    )
+        private set
+
+    fun accept(position: RawGpsPosition): WalkingState {
+        val tracking = locationPipeline.accept(position)
+        return rebuild(
+            gpsState = tracking.state,
+            routePosition = tracking.lastReliableObservation?.routePosition,
+            offline = state.isOffline
+        )
+    }
+
+    fun markNoSignal(now: Instant): WalkingState {
+        val tracking = locationPipeline.markNoSignal(now)
+        return rebuild(
+            gpsState = tracking.state,
+            routePosition = tracking.lastReliableObservation?.routePosition ?: state.routePosition,
+            offline = state.isOffline
+        )
+    }
+
+    fun setOffline(offline: Boolean): WalkingState = rebuild(
+        gpsState = state.gpsState,
+        routePosition = state.routePosition,
+        offline = offline
+    )
+
+    private fun rebuild(
+        gpsState: GpsState,
+        routePosition: RoutePosition?,
+        offline: Boolean
+    ): WalkingState {
+        state = WalkingStateBuilder.build(
+            route = route,
+            walk = walk,
+            gpsState = gpsState,
+            routePosition = routePosition,
+            publishedApoi = publishedApoi,
+            offline = offline
+        )
+        return state
+    }
+}
