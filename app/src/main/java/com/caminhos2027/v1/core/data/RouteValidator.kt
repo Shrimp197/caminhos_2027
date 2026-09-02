@@ -17,6 +17,20 @@ object RouteValidator {
         if (route.source.isBlank()) errors += "route.source must not be blank"
         if (route.updatedAt.isBlank()) errors += "route.updatedAt must not be blank"
 
+        val geometry = route.geometry.points
+        if (geometry.size < 2) errors += "route.geometry must contain at least two points"
+        geometry.forEachIndexed { index, point ->
+            if (!point.latitude.isFinite() || point.latitude !in -90.0..90.0) {
+                errors += "geometry[$index].latitude must be finite and within -90..90"
+            }
+            if (!point.longitude.isFinite() || point.longitude !in -180.0..180.0) {
+                errors += "geometry[$index].longitude must be finite and within -180..180"
+            }
+            if (index > 0 && point == geometry[index - 1]) {
+                errors += "geometry[$index] duplicates previous point"
+            }
+        }
+
         val seenIds = mutableSetOf<String>()
         val seenNumbers = mutableSetOf<Int>()
         var previousEnd = 0.0
