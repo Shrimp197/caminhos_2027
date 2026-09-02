@@ -1,0 +1,29 @@
+{
+  "dataset_version": "TEST-FICTITIOUS-v1",
+  "environment": "sr",
+  "apoi": [
+    {
+      "id": "TEST-FICTITIOUS-APOI-001",
+      "name": "TEST/FICTITIOUS Pernoita",
+      "description": "Fixture de teste isolada.",
+      "main_category": "PERNOITA",
+      "services": ["PERNOITA", "DUCHES", "CARREGAMENTO"],
+      "location": {
+        "latitude": 40.0,
+        "longitude": -8.0,
+        "precision": "APPROXIMATE",
+        "locality": "TEST",
+        "municipality": "TEST",
+        "route_id": "TEST-ROUTE",
+        "route_km": 10.0,
+        "distance_to_route_m": 20.0,
+        "access_distance_m": 50.0,
+        "route_relation": "NEAR_ROUTE"
+      },
+      "publication": {
+        "status": "PUBLISHED",
+        "reason": "TEST/FICTITIOUS"
+      }
+    }
+  ]
+}
