@@ -38,7 +38,8 @@ class ApoiJsonParserTest {
                 "main_category":"AGUA",
                 "services":["AGUA"],
                 "location":{"precision":"LOCALITY_ONLY","route_relation":"NEAR_ROUTE"},
-                "publication":{"status":"PUBLISHED_WITH_WARNING","reason":"TEST/FICTITIOUS"}
+                "publication":{"status":"PUBLISHED_WITH_WARNING","reason":"TEST/FICTITIOUS"},
+                "support":{"pilgrim_support_confirmed":true}
               }]
             }
         """.trimIndent()
