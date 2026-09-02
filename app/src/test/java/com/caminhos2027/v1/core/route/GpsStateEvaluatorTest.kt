@@ -14,8 +14,8 @@ class GpsStateEvaluatorTest {
     @Test
     fun stableOnRouteSequenceStaysOnRoute() {
         var state = GpsTrackingState(GpsState.ACQUIRING)
-        state = GpsStateEvaluator.update(state, observation(0.5, 8.0, 5.0), t0)
-        state = GpsStateEvaluator.update(state, observation(0.51, 10.0, 5.0), t0.plusSeconds(10))
+        state = GpsStateEvaluator.update(state, observation(0.5, 8.0, 5.0, t0), t0)
+        state = GpsStateEvaluator.update(state, observation(0.51, 10.0, 5.0, t0.plusSeconds(10)), t0.plusSeconds(10))
 
         assertEquals(GpsState.ON_ROUTE, state.state)
         assertEquals(0.51, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
@@ -24,7 +24,7 @@ class GpsStateEvaluatorTest {
     @Test
     fun oneNoisyPointDoesNotBecomeProbableDeviation() {
         var state = GpsTrackingState(GpsState.ON_ROUTE)
-        state = GpsStateEvaluator.update(state, observation(0.5, 90.0, 5.0), t0)
+        state = GpsStateEvaluator.update(state, observation(0.5, 90.0, 5.0, t0), t0)
 
         assertTrue(state.state != GpsState.PROBABLE_DEVIATION)
         assertEquals(1, state.consecutiveProbableSamples)
@@ -33,12 +33,13 @@ class GpsStateEvaluatorTest {
     @Test
     fun repeatedOffRoutePointsEscalate() {
         var state = GpsTrackingState(GpsState.ON_ROUTE)
-        state = GpsStateEvaluator.update(state, observation(0.5, 40.0, 5.0), t0)
+        state = GpsStateEvaluator.update(state, observation(0.5, 40.0, 5.0, t0), t0)
         assertEquals(GpsState.ON_ROUTE, state.state)
-        state = GpsStateEvaluator.update(state, observation(0.51, 45.0, 5.0), t0.plusSeconds(10))
+        state = GpsStateEvaluator.update(state, observation(0.51, 45.0, 5.0, t0.plusSeconds(10)), t0.plusSeconds(10))
         assertEquals(GpsState.POSSIBLE_DEVIATION, state.state)
-        state = GpsStateEvaluator.update(state, observation(0.52, 90.0, 5.0), t0.plusSeconds(20))
-        state = GpsStateEvaluator.update(state, observation(0.53, 90.0, 5.0), t0.plusSeconds(30))
+        state = GpsStateEvaluator.update(state, observation(0.52, 90.0, 5.0, t0.plusSeconds(20)), t0.plusSeconds(20))
+        state = GpsStateEvaluator.update(state, observation(0.53, 90.0, 5.0, t0.plusSeconds(30)), t0.plusSeconds(30))
+        state = GpsStateEvaluator.update(state, observation(0.54, 90.0, 5.0, t0.plusSeconds(40)), t0.plusSeconds(40))
         assertEquals(GpsState.PROBABLE_DEVIATION, state.state)
     }
 
@@ -46,10 +47,14 @@ class GpsStateEvaluatorTest {
     fun returningToRouteRecoversState() {
         var state = GpsTrackingState(GpsState.ON_ROUTE)
         repeat(3) { index ->
-            state = GpsStateEvaluator.update(state, observation(0.5 + index * 0.01, 90.0, 5.0), t0.plusSeconds(index * 10L))
+            val time = t0.plusSeconds(index * 10L)
+            state = GpsStateEvaluator.update(state, observation(0.5 + index * 0.01, 90.0, 5.0, time), time)
         }
+        state = GpsStateEvaluator.update(state, observation(0.54, 90.0, 5.0, t0.plusSeconds(30)), t0.plusSeconds(30))
+        state = GpsStateEvaluator.update(state, observation(0.55, 90.0, 5.0, t0.plusSeconds(40)), t0.plusSeconds(40))
+        state = GpsStateEvaluator.update(state, observation(0.56, 90.0, 5.0, t0.plusSeconds(50)), t0.plusSeconds(50))
         assertEquals(GpsState.PROBABLE_DEVIATION, state.state)
-        state = GpsStateEvaluator.update(state, observation(0.54, 6.0, 5.0), t0.plusSeconds(40))
+        state = GpsStateEvaluator.update(state, observation(0.57, 6.0, 5.0, t0.plusSeconds(60)), t0.plusSeconds(60))
         assertEquals(GpsState.ON_ROUTE, state.state)
         assertEquals(0, state.consecutiveSuspiciousSamples)
     }
@@ -58,7 +63,7 @@ class GpsStateEvaluatorTest {
     fun weakAccuracyDoesNotByItselfMeanDeviation() {
         val state = GpsStateEvaluator.update(
             GpsTrackingState(GpsState.ACQUIRING),
-            observation(0.5, 5.0, 100.0),
+            observation(0.5, 5.0, 100.0, t0),
             t0
         )
 
@@ -68,7 +73,7 @@ class GpsStateEvaluatorTest {
     @Test
     fun noSignalPreservesLastReliablePosition() {
         var state = GpsTrackingState(GpsState.ACQUIRING)
-        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0), t0)
+        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
         state = GpsStateEvaluator.update(state, null, t0.plusSeconds(31))
 
         assertEquals(GpsState.NO_SIGNAL, state.state)
@@ -79,8 +84,8 @@ class GpsStateEvaluatorTest {
     @Test
     fun implausibleJumpDoesNotMoveReliablePosition() {
         var state = GpsTrackingState(GpsState.ON_ROUTE)
-        state = GpsStateEvaluator.update(state, observation(1.0, 5.0, 5.0), t0)
-        state = GpsStateEvaluator.update(state, observation(3.0, 5.0, 5.0), t0.plusSeconds(10))
+        state = GpsStateEvaluator.update(state, observation(1.0, 5.0, 5.0, t0), t0)
+        state = GpsStateEvaluator.update(state, observation(3.0, 5.0, 5.0, t0.plusSeconds(10)), t0.plusSeconds(10))
 
         assertEquals(1.0, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
     }
