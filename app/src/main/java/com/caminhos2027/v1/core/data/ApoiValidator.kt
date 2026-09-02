@@ -1,7 +1,6 @@
 package com.caminhos2027.v1.core.data
 
 import com.caminhos2027.v1.core.model.Apoi
-import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.CostModel
 import com.caminhos2027.v1.core.model.LocationPrecision
 import com.caminhos2027.v1.core.model.PublicationStatus
@@ -42,9 +41,7 @@ object ApoiValidator {
         val cost = apoi.cost
         if (cost.model == CostModel.PAID && cost.amount != null && cost.amount < 0.0) errors += "paid cost amount must be >= 0"
         if (cost.model == CostModel.FREE && cost.amount != null) errors += "free cost cannot specify an amount"
-        if (apoi.reservation.policy == ReservationPolicy.REQUIRED && apoi.reservation.contact.isNullOrBlank() && apoi.reservation.url.isNullOrBlank()) {
-            errors += "required reservation should provide contact or url"
-        }
+        if (apoi.reservation.policy == ReservationPolicy.REQUIRED && apoi.reservation.contact.isNullOrBlank() && apoi.reservation.url.isNullOrBlank()) errors += "required reservation should provide contact or url"
 
         if (environment == "production" && apoi.publication.status in setOf(PublicationStatus.CANDIDATE, PublicationStatus.REVIEW, PublicationStatus.HISTORICAL, PublicationStatus.CLOSED, PublicationStatus.EXCLUDED)) {
             errors += "non-publishable status cannot enter production dataset"
@@ -56,10 +53,10 @@ object ApoiValidator {
             if (apoi.publication.status == PublicationStatus.PUBLISHED && apoi.publication.reason?.contains("conflict", ignoreCase = true) == true) errors += "critical conflict cannot be published"
             if (location.precision == LocationPrecision.UNKNOWN) errors += "published APOI requires a sufficiently identified location"
             if (location.routeRelation == RouteRelation.LOCATION_UNCERTAIN || location.routeRelation == RouteRelation.OUTSIDE_ROUTE) errors += "location relation is not suitable for normal publication"
-            if (apoi.support.pilgrimSupportConfirmed == false) errors += "published APOI requires pilgrim support confirmation"
+            if (apoi.support.pilgrimSupportConfirmed != true) errors += "published APOI requires confirmed pilgrim support"
         }
         return errors
     }
 
-    fun validatePublicationCandidate(apoi: Apoi): List<String> = validate(apoi, "production").toMutableList()
+    fun validatePublicationCandidate(apoi: Apoi): List<String> = validate(apoi, "production")
 }
