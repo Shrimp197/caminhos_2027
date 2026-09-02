@@ -45,6 +45,6 @@ dependencies {
     debugImplementation 'androidx.compose.ui:ui-tooling'
 
     implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'org.json:json:20240303'
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.json:json:20240303'
 }
