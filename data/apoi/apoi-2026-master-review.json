@@ -1,0 +1,134 @@
+{
+  "dataset_version": "v1-master-review-2026",
+  "environment": "review",
+  "production_ready": false,
+  "purpose": "Base interna estruturada para qualificar a informação APOI recolhida em 2026. Não é dataset de produção e não representa disponibilidade em 2027.",
+  "source_dataset": "app/src/main/assets/data/apoios-2026.json",
+  "records": [
+    {
+      "id": "apoio_2026_001",
+      "name": "Bombeiros Voluntários da Arrifana",
+      "location": {"latitude": 40.911674, "longitude": -8.496274, "precision": "approximate", "locality": "Arrifana, Santa Maria da Feira", "route_km": 30.173, "distance_to_route_m": 138.9, "route_relation": "near_route"},
+      "support": {"pilgrim_support_confirmed": false, "emergency_available": true},
+      "availability": {"status": "awaiting_confirmation", "reference_year": 2026},
+      "publication": {"status": "review", "reason": "Informação 2026; apoio de emergência identificado. Não inferir pernoita ou outros serviços."},
+      "source": {"name": "Paths of Faith — informações úteis", "url": "https://www.pathsoffaith.com/pt-pt/informacoes-uteis"},
+      "legacy_category": "seguranca_saude"
+    },
+    {
+      "id": "apoio_2026_002",
+      "name": "Bombeiros Voluntários de Lourosa",
+      "location": {"latitude": 40.978611, "longitude": -8.537222, "precision": "exact", "locality": "Lourosa, Santa Maria da Feira", "route_km": 20.525, "distance_to_route_m": 313.8, "route_relation": "near_route"},
+      "support": {"pilgrim_support_confirmed": false, "emergency_available": true},
+      "availability": {"status": "awaiting_confirmation", "reference_year": 2026},
+      "publication": {"status": "review", "reason": "Informação 2026; migrar apenas apoio de emergência. Não inferir pernoita, duche, água ou carregamento."},
+      "source": {"name": "Caminhos de Fátima / Bombeiros Voluntários de Lourosa", "url": "https://caminhosdefatima.com/sitios/bombeiros-voluntarios-de-lourosa-2/"},
+      "legacy_category": "seguranca_saude"
+    },
+    {
+      "id": "apoio_2026_003",
+      "name": "Albergue do Apeadeiro",
+      "location": {"latitude": 40.86814, "longitude": -8.49428, "precision": "exact", "locality": "Cucujães, Oliveira de Azeméis", "route_km": 35.227, "distance_to_route_m": 590.6, "route_relation": "near_route"},
+      "support": {"pilgrim_support_confirmed": true, "capacity": 12, "sleeping_type": "bed", "shower": true, "wc": true},
+      "availability": {"status": "awaiting_confirmation", "reference_year": 2026},
+      "cost": {"model": "paid", "amount": 10, "currency": "EUR"},
+      "reservation": {"policy": "required"},
+      "publication": {"status": "review", "reason": "Dados de 2026 preservados; confirmar funcionamento e condições em 2027."},
+      "source": {"name": "Azeméis.net + OpenStreetMap/Mapcarta", "url": "https://azemeisnet.sapo.pt/guia-do-peregrino-para-o-albergue-do-apeadeiro-em-cucujaes/"},
+      "legacy": {"dormitory_beds": 10, "water": null, "medical": null}
+    },
+    {
+      "id": "apoio_2026_004",
+      "name": "Albergue Albergaria-a-Nova",
+      "location": {"latitude": 40.735691, "longitude": -8.488133, "precision": "exact", "locality": "Albergaria-a-Nova", "route_km": 53.88, "distance_to_route_m": 14.4, "route_relation": "on_route"},
+      "support": {"pilgrim_support_confirmed": true, "shower": true, "wc": true},
+      "availability": {"status": "awaiting_confirmation", "reference_year": 2026},
+      "cost": {"model": "paid", "amount": 15, "currency": "EUR"},
+      "reservation": {"policy": "required"},
+      "publication": {"status": "review", "reason": "Dados de 2026 preservados; confirmar 2027."},
+      "source": {"name": "Albergue Albergaria-a-Nova — site próprio", "url": "https://www.albergaria.eu/rooms-tariff.php"}
+    },
+    {
+      "id": "apoio_2026_005",
+      "name": "Albergue de Peregrinos Rainha D. Teresa",
+      "location": {"latitude": 40.688998, "longitude": -8.481995, "precision": "exact", "locality": "Albergaria-a-Velha", "route_km": 59.784, "distance_to_route_m": 10.3, "route_relation": "on_route"},
+      "support": {"pilgrim_support_confirmed": true, "capacity": 21, "shower": true, "wc": true},
+      "availability": {"status": "awaiting_confirmation", "reference_year": 2026, "season": "01-03 a 30-11; confirmar 2027"},
+      "cost": {"model": "paid", "amount": 8, "currency": "EUR"},
+      "reservation": {"policy": "not_required"},
+      "publication": {"status": "review", "reason": "Existência e função confirmadas em 2026; preço, horário e sazonalidade precisam reconfirmação."},
+      "source": {"name": "Município de Albergaria-a-Velha / Paths of Faith / Via Lusitana", "url": "https://www.cm-albergaria.pt/visitar/caminho-de-fatima"}
+    },
+    {
+      "id": "apoio_2026_006",
+      "name": "Albergue de Peregrinos Santo António",
+      "location": {"latitude": 40.5820317, "longitude": -8.4532898, "precision": "exact", "locality": "Águeda", "route_km": 74.012, "distance_to_route_m": 161.3, "route_relation": "near_route"},
+      "support": {"pilgrim_support_confirmed": true, "shower": true, "wc": true},
+      "availability": {"status": "awaiting_confirmation", "reference_year": 2026},
+      "cost": {"model": "paid", "amount": 15, "currency": "EUR"},
+      "reservation": {"policy": "required"},
+      "publication": {"status": "review", "reason": "Capacidade conflitante (13 vs 19) não deve ser publicada sem resolução; confirmar condições em 2027."},
+      "source": {"name": "Federación Española de Asociaciones de Amigos del Camino de Santiago / Wise Pilgrim", "url": "https://www.caminosantiago.org/cpperegrino/caminos/albficha.asp?AlbergueId=2978&CaminoId=79&PoblacionId=3421"},
+      "legacy": {"capacity_reported": 19, "capacity_conflict": [13, 19]}
+    },
+    {
+      "id": "apoio_2026_007",
+      "name": "Albergue-Residencial Hilário",
+      "location": {"latitude": 40.3908535, "longitude": -8.4517801, "precision": "exact", "locality": "Sernadelo, Mealhada", "route_km": 101.98, "distance_to_route_m": 2027.6, "route_relation": "accessible_with_detour"},
+      "support": {"pilgrim_support_confirmed": false},
+      "availability": {"status": "historical", "reference_year": 2026},
+      "publication": {"status": "historical", "reason": "Registo de origem anterior; não assumir funcionamento atual."},
+      "source": {"name": "Federación Española de Asociaciones de Amigos del Camino de Santiago", "url": "https://www.caminosantiago.org/cpperegrino/caminos/albficha.asp?AlbergueId=2975&CaminoId=79&PoblacionId=3431"},
+      "legacy": {"capacity": 20, "price_eur": 10, "reservation": true}
+    },
+    {
+      "id": "apoio_2026_008",
+      "name": "Albergue de Peregrinos Rainha Santa Isabel",
+      "location": {"latitude": 40.202096, "longitude": -8.4391948, "precision": "exact", "locality": "Coimbra", "route_km": 126.796, "distance_to_route_m": 299.2, "route_relation": "near_route"},
+      "support": {"pilgrim_support_confirmed": false, "shower": true, "wc": true},
+      "availability": {"status": "historical", "reference_year": 2026},
+      "publication": {"status": "historical", "reason": "Informação histórica; confirmar funcionamento atual antes de eventual publicação."},
+      "source": {"name": "Confraria Rainha Santa Isabel / Federação Espanhola", "url": "https://rainhasantaisabel.org/2014/03/11/inauguracao-do-albergue-de-peregrinos-rainha-santa-isabel/"},
+      "legacy": {"capacity": 30, "price_eur": 10, "reservation": false}
+    },
+    {
+      "id": "apoio_2026_009",
+      "name": "Bombeiros Voluntários de Ansião",
+      "location": {"latitude": 39.91335, "longitude": -8.43853, "precision": "exact", "locality": "Ansião", "route_km": 175.746, "distance_to_route_m": 16300.5, "route_relation": "distant_potential_support"},
+      "support": {"pilgrim_support_confirmed": false, "emergency_available": true},
+      "availability": {"status": "awaiting_confirmation", "reference_year": 2026},
+      "publication": {"status": "review", "reason": "Apoio institucional potencial distante; não tratar como próximo APOI nem inferir pernoita."},
+      "source": {"name": "OpenStreetMap/Mapcarta", "url": "https://mapcarta.com/pt/W479578959"}
+    },
+    {
+      "id": "apoio_2026_010",
+      "name": "Posto de Apoio ao Peregrino — Ribeiro da Vide",
+      "location": {"latitude": 39.90843, "longitude": -8.439377, "precision": "approximate", "locality": "Ansião", "route_km": 175.746, "distance_to_route_m": 16238.1, "route_relation": "distant_potential_support"},
+      "support": {"pilgrim_support_confirmed": true},
+      "availability": {"status": "awaiting_confirmation", "reference_year": 2026, "season": "maio — confirmar 2027"},
+      "publication": {"status": "review", "reason": "Posto sazonal anunciado em 2026; serviços específicos e regras 2027 ainda por confirmar."},
+      "source": {"name": "Caminhos de Fátima — Facebook oficial", "url": "https://www.facebook.com/caminhosfatima/"}
+    },
+    {
+      "id": "apoio_2026_011",
+      "name": "Acolhimento de peregrinos a pé — Santuário de Fátima",
+      "location": {"precision": "locality_only", "locality": "Fátima", "route_relation": "location_uncertain"},
+      "support": {"pilgrim_support_confirmed": true, "shower": true, "wc": true, "water_available": true},
+      "availability": {"status": "awaiting_confirmation", "reference_year": 2026, "season": "peregrinações aniversárias de maio; regras 2027 por confirmar"},
+      "cost": {"model": "free", "amount": 0, "currency": "EUR"},
+      "reservation": {"policy": "not_required"},
+      "publication": {"status": "review", "reason": "Acolhimento 2026 preservado; regras 2027 devem ser confirmadas. Não inventar coordenadas."},
+      "source": {"name": "Santuário de Fátima", "url": "https://www.fatima.pt/pt/pages/acolhimento-de-peregrinos-a-pe"},
+      "legacy": {"notes": "Duches gratuitos no Parque 4, 08:00–21:00 segundo informação 2026."}
+    },
+    {
+      "id": "apoio_2026_012",
+      "name": "Centro Social de São José de Cluny — candidato institucional",
+      "location": {"precision": "locality_only", "locality": "Famalicão, Anadia", "route_relation": "location_uncertain"},
+      "support": {"pilgrim_support_confirmed": false},
+      "availability": {"status": "awaiting_confirmation", "reference_year": 2026},
+      "publication": {"status": "candidate", "reason": "Instituição identificada, mas as fontes não comprovam apoio específico ao peregrino."},
+      "source": {"name": "Município de Anadia / Centro Social São José de Cluny", "url": "https://www.cm-anadia.pt/contactos/associativismo/acao-social/poi/centro-social-s-jose-de-cluny"}
+    }
+  ]
+}
