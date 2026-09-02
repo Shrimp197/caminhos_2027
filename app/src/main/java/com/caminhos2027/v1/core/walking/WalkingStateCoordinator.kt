@@ -9,10 +9,7 @@ import com.caminhos2027.v1.core.route.GpsTrackingPolicy
 import com.caminhos2027.v1.gps.WalkingLocationPipeline
 import java.time.Instant
 
-/**
- * Single coordinator for the active walking read model.
- * Raw GPS is projected and evaluated by the domain pipeline; the UI only consumes WalkingState.
- */
+/** Single coordinator for the active walking read model. */
 class WalkingStateCoordinator(
     private val route: com.caminhos2027.v1.core.model.Route,
     private val walk: Walk,
@@ -45,11 +42,24 @@ class WalkingStateCoordinator(
         return state
     }
 
+    /** Restores only persisted device-derived state; derived APOI/progress values are rebuilt. */
+    fun restoreCheckpoint(checkpoint: WalkingCheckpoint): WalkingState {
+        state = WalkingStateBuilder.build(
+            route = route,
+            walk = walk,
+            gpsState = checkpoint.gpsState,
+            routePosition = checkpoint.routePosition,
+            publishedApoi = publishedApoi,
+            offline = checkpoint.isOffline
+        )
+        return state
+    }
+
     fun accept(position: RawGpsPosition): WalkingState {
         val tracking = locationPipeline.accept(position)
         return rebuild(
             gpsState = tracking.state,
-            routePosition = tracking.lastReliableObservation?.routePosition,
+            routePosition = tracking.lastReliableObservation?.routePosition ?: state.routePosition,
             offline = state.isOffline
         )
     }
