@@ -1,11 +1,14 @@
 package com.caminhos2027.v1.core.data
 
 import com.caminhos2027.v1.core.model.Route
+import com.caminhos2027.v1.core.model.RouteGeometry
+import com.caminhos2027.v1.core.route.RouteGeometryMetrics
 import kotlin.math.abs
 
 /** Deterministic domain validation for official route data before it reaches the app. */
 object RouteValidator {
     private const val DISTANCE_TOLERANCE_KM = 0.1
+    private const val GEOMETRY_DISTANCE_TOLERANCE_RATIO = 0.15
 
     fun validate(route: Route): List<String> {
         val errors = mutableListOf<String>()
@@ -28,6 +31,14 @@ object RouteValidator {
             }
             if (index > 0 && point == geometry[index - 1]) {
                 errors += "geometry[$index] duplicates previous point"
+            }
+        }
+
+        if (geometry.size >= 2 && route.totalDistanceKm > 0.0) {
+            val measuredKm = RouteGeometryMetrics.lengthKm(route.geometry)
+            val allowedDifference = maxOf(DISTANCE_TOLERANCE_KM, route.totalDistanceKm * GEOMETRY_DISTANCE_TOLERANCE_RATIO)
+            if (abs(measuredKm - route.totalDistanceKm) > allowedDifference) {
+                errors += "route geometry length $measuredKm km differs from declared total distance ${route.totalDistanceKm} km by more than $allowedDifference km"
             }
         }
 
