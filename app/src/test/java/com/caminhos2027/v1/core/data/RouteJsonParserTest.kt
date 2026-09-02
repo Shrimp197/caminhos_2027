@@ -5,14 +5,17 @@ import org.junit.Test
 
 class RouteJsonParserTest {
     @Test
-    fun parsesRouteAndStagesFromV1Contract() {
+    fun parsesRouteStagesAndGeometryFromV1Contract() {
         val route = RouteJsonParser.parse(
             """
             {
               "id":"test-route",
               "name":"TEST/FICTITIOUS route",
               "official_name":"TEST/FICTITIOUS route",
-              "geometry":{},
+              "geometry":{
+                "type":"LineString",
+                "coordinates":[[-8.0,40.0],[-8.1,40.1]]
+              },
               "total_distance_km":20.0,
               "stages":[{
                 "id":"stage-1",
@@ -34,6 +37,9 @@ class RouteJsonParserTest {
 
         assertEquals("test-route", route.id)
         assertEquals(20.0, route.totalDistanceKm, 0.0)
+        assertEquals(2, route.geometry.points.size)
+        assertEquals(40.0, route.geometry.points.first().latitude, 0.0)
+        assertEquals(-8.0, route.geometry.points.first().longitude, 0.0)
         assertEquals(1, route.stages.size)
         assertEquals(10.0, route.stages.first().distanceKm, 0.0)
     }
