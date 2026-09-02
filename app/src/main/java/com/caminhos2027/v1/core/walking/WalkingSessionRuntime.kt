@@ -1,5 +1,6 @@
 package com.caminhos2027.v1.core.walking
 
+import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RoutePosition
@@ -11,7 +12,7 @@ import java.time.Instant
 class WalkingSessionRuntime(
     private val route: Route,
     private val sessionService: WalkingSessionService,
-    private val publishedApoi: List<com.caminhos2027.v1.core.model.Apoi>,
+    private val publishedApoi: List<Apoi>,
     private val policy: GpsTrackingPolicy = GpsTrackingPolicy()
 ) {
     private var coordinator: WalkingStateCoordinator? = null
@@ -22,17 +23,9 @@ class WalkingSessionRuntime(
         val started = sessionService.start(walkId, position, now)
         val nextCoordinator = WalkingStateCoordinator(route, started, publishedApoi, policy)
         coordinator = nextCoordinator
-        return nextCoordinator.accept(
-            com.caminhos2027.v1.core.model.RawGpsPosition(
-                latitude = 0.0,
-                longitude = 0.0,
-                accuracyMeters = null,
-                capturedAt = now
-            )
-        ).let { state ->
-            // The lifecycle start position is authoritative; do not fabricate a GPS coordinate.
-            state.copy(routePosition = position)
-        }
+        val state = nextCoordinator.seedStartPosition(position)
+        sessionService.updatePosition(walkId, state)
+        return state
     }
 
     fun accept(position: RawGpsPosition): WalkingState {
@@ -70,14 +63,7 @@ class WalkingSessionRuntime(
         val nextCoordinator = WalkingStateCoordinator(route, walk, publishedApoi, policy)
         coordinator = nextCoordinator
         if (saved != null) {
-            return nextCoordinator.setOffline(saved.isOffline)
-                .copy(
-                    routePosition = saved.routePosition,
-                    gpsState = saved.gpsState,
-                    progress = saved.progress,
-                    nextApoi = saved.nextApoi,
-                    nextApoiDistanceKm = saved.nextApoiDistanceKm
-                )
+            return saved
         }
         return nextCoordinator.state
     }
