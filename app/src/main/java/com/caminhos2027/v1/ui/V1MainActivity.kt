@@ -82,7 +82,7 @@ private fun CaminhosTheme(content: @Composable () -> Unit) {
 
 @Composable
 private fun WalkingScreenV1(state: WalkingState? = null) {
-    val gpsState = state?.gpsState ?: GpsState.ON_ROUTE
+    val gpsState = state?.gpsState ?: GpsState.ACQUIRING
     val progress = state?.progress
     val nextApoi = state?.nextApoi
 
@@ -101,7 +101,7 @@ private fun WalkingScreenV1(state: WalkingState? = null) {
                         Spacer(Modifier.width(7.dp))
                         Column {
                             Text("Caminhada atual", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                            Text(progress?.stageName ?: "Etapa de referência", style = MaterialTheme.typography.labelSmall, color = Muted)
+                            Text(stageLabel(progress), style = MaterialTheme.typography.labelSmall, color = Muted)
                         }
                     }
                 }
@@ -113,13 +113,16 @@ private fun WalkingScreenV1(state: WalkingState? = null) {
             }
 
             Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(12.dp)) {
-                NextSupportCard(nextApoi)
+                NextSupportCard(nextApoi, state?.nextApoiDistanceKm)
                 Spacer(Modifier.height(8.dp))
                 ProgressCard(progress)
             }
         }
     }
 }
+
+private fun stageLabel(progress: WalkingProgress?): String =
+    progress?.stageId?.let { "Etapa $it" } ?: "Etapa de referência"
 
 @Composable
 private fun GpsStatusChip(gpsState: GpsState, modifier: Modifier = Modifier) {
@@ -136,7 +139,7 @@ private fun GpsStatusChip(gpsState: GpsState, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun NextSupportCard(nextApoi: Apoi?) {
+private fun NextSupportCard(nextApoi: Apoi?, distanceKm: Double?) {
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -155,7 +158,11 @@ private fun NextSupportCard(nextApoi: Apoi?) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.LocationOn, contentDescription = null, tint = Forest, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(5.dp))
-                Text(nextApoi?.routeKm?.let { "${formatKm(it)} km pelo caminho" } ?: "Sem APOI seguinte confirmado", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    distanceKm?.let { "${formatKm(it)} km pelo caminho" } ?: "Sem APOI seguinte confirmado",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -163,9 +170,9 @@ private fun NextSupportCard(nextApoi: Apoi?) {
 
 @Composable
 private fun ProgressCard(progress: WalkingProgress?) {
-    val walked = progress?.walkedKm ?: 12.5
-    val remaining = progress?.remainingKm ?: 199.4
-    val ratio = progress?.progressRatio ?: 0.06
+    val walked = progress?.walkedKm ?: 0.0
+    val remaining = progress?.remainingKm ?: 0.0
+    val ratio = progress?.progressRatio ?: 0.0
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Forest)) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
