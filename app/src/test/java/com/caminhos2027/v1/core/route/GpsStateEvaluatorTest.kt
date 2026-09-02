@@ -85,7 +85,12 @@ class GpsStateEvaluatorTest {
         assertEquals(1.0, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
     }
 
-    private fun observation(routeKm: Double, distanceToRouteMeters: Double, accuracyMeters: Double) = GpsObservation(
+    private fun observation(
+        routeKm: Double,
+        distanceToRouteMeters: Double,
+        accuracyMeters: Double,
+        capturedAt: Instant
+    ) = GpsObservation(
         routePosition = RoutePosition(
             routeId = "test-route",
             routeKm = routeKm,
@@ -94,6 +99,6 @@ class GpsStateEvaluatorTest {
             confidence = PositionConfidence.UNKNOWN
         ),
         accuracyMeters = accuracyMeters,
-        capturedAt = t0
+        capturedAt = capturedAt
     )
 }
