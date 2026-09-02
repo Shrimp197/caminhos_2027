@@ -1,6 +1,8 @@
 package com.caminhos2027.v1.core.data
 
+import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.Route
+import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.Stage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -45,6 +47,7 @@ class RouteRepositoryTest {
         totalDistanceKm = 20.0,
         source = "TEST/FICTITIOUS",
         updatedAt = "2026-09-02",
+        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.1, -8.1))),
         stages = listOf(
             Stage(
                 id = "test-stage-1",
