@@ -13,5 +13,7 @@ data class WalkingState(
     val gpsState: GpsState,
     val progress: WalkingProgress?,
     val nextApoi: Apoi?,
+    /** Route distance from the current position to the next APOI, not absolute route km. */
+    val nextApoiDistanceKm: Double?,
     val isOffline: Boolean = false
 )
