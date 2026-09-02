@@ -1,25 +1,30 @@
 package com.caminhos2027.v1.core.walking
 
-/** Persistence boundary for the transient/current walking read state.
- *
- * The walk lifecycle remains persisted through WalkRepository. RoutePosition is kept separate
- * because it represents the latest device-derived position, not a change to the official walk plan.
- */
+import com.caminhos2027.v1.core.model.RoutePosition
+import com.caminhos2027.v1.core.route.GpsState
+
+/** Minimal persistence boundary for the latest device-derived walking checkpoint. */
+data class WalkingCheckpoint(
+    val routePosition: RoutePosition?,
+    val gpsState: GpsState,
+    val isOffline: Boolean
+)
+
 interface WalkingStateRepository {
-    fun save(state: WalkingState)
-    fun get(walkId: String): WalkingState?
+    fun save(walkId: String, checkpoint: WalkingCheckpoint)
+    fun get(walkId: String): WalkingCheckpoint?
     fun clear(walkId: String)
 }
 
-/** Deterministic implementation for early integration and domain tests. */
+/** Deterministic repository used by domain tests and early integration work. */
 class InMemoryWalkingStateRepository : WalkingStateRepository {
-    private val states = linkedMapOf<String, WalkingState>()
+    private val states = linkedMapOf<String, WalkingCheckpoint>()
 
-    override fun save(state: WalkingState) {
-        states[state.walk.id] = state
+    override fun save(walkId: String, checkpoint: WalkingCheckpoint) {
+        states[walkId] = checkpoint
     }
 
-    override fun get(walkId: String): WalkingState? = states[walkId]
+    override fun get(walkId: String): WalkingCheckpoint? = states[walkId]
 
     override fun clear(walkId: String) {
         states.remove(walkId)
