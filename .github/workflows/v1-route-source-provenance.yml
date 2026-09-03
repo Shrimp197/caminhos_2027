@@ -1,0 +1,77 @@
+name: V1 Route Source Provenance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ v1-route-import ]
+
+jobs:
+  verify-official-gpx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Capture official ACF GPX
+        env:
+          SOURCE_URL: https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx
+          EXPECTED_SHA256: 1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266
+        run: |
+          set -euo pipefail
+          mkdir -p build/source
+          curl --fail --location --retry 3 --silent --show-error "$SOURCE_URL" \
+            --output build/source/Caminho_do_centenario.gpx
+          ACTUAL_SHA256="$(sha256sum build/source/Caminho_do_centenario.gpx | cut -d' ' -f1)"
+          echo "Official URL: $SOURCE_URL"
+          echo "Expected SHA-256: $EXPECTED_SHA256"
+          echo "Actual SHA-256:   $ACTUAL_SHA256"
+          test "$ACTUAL_SHA256" = "$EXPECTED_SHA256"
+
+      - name: Validate GPX structure and geometry metrics
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import math
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          path = Path("build/source/Caminho_do_centenario.gpx")
+          data = path.read_bytes()
+          ns = "http://www.topografix.com/GPX/1/1"
+          root = ET.fromstring(data)
+          assert root.tag == f"{{{ns}}}gpx"
+          segments = root.findall(f".//{{{ns}}}trkseg")
+          points = []
+          for p in root.findall(f".//{{{ns}}}trkpt"):
+              lat = float(p.attrib["lat"])
+              lon = float(p.attrib["lon"])
+              assert math.isfinite(lat) and math.isfinite(lon)
+              assert -90 <= lat <= 90 and -180 <= lon <= 180
+              points.append((lat, lon))
+
+          assert len(root.findall(f".//{{{ns}}}trk")) == 1
+          assert len(segments) == 1
+          assert len(points) >= 2
+          assert all(a != b for a, b in zip(points, points[1:]))
+
+          radius = 6371.0088
+          def hav(a, b):
+              lat1, lon1 = map(math.radians, a)
+              lat2, lon2 = map(math.radians, b)
+              dlat = lat2 - lat1
+              dlon = lon2 - lon1
+              h = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
+              return 2 * radius * math.asin(math.sqrt(h))
+
+          lengths = [hav(a, b) for a, b in zip(points, points[1:])]
+          print(f"tracks=1 segments=1 points={len(points)}")
+          print(f"geometry_km={sum(lengths):.6f}")
+          print(f"max_segment_m={max(lengths) * 1000:.2f}")
+          print(f"first_point={points[0]}")
+          print(f"last_point={points[-1]}")
+          PY
+
+      - name: Show provenance gate
+        run: |
+          echo "Official source bytes match the recorded SHA-256."
+          echo "This workflow proves current URL-to-bytes identity; it does not promote geometry or invent stages."
