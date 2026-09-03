@@ -4,8 +4,8 @@ import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.Stage
-import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RouteValidatorTest {
@@ -37,7 +37,7 @@ class RouteValidatorTest {
     fun geometryWithInvalidLatitudeIsRejected() {
         val route = fixture().copy(
             geometry = RouteGeometry(
-                listOf(GeoPoint(91.0, -8.0), GeoPoint(40.1, -8.1))
+                listOf(GeoPoint(91.0, -8.0), GeoPoint(40.0, -7.991007))
             )
         )
         assertTrue(RouteValidator.validate(route).any { it.contains("latitude") })
@@ -47,7 +47,7 @@ class RouteValidatorTest {
     fun geometryWithInvalidLongitudeIsRejected() {
         val route = fixture().copy(
             geometry = RouteGeometry(
-                listOf(GeoPoint(40.0, -181.0), GeoPoint(40.1, -8.1))
+                listOf(GeoPoint(40.0, -181.0), GeoPoint(40.0, -7.991007))
             )
         )
         assertTrue(RouteValidator.validate(route).any { it.contains("longitude") })
@@ -64,13 +64,13 @@ class RouteValidatorTest {
         id = "test-route",
         name = "TEST/FICTITIOUS route",
         officialName = "TEST/FICTITIOUS route",
-        totalDistanceKm = 20.0,
+        totalDistanceKm = 1.0,
         source = "TEST/FICTITIOUS",
         updatedAt = "2026-09-02",
         geometry = RouteGeometry(
             listOf(
                 GeoPoint(40.0, -8.0),
-                GeoPoint(40.1, -8.1)
+                GeoPoint(40.0, -7.991007)
             )
         ),
         stages = listOf(
@@ -80,8 +80,8 @@ class RouteValidatorTest {
                 number = 1,
                 name = "TEST/FICTITIOUS stage",
                 startRouteKm = 0.0,
-                endRouteKm = 10.0,
-                distanceKm = 10.0,
+                endRouteKm = 1.0,
+                distanceKm = 1.0,
                 startName = "TEST/FICTITIOUS start",
                 endName = "TEST/FICTITIOUS end",
                 source = "TEST/FICTITIOUS"
