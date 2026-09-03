@@ -86,6 +86,38 @@ class ApoiQualificationTest {
         ApoiQualification.evaluate(base(), ApoiQualificationEvidence(true, confirmedForYear = 2027), 2027).status
     )
 
+    @Test fun futureAvailabilityWithoutTargetYearEvidenceNeedsReview() = assertEquals(
+        PublicationStatus.REVIEW,
+        ApoiQualification.evaluate(
+            base(ApoiAvailabilityStatus.FUTURE_CONFIRMED),
+            ApoiQualificationEvidence(true),
+            2027
+        ).status
+    )
+
+    @Test fun futureAvailabilityWithDifferentYearEvidenceNeedsReview() = assertEquals(
+        PublicationStatus.REVIEW,
+        ApoiQualification.evaluate(
+            base(ApoiAvailabilityStatus.FUTURE_CONFIRMED),
+            ApoiQualificationEvidence(true, confirmedForYear = 2028),
+            2027
+        ).status
+    )
+
+    @Test fun futureAvailabilityWithTargetYearEvidenceCanPublish() = assertEquals(
+        PublicationStatus.PUBLISHED,
+        ApoiQualification.evaluate(
+            base(ApoiAvailabilityStatus.FUTURE_CONFIRMED),
+            ApoiQualificationEvidence(true, confirmedForYear = 2027),
+            2027
+        ).status
+    )
+
+    @Test fun invalidTargetYearNeedsReview() = assertEquals(
+        PublicationStatus.REVIEW,
+        ApoiQualification.evaluate(base(), ApoiQualificationEvidence(true), 0).status
+    )
+
     @Test fun uncertainLocationNeedsReviewBeforePublication() = assertEquals(
         PublicationStatus.REVIEW,
         ApoiQualification.evaluate(base(precision = LocationPrecision.UNKNOWN), ApoiQualificationEvidence(true), 2027).status
