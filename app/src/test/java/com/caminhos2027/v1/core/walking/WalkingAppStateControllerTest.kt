@@ -37,7 +37,7 @@ class WalkingAppStateControllerTest {
     @Test
     fun controllerPublishesIntoTheProvidedStore() {
         val store = AppStateStore()
-        val controller = controller(store)
+        val controller = controller(store = store)
 
         val state = controller.start(RoutePosition("route", 2.0, 0.0))
 
