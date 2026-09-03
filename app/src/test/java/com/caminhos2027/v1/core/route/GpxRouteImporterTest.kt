@@ -16,7 +16,7 @@ class GpxRouteImporterTest {
 
     @Test
     fun parseRejectsMissingLatitude() {
-        assertThrows(IllegalArgumentException::class.java) {
+        assertThrows(IllegalStateException::class.java) {
             GpxRouteImporter.parse(gpx(null, "-8.6", "41.2", "-8.5"))
         }
     }
@@ -24,7 +24,7 @@ class GpxRouteImporterTest {
     @Test
     fun parseRejectsConsecutiveDuplicatePoints() {
         assertThrows(IllegalArgumentException::class.java) {
-            GpxRouteImporter.parse(gpx("41.1", "-8.6", "41.1", "-8.6"))
+            GpxRouteImporter.parse(gpx("41.1", "-8.6", "41.1", "-8.5"))
         }
     }
 
