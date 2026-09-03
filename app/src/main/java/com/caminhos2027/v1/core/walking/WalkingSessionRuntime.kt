@@ -57,11 +57,11 @@ class WalkingSessionRuntime(
     }
 
     /** Rebuilds derived progress/APOI information from the persisted walk and checkpoint. */
-    fun resume(): WalkingState? {
+    fun resume(now: Instant = Instant.now()): WalkingState? {
         val walk = sessionService.resume() ?: return null
         val nextCoordinator = WalkingStateCoordinator(route, walk, publishedApoi, policy)
         coordinator = nextCoordinator
         val checkpoint = sessionService.resumeCheckpoint(walk.id) ?: return nextCoordinator.state
-        return nextCoordinator.restoreCheckpoint(checkpoint)
+        return nextCoordinator.restoreCheckpoint(checkpoint, now)
     }
 }
