@@ -1,17 +1,25 @@
 package com.caminhos2027.v1.core.walking
 
+import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.ApoiCategory
+import com.caminhos2027.v1.core.model.ApoiLocation
+import com.caminhos2027.v1.core.model.ApoiPublication
 import com.caminhos2027.v1.core.model.GeoPoint
+import com.caminhos2027.v1.core.model.LocationPrecision
 import com.caminhos2027.v1.core.model.PositionConfidence
+import com.caminhos2027.v1.core.model.PublicationStatus
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RoutePosition
+import com.caminhos2027.v1.core.model.RouteRelation
 import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 
@@ -71,6 +79,39 @@ class WalkingSessionRuntimeTest {
         assertEquals(0.5, resumed!!.routePosition!!.routeKm, 0.02)
     }
 
+    @Test fun recoveryAfterSignalLossResumesGpsProgressAndRefreshesNextApoi() {
+        val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
+        val water = fixtureWaterApoi()
+        val runtime = WalkingSessionRuntime(route, service, listOf(water))
+        runtime.prepare(WalkingPlanFactory.create(route, "walk-6", 0.4, 1.8))
+        runtime.start("walk-6", start, Instant.parse("2026-09-01T08:00:00Z"))
+
+        val moved = runtime.accept(RawGpsPosition(40.0045, -8.0, 5.0, Instant.parse("2026-09-01T08:02:00Z")))
+        assertTrue(moved.routePosition!!.routeKm > start.routeKm)
+        runtime.setOffline(true)
+        val noSignal = runtime.markNoSignal(Instant.parse("2026-09-01T08:02:31Z"))
+        assertEquals(GpsState.NO_SIGNAL, noSignal.gpsState)
+        assertEquals(moved.routePosition!!.routeKm, noSignal.routePosition!!.routeKm, 0.001)
+
+        val resumed = WalkingSessionRuntime(route, service, listOf(water)).resume(Instant.parse("2026-09-01T08:05:00Z"))
+        assertNotNull(resumed)
+        assertEquals(moved.routePosition!!.routeKm, resumed!!.routePosition!!.routeKm, 0.001)
+        assertTrue(resumed.isOffline)
+
+        val recovered = WalkingSessionRuntime(route, service, listOf(water)).apply {
+            resume(Instant.parse("2026-09-01T08:05:00Z"))
+            setOffline(false)
+            accept(RawGpsPosition(40.0063, -8.0, 5.0, Instant.parse("2026-09-01T08:06:00Z")))
+        }.state
+
+        assertEquals(GpsState.ON_ROUTE, recovered.gpsState)
+        assertTrue(recovered.routePosition!!.routeKm > resumed.routePosition!!.routeKm)
+        assertTrue(recovered.progress!!.currentRouteKm > resumed.progress!!.currentRouteKm)
+        assertEquals("water-1", recovered.nextApoi?.id)
+        assertTrue(recovered.nextApoiDistanceKm!! < resumed.nextApoiDistanceKm!!)
+        assertEquals(false, recovered.isOffline)
+    }
+
     @Test fun resumedRuntimeStillRejectsAnImplausibleGpsJumpFromCheckpoint() {
         val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
         val runtime = WalkingSessionRuntime(route, service, emptyList())
@@ -89,4 +130,26 @@ class WalkingSessionRuntimeTest {
         assertNotNull(afterJump)
         assertEquals(0.4, afterJump!!.routePosition!!.routeKm, 0.001)
     }
+
+    private fun fixtureWaterApoi() = Apoi(
+        id = "water-1",
+        name = "TEST/FICTITIOUS water",
+        description = "APOI fictício de teste",
+        mainCategory = ApoiCategory.AGUA,
+        services = setOf(ApoiCategory.AGUA),
+        location = ApoiLocation(
+            latitude = 40.0072,
+            longitude = -8.0,
+            precision = LocationPrecision.EXACT,
+            locality = "TEST",
+            municipality = "TEST",
+            reference = "Fixture",
+            routeId = "sr-route",
+            routeKm = 0.8,
+            distanceToRouteM = 0.0,
+            accessDistanceM = 0.0,
+            routeRelation = RouteRelation.ON_ROUTE
+        ),
+        publication = ApoiPublication(PublicationStatus.PUBLISHED, "TEST fixture")
+    )
 }
