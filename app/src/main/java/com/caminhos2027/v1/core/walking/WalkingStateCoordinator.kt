@@ -63,8 +63,9 @@ class WalkingStateCoordinator(
         return state
     }
 
-    /** Restores only persisted device-derived state; derived APOI/progress values are rebuilt. */
-    fun restoreCheckpoint(checkpoint: WalkingCheckpoint): WalkingState {
+    /** Restores persisted device state and re-establishes its route position as the GPS continuity baseline. */
+    fun restoreCheckpoint(checkpoint: WalkingCheckpoint, now: Instant = Instant.now()): WalkingState {
+        checkpoint.routePosition?.let { locationPipeline.seedRoutePosition(it, now) }
         state = WalkingStateBuilder.build(
             route = route,
             walk = walk,
