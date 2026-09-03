@@ -42,8 +42,8 @@ class WalkingSessionRuntimeTest {
         val afterJump = runtime.accept(RawGpsPosition(40.018, -8.0, 5.0, Instant.parse("2026-09-01T08:01:00Z")))
 
         assertEquals(0.4, afterJump.routePosition!!.routeKm, 0.001)
-        assertEquals(start.routeKm, afterJump.progress.currentRouteKm, 0.001)
-        assertEquals(started.progress.walkedKm, afterJump.progress.walkedKm, 0.001)
+        assertEquals(start.routeKm, afterJump.progress!!.currentRouteKm, 0.001)
+        assertEquals(started.progress!!.walkedKm, afterJump.progress.walkedKm, 0.001)
         assertEquals(GpsState.ACQUIRING, afterJump.gpsState)
     }
 
