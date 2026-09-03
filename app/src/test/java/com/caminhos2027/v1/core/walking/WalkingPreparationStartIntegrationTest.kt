@@ -34,7 +34,7 @@ class WalkingPreparationStartIntegrationTest {
         preparation.save("walk", 1.0, 5.0)
         val state = preparation.startSaved(
             catalog = catalog,
-            position = RoutePosition("route", 2.0, 40.0, -8.0, 0.0),
+            position = RoutePosition("route", 2.0, 0.0),
             now = Instant.parse("2026-09-03T10:00:00Z")
         )
 
@@ -55,7 +55,7 @@ class WalkingPreparationStartIntegrationTest {
 
         preparation.startSaved(
             catalog = catalog,
-            position = RoutePosition("other-route", 2.0, 40.0, -8.0, 0.0),
+            position = RoutePosition("other-route", 2.0, 0.0),
             now = Instant.parse("2026-09-03T10:00:00Z")
         )
     }
@@ -70,7 +70,7 @@ class WalkingPreparationStartIntegrationTest {
         totalDistanceKm = 10.0,
         source = "test",
         updatedAt = "2026-01-01",
-        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0))),
+        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.01, -8.0))),
         stages = emptyList()
     )
 
