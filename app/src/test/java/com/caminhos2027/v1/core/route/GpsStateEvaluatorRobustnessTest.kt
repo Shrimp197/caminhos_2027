@@ -19,7 +19,7 @@ class GpsStateEvaluatorRobustnessTest {
     @Test
     fun implausibleJumpDoesNotBecomeReliableProgress() {
         val previous = state(10.0, 40.0)
-        val jump = observation(11.0, 40.0)
+        val jump = observation(11.0, 40.0, 10)
 
         val result = GpsStateEvaluator.update(previous, jump, Instant.parse("2026-09-02T00:00:10Z"), policy)
 
@@ -30,8 +30,8 @@ class GpsStateEvaluatorRobustnessTest {
     @Test
     fun repeatedSuspiciousObservationsBecomePossibleDeviation() {
         val initial = state(10.0, 40.0)
-        val first = observation(10.01, 40.0)
-        val second = observation(10.02, 40.0)
+        val first = observation(10.01, 40.0, 5)
+        val second = observation(10.02, 40.0, 10)
 
         val afterFirst = GpsStateEvaluator.update(initial, first, Instant.parse("2026-09-02T00:00:05Z"), policy)
         val afterSecond = GpsStateEvaluator.update(afterFirst, second, Instant.parse("2026-09-02T00:00:10Z"), policy)
@@ -59,9 +59,9 @@ class GpsStateEvaluatorRobustnessTest {
         lastObservation = observation(routeKm, distanceToRouteMeters)
     )
 
-    private fun observation(routeKm: Double, distanceToRouteMeters: Double) = GpsObservation(
+    private fun observation(routeKm: Double, distanceToRouteMeters: Double, seconds: Long = 0) = GpsObservation(
         routePosition = RoutePosition("test-route", routeKm, distanceToRouteMeters, "stage-1"),
         accuracyMeters = 5.0,
-        capturedAt = Instant.parse("2026-09-02T00:00:00Z")
+        capturedAt = Instant.parse("2026-09-02T00:00:00Z").plusSeconds(seconds)
     )
 }
