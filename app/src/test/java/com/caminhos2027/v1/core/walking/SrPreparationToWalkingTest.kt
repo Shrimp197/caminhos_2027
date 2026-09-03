@@ -1,5 +1,9 @@
 package com.caminhos2027.v1.core.walking
 
+import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
+import com.caminhos2027.v1.core.data.ApoiDataSource
+import com.caminhos2027.v1.core.data.ApoiRepository
+import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.model.Route
@@ -29,7 +33,8 @@ class SrPreparationToWalkingTest {
         val walks = InMemoryWalkRepository()
         val states = InMemoryWalkingStateRepository()
         val service = WalkingSessionService(walks, states)
-        val preparationService = WalkingPreparationService(route, walks)
+        val catalog = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { emptyList<Apoi>() }))
+        val preparationService = WalkingPreparationService(route, walks, catalog)
         val preparation = preparationService.save("sr-vertical", 0.4, 1.8)
 
         assertEquals(WalkStatus.PLANNED, preparation.walk.status)
