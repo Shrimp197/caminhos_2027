@@ -70,7 +70,7 @@ class WalkingStateCoordinatorTest {
 
         assertEquals(first.routePosition!!.routeKm, jump.routePosition!!.routeKm, 0.0001)
         assertEquals(first.nextApoi?.id, jump.nextApoi?.id)
-        assertEquals(first.nextApoiDistanceKm, jump.nextApoiDistanceKm, 0.0001)
+        assertEquals(first.nextApoiDistanceKm!!, jump.nextApoiDistanceKm!!, 0.0001)
     }
 
     @Test
