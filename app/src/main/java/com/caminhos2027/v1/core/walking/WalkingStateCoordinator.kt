@@ -63,9 +63,11 @@ class WalkingStateCoordinator(
         return state
     }
 
-    /** Restores persisted device state and re-establishes its route position as the GPS continuity baseline. */
+    /** Restores persisted device state and uses its last real observation time as the GPS continuity baseline. */
     fun restoreCheckpoint(checkpoint: WalkingCheckpoint, now: Instant = Instant.now()): WalkingState {
-        checkpoint.routePosition?.let { locationPipeline.seedRoutePosition(it, now) }
+        checkpoint.routePosition?.let {
+            locationPipeline.seedRoutePosition(it, checkpoint.lastObservedAt ?: now)
+        }
         state = WalkingStateBuilder.build(
             route = route,
             walk = walk,
