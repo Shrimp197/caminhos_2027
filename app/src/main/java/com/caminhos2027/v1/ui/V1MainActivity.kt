@@ -38,7 +38,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -261,7 +260,7 @@ private fun NextSupportCard(nextApoi: Apoi?, distanceKm: Double?) {
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(42.dp).clip(CircleShape).background(ForestSoft), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.size(42.dp).background(ForestSoft, CircleShape), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.WaterDrop, contentDescription = null, tint = Forest)
                 }
                 Spacer(Modifier.width(12.dp))
@@ -297,8 +296,8 @@ private fun ProgressCard(progress: WalkingProgress?) {
                 Icon(Icons.Default.Navigation, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
             }
             Spacer(Modifier.height(9.dp))
-            Box(modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(4.dp)).background(Color.White.copy(alpha = .25f))) {
-                Box(modifier = Modifier.fillMaxWidth(ratio.toFloat().coerceIn(0f, 1f)).height(5.dp).clip(RoundedCornerShape(4.dp)).background(Color.White))
+            Box(modifier = Modifier.fillMaxWidth().height(5.dp).background(Color.White.copy(alpha = .25f), RoundedCornerShape(4.dp))) {
+                Box(modifier = Modifier.fillMaxWidth(ratio.toFloat().coerceIn(0f, 1f)).height(5.dp).background(Color.White, RoundedCornerShape(4.dp)))
             }
         }
     }
