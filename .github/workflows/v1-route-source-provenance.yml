@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ v1-route-import ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   verify-official-gpx:
@@ -30,7 +32,6 @@ jobs:
       - name: Validate GPX structure and geometry metrics
         run: |
           python3 - <<'PY'
-          import hashlib
           import math
           import xml.etree.ElementTree as ET
           from pathlib import Path
