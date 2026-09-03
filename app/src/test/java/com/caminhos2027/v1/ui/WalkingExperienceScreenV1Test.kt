@@ -64,7 +64,14 @@ class WalkingExperienceScreenV1Test {
         walk = Walk("walk", "route", plannedStartKm = 1.0, plannedDestinationKm = 8.0),
         routePosition = RoutePosition("route", 2.0, 0.0),
         gpsState = GpsState.ON_ROUTE,
-        progress = WalkingProgress(1.0, 6.0, 7.0),
+        progress = WalkingProgress(
+            currentRouteKm = 2.0,
+            walkedKm = 1.0,
+            remainingKm = 6.0,
+            targetRouteKm = 8.0,
+            progressRatio = 1.0 / 7.0,
+            stageId = null
+        ),
         nextApoi = apoi(),
         nextApoiDistanceKm = 1.0,
         isOffline = false
