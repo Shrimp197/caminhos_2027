@@ -32,6 +32,17 @@ class WalkingProgressTest {
     }
 
     @Test
+    fun destinationDoesNotTruncateReliablePositionBeyondPlannedTarget() {
+        val progress = WalkingProgressCalculator.calculate(route(), walk(), 12.0)
+
+        assertEquals(12.0, progress.currentRouteKm, 0.001)
+        assertEquals(7.0, progress.walkedKm, 0.001)
+        assertEquals(10.0, progress.targetRouteKm, 0.001)
+        assertEquals(0.0, progress.remainingKm, 0.001)
+        assertEquals(1.0, progress.progressRatio, 0.001)
+    }
+
+    @Test
     fun positionBeforeStartDoesNotCreateNegativeWalkedDistance() {
         val progress = WalkingProgressCalculator.calculate(route(), walk(), 4.0)
         assertEquals(0.0, progress.walkedKm, 0.001)
