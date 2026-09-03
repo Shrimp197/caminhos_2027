@@ -23,7 +23,7 @@ class WalkingSessionRuntime(
         val started = sessionService.start(walkId, position, now)
         val nextCoordinator = WalkingStateCoordinator(route, started, publishedApoi, policy)
         coordinator = nextCoordinator
-        val state = nextCoordinator.seedStartPosition(position)
+        val state = nextCoordinator.seedStartPosition(position, now)
         sessionService.updatePosition(walkId, state)
         return state
     }
