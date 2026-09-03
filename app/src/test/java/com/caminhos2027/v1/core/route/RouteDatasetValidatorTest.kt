@@ -32,6 +32,23 @@ class RouteDatasetValidatorTest {
     }
 
     @Test
+    fun nonFiniteGeometryIsRejectedByTheSharedValidator() {
+        val route = fixtureRoute().copy(
+            geometry = RouteGeometry(
+                listOf(
+                    GeoPoint(41.0, -8.60),
+                    GeoPoint(Double.NaN, -8.60)
+                )
+            )
+        )
+
+        val result = RouteDatasetValidator.validate(route)
+
+        assertFalse(result.valid)
+        assertTrue(result.errors.any { it.contains("finite") })
+    }
+
+    @Test
     fun missingSourceIsRejected() {
         val route = fixtureRoute().copy(source = "")
 
@@ -60,7 +77,18 @@ class RouteDatasetValidatorTest {
         val result = RouteDatasetValidator.validate(route)
 
         assertFalse(result.valid)
-        assertTrue(result.errors.any { it.contains("routeId does not match") })
+        assertTrue(result.errors.any { it.contains("routeId different") })
+    }
+
+    @Test
+    fun duplicateStageIdsAreRejectedByTheSharedValidator() {
+        val first = fixtureRoute().stages.first()
+        val route = fixtureRoute().copy(stages = listOf(first, first.copy(number = 2)))
+
+        val result = RouteDatasetValidator.validate(route)
+
+        assertFalse(result.valid)
+        assertTrue(result.errors.any { it.contains("duplicate stage id") })
     }
 
     @Test
@@ -75,7 +103,7 @@ class RouteDatasetValidatorTest {
         val result = RouteDatasetValidator.validate(route)
 
         assertFalse(result.valid)
-        assertTrue(result.errors.any { it.contains("overlaps") })
+        assertTrue(result.errors.any { it.contains("out of route order") })
     }
 
     private fun fixtureRoute(): Route = Route(
