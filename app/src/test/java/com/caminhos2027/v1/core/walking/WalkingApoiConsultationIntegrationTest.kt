@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
+import com.caminhos2027.v1.core.data.ApoiDataSource
 import com.caminhos2027.v1.core.data.ApoiRepository
 import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.ApoiCategory
@@ -11,7 +12,7 @@ import com.caminhos2027.v1.core.model.LocationPrecision
 import com.caminhos2027.v1.core.model.PublicationStatus
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
-import com.caminhos2027.v1.core.model.RouteGeometry
+import com.caminhos2027/v1/core/model/RouteGeometry
 import com.caminhos2027.v1.core.model.RouteRelation
 import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.Walk
@@ -26,11 +27,11 @@ class WalkingApoiConsultationIntegrationTest {
     fun `walking position is the single source for next APOI consultation`() {
         val route = fixtureRoute()
         val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
-        val catalog = PublishedApoiCatalog(FakeRepository(listOf(
+        val catalog = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { listOf(
             apoi("water", 0.7),
             apoi("sleep", 0.9, ApoiCategory.PERNOITA),
             apoi("behind", 0.2)
-        )))
+        ) }))
         val coordinator = WalkingStateCoordinator(route, walk, catalog.all())
 
         val walkingState = coordinator.accept(
@@ -55,10 +56,6 @@ class WalkingApoiConsultationIntegrationTest {
             ApoiLocation(40.0, -8.0, LocationPrecision.EXACT, "SR", "SR", null, "sr-route", km, 0.0, 0.0, RouteRelation.ON_ROUTE),
             ApoiPublication(PublicationStatus.PUBLISHED, "SR test data")
         )
-
-    private class FakeRepository(private val records: List<Apoi>) : ApoiRepository {
-        override fun getAll(): List<Apoi> = records
-    }
 
     private fun fixtureRoute() = Route(
         id = "sr-route", name = "Percurso SR", officialName = "SR — percurso sintético",
