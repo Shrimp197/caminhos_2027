@@ -18,6 +18,15 @@ class PublishedApoiCatalog(
         filter: ApoiFilter = ApoiFilter()
     ): List<Apoi> = ApoiFilterEngine.apply(all(), routeId, currentRouteKm, filter)
 
+    fun search(query: String): List<Apoi> = ApoiSearch.apply(all(), query)
+
+    fun searchAhead(
+        routeId: String,
+        currentRouteKm: Double,
+        query: String,
+        filter: ApoiFilter = ApoiFilter()
+    ): List<Apoi> = ApoiSearch.apply(filter(routeId, currentRouteKm, filter), query)
+
     fun next(routeId: String, currentRouteKm: Double): Apoi? =
         NextApoiFinder.findNext(all(), routeId, currentRouteKm)
 }
