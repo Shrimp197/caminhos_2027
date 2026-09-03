@@ -4,6 +4,7 @@ import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
+import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.route.GpsTrackingPolicy
 import com.caminhos2027.v1.gps.WalkingLocationPipeline
@@ -12,12 +13,13 @@ import java.time.Instant
 /** Single coordinator for the active walking read model. */
 class WalkingStateCoordinator(
     private val route: com.caminhos2027.v1.core.model.Route,
-    private val walk: Walk,
+    initialWalk: Walk,
     publishedApoi: List<Apoi>,
     policy: GpsTrackingPolicy = GpsTrackingPolicy()
 ) {
     private val publishedApoi = publishedApoi.toList()
     private val locationPipeline = WalkingLocationPipeline(route, policy)
+    private var walk: Walk = initialWalk
 
     var state: WalkingState = WalkingStateBuilder.build(
         route = route,
@@ -28,8 +30,25 @@ class WalkingStateCoordinator(
     )
         private set
 
-    /** Seeds the state with the route position selected when the walk starts. No fake GPS coordinates are used. */
+    /** Starts the planned walk and seeds only the real route position supplied by the caller. */
+    fun start(startPosition: RoutePosition, now: Instant = Instant.now()): WalkingState {
+        walk = WalkingSessionController.start(walk, startPosition, now)
+        state = WalkingStateBuilder.build(
+            route = route,
+            walk = walk,
+            gpsState = GpsState.ACQUIRING,
+            routePosition = startPosition,
+            publishedApoi = publishedApoi,
+            offline = state.isOffline
+        )
+        return state
+    }
+
+    /** Compatibility entry point for an already-active walking lifecycle. */
     fun seedStartPosition(position: RoutePosition): WalkingState {
+        require(walk.status == WalkStatus.ACTIVE) {
+            "Walking must be active before seeding a start position"
+        }
         require(position.routeId == route.id) { "Start position route must match route" }
         state = WalkingStateBuilder.build(
             route = route,
