@@ -29,7 +29,7 @@ class WalkingAppStateController(
     fun start(position: RoutePosition, now: Instant = Instant.now()): AppState {
         currentWalk = WalkingSessionController.start(currentWalk, position, now)
         coordinator = WalkingStateCoordinator(route, currentWalk, publishedApoi)
-        return publish { coordinator.seedStartPosition(position) }
+        return publish { coordinator.seedStartPosition(position, now) }
     }
 
     /** Compatibility entry point for tests/consumers that already own the lifecycle transition. */
