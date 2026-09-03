@@ -4,7 +4,6 @@ import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.ApoiLocation
 import com.caminhos2027.v1.core.model.ApoiPublication
-import com.caminhos2027.v1.core.model.ApoiSupport
 import com.caminhos2027.v1.core.model.LocationPrecision
 import com.caminhos2027.v1.core.model.PublicationStatus
 import com.caminhos2027.v1.core.model.Route
@@ -29,6 +28,7 @@ class WalkingStateBuilderTest {
         assertEquals(0.5, state.progress?.currentRouteKm ?: -1.0, 0.001)
         assertEquals(1.5, state.progress?.remainingKm ?: -1.0, 0.001)
         assertEquals("water-1", state.nextApoi?.id)
+        assertEquals(0.3, state.nextApoiDistanceKm ?: -1.0, 0.001)
         assertEquals(GpsState.ON_ROUTE, state.gpsState)
         assertNotNull(state.routePosition)
         assertTrue(!state.isOffline)
@@ -53,8 +53,7 @@ class WalkingStateBuilderTest {
         mainCategory = ApoiCategory.AGUA,
         services = setOf(ApoiCategory.AGUA),
         location = ApoiLocation(null, null, LocationPrecision.LOCALITY_ONLY, "TEST", null, null, "test-route", 0.8, 10.0, null, RouteRelation.ON_ROUTE),
-        publication = ApoiPublication(PublicationStatus.PUBLISHED, null),
-        support = ApoiSupport(pilgrimSupportConfirmed = true)
+        publication = ApoiPublication(PublicationStatus.PUBLISHED, null)
     )
 
     private fun fixture() = Route(
