@@ -49,7 +49,7 @@ class WalkingPreparationAppStateControllerTest {
         totalDistanceKm = 10.0,
         source = "test",
         updatedAt = "2026-01-01",
-        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0))),
+        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.0, -7.8828))),
         stages = emptyList()
     )
 
