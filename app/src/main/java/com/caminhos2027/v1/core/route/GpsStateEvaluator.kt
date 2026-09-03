@@ -24,6 +24,11 @@ object GpsStateEvaluator {
             }
         }
 
+        val lastObservation = previous.lastObservation
+        if (lastObservation != null && observation.capturedAt.isBefore(lastObservation.capturedAt)) {
+            return previous
+        }
+
         val lastReliable = previous.lastReliableObservation
         val jumpIsPlausible = lastReliable == null || isPlausibleJump(lastReliable, observation, policy)
         if (!jumpIsPlausible) {
