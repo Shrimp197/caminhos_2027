@@ -24,7 +24,9 @@ object WalkingStateBuilder {
         val nextApoi = routePosition?.let {
             NextApoiFinder.findNext(publishedApoi, route.id, it.routeKm)
         }
-        val nextApoiDistanceKm = nextApoi?.let { (it.routeKm - routePosition.routeKm).coerceAtLeast(0.0) }
+        val nextApoiDistanceKm = nextApoi?.location?.routeKm?.let {
+            (it - routePosition.routeKm).coerceAtLeast(0.0)
+        }
 
         return WalkingState(
             walk = walk,
