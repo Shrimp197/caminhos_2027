@@ -21,7 +21,7 @@ import org.junit.Test
 
 class WalkingPreparationAppStateControllerTest {
     @Test
-    fun savePublishesPlannedWalkAndRelevantApoiWithoutStartingGps() {
+    fun savePublishesPlannedWalkWithoutStartingGps() {
         val route = route()
         val water = apoi("water", 3.0)
         val store = AppStateStore()
@@ -39,7 +39,7 @@ class WalkingPreparationAppStateControllerTest {
         assertEquals(5.0, state.walking?.walk?.plannedDestinationKm ?: -1.0, 0.001)
         assertEquals(GpsState.NO_SIGNAL, state.walking?.gpsState)
         assertEquals(null, state.walking?.routePosition)
-        assertEquals("water", state.walking?.nextApoi?.id)
+        assertEquals(null, state.walking?.nextApoi)
     }
 
     private fun route() = Route(
