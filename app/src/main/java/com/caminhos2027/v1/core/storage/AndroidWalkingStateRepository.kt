@@ -7,6 +7,7 @@ import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.walking.WalkingCheckpoint
 import com.caminhos2027.v1.core.walking.WalkingStateRepository
 import org.json.JSONObject
+import java.time.Instant
 
 /** Persists only the minimal walking checkpoint needed to resume safely after process death. */
 class AndroidWalkingStateRepository(context: Context) : WalkingStateRepository {
@@ -28,6 +29,7 @@ class AndroidWalkingStateRepository(context: Context) : WalkingStateRepository {
     private fun encode(checkpoint: WalkingCheckpoint): JSONObject = JSONObject().apply {
         put("gpsState", checkpoint.gpsState.name)
         put("offline", checkpoint.isOffline)
+        put("lastObservedAt", checkpoint.lastObservedAt?.toString() ?: JSONObject.NULL)
         val position = checkpoint.routePosition
         if (position == null) {
             put("routePosition", JSONObject.NULL)
@@ -53,10 +55,12 @@ class AndroidWalkingStateRepository(context: Context) : WalkingStateRepository {
                 confidence = PositionConfidence.valueOf(it.getString("confidence"))
             )
         }
+        val lastObservedAt = json.optString("lastObservedAt", null)?.let(Instant::parse)
         return WalkingCheckpoint(
             routePosition = position,
             gpsState = GpsState.valueOf(json.getString("gpsState")),
-            isOffline = json.optBoolean("offline", false)
+            isOffline = json.optBoolean("offline", false),
+            lastObservedAt = lastObservedAt
         )
     }
 
