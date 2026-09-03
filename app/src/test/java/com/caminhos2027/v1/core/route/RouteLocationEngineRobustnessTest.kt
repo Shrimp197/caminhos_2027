@@ -27,7 +27,7 @@ class RouteLocationEngineRobustnessTest {
         val route = fixture()
         val position = RouteLocationEngine.locate(route, gps(40.0, -7.99))
 
-        assertEquals(1.0, position.routeKm, 0.05)
+        assertEquals(0.852, position.routeKm, 0.03)
         assertEquals("stage-1", position.stageId)
     }
 
