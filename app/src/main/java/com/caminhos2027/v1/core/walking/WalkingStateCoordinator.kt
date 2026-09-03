@@ -46,11 +46,12 @@ class WalkingStateCoordinator(
     }
 
     /** Compatibility entry point for tests/consumers that already own the lifecycle transition. */
-    fun seedStartPosition(position: RoutePosition): WalkingState {
+    fun seedStartPosition(position: RoutePosition, now: Instant = Instant.now()): WalkingState {
         require(walk.status == WalkStatus.ACTIVE) {
             "Walking must be active before seeding a start position"
         }
         require(position.routeId == route.id) { "Start position route must match route" }
+        locationPipeline.seedRoutePosition(position, now)
         state = WalkingStateBuilder.build(
             route = route,
             walk = walk,
