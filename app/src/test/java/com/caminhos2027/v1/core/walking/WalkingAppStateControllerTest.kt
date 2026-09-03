@@ -93,13 +93,14 @@ class WalkingAppStateControllerTest {
         val checkpoints = InMemoryWalkingStateRepository()
         val service = WalkingSessionService(walks, checkpoints)
         val plan = WalkingPlanFactory.create(route, "walk-persistent", 0.0, 1.0)
+        val water = waterApoi()
 
         val firstStore = AppStateStore()
-        val firstRuntime = WalkingSessionRuntime(route, service, listOf(waterApoi()))
+        val firstRuntime = WalkingSessionRuntime(route, service, listOf(water))
         val firstController = WalkingAppStateController(
             route = route,
             walk = plan,
-            catalog = catalog(waterApoi()),
+            catalog = catalog(water),
             store = firstStore,
             sessionRuntime = firstRuntime
         )
@@ -107,11 +108,11 @@ class WalkingAppStateControllerTest {
         val moved = firstController.acceptGps(gps(40.0045, "2026-09-03T09:02:00Z"))
 
         val resumedStore = AppStateStore()
-        val resumedRuntime = WalkingSessionRuntime(route, service, listOf(waterApoi()))
+        val resumedRuntime = WalkingSessionRuntime(route, service, listOf(water))
         val resumedController = WalkingAppStateController(
             route = route,
             walk = plan,
-            catalog = catalog(waterApoi()),
+            catalog = catalog(water),
             store = resumedStore,
             sessionRuntime = resumedRuntime
         )
