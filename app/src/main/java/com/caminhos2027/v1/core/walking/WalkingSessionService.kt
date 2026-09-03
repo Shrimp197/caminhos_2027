@@ -3,6 +3,7 @@ package com.caminhos2027.v1.core.walking
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
+import com.caminhos2027.v1.core.route.GpsState
 import java.time.Instant
 
 /** Coordinates walking lifecycle and minimal current-position checkpointing. */
@@ -20,21 +21,34 @@ class WalkingSessionService(
         val walk = requireWalk(walkId)
         val started = WalkingSessionController.start(walk, startPosition, now)
         repository.save(started)
-        stateRepository?.save(walkId, WalkingCheckpoint(startPosition, com.caminhos2027.v1.core.route.GpsState.ACQUIRING, false))
+        stateRepository?.save(
+            walkId,
+            WalkingCheckpoint(startPosition, GpsState.ACQUIRING, false, lastObservedAt = now)
+        )
         return started
     }
 
     /** Validates and checkpoints only device-derived state; it never changes the walking plan. */
-    fun updatePosition(walkId: String, state: WalkingState): WalkingState {
+    fun updatePosition(
+        walkId: String,
+        state: WalkingState,
+        observedAt: Instant? = null
+    ): WalkingState {
         val walk = requireWalk(walkId)
         require(walk.status == WalkStatus.ACTIVE) { "Only an active walk can be updated" }
         require(walk.id == state.walk.id) { "Walking state walk must match requested walk" }
         state.routePosition?.let { position ->
             require(walk.routeId == position.routeId) { "Walk and position route must match" }
         }
+        val previousObservedAt = stateRepository?.get(walkId)?.lastObservedAt
         stateRepository?.save(
             walkId,
-            WalkingCheckpoint(state.routePosition, state.gpsState, state.isOffline)
+            WalkingCheckpoint(
+                state.routePosition,
+                state.gpsState,
+                state.isOffline,
+                lastObservedAt = observedAt ?: previousObservedAt
+            )
         )
         return state
     }
