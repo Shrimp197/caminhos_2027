@@ -97,14 +97,21 @@ jobs:
           import json
           from pathlib import Path
           html = Path('app/src/main/assets/index.html').read_text(encoding='utf-8')
-          assert "const ROUTE='data/route.geojson', SUPPORTS='data/published/webview-supports.json'" in html
+          assert "const ROUTE='data/route.geojson', ROUTE_POLICY='data/routes/route-runtime-policy.json', SUPPORTS='data/published/webview-supports.json'" in html
           assert 'data/apoios-2026.json' not in html
-          assert "const places=[['Início do percurso',0],['Fim do percurso',211.87]]" in html
+          assert "publishedDistanceKm=211.87" in html
+          assert "routePolicy.published_distance_km" in html
+          assert "routePolicy.geometry_distance_km" in html
           supports = json.loads(Path('app/src/main/assets/data/published/webview-supports.json').read_text(encoding='utf-8'))
           assert supports['target_year'] == 2027
           assert supports['environment'] == 'production'
           assert supports['route_id'] == 'caminho-do-centenario'
           assert isinstance(supports['items'], list)
+          production = json.loads(Path('data/published/apoi-production.json').read_text(encoding='utf-8'))
+          assert production['target_year'] == 2027
+          assert production['environment'] == 'production'
+          assert production['route_id'] == 'caminho-do-centenario'
+          assert isinstance(production['items'], list)
           print('Production runtime inputs: OK')
           PY
 
