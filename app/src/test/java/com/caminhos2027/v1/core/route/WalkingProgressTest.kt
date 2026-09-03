@@ -59,7 +59,7 @@ class WalkingProgressTest {
         updatedAt = "2026-09-02",
         geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.0, -7.9))),
         stages = listOf(
-            stage("stage-1", 0, 6.0),
+            stage("stage-1", 0.0, 6.0),
             stage("stage-2", 6.0, 12.0)
         )
     )
