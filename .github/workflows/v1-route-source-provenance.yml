@@ -8,11 +8,10 @@ on:
     branches: [ main ]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify-official-gpx:
-    if: ${{ !contains(github.event.head_commit.message, '[route-ingest]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,140 +24,115 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/source
-          curl --fail --location --retry 3 --silent --show-error "$SOURCE_URL" \
-            --output build/source/Caminho_do_centenario.gpx
+          curl --fail --location --retry 3 --silent --show-error "$SOURCE_URL" --output build/source/Caminho_do_centenario.gpx
           ACTUAL_SHA256="$(sha256sum build/source/Caminho_do_centenario.gpx | cut -d' ' -f1)"
-          echo "Official URL: $SOURCE_URL"
-          echo "Expected SHA-256: $EXPECTED_SHA256"
-          echo "Actual SHA-256:   $ACTUAL_SHA256"
           test "$ACTUAL_SHA256" = "$EXPECTED_SHA256"
+          echo "Official source SHA-256 verified: $ACTUAL_SHA256"
 
-      - name: Validate GPX structure and geometry metrics
+      - name: Validate official GPX structure and metrics
         run: |
           python3 - <<'PY'
+          import hashlib
           import math
           import xml.etree.ElementTree as ET
           from pathlib import Path
 
-          path = Path("build/source/Caminho_do_centenario.gpx")
-          data = path.read_bytes()
-          ns = "http://www.topografix.com/GPX/1/1"
-          root = ET.fromstring(data)
-          segments = root.findall(f".//{{{ns}}}trkseg")
+          expected = '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
+          path = Path('build/source/Caminho_do_centenario.gpx')
+          raw = path.read_bytes()
+          assert hashlib.sha256(raw).hexdigest() == expected
+          ns = 'http://www.topografix.com/GPX/1/1'
+          root = ET.fromstring(raw)
+          assert len(root.findall(f'.//{{{ns}}}trk')) == 1
+          assert len(root.findall(f'.//{{{ns}}}trkseg')) == 1
           points = []
-          for p in root.findall(f".//{{{ns}}}trkpt"):
-              lat = float(p.attrib["lat"])
-              lon = float(p.attrib["lon"])
+          for p in root.findall(f'.//{{{ns}}}trkpt'):
+              lat = float(p.attrib['lat']); lon = float(p.attrib['lon'])
               assert math.isfinite(lat) and math.isfinite(lon)
               assert -90 <= lat <= 90 and -180 <= lon <= 180
               points.append((lat, lon))
-
-          assert len(root.findall(f".//{{{ns}}}trk")) == 1
-          assert len(segments) == 1
           assert len(points) == 5082
           assert all(a != b for a, b in zip(points, points[1:]))
-
           radius = 6371.0088
           def hav(a, b):
-              lat1, lon1 = map(math.radians, a)
-              lat2, lon2 = map(math.radians, b)
-              dlat = lat2 - lat1
-              dlon = lon2 - lon1
+              lat1, lon1 = map(math.radians, a); lat2, lon2 = map(math.radians, b)
+              dlat = lat2-lat1; dlon = lon2-lon1
               h = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
-              return 2 * radius * math.asin(math.sqrt(h))
-
-          lengths = [hav(a, b) for a, b in zip(points, points[1:])]
-          geometry_km = sum(lengths)
-          assert 214.70 < geometry_km < 214.90
-          print(f"tracks=1 segments=1 points={len(points)}")
-          print(f"geometry_km={geometry_km:.6f}")
-          print(f"max_segment_m={max(lengths) * 1000:.2f}")
-          print(f"first_point={points[0]}")
-          print(f"last_point={points[-1]}")
+              return 2*radius*math.asin(math.sqrt(h))
+          lengths = [hav(a,b) for a,b in zip(points, points[1:])]
+          total = sum(lengths)
+          assert 214.70 < total < 214.90
+          assert points[0] == (41.1390874108962, -8.60912359669724)
+          assert points[-1] == (39.6295907550017, -8.67756042435647)
+          print(f'tracks=1 segments=1 points={len(points)} geometry_km={total:.6f} max_segment_m={max(lengths)*1000:.2f}')
           PY
 
-      - name: Ingest verified source and publish normalized route input
+      - name: Verify committed GPX bytes and normalized geometry
         run: |
-          set -euo pipefail
-          mkdir -p data/routes app/src/main/assets/data/published
-          cp build/source/Caminho_do_centenario.gpx data/routes/Caminho_do_centenario.gpx
           python3 - <<'PY'
-          import hashlib, json, math, xml.etree.ElementTree as ET
+          import hashlib
+          import json
+          import xml.etree.ElementTree as ET
           from pathlib import Path
-          source=Path('data/routes/Caminho_do_centenario.gpx')
-          raw=source.read_bytes()
-          expected='1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
-          assert hashlib.sha256(raw).hexdigest()==expected
-          ns={'g':'http://www.topografix.com/GPX/1/1'}
-          root=ET.fromstring(raw)
-          pts=[[float(p.attrib['lon']),float(p.attrib['lat'])] for p in root.findall('.//g:trkpt',ns)]
-          R=6371.0088
-          def hav(a,b):
-              p1=math.radians(a[1]);p2=math.radians(b[1]);dp=p2-p1;dl=math.radians(b[0]-a[0])
-              h=math.sin(dp/2)**2+math.cos(p1)*math.cos(p2)*math.sin(dl/2)**2
-              return 2*R*math.asin(math.sqrt(h))
-          length=sum(hav(a,b) for a,b in zip(pts,pts[1:]))
-          route={'type':'FeatureCollection','name':'Caminho do Centenário','features':[{'type':'Feature','properties':{'route_id':'caminho-do-centenario','source':'ACF official GPX','source_sha256':expected},'geometry':{'type':'LineString','coordinates':pts}}]}
-          Path('app/src/main/assets/data/route.geojson').write_text(json.dumps(route,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
-          manifest_path=Path('data/routes/route-source-manifest.json')
-          manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
-          gpx=next(x for x in manifest['official_source_files'] if x['format']=='gpx')
-          gpx['capture_status']='official_bytes_ingested_and_validated'
-          gpx['allowed_for_production']=True
-          gpx['repository_path']=str(source)
-          gpx['normalized_geometry_path']='app/src/main/assets/data/route.geojson'
-          gpx['next_action']='validate stage compatibility before publication'
-          manifest['status']='official_gpx_bytes_ingested_validated'
-          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-          Path('app/src/main/assets/data/published/webview-supports.json').write_text('{"schema_version":"1.0-published","dataset_id":"caminho_centenario_webview_2027","route_id":"caminho-do-centenario","target_year":2027,"environment":"production","items":[]}\n',encoding='utf-8')
-          print(f'normalized_points={len(pts)} geometry_km={length:.6f}')
+
+          expected = '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
+          committed = Path('data/routes/Caminho_do_centenario.gpx')
+          assert committed.exists() and committed.stat().st_size == 377117
+          assert hashlib.sha256(committed.read_bytes()).hexdigest() == expected
+
+          ns = {'g':'http://www.topografix.com/GPX/1/1'}
+          root = ET.fromstring(committed.read_bytes())
+          source_points = [[float(p.attrib['lon']), float(p.attrib['lat'])] for p in root.findall('.//g:trkpt', ns)]
+
+          route = json.loads(Path('app/src/main/assets/data/route.geojson').read_text(encoding='utf-8'))
+          assert route['type'] == 'FeatureCollection'
+          assert len(route['features']) == 1
+          feature = route['features'][0]
+          assert feature['geometry']['type'] == 'LineString'
+          assert feature['geometry']['coordinates'] == source_points
+          assert feature['properties']['source_sha256'] == expected
+          assert feature['properties']['source'] == 'ACF official GPX'
+          print('Committed GPX and normalized GeoJSON match exactly.')
           PY
 
-      - name: Remove legacy WebView inputs and inferred stage list
+      - name: Verify production runtime inputs
         run: |
           python3 - <<'PY'
+          import json
           from pathlib import Path
-          path=Path('app/src/main/assets/index.html')
-          text=path.read_text(encoding='utf-8')
-          replacements={
-            "const ROUTE='data/route.geojson', SUPPORTS='data/apoios-2026.json'":"const ROUTE='data/route.geojson', SUPPORTS='data/published/webview-supports.json'",
-            "const places=[['Porto',0],['São João da Madeira',32.1],['Cucujães',36],['Oliveira de Azeméis',41],['Albergaria-a-Velha',56],['Águeda',74],['Anadia',91],['Mealhada',98.7],['Coimbra',126.3],['Condeixa-a-Nova',145],['Soure',160],['Pombal',188.2],['Leiria',201],['Ourém',214.8],['Fátima',216.1]]":"const places=[['Início do percurso',0],['Fim do percurso',211.87]]",
-            "distance:216.099,builtin:true":"distance:211.87,builtin:true"
-          }
-          for old,new in replacements.items():
-              if old not in text: raise SystemExit('Expected legacy pattern missing: '+old[:70])
-              text=text.replace(old,new,1)
-          path.write_text(text,encoding='utf-8')
-          PY
 
-      - name: Verify normalized route and runtime sources
-        run: |
-          python3 - <<'PY'
-          import json, hashlib, math
-          from pathlib import Path
-          route=json.loads(Path('app/src/main/assets/data/route.geojson').read_text(encoding='utf-8'))
-          assert route['features'][0]['geometry']['type']=='LineString'
-          coords=route['features'][0]['geometry']['coordinates']
-          assert len(coords)==5082
-          assert route['features'][0]['properties']['source_sha256']=='1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
-          html=Path('app/src/main/assets/index.html').read_text(encoding='utf-8')
-          assert "data/apoios-2026.json" not in html
+          html = Path('app/src/main/assets/index.html').read_text(encoding='utf-8')
           assert "const ROUTE='data/route.geojson', SUPPORTS='data/published/webview-supports.json'" in html
+          assert 'data/apoios-2026.json' not in html
           assert "const places=[['Início do percurso',0],['Fim do percurso',211.87]]" in html
-          print('Normalized route/runtime gate: OK')
-          PY
-          python3 scripts/validate_release.py
 
-      - name: Commit ingested route dataset
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+          supports = json.loads(Path('app/src/main/assets/data/published/webview-supports.json').read_text(encoding='utf-8'))
+          assert supports['target_year'] == 2027
+          assert supports['environment'] == 'production'
+          assert supports['route_id'] == 'caminho-do-centenario'
+          assert isinstance(supports['items'], list)
+          print('Production runtime inputs: OK')
+          PY
+
+      - name: Verify route manifest
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/routes/Caminho_do_centenario.gpx data/routes/route-source-manifest.json app/src/main/assets/data/route.geojson app/src/main/assets/data/published/webview-supports.json app/src/main/assets/index.html
-          if git diff --cached --quiet; then
-            echo 'No ingestion changes required.'
-            exit 0
-          fi
-          git commit -m "Ingest official Centenário route [route-ingest]"
-          git push origin HEAD:v1-route-import
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          expected = '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
+          manifest = json.loads(Path('data/routes/route-source-manifest.json').read_text(encoding='utf-8'))
+          assert manifest['status'] == 'official_gpx_bytes_ingested_validated'
+          source = next(x for x in manifest['official_source_files'] if x.get('format') == 'gpx')
+          assert source['sha256'] == expected
+          assert source['capture_status'] == 'official_bytes_ingested_and_validated'
+          assert source['allowed_for_production'] is True
+          assert source['repository_path'] == 'data/routes/Caminho_do_centenario.gpx'
+          assert source['normalized_geometry_path'] == 'app/src/main/assets/data/route.geojson'
+          print('Route manifest: OK')
+          PY
+
+      - name: Run release validator
+        run: |
+          python3 scripts/validate_release.py
+          node --check <(sed -n '/<script>/,/<\/script>/p' app/src/main/assets/index.html | sed '1d;$d')
