@@ -50,7 +50,7 @@ fun WalkingExperienceScreenV1(
             }
 
             walking.routePosition?.let { position ->
-                Text("Está aqui: %.1f km no caminho".format(position.routeKm)))
+                Text("Está aqui: %.1f km no caminho".format(position.routeKm))
             } ?: Text("A posição atual ainda não está disponível.")
 
             walking.nextApoi?.let { next ->
@@ -86,9 +86,7 @@ fun WalkingExperienceScreenV1(
                 Text("Decidir: parar ou continuar")
             }
 
-            decision?.let { context ->
-                DecisionSummary(context)
-            }
+            decision?.let { context -> DecisionSummary(context) }
 
             Button(onClick = onBackToWalking, modifier = Modifier.fillMaxWidth()) {
                 Text("Voltar à caminhada")
