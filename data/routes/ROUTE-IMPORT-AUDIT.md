@@ -2,19 +2,23 @@
 
 ## Estado
 
-**Em revisão — sem dataset de produção do percurso.**
+**Fonte oficial localizada — bytes ainda não capturados/validados; sem dataset de produção do percurso.**
 
-Data da auditoria: 2026-09-02  
+Data da auditoria: 2026-09-03  
 Branch: `v1-route-import`
 
 ## Fonte oficial pretendida
 
 A geometria de produção do Caminho do Centenário deve vir dos ficheiros GPX/KML disponibilizados pela ACF — Associação Caminhos de Fátima.
 
+A página oficial do percurso confirma o download do KML completo, e o arquivo oficial de documentos lista separadamente o GPX completo (15/10/2024) e o KML completo (17/09/2024).
+
 - Página do percurso: https://caminhosdefatima.com/caminho-do-centenario/
 - Arquivo de documentos: https://caminhosdefatima.com/category/documentos/
-- GPX oficial: `Caminho do Centenário – Completo GPX`, publicado em 15/10/2024.
-- KML oficial: `Caminho do Centenário – Completo KML`, publicado em 17/09/2024.
+- GPX oficial: `Caminho_do_centenario.gpx`, publicado no arquivo de documentos em 15/10/2024.
+- KML oficial: `caminho-do-centenario.kml`, publicado no arquivo de documentos em 17/09/2024.
+- URL GPX oficial resolvida no arquivo: https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx
+- URL KML oficial resolvida no arquivo: https://caminhosdefatima.com/wp-content/uploads/2024/09/caminho-do-centenario.kml
 
 ## O que foi encontrado no repositório
 
@@ -29,16 +33,25 @@ Por isso:
 - não é usado para declarar uma geometria V1 como oficial;
 - permanece disponível apenas como referência histórica do primeiro protótipo.
 
+Foi também preservado um capture técnico vazio (`caminho-do-centenario-acf-2020-source-capture.geojson`) para representar explicitamente a ausência de geometria de produção; esse ficheiro **não** é um dataset de rota utilizável.
+
 ## Validação já implementada
 
 A branch já contém uma camada determinística para medir o comprimento da geometria e validar discrepâncias grosseiras entre a geometria e a distância declarada.
 
 - `RouteGeometryMetrics.lengthKm(...)` mede a distância acumulada entre pontos consecutivos usando Haversine.
 - `RouteValidator` rejeita uma discrepância superior a uma tolerância documentada no código.
+- `RouteGeometryValidator` rejeita geometrias vazias, coordenadas inválidas e pontos consecutivos duplicados antes de uma geometria poder conduzir navegação.
 - Existem testes com dados `TEST/FICTITIOUS` para a métrica e para a rejeição de uma discrepância grosseira.
-- Foi adicionada uma workflow isolada de CI para executar testes e build da branch sem os scripts de reescrita do protótipo legado.
+- Existe uma workflow isolada de CI para executar testes e build da branch sem os scripts de reescrita do protótipo legado.
 
 Esta validação é deliberadamente **pré-importação**: ainda não é aplicada a uma geometria oficial real.
+
+## Auditoria do KML histórico
+
+A análise do `ACF_2020.kml` encontrou 371 `LineString`, 7.924 pontos e cerca de 216,099 km de geometria acumulada, face aos 211,87 km publicados para o percurso. A análise de conectividade mostra que existem segmentos com lacunas suficientemente grandes para tornar insegura uma reconstrução por vizinho mais próximo.
+
+Conclusão: o KML histórico serve apenas como fixture técnico/diagnóstico. Não deve ser reparado ou concatenado para fabricar a geometria oficial.
 
 ## Regra de importação
 
@@ -46,7 +59,7 @@ O dataset V1 só poderá receber a geometria de produção depois de ser possív
 
 A partir desse ficheiro será feita uma normalização determinística para GeoJSON `LineString`, preservando a ordem do traçado.
 
-A distância oficial publicada pela ACF (cerca de 212 km; 211,87 km na página específica) é uma referência de controlo, não uma licença para fabricar uma geometria ou ajustar artificialmente o traçado.
+A distância oficial publicada pela ACF (211,87 km; apresentada também como cerca de 212 km) é uma referência de controlo, não uma licença para fabricar uma geometria ou ajustar artificialmente o traçado. A página oficial confirma que o percurso liga Vila Nova de Gaia a Fátima e percorre 14 municípios.
 
 As etapas oficiais só serão incluídas quando a sua definição estiver confirmada por fonte oficial. Uma lista de etapas criada a partir de blogs, Wikiloc, trilhos de terceiros ou divisão matemática da geometria não será apresentada como oficial.
 
@@ -58,7 +71,16 @@ Esta fase só fica concluída quando existir:
 2. dataset V1 do percurso com geometria real;
 3. validação estrutural da geometria;
 4. validação da distância contra a referência oficial, com tolerância documentada;
-5. etapas oficiais incluídas apenas se confirmadas;
-6. testes do parser/validador com dados TEST/FICTITIOUS separados da produção.
+5. validação de origem Gaia e destino Fátima;
+6. etapas oficiais incluídas apenas se confirmadas;
+7. testes do parser/validador com dados TEST/FICTITIOUS separados da produção.
 
 Até lá, **não criar um `caminho-do-centenario-v1.json` fictício nem preencher coordenadas/stages aproximados**.
+
+## Próximo bloco autónomo
+
+1. Capturar os bytes do GPX e/ou KML oficiais de 2024.
+2. Registar SHA-256, tamanho, URL, data de consulta e tipo de fonte.
+3. Extrair a geometria sem reordenar silenciosamente segmentos.
+4. Produzir relatório de continuidade, origem/destino e comprimento.
+5. Só depois promover a geometria para o dataset V1 e ligar o `WalkingMapModel` ao asset validado.
