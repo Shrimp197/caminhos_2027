@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.ui
 
 import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.ApoiAvailabilityStatus
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.PublicationStatus
 
@@ -10,7 +11,8 @@ data class ApoiAheadPresentation(
     val name: String,
     val categoryLabel: String,
     val distanceLabel: String,
-    val warningLabel: String?
+    val warningLabel: String?,
+    val availabilityLabel: String
 )
 
 object ApoiAheadPresentationMapper {
@@ -20,8 +22,19 @@ object ApoiAheadPresentationMapper {
             name = apoi.name,
             categoryLabel = categoryLabel(apoi.mainCategory),
             distanceLabel = formatDistance(distanceKm),
-            warningLabel = warningLabel(apoi.publication.status)
+            warningLabel = warningLabel(apoi.publication.status),
+            availabilityLabel = availabilityLabel(apoi.availability.status)
         )
+
+    fun availabilityLabel(status: ApoiAvailabilityStatus): String = when (status) {
+        ApoiAvailabilityStatus.CURRENT -> "Disponibilidade atual"
+        ApoiAvailabilityStatus.FUTURE_CONFIRMED -> "Disponibilidade futura confirmada"
+        ApoiAvailabilityStatus.RECURRING -> "Disponibilidade recorrente"
+        ApoiAvailabilityStatus.HISTORICAL -> "Informação histórica"
+        ApoiAvailabilityStatus.EXPIRED -> "Informação expirada"
+        ApoiAvailabilityStatus.AWAITING_CONFIRMATION -> "Disponibilidade por confirmar"
+        ApoiAvailabilityStatus.CLOSED -> "APOI encerrado"
+    }
 
     private fun categoryLabel(category: ApoiCategory): String = when (category) {
         ApoiCategory.ALIMENTACAO -> "Alimentação"
