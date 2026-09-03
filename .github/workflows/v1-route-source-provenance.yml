@@ -36,7 +36,6 @@ jobs:
           import math
           import xml.etree.ElementTree as ET
           from pathlib import Path
-
           expected = '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
           path = Path('build/source/Caminho_do_centenario.gpx')
           raw = path.read_bytes()
@@ -74,16 +73,13 @@ jobs:
           import json
           import xml.etree.ElementTree as ET
           from pathlib import Path
-
           expected = '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
           committed = Path('data/routes/Caminho_do_centenario.gpx')
           assert committed.exists() and committed.stat().st_size == 377117
           assert hashlib.sha256(committed.read_bytes()).hexdigest() == expected
-
           ns = {'g':'http://www.topografix.com/GPX/1/1'}
           root = ET.fromstring(committed.read_bytes())
           source_points = [[float(p.attrib['lon']), float(p.attrib['lat'])] for p in root.findall('.//g:trkpt', ns)]
-
           route = json.loads(Path('app/src/main/assets/data/route.geojson').read_text(encoding='utf-8'))
           assert route['type'] == 'FeatureCollection'
           assert len(route['features']) == 1
@@ -100,12 +96,10 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
-
           html = Path('app/src/main/assets/index.html').read_text(encoding='utf-8')
           assert "const ROUTE='data/route.geojson', SUPPORTS='data/published/webview-supports.json'" in html
           assert 'data/apoios-2026.json' not in html
           assert "const places=[['Início do percurso',0],['Fim do percurso',211.87]]" in html
-
           supports = json.loads(Path('app/src/main/assets/data/published/webview-supports.json').read_text(encoding='utf-8'))
           assert supports['target_year'] == 2027
           assert supports['environment'] == 'production'
@@ -119,7 +113,6 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
-
           expected = '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
           manifest = json.loads(Path('data/routes/route-source-manifest.json').read_text(encoding='utf-8'))
           assert manifest['status'] == 'official_gpx_bytes_ingested_validated'
@@ -135,4 +128,4 @@ jobs:
       - name: Run release validator
         run: |
           python3 scripts/validate_release.py
-          node --check <(sed -n '/<script>/,/<\/script>/p' app/src/main/assets/index.html | sed '1d;$d')
+          node --check /tmp/index-app.js
