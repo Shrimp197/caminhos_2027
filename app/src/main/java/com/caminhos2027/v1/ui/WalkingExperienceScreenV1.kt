@@ -36,6 +36,7 @@ fun WalkingExperienceScreenV1(
     val walking = state.walking
     val browser = state.apoiBrowser
     val decision = state.decision
+    val selectedApoi = browser?.selected
 
     Surface {
         Column(
@@ -53,40 +54,50 @@ fun WalkingExperienceScreenV1(
                 Text("Está aqui: %.1f km no caminho".format(position.routeKm))
             } ?: Text("A posição atual ainda não está disponível.")
 
-            walking.nextApoi?.let { next ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("Próximo APOI", style = MaterialTheme.typography.labelMedium)
-                        Text(next.name, fontWeight = FontWeight.Bold)
-                        walking.nextApoiDistanceKm?.let { Text("%.1f km pelo caminho".format(it)) }
-                        Button(onClick = { onOpenApoi(next) }) { Text("Ver detalhe") }
+            if (selectedApoi != null) {
+                ApoiDetailScreenV1(
+                    apoi = selectedApoi,
+                    onBack = onBackToWalking
+                )
+            } else {
+                walking.nextApoi?.let { next ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Próximo APOI", style = MaterialTheme.typography.labelMedium)
+                            Text(next.name, fontWeight = FontWeight.Bold)
+                            walking.nextApoiDistanceKm?.let { Text("%.1f km pelo caminho".format(it)) }
+                            Button(onClick = { onOpenApoi(next) }) { Text("Ver detalhe") }
+                        }
                     }
                 }
-            }
 
-            browser?.results?.let { results ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("APOI à frente", fontWeight = FontWeight.Bold)
-                        results.forEach { item ->
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(item.apoi.name, modifier = Modifier.weight(1f))
-                                Button(onClick = { onOpenApoi(item.apoi) }) { Text("Abrir") }
+                browser?.results?.let { results ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("APOI à frente", fontWeight = FontWeight.Bold)
+                            results.forEach { item ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(item.apoi.name, modifier = Modifier.weight(1f))
+                                    Button(onClick = { onOpenApoi(item.apoi) }) { Text("Abrir") }
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            Button(
-                onClick = onOpenDecision,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = walking.routePosition != null
-            ) {
-                Text("Decidir: parar ou continuar")
-            }
+                Button(
+                    onClick = onOpenDecision,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = walking.routePosition != null
+                ) {
+                    Text("Decidir: parar ou continuar")
+                }
 
-            decision?.let { context -> DecisionSummary(context) }
+                decision?.let { context -> DecisionSummary(context) }
+            }
 
             Button(onClick = onBackToWalking, modifier = Modifier.fillMaxWidth()) {
                 Text("Voltar à caminhada")
