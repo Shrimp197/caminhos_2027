@@ -8,9 +8,7 @@ import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RoutePosition
-import com.caminhos2027.v1.core.model.WalkStatus
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 class WalkingAppStateControllerTest {
@@ -25,14 +23,13 @@ class WalkingAppStateControllerTest {
     }
 
     @Test
-    fun controllerDoesNotCreateASeparateWalkingReadModel() {
+    fun controllerPublishesIntoTheProvidedStore() {
         val store = AppStateStore()
         val controller = controller(store)
 
         val state = controller.seedStartPosition(RoutePosition("route", 2.0, 0.0))
 
         assertEquals(state, store.state)
-        assertEquals(WalkStatus.PLANNED, controllerWalkingInitialStatus())
     }
 
     @Test
@@ -53,10 +50,6 @@ class WalkingAppStateControllerTest {
             catalog = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { emptyList() })),
             store = store
         )
-
-    private fun controllerWalkingInitialStatus() = controller().stateWalkingStatusForTest()
-
-    private fun WalkingAppStateController.stateWalkingStatusForTest(): WalkStatus? = null
 
     private fun route() = Route(
         id = "route",
