@@ -8,6 +8,7 @@ HTML_PATH = ROOT / 'app/src/main/assets/index.html'
 MANIFEST_PATH = ROOT / 'app/src/main/AndroidManifest.xml'
 JAVA_PATH = ROOT / 'app/src/main/java/com/caminhos2027/MainActivity.java'
 ROUTE_MANIFEST_PATH = ROOT / 'data/routes/route-source-manifest.json'
+APOI_PRODUCTION_PATH = ROOT / 'app/src/main/assets/data/published/apoi-production.json'
 
 html = HTML_PATH.read_text(encoding='utf-8')
 manifest = MANIFEST_PATH.read_text(encoding='utf-8')
@@ -47,6 +48,29 @@ if candidate.get('capture_status') != 'official_url_bytes_verified_by_ci':
     raise SystemExit('Official GPX capture status is not the verified CI state')
 if candidate.get('allowed_for_production') is not False:
     raise SystemExit('Official GPX candidate must remain outside production until semantic validation')
+
+# Production APOI is a distinct 2027 publication layer. It may be empty while
+# qualification is still pending, but every item that enters it must satisfy the
+# minimum operational publication contract.
+production = json.loads(APOI_PRODUCTION_PATH.read_text(encoding='utf-8'))
+if production.get('target_year') != 2027:
+    raise SystemExit(f'APOI production target year must be 2027, got {production.get("target_year")}')
+if production.get('environment') != 'production':
+    raise SystemExit('APOI production environment must be production')
+if not isinstance(production.get('items'), list):
+    raise SystemExit('APOI production items must be a list')
+
+allowed_publication = {'PUBLISHED', 'PUBLISHED_WITH_WARNING'}
+blocked_availability = {'HISTORICAL', 'EXPIRED', 'CLOSED'}
+for item in production['items']:
+    publication = item.get('publication') or {}
+    availability = item.get('availability') or {}
+    status = publication.get('status')
+    availability_status = availability.get('status')
+    if status not in allowed_publication:
+        raise SystemExit(f'Production APOI {item.get("id")} has non-publishable status: {status}')
+    if availability_status in blocked_availability:
+        raise SystemExit(f'Production APOI {item.get("id")} has blocked availability: {availability_status}')
 
 required_test_assets = [
     ROOT / 'app/src/main/assets/data/percurso-teste-casa-trabalho.gpx',
