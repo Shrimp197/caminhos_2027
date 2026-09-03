@@ -115,7 +115,7 @@ button,select,input,textarea{font:inherit}.hidden{display:none!important}
 <script>
 (function(){
 'use strict';
-const ROUTE='data/route.geojson', SUPPORTS='data/apoios-2026.json', TESTGPX='data/percurso-teste-casa-trabalho.gpx';
+const ROUTE='data/route.geojson', SUPPORTS='data/published/webview-supports.json', TESTGPX='data/percurso-teste-casa-trabalho.gpx';
 const SET='cp.settings.v1', RES='cp.resume.v1', NOTES='cp.notes.v1', ROUTES='cp.routes.v1';
 const $=id=>document.getElementById(id);
 let map,routeLayers=[],markers=[],userMarker=null,accCircle=null,gpsWatch=null,compassOn=false;
@@ -123,7 +123,7 @@ let features=[],lines=[],supports=[],activeRoute='centenario',activeName='Caminh
 let stageStart=0,stageEnd=0,currentKm=0,following=false,walking=false,orientation='north',audio='immersive';
 let supportFilters=new Set(['all']),lastOff=false,lastPauseKm=0,lastPauseTime=0,walkStartedAt=0,simKm=0,reverse=false;
 
-const places=[['Porto',0],['São João da Madeira',32.1],['Cucujães',36],['Oliveira de Azeméis',41],['Albergaria-a-Velha',56],['Águeda',74],['Anadia',91],['Mealhada',98.7],['Coimbra',126.3],['Condeixa-a-Nova',145],['Soure',160],['Pombal',188.2],['Leiria',201],['Ourém',214.8],['Fátima',216.1]];
+const places=[['Início do percurso',0],['Fim do percurso',211.87]];
 
 function fmt(n){return Number(n||0).toLocaleString('pt-PT',{minimumFractionDigits:1,maximumFractionDigits:1})}
 function hav(a,b){const R=6371000,p1=a[1]*Math.PI/180,p2=b[1]*Math.PI/180,dp=(b[1]-a[1])*Math.PI/180,dl=(b[0]-a[0])*Math.PI/180,h=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(Math.max(0,Math.min(1,h))))}
@@ -194,7 +194,7 @@ function renderSupports(){
     list.appendChild(d)
   })
 }
-function routeStore(){let r=[];try{r=JSON.parse(localStorage.getItem(ROUTES)||'[]')}catch(e){}return[{id:'centenario',name:'Caminho do Centenário',distance:216.099,builtin:true},...r]}
+function routeStore(){let r=[];try{r=JSON.parse(localStorage.getItem(ROUTES)||'[]')}catch(e){}return[{id:'centenario',name:'Caminho do Centenário',distance:211.87,builtin:true},...r]}
 function renderRouteLibrary(){let b=$('routeLibrary');b.innerHTML='';routeStore().forEach(r=>{let d=document.createElement('div');d.className='routeItem'+(r.id===activeRoute?' active':'');d.innerHTML='<b>'+r.name+'</b><small style="display:block;color:var(--muted)">'+fmt(r.distance)+' km</small><button type="button">'+(r.id===activeRoute?'✓ Ativo':'Usar percurso')+'</button>';d.querySelector('button').onclick=()=>selectRoute(r.id);b.appendChild(d)})}
 function fillRouteSelectors(){
   fillRoutes();

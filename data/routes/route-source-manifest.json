@@ -3,7 +3,7 @@
   "route_id": "caminho-do-centenario",
   "official_name": "Caminho do Centenário",
   "scope": "Caminhos de Fátima",
-  "status": "official_gpx_provenance_verified_pending_repository_ingestion",
+  "status": "official_gpx_bytes_ingested_validated",
   "official_reference": {
     "route_name": "Caminho do Centenário",
     "origin": "Gaia",
@@ -28,7 +28,7 @@
       "format": "gpx",
       "publication_context": "ACF documents archive, 2024",
       "source_url": "https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx",
-      "capture_status": "official_url_bytes_verified_by_ci",
+      "capture_status": "official_bytes_ingested_and_validated",
       "capture_filename": "Caminho_do_centenario.gpx",
       "byte_count": 377117,
       "sha256": "1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266",
@@ -36,8 +36,10 @@
       "track_segment_count": 1,
       "point_count": 5082,
       "summed_geometry_km": 214.77816498997424,
-      "allowed_for_production": false,
-      "next_action": "ingest_original_bytes_into_repository_then_run_full_validation"
+      "allowed_for_production": true,
+      "next_action": "validate stage compatibility before publication",
+      "repository_path": "data/routes/Caminho_do_centenario.gpx",
+      "normalized_geometry_path": "app/src/main/assets/data/route.geojson"
     },
     {
       "format": "kml",
