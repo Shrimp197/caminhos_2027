@@ -24,14 +24,14 @@ class WalkingSessionRuntime(
         val nextCoordinator = WalkingStateCoordinator(route, started, publishedApoi, policy)
         coordinator = nextCoordinator
         val state = nextCoordinator.seedStartPosition(position, now)
-        sessionService.updatePosition(walkId, state)
+        sessionService.updatePosition(walkId, state, observedAt = now)
         return state
     }
 
     fun accept(position: RawGpsPosition): WalkingState {
         val active = requireNotNull(coordinator) { "Walking session has not been started" }
         val state = active.accept(position)
-        sessionService.updatePosition(state.walk.id, state)
+        sessionService.updatePosition(state.walk.id, state, observedAt = position.capturedAt)
         return state
     }
 
