@@ -14,11 +14,12 @@ import com.caminhos2027.v1.core.model.PublicationStatus
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
-import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.RouteRelation
+import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.WalkStatus
 import java.time.Instant
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -83,6 +84,44 @@ class WalkingAppStateControllerTest {
 
         assertEquals(reliableKm, jumped.walking!!.routePosition!!.routeKm, 0.0001)
         assertEquals(reliableApoiDistance, jumped.walking!!.nextApoiDistanceKm)
+    }
+
+    @Test
+    fun persistentControllerResumePublishesCheckpointedWalkingState() {
+        val route = route()
+        val walks = InMemoryWalkRepository()
+        val checkpoints = InMemoryWalkingStateRepository()
+        val service = WalkingSessionService(walks, checkpoints)
+        val plan = WalkingPlanFactory.create(route, "walk-persistent", 0.0, 1.0)
+
+        val firstStore = AppStateStore()
+        val firstRuntime = WalkingSessionRuntime(route, service, listOf(waterApoi()))
+        val firstController = WalkingAppStateController(
+            route = route,
+            walk = plan,
+            catalog = catalog(waterApoi()),
+            store = firstStore,
+            sessionRuntime = firstRuntime
+        )
+        firstController.start(RoutePosition("route", 0.0, 0.0), Instant.parse("2026-09-03T09:00:00Z"))
+        val moved = firstController.acceptGps(gps(40.0045, "2026-09-03T09:02:00Z"))
+
+        val resumedStore = AppStateStore()
+        val resumedRuntime = WalkingSessionRuntime(route, service, listOf(waterApoi()))
+        val resumedController = WalkingAppStateController(
+            route = route,
+            walk = plan,
+            catalog = catalog(waterApoi()),
+            store = resumedStore,
+            sessionRuntime = resumedRuntime
+        )
+        val resumed = resumedController.resume(Instant.parse("2026-09-03T09:10:00Z"))
+
+        assertEquals(moved.walking?.routePosition?.routeKm ?: -1.0, resumed.walking?.routePosition?.routeKm ?: -2.0, 0.001)
+        assertEquals(moved.walking?.progress?.currentRouteKm ?: -1.0, resumed.walking?.progress?.currentRouteKm ?: -2.0, 0.001)
+        assertEquals("water", resumed.walking?.nextApoi?.id)
+        assertNotNull(resumedStore.state.walking)
+        assertEquals(resumed, resumedStore.state)
     }
 
     private fun controller(
