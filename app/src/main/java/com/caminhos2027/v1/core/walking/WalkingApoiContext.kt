@@ -5,7 +5,10 @@ import com.caminhos2027.v1.core.apoi.ApoiFilter
 import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
 import com.caminhos2027.v1.core.model.Apoi
 
-/** Application-facing APOI context for an active walk. */
+/**
+ * Application-facing APOI context for an active walk.
+ * Keeps discovery anchored to the current walking position and published catalog.
+ */
 class WalkingApoiContext(
     private val routeId: String,
     private val catalog: PublishedApoiCatalog
