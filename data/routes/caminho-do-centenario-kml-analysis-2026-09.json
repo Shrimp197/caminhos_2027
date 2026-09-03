@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "route_id": "caminho-centenario",
+  "source_file": "caminho-do-centenario(1).kml",
+  "source_identity": "ACF_2020.kml",
+  "role": "analysis-only",
+  "official_production": false,
+  "analysis": {
+    "line_string_count": 371,
+    "point_count": 7924,
+    "geometric_length_km": 216.0987,
+    "official_published_distance_km": 211.87,
+    "difference_km": 4.2287,
+    "difference_percent": 1.9957,
+    "finding": "The KML is a multi-segment geometry collection. Its total geometric length matches the previously observed 216.099 km value, but the segments are not guaranteed to form one ordered production route simply by concatenation."
+  },
+  "normalization_policy": [
+    "Preserve the original KML as source evidence.",
+    "Do not declare this source as current official production geometry solely from its filename.",
+    "Build an ordered route only after deterministic segment ordering and continuity checks.",
+    "Validate start/end against the official route definition.",
+    "Keep geometric length separate from the official published distance.",
+    "Do not alter official stage distances to force agreement with measured geometry.",
+    "Do not silently bridge large spatial gaps between segments."
+  ],
+  "next_validation": [
+    "Determine segment connectivity and ordering.",
+    "Identify disconnected/auxiliary segments and quantify them.",
+    "Validate ordered geometry start and end against Gaia and Fatima.",
+    "Run RouteLocationEngine tests against the normalized geometry.",
+    "Only then promote a derived geometry asset for the walking map."
+  ]
+}
