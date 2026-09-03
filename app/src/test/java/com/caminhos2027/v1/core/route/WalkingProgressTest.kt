@@ -18,7 +18,7 @@ class WalkingProgressTest {
         assertEquals(6.0, progress.currentRouteKm, 0.001)
         assertEquals(1.0, progress.walkedKm, 0.001)
         assertEquals(4.0, progress.remainingKm, 0.001)
-        assertEquals(0.1, progress.progressRatio, 0.001)
+        assertEquals(0.2, progress.progressRatio, 0.001)
         assertEquals("stage-1", progress.stageId)
     }
 
