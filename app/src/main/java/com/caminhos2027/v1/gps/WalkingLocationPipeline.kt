@@ -2,6 +2,7 @@ package com.caminhos2027.v1.gps
 
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
+import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.route.GpsObservation
 import com.caminhos2027.v1.core.route.GpsStateEvaluator
 import com.caminhos2027.v1.core.route.GpsTrackingPolicy
@@ -17,6 +18,22 @@ class WalkingLocationPipeline(
 ) {
     var trackingState: GpsTrackingState = initialState
         private set
+
+    /** Seeds the tracker with the real route position selected at walking start. */
+    fun seedRoutePosition(position: RoutePosition, capturedAt: Instant): GpsTrackingState {
+        require(position.routeId == route.id) { "Seed position route must match route" }
+        val observation = GpsObservation(
+            routePosition = position,
+            accuracyMeters = null,
+            capturedAt = capturedAt
+        )
+        trackingState = GpsTrackingState(
+            state = com.caminhos2027.v1.core.route.GpsState.ACQUIRING,
+            lastReliableObservation = observation,
+            lastObservation = observation
+        )
+        return trackingState
+    }
 
     fun accept(position: RawGpsPosition): GpsTrackingState {
         val routePosition = RouteLocationEngine.locate(route, position)
