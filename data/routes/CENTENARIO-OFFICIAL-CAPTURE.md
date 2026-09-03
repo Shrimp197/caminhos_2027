@@ -34,9 +34,11 @@ Não são aceites como substitutos:
 
 ## Estado atual
 
-**A aguardar os bytes oficiais.**
+**GPX oficial capturado e verificado por SHA-256; promoção ainda pendente.**
 
-O site principal pode apresentar uma verificação anti-bot durante a captura automática. Uma captura assistida do ficheiro original é válida desde que o ficheiro recebido seja preservado sem alteração e a origem seja registada.
+A identidade dos bytes do GPX é verificada automaticamente no GitHub Actions contra a URL oficial ACF. O ficheiro tem 377117 bytes, SHA-256 `1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266`, 1 track, 1 segmento e 5082 pontos.
+
+O original binário continua fora do repositório enquanto a infraestrutura de ingestão de bytes não permitir preservá-lo sem alteração. A verificação de proveniência não equivale à promoção da geometria para produção.
 
 ## Gate de promoção
 
@@ -44,7 +46,7 @@ Só promover para o dataset V1 quando todos os seguintes forem verdadeiros:
 
 - fonte identificada e rastreável;
 - bytes preservados;
-- SHA-256 calculado;
+- SHA-256 calculado e reproduzível;
 - parser concluído sem perda/reordenação silenciosa;
 - geometria com pelo menos dois pontos e coordenadas válidas;
 - continuidade validada;
@@ -52,3 +54,5 @@ Só promover para o dataset V1 quando todos os seguintes forem verdadeiros:
 - destino compatível com Fátima;
 - comprimento compatível com a referência oficial de 211,87 km / cerca de 212 km;
 - etapas oficiais confirmadas separadamente, quando existirem.
+
+A validação geométrica não deve corrigir, normalizar, encurtar ou substituir a distância medida para fazer o candidato coincidir com a distância publicada. Qualquer diferença deve permanecer explícita no registo de validação.
