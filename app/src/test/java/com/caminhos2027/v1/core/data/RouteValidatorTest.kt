@@ -23,7 +23,7 @@ class RouteValidatorTest {
 
     @Test
     fun stageDistanceInconsistentWithRouteIntervalIsRejected() {
-        val route = fixture().copy(stages = listOf(fixture().stages.first().copy(distanceKm = 9.0)))
+        val route = fixture().copy(stages = listOf(fixture().stages.first().copy(distanceKm = 0.5)))
         assertFalse(RouteValidator.validate(route).isEmpty())
     }
 
@@ -37,7 +37,7 @@ class RouteValidatorTest {
     fun geometryWithInvalidLatitudeIsRejected() {
         val route = fixture().copy(
             geometry = RouteGeometry(
-                listOf(GeoPoint(91.0, -8.0), GeoPoint(40.0, -7.991007))
+                listOf(GeoPoint(91.0, -8.0), GeoPoint(40.0, -7.98827))
             )
         )
         assertTrue(RouteValidator.validate(route).any { it.contains("latitude") })
@@ -47,7 +47,7 @@ class RouteValidatorTest {
     fun geometryWithInvalidLongitudeIsRejected() {
         val route = fixture().copy(
             geometry = RouteGeometry(
-                listOf(GeoPoint(40.0, -181.0), GeoPoint(40.0, -7.991007))
+                listOf(GeoPoint(40.0, -181.0), GeoPoint(40.0, -7.98827))
             )
         )
         assertTrue(RouteValidator.validate(route).any { it.contains("longitude") })
@@ -70,7 +70,7 @@ class RouteValidatorTest {
         geometry = RouteGeometry(
             listOf(
                 GeoPoint(40.0, -8.0),
-                GeoPoint(40.0, -7.991007)
+                GeoPoint(40.0, -7.98827)
             )
         ),
         stages = listOf(
