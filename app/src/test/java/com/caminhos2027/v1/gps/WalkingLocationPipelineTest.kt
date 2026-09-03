@@ -21,7 +21,9 @@ class WalkingLocationPipelineTest {
             GeoPoint(41.02, -8.0)
         )),
         totalDistanceKm = 2.22,
-        source = "test"
+        source = "test",
+        updatedAt = "2026-09-01",
+        stages = emptyList()
     )
 
     @Test
