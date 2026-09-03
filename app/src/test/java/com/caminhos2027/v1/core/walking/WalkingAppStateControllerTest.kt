@@ -8,16 +8,18 @@ import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RoutePosition
+import com.caminhos2027.v1.core.model.WalkStatus
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class WalkingAppStateControllerTest {
     @Test
-    fun startingWalkingPublishesIntoSharedAppState() {
+    fun startingWalkingMakesTheWalkActiveAndPublishesPosition() {
         val controller = controller()
 
-        val state = controller.seedStartPosition(RoutePosition("route", 2.0, 0.0))
+        val state = controller.start(RoutePosition("route", 2.0, 0.0), java.time.Instant.parse("2026-09-02T10:00:00Z"))
 
+        assertEquals(WalkStatus.ACTIVE, state.walking?.walk?.status)
         assertEquals(2.0, state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
         assertEquals(com.caminhos2027.v1.core.route.GpsState.ACQUIRING, state.walking?.gpsState)
     }
@@ -27,7 +29,7 @@ class WalkingAppStateControllerTest {
         val store = AppStateStore()
         val controller = controller(store)
 
-        val state = controller.seedStartPosition(RoutePosition("route", 2.0, 0.0))
+        val state = controller.start(RoutePosition("route", 2.0, 0.0))
 
         assertEquals(state, store.state)
     }
@@ -35,7 +37,7 @@ class WalkingAppStateControllerTest {
     @Test
     fun offlineChangeIsPublishedWithoutChangingPosition() {
         val controller = controller()
-        controller.seedStartPosition(RoutePosition("route", 2.0, 0.0))
+        controller.start(RoutePosition("route", 2.0, 0.0))
 
         val state = controller.setOffline(true)
 
