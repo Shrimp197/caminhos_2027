@@ -2,6 +2,7 @@ package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.PositionConfidence
+import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RoutePosition
@@ -30,6 +31,20 @@ class WalkingSessionRuntimeTest {
         assertEquals(WalkStatus.ACTIVE, started.walk.status); assertEquals(0.4, started.routePosition!!.routeKm, 0.001); assertEquals(GpsState.ACQUIRING, started.gpsState)
         val completed = runtime.stop(stop, Instant.parse("2026-09-01T12:00:00Z"))
         assertEquals(WalkStatus.COMPLETED, completed.status); assertEquals(1.4, completed.actualEndKm!!, 0.001); assertNull(states.get("walk-1"))
+    }
+
+    @Test fun firstImplausibleFixDoesNotReplaceTheStartBaseline() {
+        val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        runtime.prepare(WalkingPlanFactory.create(route, "walk-3", 0.4, 1.8))
+        val started = runtime.start("walk-3", start, Instant.parse("2026-09-01T08:00:00Z"))
+
+        val afterJump = runtime.accept(RawGpsPosition(40.018, -8.0, 5.0, Instant.parse("2026-09-01T08:01:00Z")))
+
+        assertEquals(0.4, afterJump.routePosition!!.routeKm, 0.001)
+        assertEquals(start.routeKm, afterJump.progress.currentRouteKm, 0.001)
+        assertEquals(started.progress.walkedKm, afterJump.progress.walkedKm, 0.001)
+        assertEquals(GpsState.ACQUIRING, afterJump.gpsState)
     }
 
     @Test fun resumeReturnsTheLastCheckpointedState() {
