@@ -55,7 +55,7 @@ class RouteLocationEngineTest {
         geometry = RouteGeometry(
             listOf(
                 GeoPoint(40.0, -8.0),
-                GeoPoint(40.0, -7.99)
+                GeoPoint(40.0, -7.988993)
             )
         ),
         stages = listOf(
