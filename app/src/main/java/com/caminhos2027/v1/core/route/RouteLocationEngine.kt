@@ -18,6 +18,9 @@ object RouteLocationEngine {
 
     fun locate(route: Route, gps: RawGpsPosition): RoutePosition {
         require(route.geometry.points.size >= 2) { "Route geometry must contain at least two points" }
+        require(gps.latitude.isFinite() && gps.longitude.isFinite()) { "GPS coordinates must be finite" }
+        require(gps.latitude in -90.0..90.0) { "GPS latitude must be within Earth bounds" }
+        require(gps.longitude in -180.0..180.0) { "GPS longitude must be within Earth bounds" }
 
         var bestDistance = Double.POSITIVE_INFINITY
         var bestRouteKm = 0.0
