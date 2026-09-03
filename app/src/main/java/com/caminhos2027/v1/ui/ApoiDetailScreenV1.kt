@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.ApoiAvailabilityStatus
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.ApoiCostModel
 import com.caminhos2027.v1.core.model.ApoiReservationPolicy
@@ -65,7 +66,12 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(publicationLabel(apoi.publication.status), fontWeight = FontWeight.Bold)
+            Text("Estado atual: ${availabilityLabel(apoi.availability.status)}")
             apoi.publication.reason?.takeIf { it.isNotBlank() }?.let { Text(it) }
+            apoi.availability.validFrom?.takeIf { it.isNotBlank() }?.let { Text("Válido desde: $it") }
+            apoi.availability.validUntil?.takeIf { it.isNotBlank() }?.let { Text("Válido até: $it") }
+            apoi.availability.recurrence?.takeIf { it.isNotBlank() }?.let { Text("Recorrência: $it") }
+            apoi.availability.season?.takeIf { it.isNotBlank() }?.let { Text("Época: $it") }
             apoi.availability.openingHours?.takeIf { it.isNotBlank() }?.let { Text("Horário: $it") }
             apoi.availability.notes?.takeIf { it.isNotBlank() }?.let { Text(it) }
         }
@@ -175,6 +181,16 @@ private fun publicationLabel(status: com.caminhos2027.v1.core.model.PublicationS
     com.caminhos2027.v1.core.model.PublicationStatus.HISTORICAL -> "Informação histórica"
     com.caminhos2027.v1.core.model.PublicationStatus.CLOSED -> "APOI encerrado"
     else -> "Informação em revisão"
+}
+
+private fun availabilityLabel(status: ApoiAvailabilityStatus): String = when (status) {
+    ApoiAvailabilityStatus.CURRENT -> "atual"
+    ApoiAvailabilityStatus.FUTURE_CONFIRMED -> "futura confirmada"
+    ApoiAvailabilityStatus.RECURRING -> "recorrente"
+    ApoiAvailabilityStatus.HISTORICAL -> "histórica"
+    ApoiAvailabilityStatus.EXPIRED -> "expirada"
+    ApoiAvailabilityStatus.AWAITING_CONFIRMATION -> "aguarda confirmação"
+    ApoiAvailabilityStatus.CLOSED -> "encerrada"
 }
 
 private fun locationPrecisionLabel(value: LocationPrecision): String = when (value) {
