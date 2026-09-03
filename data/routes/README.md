@@ -20,6 +20,12 @@ A geometria de produção deverá passar por este processo:
 8. verificar compatibilidade com as etapas oficiais;
 9. só depois publicar o dataset consumido pela aplicação.
 
+## Fontes comunitárias
+
+Fontes de peregrinos podem ser mantidas como **community_reference** para comparação, contexto de planeamento histórico e descoberta de candidatos APOI. Não constituem autoridade para substituir a geometria oficial nem confirmam automaticamente condições para 2027.
+
+O manifesto `community-source-manifest.json` regista a referência Wikiloc da peregrinação Porto–Fátima de julho de 2025. Os seus metadados podem orientar investigação e comparação, mas os bytes GPX/KML não estão capturados no repositório nem são consumidos pela aplicação.
+
 ## Regras
 
 - O percurso oficial é referência de navegação e não deve ser alterado pela execução do peregrino.
