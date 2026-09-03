@@ -11,7 +11,7 @@ Branch: `v1-route-import`
 
 A geometria de produção do Caminho do Centenário deve vir dos ficheiros GPX/KML disponibilizados pela ACF — Associação Caminhos de Fátima.
 
-A página oficial do percurso confirma o download do KML completo, e o arquivo oficial de documentos lista separadamente o GPX completo (15/10/2024) e o KML completo (17/09/2024).
+A página oficial do percurso e o arquivo oficial de documentos continuam a disponibilizar o percurso. O arquivo lista separadamente o GPX completo publicado em 15/10/2024 e o KML completo publicado em 17/09/2024. Na verificação de 2026-09-03, os dois links resolveram para os endpoints oficiais, mas a camada de captura disponível não aceitou os content-types `application/gpx+xml` e `application/vnd.google-earth.kml+xml`; por isso os bytes ainda não foram preservados localmente.
 
 - Página do percurso: https://caminhosdefatima.com/caminho-do-centenario/
 - Arquivo de documentos: https://caminhosdefatima.com/category/documentos/
@@ -47,6 +47,12 @@ A branch já contém uma camada determinística para medir o comprimento da geom
 
 Esta validação é deliberadamente **pré-importação**: ainda não é aplicada a uma geometria oficial real.
 
+## Captura controlada da fonte
+
+O procedimento de captura está documentado em `data/routes/CENTENARIO-OFFICIAL-CAPTURE.md` e o utilitário `scripts/capture_centenário_source.py` aceita apenas os nomes oficiais esperados, calcula SHA-256 sobre os bytes originais e regista metadados sem regravar a fonte.
+
+A captura assistida de um ficheiro original é válida quando o ficheiro é preservado sem alteração e a origem é registada. Não é válido fornecer screenshots, PDFs, listas de coordenadas ou uma geometria reconstruída.
+
 ## Auditoria do KML histórico
 
 A análise do `ACF_2020.kml` encontrou 371 `LineString`, 7.924 pontos e cerca de 216,099 km de geometria acumulada, face aos 211,87 km publicados para o percurso. A análise de conectividade mostra que existem segmentos com lacunas suficientemente grandes para tornar insegura uma reconstrução por vizinho mais próximo.
@@ -79,7 +85,7 @@ Até lá, **não criar um `caminho-do-centenario-v1.json` fictício nem preenche
 
 ## Próximo bloco autónomo
 
-1. Capturar os bytes do GPX e/ou KML oficiais de 2024.
+1. Obter os bytes do GPX e/ou KML oficiais de 2024 por captura assistida ou outro meio que preserve o ficheiro original.
 2. Registar SHA-256, tamanho, URL, data de consulta e tipo de fonte.
 3. Extrair a geometria sem reordenar silenciosamente segmentos.
 4. Produzir relatório de continuidade, origem/destino e comprimento.
