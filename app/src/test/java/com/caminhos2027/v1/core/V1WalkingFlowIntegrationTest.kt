@@ -53,7 +53,7 @@ class V1WalkingFlowIntegrationTest {
 
         val moving = coordinator.accept(
             RawGpsPosition(
-                latitude = 40.0040,
+                latitude = 40.0020,
                 longitude = -8.0,
                 accuracyMeters = 5.0,
                 capturedAt = Instant.parse("2026-09-03T10:01:00Z")
