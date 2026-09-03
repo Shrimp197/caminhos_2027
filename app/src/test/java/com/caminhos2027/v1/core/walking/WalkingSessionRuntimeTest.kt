@@ -54,6 +54,23 @@ class WalkingSessionRuntimeTest {
         assertNotNull(resumed); assertEquals(0.4, resumed!!.routePosition!!.routeKm, 0.001); assertEquals(GpsState.ACQUIRING, resumed.gpsState)
     }
 
+    @Test fun checkpointPreservesLastAcceptedGpsTimestampAcrossRuntimeRecreation() {
+        val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        runtime.prepare(WalkingPlanFactory.create(route, "walk-5", 0.4, 1.8))
+        runtime.start("walk-5", start, Instant.parse("2026-09-01T08:00:00Z"))
+
+        runtime.accept(RawGpsPosition(40.0045, -8.0, 5.0, Instant.parse("2026-09-01T08:02:00Z")))
+        val checkpoint = service.resumeCheckpoint("walk-5")
+
+        assertNotNull(checkpoint)
+        assertEquals(Instant.parse("2026-09-01T08:02:00Z"), checkpoint!!.lastObservedAt)
+
+        val resumed = WalkingSessionRuntime(route, service, emptyList()).resume(Instant.parse("2026-09-01T08:20:00Z"))
+        assertNotNull(resumed)
+        assertEquals(0.5, resumed!!.routePosition!!.routeKm, 0.02)
+    }
+
     @Test fun resumedRuntimeStillRejectsAnImplausibleGpsJumpFromCheckpoint() {
         val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
         val runtime = WalkingSessionRuntime(route, service, emptyList())
@@ -63,10 +80,11 @@ class WalkingSessionRuntimeTest {
         val resumed = WalkingSessionRuntime(route, service, emptyList()).resume(Instant.parse("2026-09-01T08:05:00Z"))!!
         assertEquals(0.4, resumed.routePosition!!.routeKm, 0.001)
 
-        val afterJump = WalkingSessionRuntime(route, service, emptyList()).apply {
+        WalkingSessionRuntime(route, service, emptyList()).apply {
             resume(Instant.parse("2026-09-01T08:05:00Z"))
             accept(RawGpsPosition(40.018, -8.0, 5.0, Instant.parse("2026-09-01T08:06:00Z")))
-        }.resume(Instant.parse("2026-09-01T08:07:00Z"))
+        }
+        val afterJump = WalkingSessionRuntime(route, service, emptyList()).resume(Instant.parse("2026-09-01T08:07:00Z"))
 
         assertNotNull(afterJump)
         assertEquals(0.4, afterJump!!.routePosition!!.routeKm, 0.001)
