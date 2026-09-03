@@ -19,7 +19,7 @@ object WalkingStateBuilder {
         offline: Boolean = false
     ): WalkingState {
         val progress = routePosition?.let {
-            WalkingProgressCalculator.calculate(route, walk, it.routeKm, it.stageId)
+            WalkingProgressCalculator.calculate(route, walk, it.routeKm)
         }
         val nextApoi = routePosition?.let {
             NextApoiFinder.findNext(publishedApoi, route.id, it.routeKm)
