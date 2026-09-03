@@ -14,9 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.apoi.ApoiAhead
-import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.PublicationStatus
-import java.util.Locale
 
 /** Compact, information-first list of published APOI ahead of the pilgrim. */
 @Composable
@@ -37,6 +35,7 @@ fun ApoiAheadListV1(
                 )
             } else {
                 results.forEach { item ->
+                    val presentation = ApoiAheadPresentationMapper.map(item.apoi, item.distanceKm)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -45,14 +44,19 @@ fun ApoiAheadListV1(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            Text(item.apoi.name, fontWeight = FontWeight.SemiBold)
+                            Text(presentation.name, fontWeight = FontWeight.SemiBold)
                             Text(
-                                "${categoryLabel(item.apoi.mainCategory)} · ${formatKm(item.distanceKm)} km",
+                                "${presentation.categoryLabel} · ${presentation.distanceLabel}",
                                 style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                presentation.availabilityLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             if (item.apoi.publication.status == PublicationStatus.PUBLISHED_WITH_WARNING) {
                                 Text(
-                                    "⚠ Informação com aviso",
+                                    "⚠ ${presentation.warningLabel ?: "Informação com aviso"}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -65,16 +69,3 @@ fun ApoiAheadListV1(
         }
     }
 }
-
-private fun categoryLabel(category: ApoiCategory): String = when (category) {
-    ApoiCategory.ALIMENTACAO -> "Alimentação"
-    ApoiCategory.AGUA -> "Água"
-    ApoiCategory.DESCANSO -> "Descanso"
-    ApoiCategory.PERNOITA -> "Pernoita"
-    ApoiCategory.DUCHES -> "Duches"
-    ApoiCategory.CARREGAMENTO -> "Carregamento"
-    ApoiCategory.TRANSPORTE -> "Transporte"
-    ApoiCategory.EMERGENCIA -> "Emergência"
-}
-
-private fun formatKm(value: Double): String = String.format(Locale("pt", "PT"), "%.1f", value)
