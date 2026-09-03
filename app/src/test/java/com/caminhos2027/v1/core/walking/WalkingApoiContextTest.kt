@@ -1,5 +1,6 @@
 package com.caminhos2027.v1.core.walking
 
+import com.caminhos2027.v1.core.apoi.ApoiFilter
 import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
 import com.caminhos2027.v1.core.data.ApoiRepository
 import com.caminhos2027.v1.core.model.Apoi
@@ -40,7 +41,7 @@ class WalkingApoiContextTest {
 
     @Test fun emptyAheadHasNoNext() {
         val context = WalkingApoiContext("route", PublishedApoiCatalog(FakeRepository(emptyList())))
-        assertEquals(emptyList<Any>(), context.ahead(10.0))
+        assertEquals(0, context.ahead(10.0).size)
         assertNull(context.next(10.0))
     }
 
