@@ -60,10 +60,10 @@ class WalkingAppStateControllerTest {
         val controller = controller(catalog(waterApoi()))
         controller.start(RoutePosition("route", 0.0, 0.0), Instant.parse("2026-09-02T11:00:00Z"))
 
-        val initial = controller.acceptGps(gps(40.00225, "2026-09-02T11:00:10Z"))
+        val initial = controller.acceptGps(gps(40.00225, "2026-09-02T11:02:00Z"))
         val initialDistance = initial.walking!!.nextApoiDistanceKm!!
 
-        val moved = controller.acceptGps(gps(40.0045, "2026-09-02T11:00:20Z"))
+        val moved = controller.acceptGps(gps(40.0045, "2026-09-02T11:04:00Z"))
 
         assertTrue(moved.walking!!.routePosition!!.routeKm > initial.walking!!.routePosition!!.routeKm)
         assertEquals("water", moved.walking!!.nextApoi?.id)
@@ -75,11 +75,11 @@ class WalkingAppStateControllerTest {
         val controller = controller(catalog(waterApoi()))
         controller.start(RoutePosition("route", 0.0, 0.0), Instant.parse("2026-09-02T12:00:00Z"))
 
-        val reliable = controller.acceptGps(gps(40.00225, "2026-09-02T12:00:10Z"))
+        val reliable = controller.acceptGps(gps(40.00225, "2026-09-02T12:02:00Z"))
         val reliableKm = reliable.walking!!.routePosition!!.routeKm
         val reliableApoiDistance = reliable.walking!!.nextApoiDistanceKm
 
-        val jumped = controller.acceptGps(gps(40.009, "2026-09-02T12:00:11Z"))
+        val jumped = controller.acceptGps(gps(40.009, "2026-09-02T12:02:01Z"))
 
         assertEquals(reliableKm, jumped.walking!!.routePosition!!.routeKm, 0.0001)
         assertEquals(reliableApoiDistance, jumped.walking!!.nextApoiDistanceKm)
@@ -131,7 +131,7 @@ class WalkingAppStateControllerTest {
         id = "route",
         name = "Route",
         officialName = "Route",
-        totalDistanceKm = 10.0,
+        totalDistanceKm = 1.0,
         source = "test",
         updatedAt = "2026-01-01",
         geometry = RouteGeometry(
