@@ -23,6 +23,15 @@ class RouteLocationEngineTest {
     }
 
     @Test
+    fun stageBoundaryFromProjectionBelongsToNextStage() {
+        val route = fixtureWithStageBoundary()
+        val position = RouteLocationEngine.locate(route, gps(40.0, -7.994135))
+
+        assertEquals("stage-2", position.stageId)
+        assertEquals(0.5, position.routeKm, 0.03)
+    }
+
+    @Test
     fun positionBeforeSegmentClampsToSegmentStart() {
         val route = fixture()
         val position = RouteLocationEngine.locate(route, gps(40.0, -8.01))
@@ -70,6 +79,19 @@ class RouteLocationEngineTest {
                 startName = "TEST/FICTITIOUS start",
                 endName = "TEST/FICTITIOUS end",
                 source = "TEST/FICTITIOUS"
+            )
+        )
+    )
+
+    private fun fixtureWithStageBoundary() = fixture().copy(
+        stages = listOf(
+            fixture().stages[0].copy(endRouteKm = 0.5, distanceKm = 0.5),
+            fixture().stages[0].copy(
+                id = "stage-2",
+                number = 2,
+                startRouteKm = 0.5,
+                endRouteKm = 1.0,
+                distanceKm = 0.5
             )
         )
     )
