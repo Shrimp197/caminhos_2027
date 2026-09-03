@@ -71,7 +71,13 @@ class RouteDatasetValidatorTest {
 
     @Test
     fun measuredGeometryDistanceRemainsDistinctFromDeclaredDistance() {
-        val route = fixtureRoute().copy(totalDistanceKm = 11.0)
+        val route = fixtureRoute().copy(
+            totalDistanceKm = 11.0,
+            stages = listOf(
+                Stage("s1", "test-route", 1, "A", 0.0, 5.5, 5.5, "A", "B", "test"),
+                Stage("s2", "test-route", 2, "B", 5.5, 11.0, 5.5, "B", "C", "test")
+            )
+        )
 
         val result = RouteDatasetValidator.validate(route)
 
