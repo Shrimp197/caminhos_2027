@@ -59,7 +59,8 @@ class V1WalkingFlowIntegrationTest {
                 capturedAt = Instant.parse("2026-09-03T10:01:00Z")
             )
         )
-        assertTrue(moving.routePosition!!.routeKm > started.routePosition!!.routeKm)
+        val startedKm = started.routePosition!!.routeKm
+        assertTrue(moving.routePosition!!.routeKm > startedKm)
         assertEquals("water-1", moving.nextApoi?.id)
 
         val store = AppStateStore()
@@ -78,12 +79,10 @@ class V1WalkingFlowIntegrationTest {
         store.buildDecision(route, listOf(water))
         val decision = store.state.decision
         assertNotNull(decision)
-        assertEquals(moving.routePosition?.routeKm, decision?.currentRouteKm ?: -1.0, 0.0001)
-        assertEquals(
-            moving.walk.plannedDestinationKm - moving.routePosition!!.routeKm,
-            decision?.remainingToPlannedDestinationKm ?: -1.0,
-            0.0001
-        )
+        val currentRouteKm = moving.routePosition!!.routeKm
+        val plannedDestinationKm = moving.walk.plannedDestinationKm!!
+        assertEquals(currentRouteKm, decision!!.currentRouteKm, 0.0001)
+        assertEquals(plannedDestinationKm - currentRouteKm, decision.remainingToPlannedDestinationKm, 0.0001)
         assertSame(moving, store.state.walking)
 
         store.clearApoiSelection(browser)
