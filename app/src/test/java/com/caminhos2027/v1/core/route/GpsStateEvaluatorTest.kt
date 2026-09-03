@@ -90,6 +90,16 @@ class GpsStateEvaluatorTest {
         assertEquals(1.0, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
     }
 
+    @Test
+    fun outOfOrderObservationDoesNotReplaceReliablePosition() {
+        var state = GpsTrackingState(GpsState.ON_ROUTE)
+        state = GpsStateEvaluator.update(state, observation(1.0, 5.0, 5.0, t0.plusSeconds(20)), t0.plusSeconds(20))
+        state = GpsStateEvaluator.update(state, observation(1.1, 5.0, 5.0, t0.plusSeconds(10)), t0.plusSeconds(21))
+
+        assertEquals(1.0, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(1.1, state.lastObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+    }
+
     private fun observation(
         routeKm: Double,
         distanceToRouteMeters: Double,
