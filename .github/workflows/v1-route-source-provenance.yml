@@ -125,6 +125,22 @@ jobs:
           print('Route manifest: OK')
           PY
 
+      - name: Verify route runtime policy
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          policy = json.loads(Path('data/routes/route-runtime-policy.json').read_text(encoding='utf-8'))
+          assert policy['schema_version'] == 1
+          assert policy['route_id'] == 'caminho-do-centenario'
+          assert policy['published_distance_km'] == 211.87
+          assert abs(policy['geometry_distance_km'] - 214.77816498997424) < 1e-12
+          assert policy['endpoint_policy'] == 'navigation_uses_official_gpx_endpoint'
+          assert policy['display_policy'] == 'never_silently_substitute_geometry_for_published_distance'
+          assert policy['source']['sha256'] == '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
+          print('Route runtime policy: OK')
+          PY
+
       - name: Run release validator
         run: |
           python3 scripts/validate_release.py
