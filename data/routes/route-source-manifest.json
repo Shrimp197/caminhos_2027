@@ -37,7 +37,7 @@
       "point_count": 5082,
       "summed_geometry_km": 214.77816498997424,
       "allowed_for_production": true,
-      "next_action": "resolve official published-distance versus source-geometry display/endpoint policy before final route publication",
+      "next_action": "implemented_in_route-runtime-policy.json; apply policy to final WebView route presentation",
       "repository_path": "data/routes/Caminho_do_centenario.gpx",
       "normalized_geometry_path": "app/src/main/assets/data/route.geojson"
     },
@@ -54,6 +54,7 @@
     "Do not replace the official published distance with a third-party track distance.",
     "Production geometry must be imported from a validated official source and checked for ordered continuity, length, origin, destination and stage compatibility before publication.",
     "The official published distance and the summed source-track geometry are distinct facts and must not be silently substituted for each other.",
-    "The captured GPX is preserved in the repository with its recorded SHA-256 and validated against the official ACF URL."
+    "The captured GPX is preserved in the repository with its recorded SHA-256 and validated against the official ACF URL.",
+    "Runtime navigation uses the validated official GPX endpoint; editorial route distance remains the ACF published distance."
   ]
 }
