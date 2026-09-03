@@ -30,9 +30,10 @@ class WalkingStateCoordinator(
     )
         private set
 
-    /** Starts the planned walk and seeds only the real route position supplied by the caller. */
+    /** Starts the planned walk and establishes the supplied real route position as the tracking baseline. */
     fun start(startPosition: RoutePosition, now: Instant = Instant.now()): WalkingState {
         walk = WalkingSessionController.start(walk, startPosition, now)
+        locationPipeline.seedRoutePosition(startPosition, now)
         state = WalkingStateBuilder.build(
             route = route,
             walk = walk,
@@ -44,7 +45,7 @@ class WalkingStateCoordinator(
         return state
     }
 
-    /** Compatibility entry point for an already-active walking lifecycle. */
+    /** Compatibility entry point for tests/consumers that already own the lifecycle transition. */
     fun seedStartPosition(position: RoutePosition): WalkingState {
         require(walk.status == WalkStatus.ACTIVE) {
             "Walking must be active before seeding a start position"
