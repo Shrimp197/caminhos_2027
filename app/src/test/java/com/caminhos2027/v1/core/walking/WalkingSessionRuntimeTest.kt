@@ -98,11 +98,11 @@ class WalkingSessionRuntimeTest {
         assertEquals(moved.routePosition!!.routeKm, resumed!!.routePosition!!.routeKm, 0.001)
         assertTrue(resumed.isOffline)
 
-        val recovered = WalkingSessionRuntime(route, service, listOf(water)).apply {
+        val recovered = WalkingSessionRuntime(route, service, listOf(water)).run {
             resume(Instant.parse("2026-09-01T08:05:00Z"))
             setOffline(false)
             accept(RawGpsPosition(40.0063, -8.0, 5.0, Instant.parse("2026-09-01T08:06:00Z")))
-        }.state
+        }
 
         assertEquals(GpsState.ON_ROUTE, recovered.gpsState)
         assertTrue(recovered.routePosition!!.routeKm > resumed.routePosition!!.routeKm)
