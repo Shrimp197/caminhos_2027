@@ -46,6 +46,34 @@ class WalkingStateCoordinatorTest {
     }
 
     @Test
+    fun `valid GPS movement updates route position and next APOI distance`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, listOf(fixtureApoi()))
+
+        val first = coordinator.accept(gps(40.00225, "2026-09-01T11:00:00Z"))
+        val moved = coordinator.accept(gps(40.00300, "2026-09-01T11:01:00Z"))
+
+        assertTrue(moved.routePosition!!.routeKm > first.routePosition!!.routeKm)
+        assertEquals("sr-water", moved.nextApoi?.id)
+        assertTrue(moved.nextApoiDistanceKm!! < first.nextApoiDistanceKm!!)
+    }
+
+    @Test
+    fun `implausible GPS jump does not move walking position or next APOI`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, listOf(fixtureApoi()))
+
+        val first = coordinator.accept(gps(40.00225, "2026-09-01T12:00:00Z"))
+        val jump = coordinator.accept(gps(40.00900, "2026-09-01T12:01:00Z"))
+
+        assertEquals(first.routePosition!!.routeKm, jump.routePosition!!.routeKm, 0.0001)
+        assertEquals(first.nextApoi?.id, jump.nextApoi?.id)
+        assertEquals(first.nextApoiDistanceKm, jump.nextApoiDistanceKm, 0.0001)
+    }
+
+    @Test
     fun `offline flag changes presentation state without changing route position`() {
         val route = fixtureRoute()
         val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
