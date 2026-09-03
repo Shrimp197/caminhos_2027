@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.core.apoi
 
 import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.ApoiAvailabilityStatus
 import com.caminhos2027.v1.core.model.PublicationStatus
 import com.caminhos2027.v1.core.model.RouteRelation
 
@@ -12,6 +13,7 @@ object NextApoiFinder {
             .filter { it.location.routeId == routeId }
             .filter { it.location.routeKm != null && it.location.routeKm >= currentRouteKm }
             .filter { it.publication.status in setOf(PublicationStatus.PUBLISHED, PublicationStatus.PUBLISHED_WITH_WARNING) }
+            .filter { it.availability.status !in setOf(ApoiAvailabilityStatus.HISTORICAL, ApoiAvailabilityStatus.EXPIRED, ApoiAvailabilityStatus.CLOSED) }
             .filter { it.location.routeRelation != RouteRelation.DISTANT_POTENTIAL_SUPPORT && it.location.routeRelation != RouteRelation.OUTSIDE_ROUTE }
             .minByOrNull { it.location.routeKm ?: Double.POSITIVE_INFINITY }
 }
