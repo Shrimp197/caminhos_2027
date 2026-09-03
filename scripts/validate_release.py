@@ -31,11 +31,12 @@ for item in ['installWebCompat', 'notifyUser', 'requestNotificationPermission', 
     if item not in java:
         raise SystemExit(f'Missing Android notification bridge capability: {item}')
 
-# Provenance is intentionally validated from the route manifest, while the original
-# binary remains outside the repository until an explicit ingestion step is completed.
 expected_sha = '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
-expected_status = 'official_gpx_provenance_verified_pending_repository_ingestion'
-if route_manifest.get('status') != expected_status:
+allowed_route_statuses = {
+    'official_gpx_provenance_verified_pending_repository_ingestion',
+    'official_gpx_bytes_ingested_validated',
+}
+if route_manifest.get('status') not in allowed_route_statuses:
     raise SystemExit(f'Unexpected route manifest status: {route_manifest.get("status")}')
 
 official_sources = route_manifest.get('official_source_files', [])
@@ -44,10 +45,20 @@ if candidate is None:
     raise SystemExit('Official GPX source entry missing from route manifest')
 if candidate.get('sha256') != expected_sha:
     raise SystemExit('Official GPX SHA-256 does not match the recorded provenance')
-if candidate.get('capture_status') != 'official_url_bytes_verified_by_ci':
-    raise SystemExit('Official GPX capture status is not the verified CI state')
-if candidate.get('allowed_for_production') is not False:
-    raise SystemExit('Official GPX candidate must remain outside production until semantic validation')
+
+if route_manifest.get('status') == 'official_gpx_provenance_verified_pending_repository_ingestion':
+    if candidate.get('capture_status') != 'official_url_bytes_verified_by_ci':
+        raise SystemExit('Pending official GPX must have the verified CI capture status')
+    if candidate.get('allowed_for_production') is not False:
+        raise SystemExit('Pending official GPX must remain outside production')
+else:
+    if candidate.get('capture_status') != 'official_bytes_ingested_and_validated':
+        raise SystemExit('Ingested official GPX must have validated repository capture status')
+    if candidate.get('allowed_for_production') is not True:
+        raise SystemExit('Ingested official GPX must be explicitly allowed for production')
+    repository_path = ROOT / str(candidate.get('repository_path', ''))
+    if not repository_path.exists() or repository_path.stat().st_size <= 0:
+        raise SystemExit('Ingested official GPX repository file is missing or empty')
 
 # Production APOI is a distinct 2027 publication layer. It may be empty while
 # qualification is still pending, but every item that enters it must satisfy the
