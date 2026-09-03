@@ -11,7 +11,6 @@ import java.time.Instant
 class WalkingPreparationAppStateController(
     private val route: Route,
     private val preparationService: WalkingPreparationService,
-    private val catalog: PublishedApoiCatalog,
     private val store: AppStateStore
 ) {
     fun preview(walkId: String, startRouteKm: Double, destinationRouteKm: Double): WalkingPreparation =
@@ -32,7 +31,11 @@ class WalkingPreparationAppStateController(
     }
 
     /** Starts only the walk that was previously saved into the shared AppState. */
-    fun startSaved(position: RoutePosition, now: Instant = Instant.now()): AppState {
+    fun startSaved(
+        catalog: PublishedApoiCatalog,
+        position: RoutePosition,
+        now: Instant = Instant.now()
+    ): AppState {
         val walking = requireNotNull(store.state.walking) { "No prepared walk in AppState" }
         val controller = WalkingAppStateController(
             route = route,
