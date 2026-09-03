@@ -18,13 +18,18 @@ O GPX `Caminho_do_centenario.gpx` foi fornecido na conversa em 2026-09-03 e vali
 - Tracks: 1
 - Segmentos: 1
 - Pontos de track: 5082
+- Ligações entre pontos: 5081
 - Geometria somada por Haversine: 214.77816498997424 km
+- Maior ligação consecutiva: 916.77 m
+- Ligações superiores a 500 m: 8
+- Ligações superiores a 1 km: 0
+- Duplicados consecutivos: 0
 - Primeiro ponto: `41.1390874108962, -8.60912359669724`
 - Último ponto: `39.6295907550017, -8.67756042435647`
 
 ## Validação inicial
 
-A estrutura é compatível com GPX 1.1, contém uma única track e um único segmento contínuo. A diferença entre a distância geométrica calculada e a distância oficial publicada de 211.87 km não é, por si só, motivo para rejeição; a validação de produção deve continuar a verificar continuidade, limites geográficos, origem, destino e compatibilidade com as etapas oficiais.
+A estrutura é compatível com GPX 1.1, contém uma única track e um único segmento contínuo, com coordenadas válidas e sem duplicados consecutivos. A maior ligação entre pontos é inferior a 1 km. A diferença entre a distância geométrica calculada e a distância oficial publicada de 211.87 km não é, por si só, motivo para rejeição; a validação de produção deve continuar a verificar continuidade, limites geográficos, origem, destino e compatibilidade com as etapas oficiais.
 
 ## Gate de produção
 
