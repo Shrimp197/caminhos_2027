@@ -3,7 +3,7 @@
   "route_id": "caminho-do-centenario",
   "official_name": "Caminho do Centenário",
   "scope": "Caminhos de Fátima",
-  "status": "official_gpx_captured_pending_repository_ingestion",
+  "status": "official_gpx_provenance_verified_pending_repository_ingestion",
   "official_reference": {
     "route_name": "Caminho do Centenário",
     "origin": "Gaia",
@@ -28,7 +28,7 @@
       "format": "gpx",
       "publication_context": "ACF documents archive, 2024",
       "source_url": "https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx",
-      "capture_status": "captured_from_user_supplied_file",
+      "capture_status": "official_url_bytes_verified_by_ci",
       "capture_filename": "Caminho_do_centenario.gpx",
       "byte_count": 377117,
       "sha256": "1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266",
@@ -51,6 +51,6 @@
     "Do not invent or infer official stage boundaries from the historical KML.",
     "Do not replace the official published distance with a third-party track distance.",
     "Production geometry must be imported from a validated official source and checked for ordered continuity, length, origin, destination and stage compatibility before publication.",
-    "A captured user-supplied GPX remains a source candidate until its original bytes are ingested into the repository with the recorded SHA-256 preserved."
+    "A captured GPX is verified against the current official ACF URL by CI, but remains a source candidate until its original bytes are ingested into the repository with the recorded SHA-256 preserved."
   ]
 }
