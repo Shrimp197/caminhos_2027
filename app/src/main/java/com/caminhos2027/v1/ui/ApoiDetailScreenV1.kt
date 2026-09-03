@@ -26,36 +26,23 @@ import com.caminhos2027.v1.core.model.ApoiReservationPolicy
 import com.caminhos2027.v1.core.model.LocationPrecision
 import java.util.Locale
 
-/**
- * V1 APOI detail presentation. Missing values are omitted instead of being shown as "não informado".
- * Publication/uncertainty is visible before operational details so useful information is not presented as a guarantee.
- */
+/** V1 APOI detail presentation. Missing values are omitted instead of being shown as "não informado". */
 @Composable
-fun ApoiDetailScreenV1(
-    apoi: Apoi,
-    onBack: () -> Unit = {}
-) {
+fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
     Surface {
         Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+            modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Text(apoi.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-
-            apoi.description?.takeIf { it.isNotBlank() }?.let {
-                Text(it, style = MaterialTheme.typography.bodyLarge)
-            }
-
+            apoi.description?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
             StatusCard(apoi)
             LocationCard(apoi)
             ServicesCard(apoi)
             OperationalCard(apoi)
             ContactCard(apoi)
             ConfidenceCard(apoi)
-
             Text(
                 "Os dados apresentados dependem da informação disponível e da sua data de confirmação.",
                 style = MaterialTheme.typography.bodySmall,
@@ -65,8 +52,7 @@ fun ApoiDetailScreenV1(
     }
 }
 
-@Composable
-private fun StatusCard(apoi: Apoi) {
+@Composable private fun StatusCard(apoi: Apoi) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(publicationLabel(apoi.publication.status), fontWeight = FontWeight.Bold)
@@ -77,8 +63,7 @@ private fun StatusCard(apoi: Apoi) {
     }
 }
 
-@Composable
-private fun LocationCard(apoi: Apoi) {
+@Composable private fun LocationCard(apoi: Apoi) {
     Card {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -88,30 +73,23 @@ private fun LocationCard(apoi: Apoi) {
             apoi.location.routeKm?.let { Text("${formatKm(it)} km no caminho") }
             apoi.location.accessDistanceM?.let { Text("Acesso: ${formatMeters(it)}") }
             listOfNotNull(apoi.location.locality, apoi.location.municipality, apoi.location.reference)
-                .joinToString(" · ")
-                .takeIf { it.isNotBlank() }
-                ?.let { Text(it) }
+                .joinToString(" · ").takeIf { it.isNotBlank() }?.let { Text(it) }
             Text(locationPrecisionLabel(apoi.location.precision), style = MaterialTheme.typography.bodySmall)
         }
     }
 }
 
-@Composable
-private fun ServicesCard(apoi: Apoi) {
+@Composable private fun ServicesCard(apoi: Apoi) {
     if (apoi.services.isEmpty()) return
     Card {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("Serviços", fontWeight = FontWeight.Bold)
-            apoi.services
-                .sortedBy { it.ordinal }
-                .joinToString(" · ") { categoryLabel(it) }
-                .let { Text(it) }
+            Text(apoi.services.sortedBy { it.ordinal }.joinToString(" · ") { categoryLabel(it) })
         }
     }
 }
 
-@Composable
-private fun OperationalCard(apoi: Apoi) {
+@Composable private fun OperationalCard(apoi: Apoi) {
     val rows = buildList {
         when (apoi.cost.model) {
             ApoiCostModel.FREE -> add("Custo" to "Gratuito")
@@ -150,13 +128,14 @@ private fun OperationalCard(apoi: Apoi) {
     }
 }
 
-@Composable
-private fun ContactCard(apoi: Apoi) {
+@Composable private fun ContactCard(apoi: Apoi) {
     val contact = buildList {
         apoi.contact.responsible?.takeIf { it.isNotBlank() }?.let { add("Responsável" to it) }
         apoi.contact.organization?.takeIf { it.isNotBlank() }?.let { add("Entidade" to it) }
         apoi.contact.phone?.takeIf { it.isNotBlank() }?.let { add("Telefone" to it) }
         apoi.contact.email?.takeIf { it.isNotBlank() }?.let { add("Email" to it) }
+        apoi.contact.website?.takeIf { it.isNotBlank() }?.let { add("Website" to it) }
+        apoi.contact.social?.takeIf { it.isNotBlank() }?.let { add("Rede social" to it) }
     }
     if (contact.isEmpty()) return
     Card {
@@ -167,8 +146,7 @@ private fun ContactCard(apoi: Apoi) {
     }
 }
 
-@Composable
-private fun ConfidenceCard(apoi: Apoi) {
+@Composable private fun ConfidenceCard(apoi: Apoi) {
     Card {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("Confiança da informação", fontWeight = FontWeight.Bold)
@@ -180,10 +158,7 @@ private fun ConfidenceCard(apoi: Apoi) {
     }
 }
 
-@Composable
-private fun confidenceLine(label: String, value: String) {
-    Text("$label: ${value.lowercase(Locale("pt", "PT"))}", style = MaterialTheme.typography.bodySmall)
-}
+@Composable private fun confidenceLine(label: String, value: String) = Text("$label: ${value.lowercase(Locale("pt", "PT"))}", style = MaterialTheme.typography.bodySmall)
 
 private fun publicationLabel(status: com.caminhos2027.v1.core.model.PublicationStatus): String = when (status) {
     com.caminhos2027.v1.core.model.PublicationStatus.PUBLISHED -> "Informação publicada"
