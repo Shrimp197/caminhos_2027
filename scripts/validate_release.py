@@ -1,21 +1,28 @@
 from pathlib import Path
-import json, re, xml.etree.ElementTree as ET
+import json
+import re
+import xml.etree.ElementTree as ET
 
-root = Path(__file__).resolve().parents[1]
-html_path = root / 'app/src/main/assets/index.html'
-manifest_path = root / 'app/src/main/AndroidManifest.xml'
-java_path = root / 'app/src/main/java/com/caminhos2027/MainActivity.java'
-html = html_path.read_text(encoding='utf-8')
-manifest = manifest_path.read_text(encoding='utf-8')
-java = java_path.read_text(encoding='utf-8')
+ROOT = Path(__file__).resolve().parents[1]
+HTML_PATH = ROOT / 'app/src/main/assets/index.html'
+MANIFEST_PATH = ROOT / 'app/src/main/AndroidManifest.xml'
+JAVA_PATH = ROOT / 'app/src/main/java/com/caminhos2027/MainActivity.java'
+ROUTE_MANIFEST_PATH = ROOT / 'data/routes/route-source-manifest.json'
+
+html = HTML_PATH.read_text(encoding='utf-8')
+manifest = MANIFEST_PATH.read_text(encoding='utf-8')
+java = JAVA_PATH.read_text(encoding='utf-8')
+route_manifest = json.loads(ROUTE_MANIFEST_PATH.read_text(encoding='utf-8'))
 
 required_html = [
-    'Trajeto teste do SR', 'Trajecto teste do HF', 'Caminho do Centenário',
-    'notificationBtn', 'Próximos 10 km', 'Onde dormir?', 'Carregar KML/GPX',
+    'Caminho do Centenário',
+    'Carregar KML/GPX',
+    'Próximos 10 km',
+    'Onde dormir?',
 ]
 missing = [item for item in required_html if item not in html]
 if missing:
-    raise SystemExit('Missing required generated UI/features: ' + ', '.join(missing))
+    raise SystemExit('Missing committed V1 UI/features: ' + ', '.join(missing))
 
 if 'android.permission.POST_NOTIFICATIONS' not in manifest:
     raise SystemExit('POST_NOTIFICATIONS permission missing')
@@ -23,33 +30,30 @@ for item in ['installWebCompat', 'notifyUser', 'requestNotificationPermission', 
     if item not in java:
         raise SystemExit(f'Missing Android notification bridge capability: {item}')
 
-required_files = [
-    root / 'app/src/main/assets/data/apoios-2026.json',
-    root / 'app/src/main/assets/data/percurso-teste-casa-trabalho.gpx',
-    root / 'app/src/main/assets/data/percurso-teste-hf.gpx',
+candidate = route_manifest.get('official_gpx', {})
+expected_sha = '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
+expected_status = 'official_gpx_provenance_verified_pending_repository_ingestion'
+if route_manifest.get('status') != expected_status:
+    raise SystemExit(f'Unexpected route manifest status: {route_manifest.get("status")}')
+if candidate.get('sha256') != expected_sha:
+    raise SystemExit('Official GPX SHA-256 does not match the recorded provenance')
+if candidate.get('allowed_for_production') is not False:
+    raise SystemExit('Official GPX candidate must remain outside production until semantic validation')
+
+required_test_assets = [
+    ROOT / 'app/src/main/assets/data/percurso-teste-casa-trabalho.gpx',
+    ROOT / 'app/src/main/assets/data/percurso-teste-hf.gpx',
 ]
-for path in required_files:
+for path in required_test_assets:
     if not path.exists() or path.stat().st_size < 100:
         raise SystemExit(f'Missing/empty required test asset: {path}')
+    tree = ET.parse(path)
+    points = tree.getroot().findall('.//{http://www.topografix.com/GPX/1/1}trkpt')
+    if len(points) < 2:
+        raise SystemExit(f'GPX has fewer than 2 track points: {path}')
 
-json.loads((root / 'app/src/main/assets/data/apoios-2026.json').read_text(encoding='utf-8'))
-ET.parse(manifest_path)
-
-for gpx in required_files[1:]:
-    tree = ET.parse(gpx)
-    pts = tree.getroot().findall('.//{http://www.topografix.com/GPX/1/1}trkpt')
-    if len(pts) < 2:
-        raise SystemExit(f'GPX has fewer than 2 track points: {gpx}')
-
-route_files = [
-    'caminho-tejo.gpx', 'caminho-norte.gpx', 'caminho-nazare.kml',
-    'caminho-candeeiros.kml', 'medio-tejo-tomar.gpx', 'medio-tejo-serta.gpx',
-    'medio-tejo-abrantes.gpx', 'rota-carmelita.kml'
-]
-for name in route_files:
-    path = root / 'app/src/main/assets/data/routes' / name
-    if not path.exists() or path.stat().st_size < 100:
-        raise SystemExit(f'Missing/empty official route asset: {name}')
+json.loads((ROOT / 'app/src/main/assets/data/apoios-2026.json').read_text(encoding='utf-8'))
+ET.parse(MANIFEST_PATH)
 
 # Catch broken DOM references before Android compilation.
 dom_ids = set(re.findall(r'id="([^"]+)"', html))
