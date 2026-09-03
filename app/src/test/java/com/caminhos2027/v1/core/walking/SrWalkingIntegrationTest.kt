@@ -65,7 +65,7 @@ class SrWalkingIntegrationTest {
         assertEquals(walkedKm, noSignal.progress!!.walkedKm, 0.0001)
         assertNotNull(noSignal.nextApoi)
 
-        val recovered = coordinator.accept(SrFixture.gps(40.00630, "2026-09-01T09:32:00Z"))
+        val recovered = coordinator.accept(SrFixture.gps(40.00630, "2026-09-01T09:35:00Z"))
         assertEquals(GpsState.ON_ROUTE, recovered.gpsState)
         assertTrue(recovered.routePosition!!.routeKm > routeKm)
         assertEquals("stage-2", recovered.routePosition.stageId)
