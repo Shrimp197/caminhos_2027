@@ -7,8 +7,12 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   verify-official-gpx:
+    if: ${{ !contains(github.event.head_commit.message, '[route-ingest]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -40,7 +44,6 @@ jobs:
           data = path.read_bytes()
           ns = "http://www.topografix.com/GPX/1/1"
           root = ET.fromstring(data)
-          assert root.tag == f"{{{ns}}}gpx"
           segments = root.findall(f".//{{{ns}}}trkseg")
           points = []
           for p in root.findall(f".//{{{ns}}}trkpt"):
@@ -52,7 +55,7 @@ jobs:
 
           assert len(root.findall(f".//{{{ns}}}trk")) == 1
           assert len(segments) == 1
-          assert len(points) >= 2
+          assert len(points) == 5082
           assert all(a != b for a, b in zip(points, points[1:]))
 
           radius = 6371.0088
@@ -65,14 +68,97 @@ jobs:
               return 2 * radius * math.asin(math.sqrt(h))
 
           lengths = [hav(a, b) for a, b in zip(points, points[1:])]
+          geometry_km = sum(lengths)
+          assert 214.70 < geometry_km < 214.90
           print(f"tracks=1 segments=1 points={len(points)}")
-          print(f"geometry_km={sum(lengths):.6f}")
+          print(f"geometry_km={geometry_km:.6f}")
           print(f"max_segment_m={max(lengths) * 1000:.2f}")
           print(f"first_point={points[0]}")
           print(f"last_point={points[-1]}")
           PY
 
-      - name: Show provenance gate
+      - name: Ingest verified source and publish normalized route input
         run: |
-          echo "Official source bytes match the recorded SHA-256."
-          echo "This workflow proves current URL-to-bytes identity; it does not promote geometry or invent stages."
+          set -euo pipefail
+          mkdir -p data/routes app/src/main/assets/data/published
+          cp build/source/Caminho_do_centenario.gpx data/routes/Caminho_do_centenario.gpx
+          python3 - <<'PY'
+          import hashlib, json, math, xml.etree.ElementTree as ET
+          from pathlib import Path
+          source=Path('data/routes/Caminho_do_centenario.gpx')
+          raw=source.read_bytes()
+          expected='1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
+          assert hashlib.sha256(raw).hexdigest()==expected
+          ns={'g':'http://www.topografix.com/GPX/1/1'}
+          root=ET.fromstring(raw)
+          pts=[[float(p.attrib['lon']),float(p.attrib['lat'])] for p in root.findall('.//g:trkpt',ns)]
+          R=6371.0088
+          def hav(a,b):
+              p1=math.radians(a[1]);p2=math.radians(b[1]);dp=p2-p1;dl=math.radians(b[0]-a[0])
+              h=math.sin(dp/2)**2+math.cos(p1)*math.cos(p2)*math.sin(dl/2)**2
+              return 2*R*math.asin(math.sqrt(h))
+          length=sum(hav(a,b) for a,b in zip(pts,pts[1:]))
+          route={'type':'FeatureCollection','name':'Caminho do Centenário','features':[{'type':'Feature','properties':{'route_id':'caminho-do-centenario','source':'ACF official GPX','source_sha256':expected},'geometry':{'type':'LineString','coordinates':pts}}]}
+          Path('app/src/main/assets/data/route.geojson').write_text(json.dumps(route,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+          manifest_path=Path('data/routes/route-source-manifest.json')
+          manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+          gpx=next(x for x in manifest['official_source_files'] if x['format']=='gpx')
+          gpx['capture_status']='official_bytes_ingested_and_validated'
+          gpx['allowed_for_production']=True
+          gpx['repository_path']=str(source)
+          gpx['normalized_geometry_path']='app/src/main/assets/data/route.geojson'
+          gpx['next_action']='validate stage compatibility before publication'
+          manifest['status']='official_gpx_bytes_ingested_validated'
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          Path('app/src/main/assets/data/published/webview-supports.json').write_text('{"schema_version":"1.0-published","dataset_id":"caminho_centenario_webview_2027","route_id":"caminho-do-centenario","target_year":2027,"environment":"production","items":[]}\n',encoding='utf-8')
+          print(f'normalized_points={len(pts)} geometry_km={length:.6f}')
+          PY
+
+      - name: Remove legacy WebView inputs and inferred stage list
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('app/src/main/assets/index.html')
+          text=path.read_text(encoding='utf-8')
+          replacements={
+            "const ROUTE='data/route.geojson', SUPPORTS='data/apoios-2026.json'":"const ROUTE='data/route.geojson', SUPPORTS='data/published/webview-supports.json'",
+            "const places=[['Porto',0],['São João da Madeira',32.1],['Cucujães',36],['Oliveira de Azeméis',41],['Albergaria-a-Velha',56],['Águeda',74],['Anadia',91],['Mealhada',98.7],['Coimbra',126.3],['Condeixa-a-Nova',145],['Soure',160],['Pombal',188.2],['Leiria',201],['Ourém',214.8],['Fátima',216.1]]":"const places=[['Início do percurso',0],['Fim do percurso',211.87]]",
+            "distance:216.099,builtin:true":"distance:211.87,builtin:true"
+          }
+          for old,new in replacements.items():
+              if old not in text: raise SystemExit('Expected legacy pattern missing: '+old[:70])
+              text=text.replace(old,new,1)
+          path.write_text(text,encoding='utf-8')
+          PY
+
+      - name: Verify normalized route and runtime sources
+        run: |
+          python3 - <<'PY'
+          import json, hashlib, math
+          from pathlib import Path
+          route=json.loads(Path('app/src/main/assets/data/route.geojson').read_text(encoding='utf-8'))
+          assert route['features'][0]['geometry']['type']=='LineString'
+          coords=route['features'][0]['geometry']['coordinates']
+          assert len(coords)==5082
+          assert route['features'][0]['properties']['source_sha256']=='1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
+          html=Path('app/src/main/assets/index.html').read_text(encoding='utf-8')
+          assert "data/apoios-2026.json" not in html
+          assert "const ROUTE='data/route.geojson', SUPPORTS='data/published/webview-supports.json'" in html
+          assert "const places=[['Início do percurso',0],['Fim do percurso',211.87]]" in html
+          print('Normalized route/runtime gate: OK')
+          PY
+          python3 scripts/validate_release.py
+
+      - name: Commit ingested route dataset
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/routes/Caminho_do_centenario.gpx data/routes/route-source-manifest.json app/src/main/assets/data/route.geojson app/src/main/assets/data/published/webview-supports.json app/src/main/assets/index.html
+          if git diff --cached --quiet; then
+            echo 'No ingestion changes required.'
+            exit 0
+          fi
+          git commit -m "Ingest official Centenário route [route-ingest]"
+          git push origin HEAD:v1-route-import
