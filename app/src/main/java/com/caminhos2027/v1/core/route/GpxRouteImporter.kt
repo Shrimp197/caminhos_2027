@@ -7,6 +7,8 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 /** Parses GPX track points without mutating or repairing the source geometry. */
 object GpxRouteImporter {
+    private const val GPX_NAMESPACE = "http://www.topografix.com/GPX/1/1"
+
     fun parse(input: InputStream): RouteGeometry {
         val factory = DocumentBuilderFactory.newInstance().apply {
             isNamespaceAware = true
@@ -15,8 +17,15 @@ object GpxRouteImporter {
             setFeature("http://xml.org/sax/features/external-parameter-entities", false)
         }
         val document = factory.newDocumentBuilder().parse(input)
+
+        val tracks = document.getElementsByTagNameNS(GPX_NAMESPACE, "trk")
+        require(tracks.length == 1) { "GPX must contain exactly one track" }
+
+        val segments = document.getElementsByTagNameNS(GPX_NAMESPACE, "trkseg")
+        require(segments.length == 1) { "GPX must contain exactly one track segment" }
+
         val points = buildList {
-            val trackPoints = document.getElementsByTagNameNS("http://www.topografix.com/GPX/1/1", "trkpt")
+            val trackPoints = document.getElementsByTagNameNS(GPX_NAMESPACE, "trkpt")
             for (index in 0 until trackPoints.length) {
                 val node = trackPoints.item(index)
                 val lat = node.attributes.getNamedItem("lat")?.nodeValue?.toDoubleOrNull()
