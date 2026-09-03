@@ -33,8 +33,8 @@ class GpsStateEvaluatorRobustnessTest {
         val first = observation(10.01, 40.0)
         val second = observation(10.02, 40.0)
 
-        val afterFirst = GpsStateEvaluator.update(initial, first, Instant.parse("2026-09-02T00:00:01Z"), policy)
-        val afterSecond = GpsStateEvaluator.update(afterFirst, second, Instant.parse("2026-09-02T00:00:02Z"), policy)
+        val afterFirst = GpsStateEvaluator.update(initial, first, Instant.parse("2026-09-02T00:00:05Z"), policy)
+        val afterSecond = GpsStateEvaluator.update(afterFirst, second, Instant.parse("2026-09-02T00:00:10Z"), policy)
 
         assertEquals(GpsState.POSSIBLE_DEVIATION, afterSecond.state)
     }
