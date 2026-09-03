@@ -4,12 +4,22 @@ import com.caminhos2027.v1.core.AppStateStore
 import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
 import com.caminhos2027.v1.core.data.ApoiDataSource
 import com.caminhos2027.v1.core.data.ApoiRepository
+import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.ApoiCategory
+import com.caminhos2027.v1.core.model.ApoiLocation
+import com.caminhos2027.v1.core.model.ApoiPublication
 import com.caminhos2027.v1.core.model.GeoPoint
+import com.caminhos2027.v1.core.model.LocationPrecision
+import com.caminhos2027.v1.core.model.PublicationStatus
+import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RoutePosition
+import com.caminhos2027.v1.core.model.RouteRelation
 import com.caminhos2027.v1.core.model.WalkStatus
+import java.time.Instant
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WalkingAppStateControllerTest {
@@ -17,7 +27,7 @@ class WalkingAppStateControllerTest {
     fun startingWalkingMakesTheWalkActiveAndPublishesPosition() {
         val controller = controller()
 
-        val state = controller.start(RoutePosition("route", 2.0, 0.0), java.time.Instant.parse("2026-09-02T10:00:00Z"))
+        val state = controller.start(RoutePosition("route", 2.0, 0.0), Instant.parse("2026-09-02T10:00:00Z"))
 
         assertEquals(WalkStatus.ACTIVE, state.walking?.walk?.status)
         assertEquals(2.0, state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
@@ -45,13 +55,77 @@ class WalkingAppStateControllerTest {
         assertEquals(true, state.walking?.isOffline)
     }
 
-    private fun controller(store: AppStateStore = AppStateStore()) =
-        WalkingAppStateController(
-            route = route(),
-            walk = WalkingPlanFactory.create(route(), "walk", 0.0, 10.0),
-            catalog = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { emptyList() })),
-            store = store
-        )
+    @Test
+    fun validGpsMovementRecomputesNextApoiFromTheSharedWalkingPosition() {
+        val controller = controller(catalog(waterApoi()))
+        controller.start(RoutePosition("route", 0.0, 0.0), Instant.parse("2026-09-02T11:00:00Z"))
+
+        val initial = controller.acceptGps(gps(40.00225, "2026-09-02T11:00:10Z"))
+        val initialDistance = initial.walking!!.nextApoiDistanceKm!!
+
+        val moved = controller.acceptGps(gps(40.0045, "2026-09-02T11:00:20Z"))
+
+        assertTrue(moved.walking!!.routePosition!!.routeKm > initial.walking!!.routePosition!!.routeKm)
+        assertEquals("water", moved.walking!!.nextApoi?.id)
+        assertTrue(moved.walking!!.nextApoiDistanceKm!! < initialDistance)
+    }
+
+    @Test
+    fun implausibleGpsJumpDoesNotMoveWalkingPositionOrNextApoi() {
+        val controller = controller(catalog(waterApoi()))
+        controller.start(RoutePosition("route", 0.0, 0.0), Instant.parse("2026-09-02T12:00:00Z"))
+
+        val reliable = controller.acceptGps(gps(40.00225, "2026-09-02T12:00:10Z"))
+        val reliableKm = reliable.walking!!.routePosition!!.routeKm
+        val reliableApoiDistance = reliable.walking!!.nextApoiDistanceKm
+
+        val jumped = controller.acceptGps(gps(40.009, "2026-09-02T12:00:11Z"))
+
+        assertEquals(reliableKm, jumped.walking!!.routePosition!!.routeKm, 0.0001)
+        assertEquals(reliableApoiDistance, jumped.walking!!.nextApoiDistanceKm)
+    }
+
+    private fun controller(
+        catalog: PublishedApoiCatalog = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { emptyList() })),
+        store: AppStateStore = AppStateStore()
+    ) = WalkingAppStateController(
+        route = route(),
+        walk = WalkingPlanFactory.create(route(), "walk", 0.0, 10.0),
+        catalog = catalog,
+        store = store
+    )
+
+    private fun catalog(vararg records: Apoi) =
+        PublishedApoiCatalog(ApoiRepository(ApoiDataSource { records.toList() }))
+
+    private fun gps(latitude: Double, capturedAt: String) = RawGpsPosition(
+        latitude = latitude,
+        longitude = -8.0,
+        accuracyMeters = 5.0,
+        capturedAt = Instant.parse(capturedAt)
+    )
+
+    private fun waterApoi() = Apoi(
+        id = "water",
+        name = "Fonte",
+        description = "APOI fictício de teste",
+        mainCategory = ApoiCategory.AGUA,
+        services = setOf(ApoiCategory.AGUA),
+        location = ApoiLocation(
+            latitude = 40.0063,
+            longitude = -8.0,
+            precision = LocationPrecision.EXACT,
+            locality = "SR",
+            municipality = "SR",
+            reference = "Fixture",
+            routeId = "route",
+            routeKm = 0.7,
+            distanceToRouteM = 0.0,
+            accessDistanceM = 0.0,
+            routeRelation = RouteRelation.ON_ROUTE
+        ),
+        publication = ApoiPublication(PublicationStatus.PUBLISHED, "SR test data")
+    )
 
     private fun route() = Route(
         id = "route",
@@ -60,7 +134,13 @@ class WalkingAppStateControllerTest {
         totalDistanceKm = 10.0,
         source = "test",
         updatedAt = "2026-01-01",
-        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0))),
+        geometry = RouteGeometry(
+            listOf(
+                GeoPoint(40.0, -8.0),
+                GeoPoint(40.0045, -8.0),
+                GeoPoint(40.009, -8.0)
+            )
+        ),
         stages = emptyList()
     )
 }
