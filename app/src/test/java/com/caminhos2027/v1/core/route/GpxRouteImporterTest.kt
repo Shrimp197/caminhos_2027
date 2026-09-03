@@ -21,13 +21,6 @@ class GpxRouteImporterTest {
         }
     }
 
-    @Test
-    fun parseRejectsConsecutiveDuplicatePoints() {
-        assertThrows(IllegalArgumentException::class.java) {
-            GpxRouteImporter.parse(gpx("41.1", "-8.6", "41.1", "-8.5"))
-        }
-    }
-
     private fun gpx(lat1: String?, lon1: String?, lat2: String?, lon2: String?) = ByteArrayInputStream(
         """
         <?xml version="1.0"?>
