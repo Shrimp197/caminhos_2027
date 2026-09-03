@@ -47,7 +47,7 @@ class RouteRepositoryTest {
         totalDistanceKm = 1.0,
         source = "TEST/FICTITIOUS",
         updatedAt = "2026-09-02",
-        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.0, -7.991007))),
+        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.0, -7.98827))),
         stages = listOf(
             Stage(
                 id = "test-stage-1",
