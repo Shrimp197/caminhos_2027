@@ -16,7 +16,7 @@ class NextApoiListTest {
 
     @Test fun ordersByDistanceAndExcludesNonPublishable() {
         val result = NextApoiList.findAhead(listOf(
-            apoi("far", 5.0), apoi("near", 2.0), apoi("past", 1.0), apoi("warning", 3.0, PublicationStatus.PUBLISHED_WITH_WARNING),
+            apoi("far", 5.0), apoi("near", 2.0), apoi("past", 0.5), apoi("warning", 3.0, PublicationStatus.PUBLISHED_WITH_WARNING),
             apoi("historical", 4.0, PublicationStatus.HISTORICAL), apoi("distant", 2.5, relation = RouteRelation.DISTANT_POTENTIAL_SUPPORT)
         ), "route", 1.0)
         assertEquals(listOf("near", "warning", "far"), result.map { it.apoi.id })
