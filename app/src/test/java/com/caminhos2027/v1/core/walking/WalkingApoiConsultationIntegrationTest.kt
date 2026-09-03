@@ -12,7 +12,7 @@ import com.caminhos2027.v1.core.model.LocationPrecision
 import com.caminhos2027.v1.core.model.PublicationStatus
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
-import com.caminhos2027/v1/core/model/RouteGeometry
+import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RouteRelation
 import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.Walk
