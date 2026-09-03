@@ -14,7 +14,7 @@ data class WalkingProgress(
 )
 
 object WalkingProgressCalculator {
-    fun calculate(route: Route, walk: Walk, positionKm: Double, stageId: String?): WalkingProgress {
+    fun calculate(route: Route, walk: Walk, positionKm: Double): WalkingProgress {
         require(walk.routeId == route.id) { "Walk and route must match" }
         require(positionKm >= 0.0) { "positionKm must be >= 0" }
 
@@ -25,6 +25,7 @@ object WalkingProgressCalculator {
         val remaining = max(0.0, target - current)
         val plannedDistance = target - start
         val ratio = if (plannedDistance == 0.0) 1.0 else (walked / plannedDistance).coerceIn(0.0, 1.0)
+        val stageId = StageLocator.currentStage(route, current)?.id
 
         return WalkingProgress(current, walked, remaining, target, ratio, stageId)
     }
