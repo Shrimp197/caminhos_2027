@@ -4,6 +4,7 @@ import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.Stage
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -66,6 +67,17 @@ class RouteDatasetValidatorTest {
 
         assertFalse(result.valid)
         assertTrue(result.errors.any { it.contains("differs from declared") })
+    }
+
+    @Test
+    fun measuredGeometryDistanceRemainsDistinctFromDeclaredDistance() {
+        val route = fixtureRoute().copy(totalDistanceKm = 11.0)
+
+        val result = RouteDatasetValidator.validate(route)
+
+        assertTrue(result.valid)
+        assertEquals(11.12, result.geometryDistanceKm, 0.15)
+        assertTrue(result.geometryDistanceKm > route.totalDistanceKm)
     }
 
     @Test
