@@ -90,7 +90,7 @@ class WalkingAppStateControllerTest {
         store: AppStateStore = AppStateStore()
     ) = WalkingAppStateController(
         route = route(),
-        walk = WalkingPlanFactory.create(route(), "walk", 0.0, 10.0),
+        walk = WalkingPlanFactory.create(route(), "walk", 0.0, 1.0),
         catalog = catalog,
         store = store
     )
