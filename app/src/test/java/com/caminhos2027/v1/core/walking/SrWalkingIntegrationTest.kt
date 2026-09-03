@@ -100,7 +100,7 @@ private object SrFixture {
         description = "APOI fictício de teste.",
         mainCategory = ApoiCategory.AGUA,
         services = setOf(ApoiCategory.AGUA),
-        location = ApoiLocation(40.00630, -8.00000, LocationPrecision.EXACT, "SR", "SR", "Fixture", "sr-route-001", 0.70, 0.0, 0.0, RouteRelation.ON_ROUTE),
+        location = ApoiLocation(40.00630, -8.00000, LocationPrecision.EXACT, "SR", "SR", "Fixture", "sr-route-001", 0.82, 0.0, 0.0, RouteRelation.ON_ROUTE),
         publication = ApoiPublication(PublicationStatus.PUBLISHED, "SR test data")
     ))
 
