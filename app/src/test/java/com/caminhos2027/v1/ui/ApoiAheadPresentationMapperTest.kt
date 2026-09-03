@@ -1,6 +1,8 @@
 package com.caminhos2027.v1.ui
 
 import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.ApoiAvailability
+import com.caminhos2027.v1.core.model.ApoiAvailabilityStatus
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.ApoiLocation
 import com.caminhos2027.v1.core.model.ApoiPublication
@@ -17,6 +19,7 @@ class ApoiAheadPresentationMapperTest {
 
         assertEquals("800 m", result.distanceLabel)
         assertEquals("Água", result.categoryLabel)
+        assertEquals("Disponibilidade atual", result.availabilityLabel)
         assertNull(result.warningLabel)
     }
 
@@ -35,6 +38,15 @@ class ApoiAheadPresentationMapperTest {
         assertEquals("Informação com confirmação pendente", result.warningLabel)
     }
 
+    @Test fun distinguishesRecurringAvailability() {
+        val result = ApoiAheadPresentationMapper.map(
+            apoi().copy(availability = ApoiAvailability(status = ApoiAvailabilityStatus.RECURRING)),
+            3.0
+        )
+
+        assertEquals("Disponibilidade recorrente", result.availabilityLabel)
+    }
+
     private fun apoi() = Apoi(
         id = "water",
         name = "Fonte de água",
@@ -45,6 +57,7 @@ class ApoiAheadPresentationMapperTest {
             40.0, -8.0, LocationPrecision.EXACT,
             null, null, null, "route", 3.0, 0.0, 0.0, RouteRelation.ON_ROUTE
         ),
-        publication = ApoiPublication(PublicationStatus.PUBLISHED, null)
+        publication = ApoiPublication(PublicationStatus.PUBLISHED, null),
+        availability = ApoiAvailability(status = ApoiAvailabilityStatus.CURRENT)
     )
 }
