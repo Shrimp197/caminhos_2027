@@ -10,12 +10,14 @@ import com.caminhos2027.v1.core.model.ApoiLocation
 import com.caminhos2027.v1.core.model.ApoiPublication
 import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.LocationPrecision
+import com.caminhos2027.v1.core.model.Objective
 import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.model.PublicationStatus
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.RouteRelation
+import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
 import org.junit.Assert.assertEquals
@@ -91,7 +93,7 @@ class WalkingPreparationAppStateControllerTest {
     @Test
     fun previewExcludesUnpublishedApoiEvenWhenInsideWindow() {
         val route = route()
-        val pending = apoi("pending", 5.0).copy(publication = ApoiPublication(PublicationStatus.DRAFT, null))
+        val pending = apoi("pending", 5.0).copy(publication = ApoiPublication(PublicationStatus.REVIEW, null))
         val repository = InMemoryWalkRepository()
         val store = AppStateStore()
         val controller = WalkingPreparationAppStateController(route, service(route, repository, pending), store)
@@ -145,7 +147,7 @@ class WalkingPreparationAppStateControllerTest {
         controller.save("walk", 2.0, 8.0)
 
         val now = Instant.parse("2026-09-04T10:00:00Z")
-        controller.startSaved(catalog, RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), now)
+        controller.startSaved(RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), now)
 
         val walking = requireNotNull(store.state.walking)
         assertEquals("walk", walking.walk.id)
@@ -166,7 +168,7 @@ class WalkingPreparationAppStateControllerTest {
         controller.save("prepared", 2.0, 8.0)
         repository.save(WalkingPlanFactory.create(route, "different", 1.0, 6.0))
 
-        controller.startSaved(catalog, RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
+        controller.startSaved(RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
 
         assertEquals("prepared", store.state.walking?.walk?.id)
         assertEquals(WalkStatus.ACTIVE, store.state.walking?.walk?.status)
@@ -182,7 +184,7 @@ class WalkingPreparationAppStateControllerTest {
         controller.save("walk", 2.0, 8.0)
 
         try {
-            controller.startSaved(catalog, RoutePosition("other-route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
+            controller.startSaved(RoutePosition("other-route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
             throw AssertionError("Expected foreign route rejection")
         } catch (_: IllegalArgumentException) {
             // Expected boundary rejection.
@@ -202,7 +204,7 @@ class WalkingPreparationAppStateControllerTest {
         controller.save("walk", 2.0, 8.0)
 
         try {
-            controller.startSaved(catalog, RoutePosition("route", Double.NaN, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
+            controller.startSaved(RoutePosition("route", Double.NaN, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
             throw AssertionError("Expected non-finite position rejection")
         } catch (_: IllegalArgumentException) {
             // Expected boundary rejection.
@@ -220,17 +222,18 @@ class WalkingPreparationAppStateControllerTest {
         val catalog = catalog(apoi("water", 5.0))
         val controller = WalkingPreparationAppStateController(route, WalkingPreparationService(route, repository, catalog), store)
         val browser = com.caminhos2027.v1.core.apoi.ApoiBrowser(catalog)
-        store.setObjective(com.caminhos2027.v1.core.model.Objective.REACH_DESTINATION)
+        val objective = Objective("objective", "route", "Fátima", targetRouteKm = 10.0)
+        store.setObjective(objective)
         store.setDataVersion("2027-test")
         controller.save("walk", 2.0, 8.0)
         store.setWalking(requireNotNull(store.state.walking).copy(routePosition = RoutePosition("route", 2.0, 0.0, null, PositionConfidence.HIGH)))
         store.browseApoi(browser)
         val beforeBrowser = store.state.apoiBrowser
 
-        controller.startSaved(catalog, RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
+        controller.startSaved(RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
 
         assertEquals(beforeBrowser, store.state.apoiBrowser)
-        assertEquals(com.caminhos2027.v1.core.model.Objective.REACH_DESTINATION, store.state.objective)
+        assertEquals(objective, store.state.objective)
         assertEquals("2027-test", store.state.dataVersion)
     }
 
@@ -241,7 +244,7 @@ class WalkingPreparationAppStateControllerTest {
         val catalog = catalog()
         val controller = WalkingPreparationAppStateController(route, service(route, InMemoryWalkRepository()), store)
 
-        controller.startSaved(catalog, RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
+        controller.startSaved(RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
     }
 
     private fun service(route: Route, repository: WalkRepository, vararg records: Apoi) = WalkingPreparationService(route, repository, catalog(*records))
