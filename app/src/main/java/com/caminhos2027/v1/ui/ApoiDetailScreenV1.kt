@@ -27,8 +27,8 @@ import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.ApoiCostModel
 import com.caminhos2027.v1.core.model.ApoiReservationPolicy
 import com.caminhos2027.v1.core.model.LocationPrecision
-import com.caminhos2027.v1.core.model.PublicationStatus
 import com.caminhos2027.v1.core.model.PositionConfidence
+import com.caminhos2027.v1.core.model.PublicationStatus
 import java.util.Locale
 
 /** V1 APOI detail presentation. Missing values are omitted instead of being shown as "não informado". */
