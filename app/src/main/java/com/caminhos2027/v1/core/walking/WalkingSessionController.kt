@@ -9,7 +9,8 @@ import java.time.Instant
 object WalkingSessionController {
     fun start(walk: Walk, startPosition: RoutePosition, now: Instant = Instant.now()): Walk {
         require(walk.status == WalkStatus.PLANNED) { "Only a planned walk can be started" }
-        validatePosition(walk, startPosition)
+        require(walk.routeId == startPosition.routeId) { "Walk and position route must match" }
+        requirePosition(startPosition)
         return walk.copy(
             actualStartKm = startPosition.routeKm,
             actualEndKm = null,
@@ -21,9 +22,10 @@ object WalkingSessionController {
 
     fun stop(walk: Walk, endPosition: RoutePosition, now: Instant = Instant.now()): Walk {
         require(walk.status == WalkStatus.ACTIVE) { "Only an active walk can be stopped" }
-        validatePosition(walk, endPosition)
+        require(walk.routeId == endPosition.routeId) { "Walk and position route must match" }
+        requirePosition(endPosition)
         require(walk.startedAt == null || !now.isBefore(walk.startedAt)) {
-            "Walk end time cannot precede walk start time"
+            "Walk end time cannot be before walk start time"
         }
         return walk.copy(
             actualEndKm = endPosition.routeKm,
@@ -34,8 +36,8 @@ object WalkingSessionController {
 
     fun canResume(walk: Walk): Boolean = walk.status == WalkStatus.ACTIVE
 
-    private fun validatePosition(walk: Walk, position: RoutePosition) {
-        require(walk.routeId == position.routeId) { "Walk and position route must match" }
+    private fun requirePosition(position: RoutePosition) {
+        require(position.routeId.isNotBlank()) { "Position routeId must not be blank" }
         require(position.routeKm.isFinite() && position.routeKm >= 0.0) {
             "Position routeKm must be finite and >= 0"
         }
