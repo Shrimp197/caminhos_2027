@@ -52,8 +52,7 @@ object WalkingCheckpointJsonCodec {
             ?: throw IllegalArgumentException("routeId must not be blank")
         val routeKm = json.getDouble("routeKm")
         val distance = json.getDouble("distanceToRouteMeters")
-        require(routeKm.isFinite()) { "routeKm must be finite" }
-        require(distance.isFinite()) { "distanceToRouteMeters must be finite" }
+        if (!routeKm.isFinite() || !distance.isFinite()) return null
         if (routeKm < 0.0 || distance < 0.0) return null
         return RoutePosition(
             routeId = routeId,
