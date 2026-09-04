@@ -47,7 +47,7 @@ class WalkingSessionRuntimeTerminalStateTest {
             // Terminal state must not be resurrected.
         }
 
-        assertEquals(WalkStatus.COMPLETED, service.find("walk-terminal")!!.status)
+        assertEquals(WalkStatus.COMPLETED, service.get("walk-terminal")!!.status)
         assertNull(states.get("walk-terminal"))
     }
 
