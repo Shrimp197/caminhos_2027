@@ -64,6 +64,15 @@ class WalkingSessionControllerTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
+    fun cannotStartWithInvalidPositionMetrics() {
+        WalkingSessionController.start(
+            planned,
+            routePosition.copy(routeKm = Double.NaN),
+            startTime
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
     fun cannotStopPlannedWalk() {
         WalkingSessionController.stop(planned, routePosition, stopTime)
     }
@@ -72,5 +81,11 @@ class WalkingSessionControllerTest {
     fun cannotCrossRoutesWhenStopping() {
         val started = WalkingSessionController.start(planned, routePosition, startTime)
         WalkingSessionController.stop(started, routePosition.copy(routeId = "other-route"), stopTime)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotStopBeforeWalkStart() {
+        val started = WalkingSessionController.start(planned, routePosition, startTime)
+        WalkingSessionController.stop(started, routePosition, startTime.minusSeconds(1))
     }
 }
