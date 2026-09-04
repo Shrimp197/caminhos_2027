@@ -26,8 +26,13 @@ class WalkingCheckpointJsonCodecTest {
     @Test
     fun encodeDecodePreservesAllCheckpointFields() {
         val decoded = WalkingCheckpointJsonCodec.decode(WalkingCheckpointJsonCodec.encode(checkpoint))
-
         assertEquals(checkpoint, decoded)
+    }
+
+    @Test
+    fun emptyOptionalPositionIsPreserved() {
+        val source = checkpoint.copy(routePosition = null, lastObservedAt = null)
+        assertEquals(source, WalkingCheckpointJsonCodec.decode(WalkingCheckpointJsonCodec.encode(source)))
     }
 
     @Test
@@ -43,6 +48,11 @@ class WalkingCheckpointJsonCodecTest {
     @Test
     fun unknownVersionReturnsNull() {
         assertNull(WalkingCheckpointJsonCodec.decode("{\"version\":99,\"gpsState\":\"ON_ROUTE\"}"))
+    }
+
+    @Test
+    fun nonIntegerVersionReturnsNull() {
+        assertNull(WalkingCheckpointJsonCodec.decode("{\"version\":\"1\",\"gpsState\":\"ON_ROUTE\"}"))
     }
 
     @Test
@@ -69,6 +79,47 @@ class WalkingCheckpointJsonCodecTest {
     }
 
     @Test
+    fun blankRouteIdIsRejected() {
+        assertNull(
+            WalkingCheckpointJsonCodec.decode(
+                """
+                {
+                  "version": 1,
+                  "routePosition": {
+                    "routeId": "   ",
+                    "routeKm": 12,
+                    "distanceToRouteMeters": 5,
+                    "stageId": null,
+                    "confidence": "LOW"
+                  },
+                  "gpsState": "ON_ROUTE"
+                }
+                """.trimIndent()
+            )
+        )
+    }
+
+    @Test
+    fun blankStageIdIsNormalizedToNull() {
+        val decoded = WalkingCheckpointJsonCodec.decode(
+            """
+            {
+              "version": 1,
+              "routePosition": {
+                "routeId": "route-1",
+                "routeKm": 12,
+                "distanceToRouteMeters": 5,
+                "stageId": "   ",
+                "confidence": "LOW"
+              },
+              "gpsState": "ON_ROUTE"
+            }
+            """.trimIndent()
+        )
+        assertEquals(null, decoded!!.routePosition!!.stageId)
+    }
+
+    @Test
     fun invalidNumericPositionIsRejected() {
         assertNull(
             WalkingCheckpointJsonCodec.decode(
@@ -92,6 +143,27 @@ class WalkingCheckpointJsonCodecTest {
     }
 
     @Test
+    fun nonFiniteNumericPositionIsRejected() {
+        assertNull(
+            WalkingCheckpointJsonCodec.decode(
+                """
+                {
+                  "version": 1,
+                  "routePosition": {
+                    "routeId": "route-1",
+                    "routeKm": 1e309,
+                    "distanceToRouteMeters": 5,
+                    "stageId": null,
+                    "confidence": "LOW"
+                  },
+                  "gpsState": "ON_ROUTE"
+                }
+                """.trimIndent()
+            )
+        )
+    }
+
+    @Test
     fun invalidTimestampIsRejected() {
         assertNull(
             WalkingCheckpointJsonCodec.decode(
@@ -107,5 +179,30 @@ class WalkingCheckpointJsonCodecTest {
                 "{\"version\":1,\"gpsState\":\"UNKNOWN_STATE\",\"isOffline\":false,\"lastObservedAt\":null}"
             )
         )
+    }
+
+    @Test
+    fun invalidPositionIsDiscardedWithoutDiscardingCheckpointMetadata() {
+        val decoded = WalkingCheckpointJsonCodec.decode(
+            """
+            {
+              "version": 1,
+              "routePosition": {
+                "routeId": "route-1",
+                "routeKm": -1,
+                "distanceToRouteMeters": 5,
+                "stageId": null,
+                "confidence": "LOW"
+              },
+              "gpsState": "NO_SIGNAL",
+              "isOffline": true,
+              "lastObservedAt": "2026-09-04T10:20:30Z"
+            }
+            """.trimIndent()
+        )
+        assertNotNull(decoded)
+        assertEquals(null, decoded!!.routePosition)
+        assertEquals(GpsState.NO_SIGNAL, decoded.gpsState)
+        assertEquals(true, decoded.isOffline)
     }
 }
