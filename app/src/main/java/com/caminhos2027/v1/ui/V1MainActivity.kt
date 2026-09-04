@@ -36,11 +36,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.caminhos2027.v1.core.AndroidV1AppContainer
+import com.caminhos2027.v1.core.walking.WalkingPreparation
+import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.map.WalkingMapModel
 import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.route.GpsState
@@ -57,7 +65,9 @@ private val Muted = Color(0xFF68736D)
 private val Warning = Color(0xFF8A6412)
 
 class V1MainActivity : ComponentActivity() {
+    private lateinit var appContainer: AndroidV1AppContainer
     private var locationSource: AndroidLocationSource? = null
+    private var walkingState by mutableStateOf<WalkingState?>(null)
 
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -65,23 +75,29 @@ class V1MainActivity : ComponentActivity() {
         if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         ) {
-            startRawLocationSource()
+            startWalkingLocationSource()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { CaminhosTheme { WalkingScreenV1() } }
+        appContainer = AndroidV1AppContainer(this)
+        setContent {
+            CaminhosTheme {
+                WalkingScreenV1(state = walkingState)
+            }
+        }
+        restoreWalkingSession()
     }
 
     override fun onStart() {
         super.onStart()
-        if (hasLocationPermission()) startRawLocationSource()
-        else requestLocationPermission()
+        if (hasLocationPermission()) startWalkingLocationSource() else requestLocationPermission()
     }
 
     override fun onStop() {
         locationSource?.stop()
+        locationSource = null
         super.onStop()
     }
 
@@ -98,14 +114,36 @@ class V1MainActivity : ComponentActivity() {
         )
     }
 
-    private fun startRawLocationSource() {
-        if (locationSource == null) {
-            locationSource = AndroidLocationSource(
-                context = this,
-                onPosition = { /* Raw GPS is connected only after a validated route is available. */ },
-                onAvailabilityChanged = { /* Availability is represented by the walking state. */ }
-            )
+    private fun restoreWalkingSession() {
+        val existing = appContainer.publishedApoiCatalog()
+        val walk = appContainer.runtime.resume()
+        if (walk != null) {
+            appContainer.attachWalk(walk.walk)
+            walkingState = appContainer.activeController().resume().walking
+            return
         }
+        walkingState = null
+    }
+
+    private fun startWalkingLocationSource() {
+        if (locationSource != null || walkingState == null) return
+        locationSource = AndroidLocationSource(
+            context = this,
+            onPosition = { position ->
+                runOnUiThread {
+                    walkingState = appContainer.activeController().acceptGps(position).walking
+                }
+            },
+            onAvailabilityChanged = { available ->
+                runOnUiThread {
+                    walkingState = if (available) {
+                        walkingState
+                    } else {
+                        appContainer.activeController().markNoSignal(java.time.Instant.now()).walking
+                    }
+                }
+            }
+        )
         locationSource?.start()
     }
 }
@@ -125,7 +163,6 @@ private fun CaminhosTheme(content: @Composable () -> Unit) {
     )
 }
 
-/** Walking experience shell. Null means there is no active walk; no route data is fabricated. */
 @Composable
 private fun WalkingScreenV1(state: WalkingState? = null, map: WalkingMapModel? = null) {
     Surface(modifier = Modifier.fillMaxSize(), color = Sand) {
@@ -201,10 +238,7 @@ private fun ActiveWalkingScreen(state: WalkingState, map: WalkingMapModel?) {
             GpsStatusChip(gpsState, modifier = Modifier.align(Alignment.TopCenter).padding(top = 78.dp))
         }
 
-        PositionContextCard(
-            state,
-            modifier = Modifier.align(Alignment.TopStart).padding(top = 126.dp, start = 12.dp, end = 12.dp)
-        )
+        PositionContextCard(state, modifier = Modifier.align(Alignment.TopStart).padding(top = 126.dp, start = 12.dp, end = 12.dp))
 
         Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(12.dp)) {
             NextSupportCard(nextApoi, state.nextApoiDistanceKm)
@@ -240,10 +274,7 @@ private fun PositionContextCard(state: WalkingState, modifier: Modifier = Modifi
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .94f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 13.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.LocationOn, contentDescription = null, tint = Forest, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -258,86 +289,52 @@ private fun PositionContextCard(state: WalkingState, modifier: Modifier = Modifi
 @Composable
 private fun NextSupportCard(nextApoi: Apoi?, distanceKm: Double?) {
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(42.dp).background(ForestSoft, CircleShape), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.WaterDrop, contentDescription = null, tint = Forest)
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Próximo APOI", style = MaterialTheme.typography.labelMedium, color = Muted)
-                    Text(nextApoi?.name ?: "A procurar apoio…", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    if (nextApoi != null) Text(nextApoi.services.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Muted)
-                }
-                Icon(Icons.Default.ChevronRight, contentDescription = "Ver detalhe", tint = Muted)
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(42.dp).background(ForestSoft, CircleShape), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.WaterDrop, contentDescription = null, tint = Forest)
             }
-            Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.LocationOn, contentDescription = null, tint = Forest, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(5.dp))
-                Text(distanceKm?.let { "${formatKm(it)} km pelo caminho" } ?: "Sem APOI seguinte confirmado", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Próximo APOI", style = MaterialTheme.typography.labelMedium, color = Muted)
+                if (nextApoi == null) {
+                    Text("Não há APOI publicado à frente.", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                } else {
+                    Text(nextApoi.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                    distanceKm?.let { Text(formatDistance(it), style = MaterialTheme.typography.bodySmall, color = Muted) }
+                }
             }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Muted)
         }
     }
 }
 
 @Composable
 private fun ProgressCard(progress: WalkingProgress?) {
-    val walked = progress?.walkedKm ?: 0.0
-    val remaining = progress?.remainingKm ?: 0.0
-    val ratio = progress?.progressRatio ?: 0.0
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Forest)) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("${formatKm(walked)} km percorridos", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("${formatKm(remaining)} km até ao objetivo", color = Color.White.copy(alpha = .82f), style = MaterialTheme.typography.bodySmall)
-                }
-                Icon(Icons.Default.Navigation, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-            }
-            Spacer(Modifier.height(9.dp))
-            Box(modifier = Modifier.fillMaxWidth().height(5.dp).background(Color.White.copy(alpha = .25f), RoundedCornerShape(4.dp))) {
-                Box(modifier = Modifier.fillMaxWidth(ratio.toFloat().coerceIn(0f, 1f)).height(5.dp).background(Color.White, RoundedCornerShape(4.dp)))
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Progresso", style = MaterialTheme.typography.labelMedium, color = Muted)
+            Spacer(Modifier.height(4.dp))
+            if (progress == null) {
+                Text("Aguardando posição", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+            } else {
+                Text("${formatKm(progress.walkedKm)} km caminhados", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                Text("${formatKm(progress.remainingKm)} km até ao destino planeado", style = MaterialTheme.typography.bodySmall, color = Muted)
             }
         }
     }
 }
 
-private fun formatKm(value: Double): String = String.format(Locale("pt", "PT"), "%.1f", value)
-
-/**
- * Visual map surface. It deliberately renders no invented route geometry.
- * Once a validated route model is supplied, this is the single UI seam for the real map.
- */
 @Composable
-private fun WalkingMapSurface(
-    map: WalkingMapModel?,
-    gpsState: GpsState,
-    hasPosition: Boolean
-) {
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE9E7E0))) {
-        if (map?.hasOfficialGeometry == true) {
-            Text(
-                "Percurso oficial carregado",
-                modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Muted
-            )
-        } else {
-            Column(
-                modifier = Modifier.align(Alignment.Center).padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(Icons.Default.Navigation, contentDescription = null, tint = Muted, modifier = Modifier.size(32.dp))
-                Spacer(Modifier.height(10.dp))
-                Text("Percurso oficial em preparação", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Ink)
-                Spacer(Modifier.height(4.dp))
-                Text("O mapa só será apresentado quando a geometria validada estiver disponível.", style = MaterialTheme.typography.bodyMedium, color = Muted)
-                if (hasPosition && gpsState != GpsState.ON_ROUTE) {
-                    Spacer(Modifier.height(8.dp))
-                    Text("A posição GPS continua disponível, mas não é projetada num traçado não validado.", style = MaterialTheme.typography.bodySmall, color = Warning)
-                }
-            }
+private fun WalkingMapSurface(map: WalkingMapModel?, gpsState: GpsState, hasPosition: Boolean) {
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFE9EEE9))) {
+        Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Default.Navigation, contentDescription = null, tint = Forest, modifier = Modifier.size(32.dp))
+            Spacer(Modifier.height(6.dp))
+            Text(if (hasPosition) "Mapa da caminhada" else "Mapa indisponível", color = Muted)
+            if (gpsState == GpsState.NO_SIGNAL) Text("Última posição mantida", style = MaterialTheme.typography.labelSmall, color = Warning)
         }
     }
 }
+
+private fun formatKm(value: Double): String = String.format(Locale.US, "%.2f", value)
+private fun formatDistance(value: Double): String = if (value < 1.0) String.format(Locale.US, "%d m", (value * 1000).toInt()) else String.format(Locale.US, "%.1f km", value)
