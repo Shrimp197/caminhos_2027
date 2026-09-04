@@ -31,7 +31,11 @@ class WalkingSessionRuntime(
     fun accept(position: RawGpsPosition): WalkingState {
         val active = requireNotNull(coordinator) { "Walking session has not been started" }
         val state = active.accept(position)
-        sessionService.updatePosition(state.walk.id, state, observedAt = position.capturedAt)
+        sessionService.updatePosition(
+            state.walk.id,
+            state,
+            observedAt = active.lastReliableObservedAt()
+        )
         return state
     }
 
