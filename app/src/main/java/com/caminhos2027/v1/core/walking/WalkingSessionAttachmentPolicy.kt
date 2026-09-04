@@ -7,9 +7,9 @@ import com.caminhos2027.v1.core.model.WalkStatus
 /**
  * Pure attachment rules for the Android composition boundary.
  *
- * UI recreation may attach the same walk repeatedly, but an already-attached active
- * session must never be silently replaced by another walk. The policy is deliberately
- * independent from Android so the lifecycle boundary can be regression-tested cheaply.
+ * UI recreation may attach the same walk repeatedly, but an already-active
+ * persistent session must never be silently replaced by another walk. The policy is
+ * deliberately independent from Android so the lifecycle boundary can be regression-tested cheaply.
  */
 object WalkingSessionAttachmentPolicy {
     fun requireAttachable(
@@ -22,6 +22,12 @@ object WalkingSessionAttachmentPolicy {
     ) {
         require(requestedWalk.routeId == publishedRoute.id) {
             "Walk route must match the published V1 route"
+        }
+
+        persistentActiveWalk?.takeIf { it.status == WalkStatus.ACTIVE }?.let { activeWalk ->
+            require(activeWalk.id == requestedWalk.id) {
+                "Cannot attach a different walk while an active V1 walking session exists"
+            }
         }
 
         if (!existingController || attachedWalkId == null || attachedWalkId == requestedWalk.id) return
