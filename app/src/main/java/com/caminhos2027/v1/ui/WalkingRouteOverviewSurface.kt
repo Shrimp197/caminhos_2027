@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -21,6 +22,12 @@ import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.sin
+
+internal data class WalkingRouteGeometryProfile(
+    val points: List<GeoPoint>,
+    val cumulativeMeters: List<Double>,
+    val totalMeters: Double
+)
 
 internal object WalkingRouteOverviewPresenter {
     fun currentRatio(currentRouteKm: Double?, totalDistanceKm: Double): Float {
@@ -35,32 +42,54 @@ internal object WalkingRouteOverviewPresenter {
         return (ratio.coerceIn(0f, 1f) * (pointCount - 1)).toInt().coerceIn(0, pointCount - 1)
     }
 
-    fun visiblePathPointIndex(geometry: List<GeoPoint>, ratio: Float): Int {
+    fun buildGeometryProfile(geometry: List<GeoPoint>): WalkingRouteGeometryProfile {
         val safeGeometry = sanitizeGeometry(geometry)
-        if (safeGeometry.size <= 1) return 0
-        val target = ratio.coerceIn(0f, 1f)
-        val totalMeters = geometryLengthMeters(safeGeometry)
-        if (!totalMeters.isFinite() || totalMeters <= 0.0) {
-            return visiblePathPointIndex(safeGeometry.size, target)
+        if (safeGeometry.isEmpty()) {
+            return WalkingRouteGeometryProfile(emptyList(), emptyList(), 0.0)
         }
 
-        val targetMeters = totalMeters * target
-        var cumulative = 0.0
-        safeGeometry.zipWithNext().forEachIndexed { index, pair ->
-            cumulative += distanceMeters(pair.first, pair.second)
-            if (cumulative >= targetMeters) return index + 1
+        val cumulative = ArrayList<Double>(safeGeometry.size)
+        cumulative += 0.0
+        var total = 0.0
+        safeGeometry.zipWithNext().forEach { pair ->
+            total += distanceMeters(pair.first, pair.second)
+            cumulative += total
         }
-        return safeGeometry.lastIndex
+        return WalkingRouteGeometryProfile(safeGeometry, cumulative, total)
     }
 
+    fun visiblePathPointIndex(profile: WalkingRouteGeometryProfile, ratio: Float): Int {
+        val points = profile.points
+        if (points.size <= 1) return 0
+        if (!profile.totalMeters.isFinite() || profile.totalMeters <= 0.0 || profile.cumulativeMeters.size != points.size) {
+            return visiblePathPointIndex(points.size, ratio)
+        }
+
+        val targetMeters = profile.totalMeters * ratio.coerceIn(0f, 1f)
+        var low = 0
+        var high = profile.cumulativeMeters.lastIndex
+        while (low < high) {
+            val middle = (low + high) ushr 1
+            if (profile.cumulativeMeters[middle] < targetMeters) {
+                low = middle + 1
+            } else {
+                high = middle
+            }
+        }
+        return low.coerceIn(0, points.lastIndex)
+    }
+
+    fun visiblePathPointIndex(geometry: List<GeoPoint>, ratio: Float): Int =
+        visiblePathPointIndex(buildGeometryProfile(geometry), ratio)
+
     /** Returns the bearing of the route segment at the current visual position. */
-    fun routeBearingDegrees(geometry: List<GeoPoint>, ratio: Float): Double? {
-        val safeGeometry = sanitizeGeometry(geometry)
-        if (safeGeometry.size < 2) return null
-        val index = visiblePathPointIndex(safeGeometry, ratio)
-        val startIndex = (index - 1).coerceAtLeast(0).coerceAtMost(safeGeometry.lastIndex - 1)
-        val start = safeGeometry[startIndex]
-        val end = safeGeometry[startIndex + 1]
+    fun routeBearingDegrees(profile: WalkingRouteGeometryProfile, ratio: Float): Double? {
+        val points = profile.points
+        if (points.size < 2) return null
+        val index = visiblePathPointIndex(profile, ratio)
+        val startIndex = (index - 1).coerceAtLeast(0).coerceAtMost(points.lastIndex - 1)
+        val start = points[startIndex]
+        val end = points[startIndex + 1]
         val lat1 = Math.toRadians(start.latitude)
         val lat2 = Math.toRadians(end.latitude)
         val deltaLon = Math.toRadians(end.longitude - start.longitude)
@@ -69,6 +98,9 @@ internal object WalkingRouteOverviewPresenter {
         if (!x.isFinite() || !y.isFinite() || (x == 0.0 && y == 0.0)) return null
         return Math.toDegrees(atan2(y, x)).let { (it + 360.0) % 360.0 }
     }
+
+    fun routeBearingDegrees(geometry: List<GeoPoint>, ratio: Float): Double? =
+        routeBearingDegrees(buildGeometryProfile(geometry), ratio)
 
     fun routeDirectionLabel(bearingDegrees: Double?): String? {
         if (bearingDegrees == null || !bearingDegrees.isFinite()) return null
@@ -80,9 +112,6 @@ internal object WalkingRouteOverviewPresenter {
 
     fun sanitizeGeometry(geometry: List<GeoPoint>): List<GeoPoint> =
         geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() }
-
-    private fun geometryLengthMeters(geometry: List<GeoPoint>): Double =
-        geometry.zipWithNext().sumOf { distanceMeters(it.first, it.second) }
 
     private fun distanceMeters(a: GeoPoint, b: GeoPoint): Double {
         val earthRadiusMeters = 6_371_000.0
@@ -105,15 +134,16 @@ internal fun WalkingRouteOverviewSurface(
     modifier: Modifier = Modifier
 ) {
     val ratio = WalkingRouteOverviewPresenter.currentRatio(currentRouteKm, totalDistanceKm)
-    val safeGeometry = WalkingRouteOverviewPresenter.sanitizeGeometry(geometry)
+    val profile = remember(geometry) { WalkingRouteOverviewPresenter.buildGeometryProfile(geometry) }
     val directionLabel = WalkingRouteOverviewPresenter.routeDirectionLabel(
-        WalkingRouteOverviewPresenter.routeBearingDegrees(safeGeometry, ratio)
+        WalkingRouteOverviewPresenter.routeBearingDegrees(profile, ratio)
     )
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("Traçado local", style = MaterialTheme.typography.labelLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
         Text("Visualização esquemática do percurso oficial, disponível sem rede.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF68736D))
         Canvas(modifier = Modifier.fillMaxWidth().height(190.dp)) {
-            if (safeGeometry.size < 2) return@Canvas
+            if (profile.points.size < 2) return@Canvas
+            val safeGeometry = profile.points
             val minLat = safeGeometry.minOf { it.latitude }
             val maxLat = safeGeometry.maxOf { it.latitude }
             val minLon = safeGeometry.minOf { it.longitude }
@@ -143,7 +173,7 @@ internal fun WalkingRouteOverviewSurface(
             }
             drawPath(path = path, color = Color(0xFF165B43), style = Stroke(width = 6f, cap = StrokeCap.Round))
 
-            val currentIndex = WalkingRouteOverviewPresenter.visiblePathPointIndex(safeGeometry, ratio)
+            val currentIndex = WalkingRouteOverviewPresenter.visiblePathPointIndex(profile, ratio)
             val current = project(safeGeometry[currentIndex])
             drawCircle(color = Color.White, radius = 10f, center = current)
             drawCircle(color = Color(0xFF165B43), radius = 6f, center = current)
