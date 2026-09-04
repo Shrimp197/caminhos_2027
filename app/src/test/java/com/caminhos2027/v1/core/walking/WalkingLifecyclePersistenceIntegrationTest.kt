@@ -176,7 +176,7 @@ class WalkingLifecyclePersistenceIntegrationTest {
     private fun gps(latitude: Double, capturedAt: String) =
         RawGpsPosition(latitude, -8.0, 5.0, t(capturedAt))
 
-    private fun t(clock: String) = Instant.parse("2026-09-04T$clockZ")
+    private fun t(clock: String) = Instant.parse("2026-09-04T${clock}Z")
 
     private fun catalog(vararg records: Apoi) =
         PublishedApoiCatalog(ApoiRepository(ApoiDataSource { records.toList() }))
