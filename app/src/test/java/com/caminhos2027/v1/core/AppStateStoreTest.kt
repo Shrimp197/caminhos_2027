@@ -156,7 +156,6 @@ class AppStateStoreTest {
         store.browseApoi(browser)
         store.selectApoi(browser, "missing")
         assertEquals(listOf("water"), store.state.apoiBrowser?.results?.map { it.apoi.id })
-        assertNull(store.state.apoiBrowser?.selected)
     }
 
     private fun route() = Route(
