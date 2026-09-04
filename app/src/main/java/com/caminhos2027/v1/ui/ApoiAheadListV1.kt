@@ -54,6 +54,11 @@ fun ApoiAheadListV1(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            Text(
+                                presentation.confidenceLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                             if (item.apoi.publication.status == PublicationStatus.PUBLISHED_WITH_WARNING) {
                                 Text(
                                     "⚠ ${presentation.warningLabel ?: "Informação com aviso"}",
