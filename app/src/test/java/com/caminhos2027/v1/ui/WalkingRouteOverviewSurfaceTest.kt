@@ -1,5 +1,6 @@
 package com.caminhos2027.v1.ui
 
+import com.caminhos2027.v1.core.model.GeoPoint
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -26,5 +27,20 @@ class WalkingRouteOverviewSurfaceTest {
         assertEquals(0, WalkingRouteOverviewPresenter.visiblePathPointIndex(5, -1f))
         assertEquals(2, WalkingRouteOverviewPresenter.visiblePathPointIndex(5, 0.5f))
         assertEquals(4, WalkingRouteOverviewPresenter.visiblePathPointIndex(5, 2f))
+    }
+
+    @Test
+    fun sanitizeGeometryDropsNonFinitePoints() {
+        val geometry = listOf(
+            GeoPoint(40.0, -8.0),
+            GeoPoint(Double.NaN, -8.1),
+            GeoPoint(39.9, Double.POSITIVE_INFINITY),
+            GeoPoint(39.8, -8.2)
+        )
+
+        assertEquals(
+            listOf(GeoPoint(40.0, -8.0), GeoPoint(39.8, -8.2)),
+            WalkingRouteOverviewPresenter.sanitizeGeometry(geometry)
+        )
     }
 }
