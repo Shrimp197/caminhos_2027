@@ -11,6 +11,7 @@ A branch de desenvolvimento oficial é `v1-route-import` e o trabalho continua s
 - SHA-256 da fonte oficial registado e verificado em CI;
 - geometria normalizada para `app/src/main/assets/data/route.geojson`;
 - distância publicada ACF (`211.87 km`) mantida distinta da extensão técnica da geometria (`214.778165 km`);
+- o ecrã ativo usa essa geometria para uma visualização esquemática local, sem depender de cartografia externa;
 - KML histórico `ACF_2020` mantido apenas como referência, nunca como geometria de produção.
 
 ### Walking e GPS
@@ -20,7 +21,9 @@ A branch de desenvolvimento oficial é `v1-route-import` e o trabalho continua s
 - progresso e etapa quando esta estiver disponível;
 - proteção contra timestamps futuros e movimentos GPS implausíveis;
 - preservação da última posição fiável durante perda de sinal;
-- persistência e recuperação da sessão.
+- persistência e recuperação da sessão;
+- superfície ativa inferior limitada e rolável para ecrãs pequenos;
+- degradação defensiva da visualização local quando a geometria recebida contém pontos inválidos.
 
 ### APOI
 - catálogo publicado e qualificado;
