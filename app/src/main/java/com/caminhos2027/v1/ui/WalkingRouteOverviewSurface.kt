@@ -17,7 +17,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.model.GeoPoint
+import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.max
+import kotlin.math.sin
 
 internal object WalkingRouteOverviewPresenter {
     fun currentRatio(currentRouteKm: Double?, totalDistanceKm: Double): Float {
@@ -32,8 +35,41 @@ internal object WalkingRouteOverviewPresenter {
         return (ratio.coerceIn(0f, 1f) * (pointCount - 1)).toInt().coerceIn(0, pointCount - 1)
     }
 
+    fun visiblePathPointIndex(geometry: List<GeoPoint>, ratio: Float): Int {
+        val safeGeometry = sanitizeGeometry(geometry)
+        if (safeGeometry.size <= 1) return 0
+        val target = ratio.coerceIn(0f, 1f)
+        val totalMeters = geometryLengthMeters(safeGeometry)
+        if (!totalMeters.isFinite() || totalMeters <= 0.0) {
+            return visiblePathPointIndex(safeGeometry.size, target)
+        }
+
+        val targetMeters = totalMeters * target
+        var cumulative = 0.0
+        safeGeometry.zipWithNext().forEachIndexed { index, pair ->
+            cumulative += distanceMeters(pair.first, pair.second)
+            if (cumulative >= targetMeters) return index + 1
+        }
+        return safeGeometry.lastIndex
+    }
+
     fun sanitizeGeometry(geometry: List<GeoPoint>): List<GeoPoint> =
         geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() }
+
+    private fun geometryLengthMeters(geometry: List<GeoPoint>): Double =
+        geometry.zipWithNext().sumOf { distanceMeters(it.first, it.second) }
+
+    private fun distanceMeters(a: GeoPoint, b: GeoPoint): Double {
+        val earthRadiusMeters = 6_371_000.0
+        val lat1 = Math.toRadians(a.latitude)
+        val lat2 = Math.toRadians(b.latitude)
+        val deltaLat = lat2 - lat1
+        val deltaLon = Math.toRadians(b.longitude - a.longitude)
+        val sinLat = sin(deltaLat / 2.0)
+        val sinLon = sin(deltaLon / 2.0)
+        val h = sinLat * sinLat + cos(lat1) * cos(lat2) * sinLon * sinLon
+        return 2.0 * earthRadiusMeters * atan2(Math.sqrt(h.coerceIn(0.0, 1.0)), Math.sqrt((1.0 - h).coerceIn(0.0, 1.0)))
+    }
 }
 
 @Composable
@@ -79,7 +115,7 @@ internal fun WalkingRouteOverviewSurface(
             }
             drawPath(path = path, color = Color(0xFF165B43), style = Stroke(width = 6f, cap = StrokeCap.Round))
 
-            val currentIndex = WalkingRouteOverviewPresenter.visiblePathPointIndex(safeGeometry.size, ratio)
+            val currentIndex = WalkingRouteOverviewPresenter.visiblePathPointIndex(safeGeometry, ratio)
             val current = project(safeGeometry[currentIndex])
             drawCircle(color = Color.White, radius = 10f, center = current)
             drawCircle(color = Color(0xFF165B43), radius = 6f, center = current)
