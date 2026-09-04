@@ -43,6 +43,23 @@ class WalkingRouteOverviewSurfaceTest {
     }
 
     @Test
+    fun geometryProfileCachesCumulativeMetersForSafePoints() {
+        val geometry = listOf(
+            GeoPoint(41.0, -8.0),
+            GeoPoint(Double.NaN, -8.1),
+            GeoPoint(41.001, -8.0)
+        )
+
+        val profile = WalkingRouteOverviewPresenter.buildGeometryProfile(geometry)
+
+        assertEquals(2, profile.points.size)
+        assertEquals(2, profile.cumulativeMeters.size)
+        assertEquals(0.0, profile.cumulativeMeters.first())
+        assertEquals(profile.totalMeters, profile.cumulativeMeters.last())
+        assertEquals(2, WalkingRouteOverviewPresenter.visiblePathPointIndex(profile, 1f))
+    }
+
+    @Test
     fun distanceAwareIndexFallsBackForCollapsedGeometry() {
         val geometry = listOf(
             GeoPoint(41.0, -8.0),
@@ -50,8 +67,10 @@ class WalkingRouteOverviewSurfaceTest {
             GeoPoint(41.0, -8.0)
         )
 
-        assertEquals(1, WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry, 0.5f))
-        assertEquals(2, WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry, 1.0f))
+        val profile = WalkingRouteOverviewPresenter.buildGeometryProfile(geometry)
+        assertEquals(0.0, profile.totalMeters)
+        assertEquals(1, WalkingRouteOverviewPresenter.visiblePathPointIndex(profile, 0.5f))
+        assertEquals(2, WalkingRouteOverviewPresenter.visiblePathPointIndex(profile, 1.0f))
     }
 
     @Test
@@ -68,6 +87,21 @@ class WalkingRouteOverviewSurfaceTest {
         assertEquals("Este", WalkingRouteOverviewPresenter.routeDirectionLabel(
             WalkingRouteOverviewPresenter.routeBearingDegrees(geometry, 0.9f)
         ))
+    }
+
+    @Test
+    fun cachedProfileProducesSameBearingAsGeometryHelper() {
+        val geometry = listOf(
+            GeoPoint(40.0, -8.0),
+            GeoPoint(40.01, -8.0),
+            GeoPoint(40.01, -7.99)
+        )
+        val profile = WalkingRouteOverviewPresenter.buildGeometryProfile(geometry)
+
+        assertEquals(
+            WalkingRouteOverviewPresenter.routeBearingDegrees(geometry, 0.25f),
+            WalkingRouteOverviewPresenter.routeBearingDegrees(profile, 0.25f)
+        )
     }
 
     @Test
