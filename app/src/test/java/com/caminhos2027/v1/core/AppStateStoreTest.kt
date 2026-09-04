@@ -53,6 +53,16 @@ class AppStateStoreTest {
         assertEquals(listOf("water"), store.state.apoiBrowser?.results?.map { it.apoi.id })
     }
 
+    @Test fun clearingBrowserIsSafeWhenNoBrowserWasOpened() {
+        val store = AppStateStore()
+        store.setWalking(walkingState(4.0))
+
+        store.clearApoiBrowser()
+
+        assertNull(store.state.apoiBrowser)
+        assertEquals(4.0, store.state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
+    }
+
     @Test fun decisionUsesTheSameCurrentWalkingPosition() {
         val route = route()
         val store = AppStateStore()
