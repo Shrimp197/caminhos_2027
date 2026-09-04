@@ -53,6 +53,31 @@ internal object WalkingRouteOverviewPresenter {
         return safeGeometry.lastIndex
     }
 
+    /** Returns the bearing of the route segment at the current visual position. */
+    fun routeBearingDegrees(geometry: List<GeoPoint>, ratio: Float): Double? {
+        val safeGeometry = sanitizeGeometry(geometry)
+        if (safeGeometry.size < 2) return null
+        val index = visiblePathPointIndex(safeGeometry, ratio)
+        val startIndex = (index - 1).coerceAtLeast(0).coerceAtMost(safeGeometry.lastIndex - 1)
+        val start = safeGeometry[startIndex]
+        val end = safeGeometry[startIndex + 1]
+        val lat1 = Math.toRadians(start.latitude)
+        val lat2 = Math.toRadians(end.latitude)
+        val deltaLon = Math.toRadians(end.longitude - start.longitude)
+        val y = sin(deltaLon) * cos(lat2)
+        val x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(deltaLon)
+        if (!x.isFinite() || !y.isFinite() || (x == 0.0 && y == 0.0)) return null
+        return Math.toDegrees(atan2(y, x)).let { (it + 360.0) % 360.0 }
+    }
+
+    fun routeDirectionLabel(bearingDegrees: Double?): String? {
+        if (bearingDegrees == null || !bearingDegrees.isFinite()) return null
+        val normalized = ((bearingDegrees % 360.0) + 360.0) % 360.0
+        val directions = arrayOf("Norte", "Nordeste", "Este", "Sudeste", "Sul", "Sudoeste", "Oeste", "Noroeste")
+        val index = (((normalized + 22.5) / 45.0).toInt()) % directions.size
+        return directions[index]
+    }
+
     fun sanitizeGeometry(geometry: List<GeoPoint>): List<GeoPoint> =
         geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() }
 
@@ -81,6 +106,9 @@ internal fun WalkingRouteOverviewSurface(
 ) {
     val ratio = WalkingRouteOverviewPresenter.currentRatio(currentRouteKm, totalDistanceKm)
     val safeGeometry = WalkingRouteOverviewPresenter.sanitizeGeometry(geometry)
+    val directionLabel = WalkingRouteOverviewPresenter.routeDirectionLabel(
+        WalkingRouteOverviewPresenter.routeBearingDegrees(safeGeometry, ratio)
+    )
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("Traçado local", style = MaterialTheme.typography.labelLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
         Text("Visualização esquemática do percurso oficial, disponível sem rede.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF68736D))
@@ -127,5 +155,12 @@ internal fun WalkingRouteOverviewSurface(
             style = MaterialTheme.typography.labelSmall,
             color = Color(0xFF68736D)
         )
+        directionLabel?.let {
+            Text(
+                "Sentido do traçado: $it",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF68736D)
+            )
+        }
     }
 }
