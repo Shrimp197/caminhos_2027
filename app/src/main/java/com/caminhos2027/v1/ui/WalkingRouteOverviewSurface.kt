@@ -31,6 +31,9 @@ internal object WalkingRouteOverviewPresenter {
         if (pointCount <= 1) return 0
         return (ratio.coerceIn(0f, 1f) * (pointCount - 1)).toInt().coerceIn(0, pointCount - 1)
     }
+
+    fun sanitizeGeometry(geometry: List<GeoPoint>): List<GeoPoint> =
+        geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() }
 }
 
 @Composable
@@ -41,15 +44,16 @@ internal fun WalkingRouteOverviewSurface(
     modifier: Modifier = Modifier
 ) {
     val ratio = WalkingRouteOverviewPresenter.currentRatio(currentRouteKm, totalDistanceKm)
+    val safeGeometry = WalkingRouteOverviewPresenter.sanitizeGeometry(geometry)
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("Traçado local", style = MaterialTheme.typography.labelLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
         Text("Visualização esquemática do percurso oficial, disponível sem rede.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF68736D))
         Canvas(modifier = Modifier.fillMaxWidth().height(190.dp)) {
-            if (geometry.size < 2) return@Canvas
-            val minLat = geometry.minOf { it.latitude }
-            val maxLat = geometry.maxOf { it.latitude }
-            val minLon = geometry.minOf { it.longitude }
-            val maxLon = geometry.maxOf { it.longitude }
+            if (safeGeometry.size < 2) return@Canvas
+            val minLat = safeGeometry.minOf { it.latitude }
+            val maxLat = safeGeometry.maxOf { it.latitude }
+            val minLon = safeGeometry.minOf { it.longitude }
+            val maxLon = safeGeometry.maxOf { it.longitude }
             val latSpan = max(maxLat - minLat, 1e-9)
             val lonSpan = max(maxLon - minLon, 1e-9)
             val padding = 12f
@@ -67,20 +71,20 @@ internal fun WalkingRouteOverviewSurface(
             )
 
             val path = Path().apply {
-                moveTo(project(geometry.first()).x, project(geometry.first()).y)
-                geometry.drop(1).forEach { point ->
+                moveTo(project(safeGeometry.first()).x, project(safeGeometry.first()).y)
+                safeGeometry.drop(1).forEach { point ->
                     val projected = project(point)
                     lineTo(projected.x, projected.y)
                 }
             }
             drawPath(path = path, color = Color(0xFF165B43), style = Stroke(width = 6f, cap = StrokeCap.Round))
 
-            val currentIndex = WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry.size, ratio)
-            val current = project(geometry[currentIndex])
+            val currentIndex = WalkingRouteOverviewPresenter.visiblePathPointIndex(safeGeometry.size, ratio)
+            val current = project(safeGeometry[currentIndex])
             drawCircle(color = Color.White, radius = 10f, center = current)
             drawCircle(color = Color(0xFF165B43), radius = 6f, center = current)
-            drawCircle(color = Color(0xFF165B43), radius = 5f, center = project(geometry.first()))
-            drawCircle(color = Color(0xFF165B43), radius = 5f, center = project(geometry.last()))
+            drawCircle(color = Color(0xFF165B43), radius = 5f, center = project(safeGeometry.first()))
+            drawCircle(color = Color(0xFF165B43), radius = 5f, center = project(safeGeometry.last()))
         }
         Text(
             "Início · posição atual · destino",
