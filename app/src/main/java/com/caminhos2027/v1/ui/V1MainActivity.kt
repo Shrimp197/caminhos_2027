@@ -18,15 +18,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DirectionsWalk
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Navigation
-import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,7 +44,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.AndroidV1AppContainer
 import com.caminhos2027.v1.core.AppState
-import com.caminhos2027.v1.core.apoi.ApoiAhead
 import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Walk
@@ -206,6 +201,7 @@ class V1MainActivity : ComponentActivity() {
 
     private fun openApoiBrowser() {
         if (walkingState?.routePosition == null) return
+        appContainer.apoiDecisionController.clearDecision()
         appContainer.apoiDecisionController.browseApoi()
         surface = WalkingSurface.APOI_BROWSER
     }
@@ -217,6 +213,7 @@ class V1MainActivity : ComponentActivity() {
 
     private fun openDecision() {
         if (walkingState?.routePosition == null) return
+        appContainer.apoiDecisionController.clearApoiSelection()
         appContainer.apoiDecisionController.buildDecision()
         surface = WalkingSurface.DECISION
     }
@@ -228,8 +225,9 @@ class V1MainActivity : ComponentActivity() {
     }
 
     private fun returnToApoiBrowser() {
+        val cameFromDecision = appContainer.store.state.decision != null
         appContainer.apoiDecisionController.clearApoiSelection()
-        surface = WalkingSurface.APOI_BROWSER
+        surface = if (cameFromDecision) WalkingSurface.DECISION else WalkingSurface.APOI_BROWSER
     }
 
     private fun returnToDecision() {
