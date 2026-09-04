@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -46,7 +47,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.AndroidV1AppContainer
 import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.RawGpsPosition
+import com.caminhos2027.v1.core.model.Walk
+import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
+import com.caminhos2027.v1.core.route.RouteLocationEngine
 import com.caminhos2027.v1.core.route.WalkingProgress
 import com.caminhos2027.v1.core.walking.WalkingState
 import com.caminhos2027.v1.gps.AndroidLocationSource
@@ -64,23 +69,35 @@ class V1MainActivity : ComponentActivity() {
     private lateinit var appContainer: AndroidV1AppContainer
     private var locationSource: AndroidLocationSource? = null
     private var walkingState by mutableStateOf<WalkingState?>(null)
+    private var preparedWalk by mutableStateOf<Walk?>(null)
+    private var startRequested by mutableStateOf(false)
 
     private val locationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
-            startWalkingLocationSource()
-        }
+        if (hasLocationPermissionAfterResult(permissions)) startWalkingLocationSource()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         appContainer = AndroidV1AppContainer(this)
-        setContent { CaminhosTheme { WalkingScreenV1(walkingState) } }
+        setContent {
+            CaminhosTheme {
+                WalkingScreenV1(
+                    state = walkingState,
+                    preparedWalk = preparedWalk,
+                    onPrepare = ::prepareWalking,
+                    onStart = ::requestStartPreparedWalk,
+                    onStop = ::stopWalking
+                )
+            }
+        }
         restoreWalkingSession()
     }
 
     override fun onStart() {
         super.onStart()
-        if (hasLocationPermission()) startWalkingLocationSource() else requestLocationPermission()
+        if (walkingState != null || startRequested) {
+            if (hasLocationPermission()) startWalkingLocationSource() else requestLocationPermission()
+        }
     }
 
     override fun onStop() {
@@ -89,45 +106,139 @@ class V1MainActivity : ComponentActivity() {
         super.onStop()
     }
 
-    private fun hasLocationPermission(): Boolean = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    private fun hasLocationPermission(): Boolean =
+        checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    private fun hasLocationPermissionAfterResult(permissions: Map<String, Boolean>): Boolean =
+        permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
 
     private fun requestLocationPermission() {
-        locationPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+        locationPermissionLauncher.launch(
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+        )
     }
 
     private fun restoreWalkingSession() {
         val resumed = appContainer.runtime.resume() ?: return
         appContainer.attachWalk(resumed.walk)
         walkingState = appContainer.activeController().resume().walking
+        preparedWalk = null
+        startRequested = false
+    }
+
+    private fun prepareWalking() {
+        val prepared = appContainer.preparationController.save(
+            walkId = "walk-${System.currentTimeMillis()}",
+            startRouteKm = 0.0,
+            destinationRouteKm = appContainer.publishedRoute().totalDistanceKm
+        )
+        preparedWalk = prepared.state.walking?.walk
+        walkingState = null
+        startRequested = false
+    }
+
+    private fun requestStartPreparedWalk() {
+        require(preparedWalk?.status == WalkStatus.PLANNED) { "A planned walk is required before starting" }
+        startRequested = true
+        if (hasLocationPermission()) startWalkingLocationSource() else requestLocationPermission()
+    }
+
+    private fun handleFirstGpsForPreparedWalk(position: RawGpsPosition): Boolean {
+        if (!startRequested || walkingState != null || preparedWalk == null) return false
+        val routePosition = RouteLocationEngine.locate(appContainer.publishedRoute(), position)
+        val started = appContainer.preparationController.startSaved(
+            catalog = appContainer.publishedApoiCatalog(),
+            position = routePosition,
+            now = position.capturedAt
+        )
+        val walking = started.walking ?: return false
+        appContainer.attachWalk(walking.walk)
+        walkingState = appContainer.activeController().resume().walking
+        preparedWalk = null
+        startRequested = false
+        return true
     }
 
     private fun startWalkingLocationSource() {
-        if (locationSource != null || walkingState == null) return
+        if (locationSource != null || (walkingState == null && !startRequested)) return
         locationSource = AndroidLocationSource(
             context = this,
-            onPosition = { position -> runOnUiThread { walkingState = appContainer.activeController().acceptGps(position).walking } },
-            onAvailabilityChanged = { available -> if (!available) runOnUiThread { walkingState = appContainer.activeController().markNoSignal(Instant.now()).walking } }
+            onPosition = { position ->
+                runOnUiThread {
+                    if (!handleFirstGpsForPreparedWalk(position)) {
+                        if (walkingState != null) {
+                            walkingState = appContainer.activeController().acceptGps(position).walking
+                        }
+                    }
+                }
+            },
+            onAvailabilityChanged = { available ->
+                if (!available) {
+                    runOnUiThread {
+                        if (walkingState != null) {
+                            walkingState = appContainer.activeController().markNoSignal(Instant.now()).walking
+                        }
+                    }
+                }
+            }
         )
         locationSource?.start()
+    }
+
+    private fun stopWalking() {
+        val position = walkingState?.routePosition ?: return
+        appContainer.runtime.stop(position, Instant.now())
+        appContainer.clearSession()
+        locationSource?.stop()
+        locationSource = null
+        walkingState = null
+        preparedWalk = null
+        startRequested = false
     }
 }
 
 @Composable
 private fun CaminhosTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = lightColorScheme(primary = Forest, onPrimary = Color.White, background = Sand, surface = Color.White, onSurface = Ink, onBackground = Ink), content = content)
+    MaterialTheme(
+        colorScheme = lightColorScheme(
+            primary = Forest,
+            onPrimary = Color.White,
+            background = Sand,
+            surface = Color.White,
+            onSurface = Ink,
+            onBackground = Ink
+        ),
+        content = content
+    )
 }
 
 @Composable
-private fun WalkingScreenV1(state: WalkingState? = null) {
+private fun WalkingScreenV1(
+    state: WalkingState?,
+    preparedWalk: Walk?,
+    onPrepare: () -> Unit,
+    onStart: () -> Unit,
+    onStop: () -> Unit
+) {
     Surface(modifier = Modifier.fillMaxSize(), color = Sand) {
-        if (state == null) NoActiveWalkScreen() else ActiveWalkingScreen(state)
+        when {
+            state != null -> ActiveWalkingScreen(state, onStop)
+            preparedWalk != null -> PreparedWalkScreen(preparedWalk, onStart)
+            else -> NoActiveWalkScreen(onPrepare)
+        }
     }
 }
 
 @Composable
-private fun NoActiveWalkScreen() {
+private fun NoActiveWalkScreen(onPrepare: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
@@ -135,23 +246,72 @@ private fun NoActiveWalkScreen() {
             }
             IconButton(onClick = {}) { Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Ink) }
         }
-        Card(modifier = Modifier.align(Alignment.Center).fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)) {
+        Card(
+            modifier = Modifier.align(Alignment.Center).fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        ) {
             Column(modifier = Modifier.padding(22.dp)) {
                 Text("Nenhuma caminhada ativa", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
-                Text("Prepare uma caminhada para começar a acompanhar a sua posição, progresso e APOI.", style = MaterialTheme.typography.bodyLarge, color = Muted)
+                Text(
+                    "Prepare uma caminhada para começar a acompanhar a sua posição, progresso e APOI.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Muted
+                )
                 Spacer(Modifier.height(16.dp))
-                Text("Preparar caminhada", color = Forest, fontWeight = FontWeight.Bold)
+                Button(onClick = onPrepare, modifier = Modifier.fillMaxWidth()) {
+                    Text("Preparar caminhada")
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ActiveWalkingScreen(state: WalkingState) {
+private fun PreparedWalkScreen(walk: Walk, onStart: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+        Card(
+            modifier = Modifier.align(Alignment.Center).fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        ) {
+            Column(modifier = Modifier.padding(22.dp)) {
+                Text("Caminhada preparada", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+                Text("Caminho do Centenário", style = MaterialTheme.typography.titleMedium, color = Forest)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Percurso planeado: ${formatKm(walk.plannedStartKm ?: 0.0)} → ${formatKm(walk.plannedDestinationKm ?: 0.0)} km",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Muted
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Ao iniciar, o primeiro sinal GPS define a sua posição real no caminho.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Muted
+                )
+                Spacer(Modifier.height(18.dp))
+                Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
+                    Text("Iniciar caminhada")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         WalkingMapSurface(gpsState = state.gpsState, hasPosition = state.routePosition != null)
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
                     Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(20.dp))
@@ -162,7 +322,7 @@ private fun ActiveWalkingScreen(state: WalkingState) {
                     }
                 }
             }
-            IconButton(onClick = {}) { Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Ink) }
+            IconButton(onClick = onStop) { Icon(Icons.Default.Menu, contentDescription = "Terminar caminhada", tint = Ink) }
         }
         if (state.gpsState != GpsState.ON_ROUTE) GpsStatusChip(state.gpsState, modifier = Modifier.align(Alignment.TopCenter).padding(top = 78.dp))
         PositionContextCard(state, modifier = Modifier.align(Alignment.TopStart).padding(top = 126.dp, start = 12.dp, end = 12.dp))
