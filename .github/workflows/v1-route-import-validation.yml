@@ -24,6 +24,12 @@ jobs:
         with:
           gradle-version: '8.11.1'
 
+      - name: Validate APOI master dataset
+        run: python3 tools/validate_apoi_master.py
+
+      - name: Validate APOI 2026 to 2027 transition
+        run: python3 tools/validate_apoi_transition.py
+
       - name: Run route import JVM tests
         run: gradle --no-daemon :app:testDebugUnitTest
 
