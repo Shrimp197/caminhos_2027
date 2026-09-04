@@ -8,11 +8,13 @@ import com.caminhos2027.v1.core.walking.WalkingAppStateController
 import com.caminhos2027.v1.core.walking.WalkingPreparationAppStateController
 import com.caminhos2027.v1.core.walking.WalkingSessionAttachmentPolicy
 import com.caminhos2027.v1.core.walking.WalkingSessionRuntime
+import java.time.Instant
 
 /** Android composition boundary for V1 walking preparation, consultation and the persistent session read model. */
-class AndroidV1AppContainer(context: Context) {
-    private val appContext = context.applicationContext
-    private val base = V1AppContainer.forAndroid(appContext)
+class AndroidV1AppContainer internal constructor(
+    private val base: V1AppContainer
+) {
+    constructor(context: Context) : this(V1AppContainer.forAndroid(context.applicationContext))
 
     val store: AppStateStore = base.appStateStore
     val runtime: WalkingSessionRuntime = base.sessionRuntime
@@ -52,6 +54,41 @@ class AndroidV1AppContainer(context: Context) {
             controller = it
             attachedWalkId = walk.id
         }
+    }
+
+    /**
+     * Recreates the attached controller from the persistent active session after Android process/UI recreation.
+     * Runtime restoration is completed before the restored state is published into the new composition boundary.
+     */
+    fun resumePersistedWalk(now: Instant = Instant.now()): AppState {
+        val persisted = runtime.activeWalk()
+        if (persisted == null) {
+            clearSession()
+            return store.state
+        }
+
+        WalkingSessionAttachmentPolicy.requireAttachable(
+            publishedRoute = base.route,
+            requestedWalk = persisted,
+            attachedWalkId = attachedWalkId,
+            existingController = controller != null,
+            publishedStateWalk = store.state.walking?.walk,
+            persistentActiveWalk = persisted
+        )
+
+        val restored = runtime.resume(now)
+        if (restored == null) {
+            clearSession()
+            return store.state
+        }
+
+        val existing = controller
+        if (existing == null || attachedWalkId != restored.walk.id) {
+            controller = base.controller(restored.walk)
+            attachedWalkId = restored.walk.id
+        }
+        store.setWalking(restored)
+        return store.state
     }
 
     fun activeController(): WalkingAppStateController =
