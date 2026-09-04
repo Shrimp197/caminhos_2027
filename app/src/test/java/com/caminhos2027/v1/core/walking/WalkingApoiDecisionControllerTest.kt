@@ -47,7 +47,7 @@ class WalkingApoiDecisionControllerTest {
     }
 
     @Test
-    fun selectionDoesNotAlterWalkingState() {
+    fun selectionDoesNotAlterWalkingStateAndClearsStaleDecision() {
         val route = route()
         val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
         val store = AppStateStore()
@@ -62,10 +62,12 @@ class WalkingApoiDecisionControllerTest {
         val controller = WalkingApoiDecisionController(route, catalog(water), store)
 
         controller.browseApoi()
+        controller.buildDecision()
         controller.selectApoi("water")
 
         assertEquals(4.0, store.state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
         assertEquals("water", store.state.apoiBrowser?.selected?.id)
+        assertNull(store.state.decision)
 
         controller.clearApoiSelection()
         assertNull(store.state.apoiBrowser?.selected)
