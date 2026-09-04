@@ -176,7 +176,7 @@ class SrPreparationToWalkingTest {
                 latitude = 40.0045,
                 longitude = -8.0,
                 accuracyMeters = 5.0,
-                observedAt = Instant.parse("2026-09-01T08:01:00Z")
+                capturedAt = Instant.parse("2026-09-01T08:01:00Z")
             )
         )
 
