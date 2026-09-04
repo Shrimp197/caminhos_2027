@@ -9,10 +9,12 @@ import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.walking.AndroidWalkRepository
 import com.caminhos2027.v1.core.walking.AndroidWalkingStateRepository
 import com.caminhos2027.v1.core.walking.WalkingAppStateController
+import com.caminhos2027.v1.core.walking.WalkingPreparationAppStateController
+import com.caminhos2027.v1.core.walking.WalkingPreparationService
 import com.caminhos2027.v1.core.walking.WalkingSessionRuntime
 import com.caminhos2027.v1.core.walking.WalkingSessionService
 
-/** Android composition boundary for one V1 walking session and its persistent read model. */
+/** Android composition boundary for V1 walking preparation and the persistent session read model. */
 class AndroidV1AppContainer(context: Context) {
     private val appContext = context.applicationContext
     private val route = AssetRouteDataSource(appContext, "data/route.geojson").loadRoute()
@@ -20,9 +22,16 @@ class AndroidV1AppContainer(context: Context) {
     private val walkRepository = AndroidWalkRepository(appContext)
     private val walkingStateRepository = AndroidWalkingStateRepository(appContext)
     private val sessionService = WalkingSessionService(walkRepository, walkingStateRepository)
+    private val preparationService = WalkingPreparationService(route, walkRepository, catalog)
 
     val store = AppStateStore()
     val runtime = WalkingSessionRuntime(route, sessionService, catalog.all())
+    val preparationController = WalkingPreparationAppStateController(
+        route = route,
+        preparationService = preparationService,
+        store = store,
+        sessionRuntime = runtime
+    )
 
     private var controller: WalkingAppStateController? = null
 
