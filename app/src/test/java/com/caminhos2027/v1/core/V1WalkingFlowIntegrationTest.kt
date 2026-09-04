@@ -126,6 +126,7 @@ class V1WalkingFlowIntegrationTest {
         val water = fixtureApoi()
         val coordinator = WalkingStateCoordinator(route, Walk(id = "walk-offline", routeId = route.id, plannedStartKm = 0.0, plannedDestinationKm = 1.0), listOf(water))
         val store = AppStateStore()
+        coordinator.start(RoutePosition(route.id, 0.0, 0.0), Instant.parse("2026-09-03T13:00:00Z"))
         val moving = coordinator.accept(
             RawGpsPosition(40.00225, -8.0, 5.0, Instant.parse("2026-09-03T13:02:00Z"))
         )
