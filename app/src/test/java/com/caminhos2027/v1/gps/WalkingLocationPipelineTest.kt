@@ -4,6 +4,8 @@ import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
+import com.caminhos2027.v1.core.model.RoutePosition
+import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.route.GpsState
 import java.time.Instant
 import org.junit.Assert.assertEquals
@@ -60,6 +62,21 @@ class WalkingLocationPipelineTest {
 
         assertEquals(GpsState.ON_ROUTE, state.state)
         assertEquals(slightlyFuture, state.lastReliableObservation?.capturedAt)
+    }
+
+    @Test
+    fun provisionalSeedDoesNotBecomeReliableUntilGpsObservationIsAccepted() {
+        val capturedAt = Instant.parse("2026-09-01T10:00:00Z")
+        val provisional = RoutePosition("test-route", 0.2, 150.0, null, PositionConfidence.LOW)
+        val pipeline = WalkingLocationPipeline(route)
+
+        val seeded = pipeline.seedRoutePosition(provisional, capturedAt, reliable = false)
+        assertEquals(null, seeded.lastReliableObservation)
+        assertEquals(provisional, seeded.lastObservation?.routePosition)
+
+        val accepted = pipeline.accept(RawGpsPosition(41.002, -8.0, 5.0, capturedAt.plusSeconds(1)))
+        assertEquals(GpsState.ON_ROUTE, accepted.state)
+        assertEquals(capturedAt.plusSeconds(1), accepted.lastReliableObservation?.capturedAt)
     }
 
     @Test
