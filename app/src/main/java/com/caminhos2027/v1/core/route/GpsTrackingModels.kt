@@ -31,7 +31,9 @@ data class GpsTrackingPolicy(
     /** Poor accuracy must not by itself become a deviation. */
     val weakAccuracyMeters: Double = 50.0,
     /** Reject physically implausible route jumps instead of moving the walking state. Initial test value. */
-    val maxPlausibleSpeedKmh: Double = 8.0
+    val maxPlausibleSpeedKmh: Double = 8.0,
+    /** Accept small device-clock skew, but never let a materially future observation advance state. */
+    val maxFutureSkewSeconds: Long = 15
 )
 
 data class GpsTrackingState(
