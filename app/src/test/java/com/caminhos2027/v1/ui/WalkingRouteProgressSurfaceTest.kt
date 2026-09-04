@@ -2,6 +2,7 @@ package com.caminhos2027.v1.ui
 
 import com.caminhos2027.v1.core.route.WalkingProgress
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WalkingRouteProgressSurfaceTest {
@@ -37,5 +38,20 @@ class WalkingRouteProgressSurfaceTest {
         )
 
         assertEquals(0.0f, WalkingRouteProgressPresenter.present(progress).ratio, 0.0f)
+    }
+
+    @Test
+    fun ordinaryProgressRatioRemainsVisibleAsFraction() {
+        val progress = WalkingProgress(
+            currentRouteKm = 50.0,
+            walkedKm = 50.0,
+            remainingKm = 50.0,
+            targetRouteKm = 100.0,
+            progressRatio = 0.5,
+            stageId = "stage-1"
+        )
+
+        assertEquals(0.5f, WalkingRouteProgressPresenter.present(progress).ratio, 0.0f)
+        assertTrue(WalkingRouteProgressPresenter.present(progress).remainingLabel.contains("50.0 km"))
     }
 }
