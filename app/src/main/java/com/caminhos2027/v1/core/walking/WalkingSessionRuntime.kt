@@ -66,6 +66,9 @@ class WalkingSessionRuntime(
         return stopped
     }
 
+    /** Returns the persisted active walk without creating or replacing an in-memory coordinator. */
+    fun activeWalk(): Walk? = sessionService.resume()
+
     /** Rebuilds derived progress/APOI information from the persisted walk and checkpoint. */
     fun resume(now: Instant = Instant.now()): WalkingState? {
         val walk = sessionService.resume() ?: return null
