@@ -10,11 +10,14 @@ import com.caminhos2027.v1.core.model.PublicationStatus
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
+import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.route.GpsState
+import com.caminhos2027.v1.core.route.GpsTrackingPolicy
 import java.time.Instant
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -71,6 +74,43 @@ class WalkingStateCoordinatorTest {
         assertEquals(first.routePosition!!.routeKm, jump.routePosition!!.routeKm, 0.0001)
         assertEquals(first.nextApoi?.id, jump.nextApoi?.id)
         assertEquals(first.nextApoiDistanceKm!!, jump.nextApoiDistanceKm!!, 0.0001)
+    }
+
+    @Test
+    fun `start position outside possible-deviation threshold is provisional`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+        val provisional = RoutePosition(
+            routeId = route.id,
+            routeKm = 0.3,
+            distanceToRouteMeters = 40.0,
+            stageId = "stage-1"
+        )
+
+        val started = coordinator.start(provisional, Instant.parse("2026-09-01T13:00:00Z"))
+
+        assertEquals(GpsState.ACQUIRING, started.gpsState)
+        assertEquals(provisional.routeKm, started.routePosition!!.routeKm, 0.0001)
+        assertNull(coordinator.lastReliableObservedAt())
+    }
+
+    @Test
+    fun `start position inside possible-deviation threshold can establish reliable baseline`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+        val baseline = RoutePosition(
+            routeId = route.id,
+            routeKm = 0.3,
+            distanceToRouteMeters = 34.0,
+            stageId = "stage-1"
+        )
+        val now = Instant.parse("2026-09-01T13:00:00Z")
+
+        coordinator.start(baseline, now)
+
+        assertEquals(now, coordinator.lastReliableObservedAt())
     }
 
     @Test
