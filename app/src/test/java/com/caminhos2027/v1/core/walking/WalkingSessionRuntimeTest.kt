@@ -41,6 +41,23 @@ class WalkingSessionRuntimeTest {
         assertEquals(WalkStatus.COMPLETED, completed.status); assertEquals(1.4, completed.actualEndKm!!, 0.001); assertNull(states.get("walk-1"))
     }
 
+    @Test fun startOutsideRouteDoesNotPersistAsReliableGpsObservation() {
+        val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        runtime.prepare(WalkingPlanFactory.create(route, "walk-7", 0.4, 1.8))
+        val provisional = RoutePosition("sr-route", 0.4, 150.0, "stage-1", PositionConfidence.LOW)
+
+        val started = runtime.start("walk-7", provisional, Instant.parse("2026-09-01T08:00:00Z"))
+
+        assertEquals(provisional, started.routePosition)
+        assertEquals(GpsState.ACQUIRING, started.gpsState)
+        assertNull(service.resumeCheckpoint("walk-7")!!.lastObservedAt)
+
+        val recovered = runtime.accept(RawGpsPosition(40.0045, -8.0, 5.0, Instant.parse("2026-09-01T08:00:10Z")))
+        assertEquals(GpsState.ON_ROUTE, recovered.gpsState)
+        assertEquals(Instant.parse("2026-09-01T08:00:10Z"), service.resumeCheckpoint("walk-7")!!.lastObservedAt)
+    }
+
     @Test fun firstImplausibleFixDoesNotReplaceTheStartBaseline() {
         val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
         val runtime = WalkingSessionRuntime(route, service, emptyList())
