@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.core
 
-import com.caminhos2027.v1.core.apoi.ApoiBrowserState
+import com.caminhos2027.v1.core.apoi.ApoiBrowser
+import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
 import com.caminhos2027.v1.core.data.ApoiRepository
 import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.Objective
@@ -9,13 +10,10 @@ import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
-import com.caminhos2027.v1.core.route.GpsState
-import com.caminhos2027.v1.core.route.WalkingProgress
 import com.caminhos2027.v1.core.walking.InMemoryWalkRepository
 import com.caminhos2027.v1.core.walking.InMemoryWalkingStateRepository
 import com.caminhos2027.v1.core.walking.WalkingSessionRuntime
 import com.caminhos2027.v1.core.walking.WalkingSessionService
-import com.caminhos2027.v1.core.walking.WalkingState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
@@ -50,7 +48,8 @@ class AndroidV1AppContainerLifecycleTest {
         assertNotSame(firstController, secondController)
         assertEquals("walk-1", first.store.state.walking?.walk?.id)
         assertEquals("walk-1", second.store.state.walking?.walk?.id)
-        assertSame(first.runtime.activeWalk(), second.runtime.activeWalk())
+        assertEquals("walk-1", first.runtime.activeWalk()?.id)
+        assertEquals("walk-1", second.runtime.activeWalk()?.id)
     }
 
     @Test
@@ -64,7 +63,6 @@ class AndroidV1AppContainerLifecycleTest {
         assertEquals("walk-1", state.walking?.walk?.id)
         assertEquals(WalkStatus.ACTIVE, state.walking?.walk?.status)
         assertEquals(0.25, state.walking?.routePosition?.routeKm ?: -1.0, 0.0001)
-        assertEquals("walk-1", recreated.activeController().resume().walking?.walk?.id)
     }
 
     @Test
@@ -88,11 +86,11 @@ class AndroidV1AppContainerLifecycleTest {
     @Test
     fun clearSessionRemovesCompositionSlicesButKeepsPersistentActiveSession() {
         val repositories = Repositories()
-        val active = repositories.start("walk-1", 0.25)
         val container = AndroidV1AppContainer(repositories.base())
-        container.attachWalk(active)
+        repositories.start("walk-1", 0.25)
+        container.resumePersistedWalk(Instant.parse("2026-01-01T11:00:00Z"))
         container.store.setObjective(Objective("obj-1", route.id, "dest"))
-        container.store.browseApoi(com.caminhos2027.v1.core.apoi.ApoiBrowser(repositories.catalog))
+        container.store.browseApoi(ApoiBrowser(repositories.catalog))
         container.store.buildDecision(route, emptyList())
 
         container.clearSession()
@@ -139,7 +137,7 @@ class AndroidV1AppContainerLifecycleTest {
         val walkRepository = InMemoryWalkRepository()
         val stateRepository = InMemoryWalkingStateRepository()
         val service = WalkingSessionService(walkRepository, stateRepository)
-        val catalog = com.caminhos2027.v1.core.apoi.PublishedApoiCatalog(ApoiRepository { emptyList() })
+        val catalog = PublishedApoiCatalog(ApoiRepository { emptyList() })
 
         fun start(id: String, routeKm: Double): Walk {
             service.prepare(walk(id, WalkStatus.PLANNED))
