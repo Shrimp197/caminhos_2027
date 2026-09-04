@@ -71,7 +71,7 @@ class WalkingStateCoordinatorTest {
         val first = coordinator.accept(gps(40.00225, "2026-09-01T11:10:00Z"))
         assertNull(first.movementCue)
 
-        val moved = coordinator.accept(gps(40.00350, "2026-09-01T11:11:00Z"))
+        val moved = coordinator.accept(gps(40.00340, "2026-09-01T11:11:00Z"))
         assertEquals(WalkingMovementCue.FORWARD, moved.movementCue)
     }
 
@@ -82,7 +82,7 @@ class WalkingStateCoordinatorTest {
         val coordinator = WalkingStateCoordinator(route, walk, emptyList())
 
         coordinator.accept(gps(40.00550, "2026-09-01T11:20:00Z"))
-        val movedBack = coordinator.accept(gps(40.00425, "2026-09-01T11:21:00Z"))
+        val movedBack = coordinator.accept(gps(40.00440, "2026-09-01T11:21:00Z"))
 
         assertEquals(WalkingMovementCue.BACKWARD, movedBack.movementCue)
     }
@@ -106,7 +106,7 @@ class WalkingStateCoordinatorTest {
         val coordinator = WalkingStateCoordinator(route, walk, listOf(fixtureApoi()))
 
         val first = coordinator.accept(gps(40.00225, "2026-09-01T12:00:00Z"))
-        val jump = coordinator.accept(gps(40.00900, "2026-09-01T12:01:00Z"))
+        val jump = coordinator.accept(gps(40.00900, "2026-09-01T12:00:10Z"))
 
         assertEquals(first.routePosition!!.routeKm, jump.routePosition!!.routeKm, 0.0001)
         assertEquals(first.nextApoi?.id, jump.nextApoi?.id)
