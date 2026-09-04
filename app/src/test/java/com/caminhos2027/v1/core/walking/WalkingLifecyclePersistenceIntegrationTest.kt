@@ -66,7 +66,7 @@ class WalkingLifecyclePersistenceIntegrationTest {
         assertEquals(WalkStatus.COMPLETED, completed.status)
         assertNull(service.resume())
         assertNull(checkpoints.get("walk-e2e"))
-        assertEquals(WalkStatus.COMPLETED, walks.get("walk-e2e")!!.status)
+        assertEquals(WalkStatus.COMPLETED, walks.getById("walk-e2e")!!.status)
         assertEquals(started.walk.id, completed.id)
     }
 
@@ -88,7 +88,7 @@ class WalkingLifecyclePersistenceIntegrationTest {
             // Expected: route validation must happen before service mutation.
         }
 
-        assertEquals(WalkStatus.ACTIVE, walks.get("walk-invalid-stop")!!.status)
+        assertEquals(WalkStatus.ACTIVE, walks.getById("walk-invalid-stop")!!.status)
         assertEquals(checkpointBefore, service.resumeCheckpoint("walk-invalid-stop"))
         assertNotNull(runtime.resume(t("10:03:01")))
     }
@@ -105,7 +105,7 @@ class WalkingLifecyclePersistenceIntegrationTest {
 
         assertEquals(WalkStatus.COMPLETED, completed.status)
         assertNull(WalkingSessionRuntime(route, service, emptyList()).resume(t("12:01:00")))
-        assertEquals(WalkStatus.COMPLETED, walks.get("walk-terminal")!!.status)
+        assertEquals(WalkStatus.COMPLETED, walks.getById("walk-terminal")!!.status)
 
         try {
             runtime.stop(RoutePosition(route.id, 1.4, 2.0), t("12:02:00"))
