@@ -39,16 +39,12 @@ class WalkingCheckpointFreshnessBoundaryTest {
             isOffline = false,
             lastObservedAt = now.minusNanos(29_999_999_999L)
         )
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
 
-        val restored = WalkingStateCoordinator(route, walk, emptyList())
-            .restoreCheckpoint(checkpoint, now)
+        val restored = coordinator.restoreCheckpoint(checkpoint, now)
 
         assertEquals(GpsState.ON_ROUTE, restored.gpsState)
-        assertEquals(checkpoint.lastObservedAt, restored.routePosition?.let { checkpoint.lastObservedAt })
-        assertEquals(checkpoint.lastObservedAt, WalkingStateCoordinator(route, walk, emptyList()).run {
-            restoreCheckpoint(checkpoint, now)
-            lastReliableObservedAt()
-        })
+        assertEquals(checkpoint.lastObservedAt, coordinator.lastReliableObservedAt())
     }
 
     @Test
@@ -59,8 +55,8 @@ class WalkingCheckpointFreshnessBoundaryTest {
             isOffline = false,
             lastObservedAt = now.minusSeconds(30)
         )
-
         val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+
         val restored = coordinator.restoreCheckpoint(checkpoint, now)
 
         assertEquals(GpsState.NO_SIGNAL, restored.gpsState)
