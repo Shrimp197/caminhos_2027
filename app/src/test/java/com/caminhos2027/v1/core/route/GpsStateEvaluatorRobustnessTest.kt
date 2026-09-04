@@ -36,7 +36,28 @@ class GpsStateEvaluatorRobustnessTest {
         val afterFirst = GpsStateEvaluator.update(initial, first, Instant.parse("2026-09-02T00:00:05Z"), policy)
         val afterSecond = GpsStateEvaluator.update(afterFirst, second, Instant.parse("2026-09-02T00:00:10Z"), policy)
 
+        assertEquals(GpsState.ON_ROUTE, afterFirst.state)
+        assertEquals(10.0, afterFirst.lastReliableObservation!!.routePosition.routeKm, 0.001)
         assertEquals(GpsState.POSSIBLE_DEVIATION, afterSecond.state)
+        assertEquals(10.0, afterSecond.lastReliableObservation!!.routePosition.routeKm, 0.001)
+        assertSame(second, afterSecond.lastObservation)
+    }
+
+    @Test
+    fun repeatedProbableObservationsBecomeProbableDeviationWithoutReplacingReliablePosition() {
+        val initial = state(10.0, 20.0)
+        val first = observation(10.01, 90.0, 5)
+        val second = observation(10.02, 90.0, 10)
+        val third = observation(10.03, 90.0, 15)
+
+        val afterFirst = GpsStateEvaluator.update(initial, first, Instant.parse("2026-09-02T00:00:05Z"), policy)
+        val afterSecond = GpsStateEvaluator.update(afterFirst, second, Instant.parse("2026-09-02T00:00:10Z"), policy)
+        val afterThird = GpsStateEvaluator.update(afterSecond, third, Instant.parse("2026-09-02T00:00:15Z"), policy)
+
+        assertEquals(GpsState.ON_ROUTE, afterFirst.state)
+        assertEquals(GpsState.POSSIBLE_DEVIATION, afterSecond.state)
+        assertEquals(GpsState.PROBABLE_DEVIATION, afterThird.state)
+        assertEquals(10.0, afterThird.lastReliableObservation!!.routePosition.routeKm, 0.001)
     }
 
     @Test
