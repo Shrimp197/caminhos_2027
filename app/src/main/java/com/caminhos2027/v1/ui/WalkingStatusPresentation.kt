@@ -2,6 +2,7 @@ package com.caminhos2027.v1.ui
 
 import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.route.GpsState
+import com.caminhos2027.v1.core.route.WalkingMovementCue
 
 /** User-facing labels for walking tracking state. Domain transitions remain in the GPS evaluator. */
 data class WalkingGpsPresentation(
@@ -38,6 +39,13 @@ object WalkingStatusPresentation {
         PositionConfidence.MEDIUM -> "Confiança da posição: média"
         PositionConfidence.LOW -> "Confiança da posição: baixa"
         PositionConfidence.UNKNOWN -> "Confiança da posição: não conhecida"
+    }
+
+    fun movement(cue: WalkingMovementCue): String = when (cue) {
+        WalkingMovementCue.FORWARD -> "Movimento: no sentido do percurso"
+        WalkingMovementCue.BACKWARD -> "Movimento: em sentido inverso ao percurso"
+        WalkingMovementCue.STATIONARY -> "Movimento: sem deslocação relevante"
+        WalkingMovementCue.UNKNOWN -> "Movimento: ainda sem referência suficiente"
     }
 
     fun offlineLabel(isOffline: Boolean): String? =
