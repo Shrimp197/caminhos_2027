@@ -133,14 +133,8 @@ class WalkingSessionAttachmentPolicyTest {
         error
     }
 
-    private fun walk(id: String, routeId: String, status: WalkStatus) = Walk(
-        id = id,
-        routeId = routeId,
-        title = "Test walk",
-        plannedStartKm = 0.0,
-        plannedDestinationKm = 1.0,
-        status = status
-    )
+    private fun walk(id: String, routeId: String, status: WalkStatus): Walk =
+        WalkingPlanFactory.create(route(routeId), id, 0.0, 1.0).copy(status = status)
 
     private fun route(id: String) = Route(
         id = id,
