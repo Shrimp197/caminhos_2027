@@ -71,7 +71,7 @@ class WalkingStateCoordinatorTest {
         val first = coordinator.accept(gps(40.00225, "2026-09-01T11:10:00Z"))
         assertNull(first.movementCue)
 
-        val moved = coordinator.accept(gps(40.00340, "2026-09-01T11:11:00Z"))
+        val moved = coordinator.accept(gps(40.00320, "2026-09-01T11:11:00Z"))
         assertEquals(WalkingMovementCue.FORWARD, moved.movementCue)
     }
 
@@ -82,7 +82,7 @@ class WalkingStateCoordinatorTest {
         val coordinator = WalkingStateCoordinator(route, walk, emptyList())
 
         coordinator.accept(gps(40.00550, "2026-09-01T11:20:00Z"))
-        val movedBack = coordinator.accept(gps(40.00440, "2026-09-01T11:21:00Z"))
+        val movedBack = coordinator.accept(gps(40.00450, "2026-09-01T11:21:00Z"))
 
         assertEquals(WalkingMovementCue.BACKWARD, movedBack.movementCue)
     }
@@ -97,6 +97,19 @@ class WalkingStateCoordinatorTest {
         val nearlySame = coordinator.accept(gps(40.00308, "2026-09-01T11:31:00Z"))
 
         assertEquals(WalkingMovementCue.STATIONARY, nearlySame.movementCue)
+    }
+
+    @Test
+    fun `identical reliable route positions remain stationary`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+
+        val first = coordinator.accept(gps(40.00300, "2026-09-01T11:35:00Z"))
+        val same = coordinator.accept(gps(40.00300, "2026-09-01T11:36:00Z"))
+
+        assertNull(first.movementCue)
+        assertEquals(WalkingMovementCue.STATIONARY, same.movementCue)
     }
 
     @Test
