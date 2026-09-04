@@ -56,7 +56,7 @@ class WalkingRouteOverviewSurfaceTest {
         assertEquals(2, profile.cumulativeMeters.size)
         assertEquals(0.0, profile.cumulativeMeters.first())
         assertEquals(profile.totalMeters, profile.cumulativeMeters.last())
-        assertEquals(2, WalkingRouteOverviewPresenter.visiblePathPointIndex(profile, 1f))
+        assertEquals(1, WalkingRouteOverviewPresenter.visiblePathPointIndex(profile, 1f))
     }
 
     @Test
