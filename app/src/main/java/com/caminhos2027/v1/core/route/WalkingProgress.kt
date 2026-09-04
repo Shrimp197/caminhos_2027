@@ -17,7 +17,21 @@ data class WalkingProgress(
 object WalkingProgressCalculator {
     fun calculate(route: Route, walk: Walk, positionKm: Double): WalkingProgress {
         require(walk.routeId == route.id) { "Walk and route must match" }
-        require(positionKm >= 0.0) { "positionKm must be >= 0" }
+        require(route.totalDistanceKm.isFinite() && route.totalDistanceKm >= 0.0) {
+            "route.totalDistanceKm must be finite and >= 0"
+        }
+        require(positionKm.isFinite() && positionKm >= 0.0) {
+            "positionKm must be finite and >= 0"
+        }
+        require(walk.plannedStartKm == null || walk.plannedStartKm.isFinite() && walk.plannedStartKm >= 0.0) {
+            "plannedStartKm must be finite and >= 0"
+        }
+        require(walk.plannedDestinationKm == null || walk.plannedDestinationKm.isFinite() && walk.plannedDestinationKm >= 0.0) {
+            "plannedDestinationKm must be finite and >= 0"
+        }
+        require(walk.actualStartKm == null || walk.actualStartKm.isFinite() && walk.actualStartKm >= 0.0) {
+            "actualStartKm must be finite and >= 0"
+        }
 
         val current = positionKm.coerceAtMost(route.totalDistanceKm)
         val start = (walk.actualStartKm ?: walk.plannedStartKm ?: 0.0).coerceIn(0.0, route.totalDistanceKm)
