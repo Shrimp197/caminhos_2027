@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.walking.WalkingState
 
-/** Adapter for callers that still provide the aggregate route and walking state. */
+/** Adapters for callers that still provide aggregate route or walking state objects. */
 @Composable
 internal fun WalkingRouteOverviewSurface(
     route: Route,
@@ -17,4 +17,12 @@ internal fun WalkingRouteOverviewSurface(
         totalDistanceKm = route.totalDistanceKm,
         modifier = modifier
     )
+}
+
+@Composable
+internal fun WalkingRouteProgressSurface(
+    state: WalkingState,
+    modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier
+) {
+    WalkingRouteProgressSurface(progress = state.progress)
 }
