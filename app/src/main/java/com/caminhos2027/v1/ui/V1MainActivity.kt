@@ -417,6 +417,7 @@ private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit, onOpenA
             IconButton(onClick = onStop) { Icon(Icons.Default.Close, contentDescription = "Terminar caminhada", tint = Ink) }
         }
         Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            WalkingRouteProgressSurface(state.progress)
             state.routePosition?.let { position ->
                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)) {
                     Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
