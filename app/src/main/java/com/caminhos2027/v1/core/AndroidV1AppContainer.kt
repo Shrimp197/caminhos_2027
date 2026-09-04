@@ -31,14 +31,18 @@ class AndroidV1AppContainer(context: Context) {
     private var controller: WalkingAppStateController? = null
     private var attachedWalkId: String? = null
 
-    /** Reuses the controller during repeated UI attachment, while preventing cross-session controller replacement. */
+    /**
+     * Reuses the controller during repeated UI attachment, while preventing cross-session controller replacement.
+     * The persistent active walk is checked separately from the read model so clearSession() cannot erase this guard.
+     */
     fun attachWalk(walk: Walk): WalkingAppStateController {
         WalkingSessionAttachmentPolicy.requireAttachable(
             publishedRoute = base.route,
             requestedWalk = walk,
             attachedWalkId = attachedWalkId,
             existingController = controller != null,
-            publishedStateWalk = store.state.walking?.walk
+            publishedStateWalk = store.state.walking?.walk,
+            persistentActiveWalk = runtime.activeWalk()
         )
 
         val existing = controller
