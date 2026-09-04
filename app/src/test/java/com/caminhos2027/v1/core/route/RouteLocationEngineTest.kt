@@ -51,6 +51,22 @@ class RouteLocationEngineTest {
     }
 
     @Test
+    fun nonFiniteAccuracyLeavesConfidenceUnknown() {
+        val route = fixture()
+        val position = RouteLocationEngine.locate(route, gps(40.0, -7.995, accuracyMeters = Double.NaN))
+
+        assertEquals(PositionConfidence.UNKNOWN, position.confidence)
+    }
+
+    @Test
+    fun negativeAccuracyLeavesConfidenceUnknown() {
+        val route = fixture()
+        val position = RouteLocationEngine.locate(route, gps(40.0, -7.995, accuracyMeters = -1.0))
+
+        assertEquals(PositionConfidence.UNKNOWN, position.confidence)
+    }
+
+    @Test
     fun positionBeforeSegmentClampsToSegmentStart() {
         val route = fixture()
         val position = RouteLocationEngine.locate(route, gps(40.0, -8.01))
