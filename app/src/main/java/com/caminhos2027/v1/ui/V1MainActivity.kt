@@ -134,7 +134,7 @@ class V1MainActivity : ComponentActivity() {
             startRouteKm = 0.0,
             destinationRouteKm = appContainer.publishedRoute().totalDistanceKm
         )
-        preparedWalk = prepared.state.walking?.walk
+        preparedWalk = prepared.walking?.walk
         walkingState = null
         startRequested = false
     }
