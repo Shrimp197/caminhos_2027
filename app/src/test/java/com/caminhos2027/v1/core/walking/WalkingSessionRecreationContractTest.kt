@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.model.GeoPoint
+import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RoutePosition
@@ -59,6 +60,7 @@ class WalkingSessionRecreationContractTest {
         val current = runtime.resume() ?: error("expected active session")
 
         repositories.walkRepository.save(walk("foreign", "foreign", WalkStatus.ACTIVE))
+        repositories.walkRepository.forceActiveId("foreign")
 
         val error = try {
             runtime.resume()
@@ -73,7 +75,7 @@ class WalkingSessionRecreationContractTest {
     }
 
     private fun rawPosition(routeKm: Double, capturedAt: String) =
-        com.caminhos2027.v1.core.model.RawGpsPosition(
+        RawGpsPosition(
             latitude = 40.0,
             longitude = -8.0,
             accuracyMeters = 5.0,
@@ -92,7 +94,7 @@ class WalkingSessionRecreationContractTest {
     )
 
     private inner class Repositories {
-        val walkRepository = InMemoryWalkRepository()
+        val walkRepository = SelectableActiveWalkRepository()
         val stateRepository = InMemoryWalkingStateRepository()
         val service = WalkingSessionService(walkRepository, stateRepository)
 
@@ -102,5 +104,20 @@ class WalkingSessionRecreationContractTest {
         }
 
         fun runtime() = WalkingSessionRuntime(route, service, emptyList())
+    }
+
+    private class SelectableActiveWalkRepository : WalkRepository {
+        private val delegate = InMemoryWalkRepository()
+        private var forcedActiveId: String? = null
+
+        override fun save(walk: Walk) = delegate.save(walk)
+        override fun getById(id: String): Walk? = delegate.getById(id)
+        override fun getActive(): Walk? = forcedActiveId?.let { delegate.getById(it) }?.takeIf { it.status == WalkStatus.ACTIVE }
+            ?: delegate.getActive()
+        override fun list(): List<Walk> = delegate.list()
+
+        fun forceActiveId(id: String) {
+            forcedActiveId = id
+        }
     }
 }
