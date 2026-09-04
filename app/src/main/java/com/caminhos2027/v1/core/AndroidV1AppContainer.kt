@@ -1,13 +1,8 @@
 package com.caminhos2027.v1.core
 
 import android.content.Context
-import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
-import com.caminhos2027.v1.core.data.ApoiRepository
-import com.caminhos2027.v1.core.data.AssetApoiDataSource
-import com.caminhos2027.v1.core.data.AssetRouteDataSource
+import com.caminhos2027.v1.V1AppContainer
 import com.caminhos2027.v1.core.model.Walk
-import com.caminhos2027.v1.core.walking.AndroidWalkRepository
-import com.caminhos2027.v1.core.walking.AndroidWalkingStateRepository
 import com.caminhos2027.v1.core.walking.WalkingApoiDecisionController
 import com.caminhos2027.v1.core.walking.WalkingAppStateController
 import com.caminhos2027.v1.core.walking.WalkingPreparationAppStateController
