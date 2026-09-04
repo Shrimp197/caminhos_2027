@@ -42,15 +42,17 @@ object WalkingCheckpointJsonCodec {
     }
 
     private fun routePositionFromJson(json: JSONObject): RoutePosition? = runCatching {
+        val routeId = json.getString("routeId").takeIf { it.isNotBlank() }
+            ?: throw IllegalArgumentException("routeId must not be blank")
         val routeKm = json.getDouble("routeKm")
         val distance = json.getDouble("distanceToRouteMeters")
         require(routeKm.isFinite() && routeKm >= 0.0)
         require(distance.isFinite() && distance >= 0.0)
         RoutePosition(
-            routeId = json.getString("routeId"),
+            routeId = routeId,
             routeKm = routeKm,
             distanceToRouteMeters = distance,
-            stageId = json.optStringOrNull("stageId"),
+            stageId = json.optStringOrNull("stageId")?.takeIf { it.isNotBlank() },
             confidence = PositionConfidence.valueOf(json.getString("confidence"))
         )
     }.getOrNull()
