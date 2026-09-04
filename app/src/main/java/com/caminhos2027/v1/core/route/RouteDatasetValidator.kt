@@ -10,7 +10,11 @@ import com.caminhos2027.v1.core.model.Route
 object RouteDatasetValidator {
     fun validate(route: Route): ValidationResult {
         val errors = RouteValidator.validate(route)
-        val geometryDistanceKm = if (route.geometry.points.size >= 2) {
+        val geometryCoordinatesValid = route.geometry.points.all {
+            it.latitude.isFinite() && it.longitude.isFinite() &&
+                it.latitude in -90.0..90.0 && it.longitude in -180.0..180.0
+        }
+        val geometryDistanceKm = if (route.geometry.points.size >= 2 && geometryCoordinatesValid) {
             RouteGeometryMetrics.lengthKm(route.geometry)
         } else {
             0.0
