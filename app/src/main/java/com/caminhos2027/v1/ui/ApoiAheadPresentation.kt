@@ -3,6 +3,7 @@ package com.caminhos2027.v1.ui
 import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.ApoiAvailabilityStatus
 import com.caminhos2027.v1.core.model.ApoiCategory
+import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.model.PublicationStatus
 
 /** Small UI read model for an APOI in the ahead list. No business filtering is done here. */
@@ -12,7 +13,8 @@ data class ApoiAheadPresentation(
     val categoryLabel: String,
     val distanceLabel: String,
     val warningLabel: String?,
-    val availabilityLabel: String
+    val availabilityLabel: String,
+    val confidenceLabel: String
 )
 
 object ApoiAheadPresentationMapper {
@@ -23,7 +25,8 @@ object ApoiAheadPresentationMapper {
             categoryLabel = categoryLabel(apoi.mainCategory),
             distanceLabel = formatDistance(distanceKm),
             warningLabel = warningLabel(apoi.publication.status),
-            availabilityLabel = availabilityLabel(apoi.availability.status)
+            availabilityLabel = availabilityLabel(apoi.availability.status),
+            confidenceLabel = confidenceLabel(apoi.confidence.overall)
         )
 
     fun availabilityLabel(status: ApoiAvailabilityStatus): String = when (status) {
@@ -34,6 +37,13 @@ object ApoiAheadPresentationMapper {
         ApoiAvailabilityStatus.EXPIRED -> "Informação expirada"
         ApoiAvailabilityStatus.AWAITING_CONFIRMATION -> "Disponibilidade por confirmar"
         ApoiAvailabilityStatus.CLOSED -> "APOI encerrado"
+    }
+
+    private fun confidenceLabel(confidence: PositionConfidence): String = when (confidence) {
+        PositionConfidence.HIGH -> "Confiança alta"
+        PositionConfidence.MEDIUM -> "Confiança média"
+        PositionConfidence.LOW -> "Confiança baixa"
+        PositionConfidence.UNKNOWN -> "Confiança não conhecida"
     }
 
     private fun categoryLabel(category: ApoiCategory): String = when (category) {
