@@ -1,7 +1,9 @@
 package com.caminhos2027.v1.core.route
 
+import com.caminhos2027.v1.core.model.RoutePosition
 import kotlin.math.abs
 import kotlin.math.max
+import java.time.Duration
 import java.time.Instant
 
 /**
@@ -23,6 +25,10 @@ object GpsStateEvaluator {
             } else {
                 previous.copy(state = GpsState.ACQUIRING)
             }
+        }
+
+        if (!isValidObservation(observation)) {
+            return previous
         }
 
         if (observation.capturedAt.isAfter(now.plusSeconds(policy.maxFutureSkewSeconds))) {
@@ -74,15 +80,25 @@ object GpsStateEvaluator {
         }
     }
 
+    private fun isValidObservation(observation: GpsObservation): Boolean {
+        val position: RoutePosition = observation.routePosition
+        return position.routeKm.isFinite() &&
+            position.routeKm >= 0.0 &&
+            position.distanceToRouteMeters.isFinite() &&
+            position.distanceToRouteMeters >= 0.0 &&
+            (observation.accuracyMeters == null ||
+                (observation.accuracyMeters.isFinite() && observation.accuracyMeters >= 0.0))
+    }
+
     private fun isPlausibleJump(
         previous: GpsObservation,
         current: GpsObservation,
         policy: GpsTrackingPolicy
     ): Boolean {
-        val seconds = current.capturedAt.epochSecond - previous.capturedAt.epochSecond
-        if (seconds <= 0) return false
+        val elapsedMillis = Duration.between(previous.capturedAt, current.capturedAt).toMillis()
+        if (elapsedMillis <= 0) return false
         val distanceKm = abs(current.routePosition.routeKm - previous.routePosition.routeKm)
-        val speedKmh = distanceKm / (seconds / 3600.0)
+        val speedKmh = distanceKm / (elapsedMillis / 3_600_000.0)
         return speedKmh <= policy.maxPlausibleSpeedKmh
     }
 }
