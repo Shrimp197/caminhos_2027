@@ -61,20 +61,21 @@ class WalkingStateCoordinator(
         return state
     }
 
-    /** Restores persisted device state and uses its last real observation time as the GPS continuity baseline. */
+    /** Restores persisted device state, rejecting malformed route positions instead of promoting them to active state. */
     fun restoreCheckpoint(checkpoint: WalkingCheckpoint, now: Instant = Instant.now()): WalkingState {
-        checkpoint.routePosition?.let {
+        val validPosition = checkpoint.routePosition?.takeIf(::isValidRoutePosition)
+        if (validPosition != null && checkpoint.lastObservedAt != null) {
             locationPipeline.seedRoutePosition(
-                it,
-                checkpoint.lastObservedAt ?: now,
-                reliable = checkpoint.lastObservedAt != null
+                validPosition,
+                checkpoint.lastObservedAt,
+                reliable = true
             )
         }
         state = WalkingStateBuilder.build(
             route = route,
             walk = walk,
-            gpsState = checkpoint.gpsState,
-            routePosition = checkpoint.routePosition,
+            gpsState = if (validPosition != null) checkpoint.gpsState else GpsState.NO_SIGNAL,
+            routePosition = validPosition,
             publishedApoi = publishedApoi,
             offline = checkpoint.isOffline
         )
@@ -120,4 +121,11 @@ class WalkingStateCoordinator(
         )
         return state
     }
+
+    private fun isValidRoutePosition(position: RoutePosition): Boolean =
+        position.routeId == route.id &&
+            position.routeKm.isFinite() &&
+            position.routeKm in 0.0..route.totalDistanceKm &&
+            position.distanceToRouteMeters.isFinite() &&
+            position.distanceToRouteMeters >= 0.0
 }
