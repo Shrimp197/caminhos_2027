@@ -60,7 +60,7 @@ class WalkingLifecyclePersistenceIntegrationTest {
         assertEquals("water-1", recovered.nextApoi?.id)
 
         val completed = recreated.stop(
-            RoutePosition(route.id, recovered.routePosition.routeKm, 3.0),
+            RoutePosition(route.id, recovered.routePosition.routeKm, 2.0),
             t("09:00:00")
         )
         assertEquals(WalkStatus.COMPLETED, completed.status)
@@ -101,14 +101,14 @@ class WalkingLifecyclePersistenceIntegrationTest {
         val runtime = WalkingSessionRuntime(route, service, emptyList())
         runtime.prepare(WalkingPlanFactory.create(route, "walk-terminal", 0.4, 1.8))
         runtime.start("walk-terminal", start, t("11:00:00"))
-        val completed = runtime.stop(RoutePosition(route.id, 1.4, 3.0), t("12:00:00"))
+        val completed = runtime.stop(RoutePosition(route.id, 1.4, 2.0), t("12:00:00"))
 
         assertEquals(WalkStatus.COMPLETED, completed.status)
         assertNull(WalkingSessionRuntime(route, service, emptyList()).resume(t("12:01:00")))
         assertEquals(WalkStatus.COMPLETED, walks.get("walk-terminal")!!.status)
 
         try {
-            runtime.stop(RoutePosition(route.id, 1.4, 3.0), t("12:02:00"))
+            runtime.stop(RoutePosition(route.id, 1.4, 2.0), t("12:02:00"))
             throw AssertionError("completed session must reject a second stop")
         } catch (_: IllegalArgumentException) {
             // Expected terminal lifecycle rejection.
