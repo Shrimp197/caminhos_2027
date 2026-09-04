@@ -79,6 +79,16 @@ class V1MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         appContainer = AndroidV1AppContainer(this)
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                when (surface) {
+                    WalkingSurface.ACTIVE -> finish()
+                    WalkingSurface.APOI_BROWSER -> returnToWalking()
+                    WalkingSurface.APOI_DETAIL -> returnToApoiBrowser()
+                    WalkingSurface.DECISION -> returnToWalking()
+                }
+            }
+        })
         setContent {
             CaminhosTheme {
                 WalkingScreenV1(
