@@ -24,8 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -359,7 +359,7 @@ private fun EmptyFlowState(title: String, message: String, onBack: () -> Unit) {
 private fun NoActiveWalkScreen(onPrepare: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(22.dp))
+            Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(8.dp))
             Text("Caminhos de Fátima", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
@@ -425,7 +425,7 @@ private fun ActiveWalkingScreen(
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
-                    Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(20.dp))
+                    Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(7.dp))
                     Column {
                         Text("Caminhada atual", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
@@ -458,6 +458,9 @@ private fun ActiveWalkingScreen(
                             Text(gpsPresentation.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             Text(gpsPresentation.detail, style = MaterialTheme.typography.bodySmall, color = Muted)
                             Text(WalkingStatusPresentation.confidence(position.confidence), style = MaterialTheme.typography.bodySmall, color = Muted)
+                            state.movementCue?.let { cue ->
+                                Text(WalkingStatusPresentation.movement(cue), style = MaterialTheme.typography.bodySmall, color = Muted)
+                            }
                             WalkingStatusPresentation.offlineLabel(state.isOffline)?.let { label ->
                                 Text(label, style = MaterialTheme.typography.bodySmall, color = Muted)
                             }
