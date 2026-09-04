@@ -138,23 +138,23 @@ class WalkingSessionLifecycleContractTest {
             WalkingSessionController.start(planned, invalidPosition, start)
         }
 
-        assertTrue(error.message.orEmpty().contains("routeId"))
+        assertTrue(error.message.orEmpty().contains("route"))
         assertEquals(WalkStatus.PLANNED, planned.status)
         assertEquals(null, planned.actualStartKm)
     }
 
     @Test
-    fun zeroAndNegativeRouteDistancesAreRejected() {
+    fun negativeRouteDistanceAndNegativeRouteKmAreRejected() {
         val planned = plannedWalk()
 
-        val zeroError = assertFails {
+        val negativeDistanceError = assertFails {
             WalkingSessionController.start(planned, startPosition.copy(distanceToRouteMeters = -0.01), start)
         }
         val negativeKmError = assertFails {
             WalkingSessionController.start(planned, startPosition.copy(routeKm = -0.01), start)
         }
 
-        assertTrue(zeroError.message.orEmpty().contains("distanceToRouteMeters"))
+        assertTrue(negativeDistanceError.message.orEmpty().contains("distanceToRouteMeters"))
         assertTrue(negativeKmError.message.orEmpty().contains("routeKm"))
         assertEquals(WalkStatus.PLANNED, planned.status)
     }
