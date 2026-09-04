@@ -162,9 +162,10 @@ class AppStateStoreTest {
         store.setWalking(walkingState(4.0))
         store.browseApoi(browser)
         val beforeBrowser = store.state.apoiBrowser
-        store.setObjective(Objective.REACH_DESTINATION)
+        val objective = Objective("objective", "route", "Fátima", targetRouteKm = 10.0)
+        store.setObjective(objective)
         store.setDataVersion("2027-test")
-        assertEquals(Objective.REACH_DESTINATION, store.state.objective)
+        assertEquals(objective, store.state.objective)
         assertEquals("2027-test", store.state.dataVersion)
         assertEquals(beforeBrowser, store.state.apoiBrowser)
         assertEquals(4.0, store.state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
@@ -173,12 +174,13 @@ class AppStateStoreTest {
     @Test fun clearingDecisionIsIdempotentAndPreservesObjectiveAndVersion() {
         val store = AppStateStore()
         store.setWalking(walkingState(4.0))
-        store.setObjective(Objective.REACH_DESTINATION)
+        val objective = Objective("objective", "route", "Fátima", targetRouteKm = 10.0)
+        store.setObjective(objective)
         store.setDataVersion("2027-test")
         store.clearDecision()
         store.clearDecision()
         assertNull(store.state.decision)
-        assertEquals(Objective.REACH_DESTINATION, store.state.objective)
+        assertEquals(objective, store.state.objective)
         assertEquals("2027-test", store.state.dataVersion)
         assertEquals(4.0, store.state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
     }
