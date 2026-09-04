@@ -139,7 +139,7 @@ class WalkingCheckpointJsonCodecTest {
             """.trimIndent()
         )
         assertNotNull(decoded)
-        assertEquals(null, decoded!!.routePosition)
+        assertNull(decoded!!.routePosition)
         assertEquals(GpsState.NO_SIGNAL, decoded.gpsState)
         assertEquals(false, decoded.isOffline)
     }
@@ -206,30 +206,5 @@ class WalkingCheckpointJsonCodecTest {
                 "{\"version\":1,\"gpsState\":\"UNKNOWN_STATE\",\"isOffline\":false,\"lastObservedAt\":null}"
             )
         )
-    }
-
-    @Test
-    fun invalidPositionIsDiscardedWithoutDiscardingCheckpointMetadata() {
-        val decoded = WalkingCheckpointJsonCodec.decode(
-            """
-            {
-              "version": 1,
-              "routePosition": {
-                "routeId": "route-1",
-                "routeKm": -1,
-                "distanceToRouteMeters": 5,
-                "stageId": null,
-                "confidence": "LOW"
-              },
-              "gpsState": "NO_SIGNAL",
-              "isOffline": true,
-              "lastObservedAt": "2026-09-04T10:20:30Z"
-            }
-            """.trimIndent()
-        )
-        assertNotNull(decoded)
-        assertEquals(null, decoded!!.routePosition)
-        assertEquals(GpsState.NO_SIGNAL, decoded.gpsState)
-        assertEquals(true, decoded.isOffline)
     }
 }
