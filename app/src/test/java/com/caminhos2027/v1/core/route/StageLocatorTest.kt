@@ -26,6 +26,16 @@ class StageLocatorTest {
         assertEquals("stage-2", stage?.id)
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteRoutePositionIsRejected() {
+        StageLocator.currentStage(route(), Double.POSITIVE_INFINITY)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteRouteDistanceIsRejected() {
+        StageLocator.currentStage(route().copy(totalDistanceKm = Double.NaN), 5.0)
+    }
+
     private fun route() = Route(
         id = "test-route",
         name = "TEST/FICTITIOUS route",
