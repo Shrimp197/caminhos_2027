@@ -11,6 +11,7 @@ import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.walking.AndroidWalkRepository
 import com.caminhos2027.v1.core.walking.AndroidWalkingStateRepository
 import com.caminhos2027.v1.core.walking.WalkingAppStateController
+import com.caminhos2027.v1.core.walking.WalkingPreparationService
 import com.caminhos2027.v1.core.walking.WalkingSessionRuntime
 import com.caminhos2027.v1.core.walking.WalkingSessionService
 
@@ -24,7 +25,8 @@ class V1AppContainer(
     val route: Route,
     val catalog: PublishedApoiCatalog,
     val appStateStore: AppStateStore,
-    val sessionRuntime: WalkingSessionRuntime
+    val sessionRuntime: WalkingSessionRuntime,
+    val preparationService: WalkingPreparationService? = null
 ) {
     fun controller(walk: Walk): WalkingAppStateController =
         WalkingAppStateController(
@@ -49,7 +51,14 @@ class V1AppContainer(
             val checkpointRepository = AndroidWalkingStateRepository(context)
             val sessionService = WalkingSessionService(walkRepository, checkpointRepository)
             val sessionRuntime = WalkingSessionRuntime(route, sessionService, catalog.all())
-            return V1AppContainer(route, catalog, AppStateStore(), sessionRuntime)
+            val preparationService = WalkingPreparationService(route, walkRepository, catalog)
+            return V1AppContainer(
+                route = route,
+                catalog = catalog,
+                appStateStore = AppStateStore(),
+                sessionRuntime = sessionRuntime,
+                preparationService = preparationService
+            )
         }
     }
 }
