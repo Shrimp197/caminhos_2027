@@ -49,8 +49,13 @@ class WalkingStatusPresentationTest {
     }
 
     @Test
-    fun offlineIndicatorOnlyAppearsWhenStateExplicitlyMarksOfflineData() {
+    fun offlinePresentationIsOnlyVisibleWhenStateExplicitlyMarksOfflineData() {
         assertNull(WalkingStatusPresentation.offlineLabel(false))
-        assertEquals("Dados locais disponíveis", WalkingStatusPresentation.offlineLabel(true))
+        assertNull(WalkingStatusPresentation.offlineDetail(false))
+        assertEquals("Dados do percurso disponíveis offline", WalkingStatusPresentation.offlineLabel(true))
+        assertEquals(
+            "O percurso e o progresso guardados localmente podem continuar sem rede; o mapa cartográfico offline não está disponível.",
+            WalkingStatusPresentation.offlineDetail(true)
+        )
     }
 }
