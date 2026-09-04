@@ -144,10 +144,10 @@ class V1MainActivity : ComponentActivity() {
     }
 
     private fun restoreWalkingSession() {
-        val resumed = appContainer.runtime.resume() ?: return
-        appContainer.attachWalk(resumed.walk)
-        appContainer.store.setWalking(resumed)
-        walkingState = resumed
+        val restored = appContainer.resumePersistedWalk() 
+        val state = restored.walking
+        if (state == null) return
+        walkingState = state
         preparedWalk = null
         startRequested = false
         surface = WalkingSurface.ACTIVE
