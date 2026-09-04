@@ -61,28 +61,25 @@ fun WalkingExperienceScreenV1(
                 )
             } else {
                 walking.nextApoi?.let { next ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("Próximo APOI", style = MaterialTheme.typography.labelMedium)
-                            Text(next.name, fontWeight = FontWeight.Bold)
-                            walking.nextApoiDistanceKm?.let { Text("%.1f km pelo caminho".format(it)) }
-                            Button(onClick = { onOpenApoi(next) }) { Text("Ver detalhe") }
-                        }
-                    }
+                    ApoiAheadCard(
+                        title = "Próximo APOI",
+                        apoi = next,
+                        distanceKm = walking.nextApoiDistanceKm,
+                        onOpen = { onOpenApoi(next) }
+                    )
                 }
 
                 browser?.results?.let { results ->
                     Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("APOI à frente", fontWeight = FontWeight.Bold)
                             results.forEach { item ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(item.apoi.name, modifier = Modifier.weight(1f))
-                                    Button(onClick = { onOpenApoi(item.apoi) }) { Text("Abrir") }
-                                }
+                                ApoiAheadCard(
+                                    title = null,
+                                    apoi = item.apoi,
+                                    distanceKm = item.distanceKm,
+                                    onOpen = { onOpenApoi(item.apoi) }
+                                )
                             }
                         }
                     }
@@ -102,6 +99,30 @@ fun WalkingExperienceScreenV1(
             Button(onClick = onBackToWalking, modifier = Modifier.fillMaxWidth()) {
                 Text("Voltar à caminhada")
             }
+        }
+    }
+}
+
+@Composable
+private fun ApoiAheadCard(
+    title: String?,
+    apoi: Apoi,
+    distanceKm: Double?,
+    onOpen: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            title?.let { Text(it, style = MaterialTheme.typography.labelMedium) }
+            Text(apoi.name, fontWeight = FontWeight.Bold)
+            val presentation = distanceKm?.let { ApoiAheadPresentationMapper.map(apoi, it) }
+            presentation?.let {
+                Text("${it.categoryLabel} · ${it.distanceLabel}", style = MaterialTheme.typography.bodyMedium)
+                Text(it.availabilityLabel, style = MaterialTheme.typography.bodySmall)
+                it.warningLabel?.let { warning ->
+                    Text(warning, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Button(onClick = onOpen) { Text("Ver detalhe") }
         }
     }
 }
