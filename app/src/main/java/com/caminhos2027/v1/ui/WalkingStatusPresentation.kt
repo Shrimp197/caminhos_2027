@@ -8,7 +8,11 @@ import com.caminhos2027.v1.core.route.WalkingMovementCue
 data class WalkingGpsPresentation(
     val label: String,
     val detail: String
-)
+) {
+    /** Compatibility alias for surfaces that render the presentation as a title. */
+    val title: String
+        get() = label
+}
 
 object WalkingStatusPresentation {
     fun gps(state: GpsState): WalkingGpsPresentation = when (state) {
