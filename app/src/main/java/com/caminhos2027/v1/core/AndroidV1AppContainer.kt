@@ -11,7 +11,7 @@ import com.caminhos2027.v1.core.walking.WalkingSessionRuntime
 import java.time.Instant
 
 /** Android composition boundary for V1 walking preparation, consultation and the persistent session read model. */
-class AndroidV1AppContainer internal constructor(
+class AndroidV1AppContainer(
     private val base: V1AppContainer
 ) {
     constructor(context: Context) : this(V1AppContainer.forAndroid(context.applicationContext))
