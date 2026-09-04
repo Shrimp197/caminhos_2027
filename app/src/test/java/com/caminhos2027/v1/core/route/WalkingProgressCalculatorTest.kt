@@ -6,7 +6,6 @@ import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.Walk
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFailsWith
 import org.junit.Test
 
 class WalkingProgressCalculatorTest {
@@ -74,41 +73,44 @@ class WalkingProgressCalculatorTest {
         assertEquals(1.0, progress.progressRatio, 0.000001)
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException::class)
     fun routeMismatchIsRejected() {
-        assertFailsWith<IllegalArgumentException> {
-            WalkingProgressCalculator.calculate(route(), walk(routeId = "other-route"), 2.0)
-        }
+        WalkingProgressCalculator.calculate(route(), walk(routeId = "other-route"), 2.0)
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException::class)
     fun negativePositionIsRejected() {
-        assertFailsWith<IllegalArgumentException> {
-            WalkingProgressCalculator.calculate(route(), walk(), -0.001)
-        }
+        WalkingProgressCalculator.calculate(route(), walk(), -0.001)
     }
 
-    @Test
-    fun nonFinitePositionIsRejected() {
-        assertFailsWith<IllegalArgumentException> {
-            WalkingProgressCalculator.calculate(route(), walk(), Double.NaN)
-        }
-        assertFailsWith<IllegalArgumentException> {
-            WalkingProgressCalculator.calculate(route(), walk(), Double.POSITIVE_INFINITY)
-        }
+    @Test(expected = IllegalArgumentException::class)
+    fun nanPositionIsRejected() {
+        WalkingProgressCalculator.calculate(route(), walk(), Double.NaN)
     }
 
-    @Test
-    fun nonFiniteWalkPlanningValuesAreRejected() {
-        assertFailsWith<IllegalArgumentException> {
-            WalkingProgressCalculator.calculate(route(), walk(plannedStartKm = Double.NaN), 2.0)
-        }
-        assertFailsWith<IllegalArgumentException> {
-            WalkingProgressCalculator.calculate(route(), walk(plannedDestinationKm = Double.POSITIVE_INFINITY), 2.0)
-        }
-        assertFailsWith<IllegalArgumentException> {
-            WalkingProgressCalculator.calculate(route(), walk(actualStartKm = Double.NEGATIVE_INFINITY), 2.0)
-        }
+    @Test(expected = IllegalArgumentException::class)
+    fun infinitePositionIsRejected() {
+        WalkingProgressCalculator.calculate(route(), walk(), Double.POSITIVE_INFINITY)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFinitePlannedStartIsRejected() {
+        WalkingProgressCalculator.calculate(route(), walk(plannedStartKm = Double.NaN), 2.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFinitePlannedDestinationIsRejected() {
+        WalkingProgressCalculator.calculate(route(), walk(plannedDestinationKm = Double.POSITIVE_INFINITY), 2.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteActualStartIsRejected() {
+        WalkingProgressCalculator.calculate(route(), walk(actualStartKm = Double.NEGATIVE_INFINITY), 2.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteRouteDistanceIsRejected() {
+        WalkingProgressCalculator.calculate(route().copy(totalDistanceKm = Double.NaN), walk(), 2.0)
     }
 
     private fun walk(
