@@ -241,6 +241,35 @@ class WalkingPreparationAppStateControllerTest {
         assertNull(store.state.walking?.routePosition)
     }
 
+    @Test
+    fun startSavedPreservesExistingNonWalkingSlices() {
+        val route = route()
+        val repository = InMemoryWalkRepository()
+        val store = AppStateStore()
+        val catalog = catalog(apoi("water", 5.0))
+        val controller = WalkingPreparationAppStateController(
+            route,
+            WalkingPreparationService(route, repository, catalog),
+            store
+        )
+        val browser = com.caminhos2027.v1.core.apoi.ApoiBrowser(catalog)
+        store.setObjective(com.caminhos2027.v1.core.model.Objective.REACH_DESTINATION)
+        store.setDataVersion("2027-test")
+        controller.save("walk", 2.0, 8.0)
+        store.browseApoi(browser)
+        val beforeBrowser = store.state.apoiBrowser
+
+        controller.startSaved(
+            catalog,
+            RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH),
+            Instant.parse("2026-09-04T10:00:00Z")
+        )
+
+        assertEquals(beforeBrowser, store.state.apoiBrowser)
+        assertEquals(com.caminhos2027.v1.core.model.Objective.REACH_DESTINATION, store.state.objective)
+        assertEquals("2027-test", store.state.dataVersion)
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun startSavedRequiresPreparedState() {
         val route = route()
