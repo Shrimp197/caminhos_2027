@@ -29,7 +29,8 @@ class WalkingSessionAttachmentPolicyTest {
             requestedWalk = walk("walk-1", route.id, WalkStatus.ACTIVE),
             attachedWalkId = "walk-1",
             existingController = true,
-            publishedStateWalk = walk("walk-1", route.id, WalkStatus.ACTIVE)
+            publishedStateWalk = walk("walk-1", route.id, WalkStatus.ACTIVE),
+            persistentActiveWalk = walk("walk-1", route.id, WalkStatus.ACTIVE)
         )
     }
 
@@ -44,13 +45,33 @@ class WalkingSessionAttachmentPolicyTest {
     }
 
     @Test
-    fun differentWalkCanAttachWhenStoreHasAlreadyBeenCleared() {
+    fun differentWalkCanAttachWhenStoreHasAlreadyBeenClearedAndNoPersistentWalkIsActive() {
         requireAttachable(
             requestedWalk = walk("walk-2", route.id, WalkStatus.PLANNED),
             attachedWalkId = "walk-1",
             existingController = true,
-            publishedStateWalk = null
+            publishedStateWalk = null,
+            persistentActiveWalk = null
         )
+    }
+
+    @Test
+    fun persistentActiveWalkStillBlocksReplacementAfterReadModelWasCleared() {
+        val activeBefore = walk("walk-1", route.id, WalkStatus.ACTIVE)
+        val error = assertFails {
+            WalkingSessionAttachmentPolicy.requireAttachable(
+                publishedRoute = route,
+                requestedWalk = walk("walk-2", route.id, WalkStatus.PLANNED),
+                attachedWalkId = "walk-1",
+                existingController = true,
+                publishedStateWalk = null,
+                persistentActiveWalk = activeBefore
+            )
+        }
+
+        assertTrue(error.message.orEmpty().contains("active V1 walking session"))
+        assertTrue(activeBefore.status == WalkStatus.ACTIVE)
+        assertTrue(activeBefore.id == "walk-1")
     }
 
     @Test
@@ -107,7 +128,8 @@ class WalkingSessionAttachmentPolicyTest {
             requestedWalk = walk("walk-2", route.id, WalkStatus.PLANNED),
             attachedWalkId = "stale-id",
             existingController = false,
-            publishedStateWalk = walk("walk-1", route.id, WalkStatus.ACTIVE)
+            publishedStateWalk = walk("walk-1", route.id, WalkStatus.ACTIVE),
+            persistentActiveWalk = walk("walk-1", route.id, WalkStatus.ACTIVE)
         )
     }
 
@@ -115,14 +137,16 @@ class WalkingSessionAttachmentPolicyTest {
         requestedWalk: Walk,
         attachedWalkId: String?,
         existingController: Boolean,
-        publishedStateWalk: Walk?
+        publishedStateWalk: Walk?,
+        persistentActiveWalk: Walk? = null
     ) {
         WalkingSessionAttachmentPolicy.requireAttachable(
             publishedRoute = route,
             requestedWalk = requestedWalk,
             attachedWalkId = attachedWalkId,
             existingController = existingController,
-            publishedStateWalk = publishedStateWalk
+            publishedStateWalk = publishedStateWalk,
+            persistentActiveWalk = persistentActiveWalk
         )
     }
 
