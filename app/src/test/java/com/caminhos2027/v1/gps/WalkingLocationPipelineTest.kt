@@ -28,7 +28,8 @@ class WalkingLocationPipelineTest {
 
     @Test
     fun acceptsRawPositionAndProjectsItToRoute() {
-        val pipeline = WalkingLocationPipeline(route)
+        val now = Instant.parse("2026-09-01T10:00:05Z")
+        val pipeline = WalkingLocationPipeline(route, clock = { now })
         val state = pipeline.accept(RawGpsPosition(41.005, -8.0, 5.0, Instant.parse("2026-09-01T10:00:00Z")))
 
         assertEquals(GpsState.ON_ROUTE, state.state)
@@ -37,9 +38,34 @@ class WalkingLocationPipelineTest {
     }
 
     @Test
+    fun materiallyFutureObservationIsIgnoredByAndroidPipeline() {
+        val now = Instant.parse("2026-09-01T10:00:00Z")
+        val pipeline = WalkingLocationPipeline(route, clock = { now })
+        val future = now.plusSeconds(16)
+
+        val state = pipeline.accept(RawGpsPosition(41.005, -8.0, 5.0, future))
+
+        assertEquals(GpsState.NO_SIGNAL, state.state)
+        assertEquals(null, state.lastObservation)
+        assertEquals(null, state.lastReliableObservation)
+    }
+
+    @Test
+    fun smallClockSkewIsAcceptedWithinPolicy() {
+        val now = Instant.parse("2026-09-01T10:00:00Z")
+        val pipeline = WalkingLocationPipeline(route, clock = { now })
+        val slightlyFuture = now.plusSeconds(10)
+
+        val state = pipeline.accept(RawGpsPosition(41.005, -8.0, 5.0, slightlyFuture))
+
+        assertEquals(GpsState.ON_ROUTE, state.state)
+        assertEquals(slightlyFuture, state.lastReliableObservation?.capturedAt)
+    }
+
+    @Test
     fun prolongedMissingUpdatesBecomeNoSignal() {
         val first = Instant.parse("2026-09-01T10:00:00Z")
-        val pipeline = WalkingLocationPipeline(route)
+        val pipeline = WalkingLocationPipeline(route, clock = { first })
         pipeline.accept(RawGpsPosition(41.005, -8.0, 5.0, first))
 
         val state = pipeline.markNoSignal(first.plusSeconds(31))
