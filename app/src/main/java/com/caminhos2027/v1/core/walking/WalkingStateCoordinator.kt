@@ -1,7 +1,6 @@
 package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.model.Apoi
-import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
@@ -29,6 +28,10 @@ class WalkingStateCoordinator(
         publishedApoi = this.publishedApoi
     )
         private set
+
+    /** Timestamp of the last observation accepted as reliable by the GPS pipeline. */
+    fun lastReliableObservedAt(): Instant? =
+        locationPipeline.trackingState.lastReliableObservation?.capturedAt
 
     /** Starts the planned walk and establishes the supplied real route position as the tracking baseline. */
     fun start(startPosition: RoutePosition, now: Instant = Instant.now()): WalkingState {
@@ -79,7 +82,7 @@ class WalkingStateCoordinator(
         return state
     }
 
-    fun accept(position: RawGpsPosition): WalkingState {
+    fun accept(position: com.caminhos2027.v1.core.model.RawGpsPosition): WalkingState {
         val tracking = locationPipeline.accept(position)
         return rebuild(
             gpsState = tracking.state,
