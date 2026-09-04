@@ -7,6 +7,7 @@ import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Stage
+import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -69,6 +70,64 @@ class WalkingSessionRuntimeRouteBoundaryTest {
             assertTrue(error.message.orEmpty().contains("not been started"))
         }
         assertEquals(activeBefore, walks.getById(foreignWalk.id))
+    }
+
+    @Test
+    fun rejectedResumeDoesNotDetachAnAlreadyRunningPublishedCoordinator() {
+        val walks = SelectableActiveWalkRepository()
+        val states = InMemoryWalkingStateRepository()
+        val service = WalkingSessionService(walks, states)
+        val publishedWalk = WalkingPlanFactory.create(publishedRoute, "published-active", 0.2, 1.8)
+        val foreignWalk = WalkingPlanFactory.create(foreignRoute, "foreign-active", 0.2, 1.8)
+
+        service.prepare(publishedWalk)
+        val runtime = WalkingSessionRuntime(publishedRoute, service, emptyList())
+        runtime.start(
+            publishedWalk.id,
+            RoutePosition(publishedRoute.id, 0.2, 2.0, "published-route-stage-1", PositionConfidence.HIGH),
+            Instant.parse("2026-09-04T09:00:00Z")
+        )
+
+        service.prepare(foreignWalk)
+        service.start(
+            foreignWalk.id,
+            RoutePosition(foreignRoute.id, 0.2, 2.0, "foreign-route-stage-1", PositionConfidence.HIGH),
+            Instant.parse("2026-09-04T09:01:00Z")
+        )
+        walks.activeId = foreignWalk.id
+
+        try {
+            runtime.resume(Instant.parse("2026-09-04T09:02:00Z"))
+            throw AssertionError("Expected cross-route resume to be rejected")
+        } catch (error: IllegalArgumentException) {
+            assertTrue(error.message.orEmpty().contains("route"))
+        }
+
+        val continued = runtime.accept(
+            RawGpsPosition(
+                latitude = 40.0045,
+                longitude = -8.0,
+                accuracyMeters = 5.0,
+                observedAt = Instant.parse("2026-09-04T09:02:10Z")
+            )
+        )
+        assertEquals(publishedWalk.id, continued.walk.id)
+        assertEquals(publishedRoute.id, continued.routePosition?.routeId)
+        assertEquals(WalkStatus.ACTIVE, continued.walk.status)
+    }
+
+    private class SelectableActiveWalkRepository : WalkRepository {
+        private val walks = linkedMapOf<String, Walk>()
+        var activeId: String? = null
+
+        override fun save(walk: Walk) {
+            walks[walk.id] = walk
+            if (walk.status == WalkStatus.ACTIVE && activeId == null) activeId = walk.id
+        }
+
+        override fun getById(id: String): Walk? = walks[id]
+        override fun getActive(): Walk? = activeId?.let(walks::get)
+        override fun list(): List<Walk> = walks.values.toList()
     }
 
     private fun route(id: String) = Route(
