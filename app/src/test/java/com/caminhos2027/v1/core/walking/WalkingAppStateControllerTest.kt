@@ -87,6 +87,31 @@ class WalkingAppStateControllerTest {
     }
 
     @Test
+    fun persistentRuntimeKeepsLastReliableObservedAtAfterRejectedJump() {
+        val route = route()
+        val walks = InMemoryWalkRepository()
+        val checkpoints = InMemoryWalkingStateRepository()
+        val service = WalkingSessionService(walks, checkpoints)
+        val plan = WalkingPlanFactory.create(route, "walk-persist-time", 0.0, 1.0)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        val controller = WalkingAppStateController(
+            route = route,
+            walk = plan,
+            catalog = catalog(),
+            store = AppStateStore(),
+            sessionRuntime = runtime
+        )
+        controller.start(RoutePosition("route", 0.0, 0.0), Instant.parse("2026-09-02T13:00:00Z"))
+        controller.acceptGps(gps(40.00225, "2026-09-02T13:02:00Z"))
+        controller.acceptGps(gps(40.009, "2026-09-02T13:02:01Z"))
+
+        assertEquals(
+            Instant.parse("2026-09-02T13:02:00Z"),
+            checkpoints.get("walk-persist-time")?.lastObservedAt
+        )
+    }
+
+    @Test
     fun persistentControllerResumePublishesCheckpointedWalkingState() {
         val route = route()
         val walks = InMemoryWalkRepository()
