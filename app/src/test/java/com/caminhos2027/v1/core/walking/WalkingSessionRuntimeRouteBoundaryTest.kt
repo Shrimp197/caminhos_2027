@@ -62,7 +62,7 @@ class WalkingSessionRuntimeRouteBoundaryTest {
                     latitude = 40.001,
                     longitude = -8.0,
                     accuracyMeters = 5.0,
-                    observedAt = Instant.parse("2026-09-04T08:01:10Z")
+                    capturedAt = Instant.parse("2026-09-04T08:01:10Z")
                 )
             )
             throw AssertionError("Rejected resume must not attach a coordinator")
@@ -108,7 +108,7 @@ class WalkingSessionRuntimeRouteBoundaryTest {
                 latitude = 40.0045,
                 longitude = -8.0,
                 accuracyMeters = 5.0,
-                observedAt = Instant.parse("2026-09-04T09:02:10Z")
+                capturedAt = Instant.parse("2026-09-04T09:02:10Z")
             )
         )
         assertEquals(publishedWalk.id, continued.walk.id)
