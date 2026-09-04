@@ -35,6 +35,17 @@ class WalkingSessionAttachmentPolicyTest {
     }
 
     @Test
+    fun sameWalkCanAttachDuringRecreationFromPersistentActiveState() {
+        requireAttachable(
+            requestedWalk = walk("walk-1", route.id, WalkStatus.ACTIVE),
+            attachedWalkId = null,
+            existingController = false,
+            publishedStateWalk = null,
+            persistentActiveWalk = walk("walk-1", route.id, WalkStatus.ACTIVE)
+        )
+    }
+
+    @Test
     fun differentWalkCanReplaceWhenPreviousPublishedStateIsNotActive() {
         requireAttachable(
             requestedWalk = walk("walk-2", route.id, WalkStatus.PLANNED),
@@ -56,6 +67,22 @@ class WalkingSessionAttachmentPolicyTest {
     }
 
     @Test
+    fun differentWalkIsRejectedWhenAStatefulNewContainerSeesPersistentActiveWalk() {
+        val error = assertFails {
+            WalkingSessionAttachmentPolicy.requireAttachable(
+                publishedRoute = route,
+                requestedWalk = walk("walk-2", route.id, WalkStatus.PLANNED),
+                attachedWalkId = null,
+                existingController = false,
+                publishedStateWalk = null,
+                persistentActiveWalk = walk("walk-1", route.id, WalkStatus.ACTIVE)
+            )
+        }
+
+        assertTrue(error.message.orEmpty().contains("different walk"))
+    }
+
+    @Test
     fun persistentActiveWalkStillBlocksReplacementAfterReadModelWasCleared() {
         val activeBefore = walk("walk-1", route.id, WalkStatus.ACTIVE)
         val error = assertFails {
@@ -69,7 +96,7 @@ class WalkingSessionAttachmentPolicyTest {
             )
         }
 
-        assertTrue(error.message.orEmpty().contains("active V1 walking session"))
+        assertTrue(error.message.orEmpty().contains("different walk"))
         assertTrue(activeBefore.status == WalkStatus.ACTIVE)
         assertTrue(activeBefore.id == "walk-1")
     }
