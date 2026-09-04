@@ -101,6 +101,22 @@ class GpsStateEvaluatorTest {
         assertEquals(t0.plusSeconds(20), state.lastObservation?.capturedAt)
     }
 
+    @Test
+    fun materiallyFutureObservationIsIgnored() {
+        var state = GpsTrackingState(GpsState.ON_ROUTE)
+        val now = t0.plusSeconds(10)
+        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
+        val result = GpsStateEvaluator.update(
+            state,
+            observation(4.0, 5.0, 5.0, now.plusSeconds(16)),
+            now
+        )
+
+        assertSame(state, result)
+        assertEquals(0.5, result.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(t0, result.lastObservation?.capturedAt)
+    }
+
     private fun observation(
         routeKm: Double,
         distanceToRouteMeters: Double,
