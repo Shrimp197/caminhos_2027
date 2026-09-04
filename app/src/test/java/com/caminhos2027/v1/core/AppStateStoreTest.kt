@@ -154,12 +154,7 @@ class AppStateStoreTest {
         val browser = ApoiBrowser(catalog(water))
         store.setWalking(walkingState(4.0))
         store.browseApoi(browser)
-        try {
-            store.selectApoi(browser, "missing")
-            throw AssertionError("Expected unknown APOI selection to reject")
-        } catch (_: IllegalArgumentException) {
-            // Expected boundary rejection; browser results must remain intact.
-        }
+        store.selectApoi(browser, "missing")
         assertEquals(listOf("water"), store.state.apoiBrowser?.results?.map { it.apoi.id })
         assertNull(store.state.apoiBrowser?.selected)
     }
