@@ -2,6 +2,7 @@ package com.caminhos2027.v1.ui
 
 import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.route.GpsState
+import com.caminhos2027.v1.core.route.WalkingMovementCue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -46,6 +47,14 @@ class WalkingStatusPresentationTest {
         assertEquals("Confiança da posição: média", WalkingStatusPresentation.confidence(PositionConfidence.MEDIUM))
         assertEquals("Confiança da posição: baixa", WalkingStatusPresentation.confidence(PositionConfidence.LOW))
         assertEquals("Confiança da posição: não conhecida", WalkingStatusPresentation.confidence(PositionConfidence.UNKNOWN))
+    }
+
+    @Test
+    fun movementUsesExplicitPortugueseLabels() {
+        assertEquals("Movimento: no sentido do percurso", WalkingStatusPresentation.movement(WalkingMovementCue.FORWARD))
+        assertEquals("Movimento: em sentido inverso ao percurso", WalkingStatusPresentation.movement(WalkingMovementCue.BACKWARD))
+        assertEquals("Movimento: sem deslocação relevante", WalkingStatusPresentation.movement(WalkingMovementCue.STATIONARY))
+        assertEquals("Movimento: ainda sem referência suficiente", WalkingStatusPresentation.movement(WalkingMovementCue.UNKNOWN))
     }
 
     @Test
