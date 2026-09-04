@@ -6,6 +6,7 @@ import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.route.GpsTrackingPolicy
+import com.caminhos2027.v1.core.route.WalkingMovementCueEvaluator
 import com.caminhos2027.v1.gps.WalkingLocationPipeline
 import java.time.Instant
 
@@ -19,6 +20,7 @@ class WalkingStateCoordinator(
     private val publishedApoi = publishedApoi.toList()
     private val locationPipeline = WalkingLocationPipeline(route, policy)
     private var walk: Walk = initialWalk
+    private var lastReliableRouteKm: Double? = null
 
     var state: WalkingState = WalkingStateBuilder.build(
         route = route,
@@ -50,12 +52,14 @@ class WalkingStateCoordinator(
         // visual anchor. Do not use it as the GPS continuity baseline or persisted observation.
         val reliable = position.distanceToRouteMeters < policy.possibleDeviationMeters
         locationPipeline.seedRoutePosition(position, now, reliable = reliable)
+        lastReliableRouteKm = position.routeKm.takeIf { reliable }
         state = WalkingStateBuilder.build(
             route = route,
             walk = walk,
             gpsState = GpsState.ACQUIRING,
             routePosition = position,
             publishedApoi = publishedApoi,
+            movementCue = null,
             offline = state.isOffline
         )
         return state
@@ -64,12 +68,14 @@ class WalkingStateCoordinator(
     /** Restores persisted device state, rejecting malformed route positions instead of promoting them to active state. */
     fun restoreCheckpoint(checkpoint: WalkingCheckpoint, now: Instant = Instant.now()): WalkingState {
         val validPosition = checkpoint.routePosition?.takeIf(::isValidRoutePosition)
+        lastReliableRouteKm = null
         if (validPosition != null && checkpoint.lastObservedAt != null) {
             locationPipeline.seedRoutePosition(
                 validPosition,
                 checkpoint.lastObservedAt,
                 reliable = true
             )
+            lastReliableRouteKm = validPosition.routeKm
         }
         state = WalkingStateBuilder.build(
             route = route,
@@ -77,16 +83,28 @@ class WalkingStateCoordinator(
             gpsState = if (validPosition != null) checkpoint.gpsState else GpsState.NO_SIGNAL,
             routePosition = validPosition,
             publishedApoi = publishedApoi,
+            movementCue = null,
             offline = checkpoint.isOffline
         )
         return state
     }
 
     fun accept(position: com.caminhos2027.v1.core.model.RawGpsPosition): WalkingState {
+        val previousReliableRouteKm = lastReliableRouteKm
         val tracking = locationPipeline.accept(position)
+        val currentReliableRouteKm = tracking.lastReliableObservation?.routePosition?.routeKm
+        val movementCue = if (currentReliableRouteKm != null && currentReliableRouteKm != previousReliableRouteKm) {
+            WalkingMovementCueEvaluator.evaluate(previousReliableRouteKm, currentReliableRouteKm)
+        } else {
+            state.movementCue
+        }
+        if (currentReliableRouteKm != null) {
+            lastReliableRouteKm = currentReliableRouteKm
+        }
         return rebuild(
             gpsState = tracking.state,
             routePosition = tracking.lastReliableObservation?.routePosition ?: state.routePosition,
+            movementCue = movementCue,
             offline = state.isOffline
         )
     }
@@ -96,6 +114,7 @@ class WalkingStateCoordinator(
         return rebuild(
             gpsState = tracking.state,
             routePosition = tracking.lastReliableObservation?.routePosition ?: state.routePosition,
+            movementCue = state.movementCue,
             offline = state.isOffline
         )
     }
@@ -103,12 +122,14 @@ class WalkingStateCoordinator(
     fun setOffline(offline: Boolean): WalkingState = rebuild(
         gpsState = state.gpsState,
         routePosition = state.routePosition,
+        movementCue = state.movementCue,
         offline = offline
     )
 
     private fun rebuild(
         gpsState: GpsState,
         routePosition: RoutePosition?,
+        movementCue: com.caminhos2027.v1.core.route.WalkingMovementCue?,
         offline: Boolean
     ): WalkingState {
         state = WalkingStateBuilder.build(
@@ -117,6 +138,7 @@ class WalkingStateCoordinator(
             gpsState = gpsState,
             routePosition = routePosition,
             publishedApoi = publishedApoi,
+            movementCue = movementCue,
             offline = offline
         )
         return state
