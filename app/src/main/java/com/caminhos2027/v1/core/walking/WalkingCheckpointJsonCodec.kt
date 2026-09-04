@@ -20,8 +20,14 @@ object WalkingCheckpointJsonCodec {
 
     fun decode(json: String): WalkingCheckpoint? = runCatching {
         val root = JSONObject(json)
-        val version = if (root.has("version")) root.getInt("version") else VERSION
-        require(version == VERSION) { "Unsupported walking checkpoint version: $version" }
+        val versionValue = if (root.has("version")) root.get("version") else VERSION
+        require(versionValue is Number && versionValue.toDouble() == VERSION.toDouble()) {
+            "Unsupported walking checkpoint version type"
+        }
+        require(versionValue.toInt() == VERSION) {
+            "Unsupported walking checkpoint version: $versionValue"
+        }
+
         val position = root.optJSONObject("routePosition")?.let(::routePositionFromJson)
         val gpsState = GpsState.valueOf(root.getString("gpsState"))
         val lastObservedAt = root.optStringOrNull("lastObservedAt")?.let(Instant::parse)
@@ -41,21 +47,22 @@ object WalkingCheckpointJsonCodec {
         put("confidence", confidence.name)
     }
 
-    private fun routePositionFromJson(json: JSONObject): RoutePosition? = runCatching {
+    private fun routePositionFromJson(json: JSONObject): RoutePosition? {
         val routeId = json.getString("routeId").takeIf { it.isNotBlank() }
             ?: throw IllegalArgumentException("routeId must not be blank")
         val routeKm = json.getDouble("routeKm")
         val distance = json.getDouble("distanceToRouteMeters")
-        require(routeKm.isFinite() && routeKm >= 0.0)
-        require(distance.isFinite() && distance >= 0.0)
-        RoutePosition(
+        require(routeKm.isFinite()) { "routeKm must be finite" }
+        require(distance.isFinite()) { "distanceToRouteMeters must be finite" }
+        if (routeKm < 0.0 || distance < 0.0) return null
+        return RoutePosition(
             routeId = routeId,
             routeKm = routeKm,
             distanceToRouteMeters = distance,
             stageId = json.optStringOrNull("stageId")?.takeIf { it.isNotBlank() },
             confidence = PositionConfidence.valueOf(json.getString("confidence"))
         )
-    }.getOrNull()
+    }
 
     private fun JSONObject.putNullable(key: String, value: Any?) {
         put(key, value ?: JSONObject.NULL)
