@@ -414,6 +414,7 @@ private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit, onOpenA
                         Text("${formatKm(position.routeKm)} km no caminho", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                         Text(gpsPresentation.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(gpsPresentation.detail, style = MaterialTheme.typography.bodySmall, color = Muted)
+                        Text(WalkingStatusPresentation.confidence(position.confidence), style = MaterialTheme.typography.bodySmall, color = Muted)
                         WalkingStatusPresentation.offlineLabel(state.isOffline)?.let { label ->
                             Text(label, style = MaterialTheme.typography.bodySmall, color = Muted)
                         }
@@ -454,5 +455,7 @@ private fun WalkingMapSurface(gpsState: GpsState, hasPosition: Boolean) {
     }
 }
 
-private fun stageLabel(progress: WalkingProgress?): String = progress?.stageName ?: "Percurso em acompanhamento"
-private fun formatKm(value: Double): String = String.format(Locale("pt", "PT"), "%.1f", value)
+private fun stageLabel(progress: WalkingProgress?): String =
+    progress?.stageName ?: progress?.stageId ?: "Etapa não definida"
+
+private fun formatKm(value: Double): String = String.format(Locale.US, "%.1f", value)
