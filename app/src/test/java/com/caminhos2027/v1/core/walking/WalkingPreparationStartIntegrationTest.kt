@@ -11,6 +11,7 @@ import com.caminhos2027.v1.core.model.ApoiPublication
 import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.LocationPrecision
 import com.caminhos2027.v1.core.model.PublicationStatus
+import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RoutePosition
@@ -18,6 +19,7 @@ import com.caminhos2027.v1.core.model.RouteRelation
 import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import java.time.Instant
 
@@ -42,6 +44,88 @@ class WalkingPreparationStartIntegrationTest {
         assertEquals(2.0, state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
         assertEquals(GpsState.ACQUIRING, state.walking?.gpsState)
         assertEquals("water", state.walking?.nextApoi?.id)
+    }
+
+    @Test
+    fun persistentRuntimeCarriesPreparationThroughGpsLossRecoveryAndStop() {
+        val route = route()
+        val catalog = catalog(apoi("water", 3.0))
+        val walkRepository = InMemoryWalkRepository()
+        val checkpointRepository = InMemoryWalkingStateRepository()
+        val runtime = WalkingSessionRuntime(
+            route = route,
+            sessionService = WalkingSessionService(walkRepository, checkpointRepository),
+            publishedApoi = catalog.all()
+        )
+        val store = AppStateStore()
+        val service = WalkingPreparationService(route, walkRepository, catalog)
+        val preparation = WalkingPreparationAppStateController(route, service, store, runtime)
+
+        preparation.save("walk", 1.0, 5.0)
+        val started = preparation.startSaved(
+            catalog = catalog,
+            position = RoutePosition("route", 2.0, 0.0),
+            now = Instant.parse("2026-09-03T10:00:00Z")
+        )
+        assertEquals(WalkStatus.ACTIVE, started.walking?.walk?.status)
+        assertEquals(2.0, started.walking?.routePosition?.routeKm ?: -1.0, 0.001)
+
+        val controller = WalkingAppStateController(
+            route = route,
+            walk = requireNotNull(started.walking).walk,
+            catalog = catalog,
+            store = store,
+            sessionRuntime = runtime
+        )
+        val moved = controller.acceptGps(
+            RawGpsPosition(
+                latitude = 40.003,
+                longitude = -8.0,
+                accuracyMeters = 5.0,
+                capturedAt = Instant.parse("2026-09-03T10:01:00Z")
+            )
+        )
+        assertNotNull(moved.walking?.routePosition)
+        val acceptedKm = moved.walking!!.routePosition!!.routeKm
+        assertEquals(GpsState.ON_ROUTE, moved.walking.gpsState)
+
+        val lost = controller.markNoSignal(Instant.parse("2026-09-03T10:02:00Z"))
+        assertEquals(GpsState.NO_SIGNAL, lost.walking?.gpsState)
+        assertEquals(acceptedKm, lost.walking?.routePosition?.routeKm ?: -1.0, 0.0001)
+
+        val resumedRuntime = WalkingSessionRuntime(
+            route = route,
+            sessionService = WalkingSessionService(walkRepository, checkpointRepository),
+            publishedApoi = catalog.all()
+        )
+        val resumedController = WalkingAppStateController(
+            route = route,
+            walk = requireNotNull(walkRepository.getActive()),
+            catalog = catalog,
+            store = AppStateStore(),
+            sessionRuntime = resumedRuntime
+        )
+        val resumed = resumedController.resume(Instant.parse("2026-09-03T10:03:00Z"))
+        assertEquals(GpsState.NO_SIGNAL, resumed.walking?.gpsState)
+        assertEquals(acceptedKm, resumed.walking?.routePosition?.routeKm ?: -1.0, 0.0001)
+
+        val recovered = resumedController.acceptGps(
+            RawGpsPosition(
+                latitude = 40.004,
+                longitude = -8.0,
+                accuracyMeters = 5.0,
+                capturedAt = Instant.parse("2026-09-03T10:04:00Z")
+            )
+        )
+        assertEquals(GpsState.ON_ROUTE, recovered.walking?.gpsState)
+        assertEquals(true, recovered.walking!!.routePosition!!.routeKm > acceptedKm)
+
+        val stopped = resumedRuntime.stop(
+            requireNotNull(recovered.walking).routePosition!!,
+            Instant.parse("2026-09-03T10:05:00Z")
+        )
+        assertEquals(WalkStatus.COMPLETED, stopped.status)
+        assertEquals(null, checkpointRepository.get("walk"))
     }
 
     @Test(expected = IllegalArgumentException::class)
