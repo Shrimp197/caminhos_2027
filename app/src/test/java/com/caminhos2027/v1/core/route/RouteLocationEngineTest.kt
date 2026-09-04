@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.core.route
 
 import com.caminhos2027.v1.core.model.GeoPoint
+import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
@@ -20,6 +21,33 @@ class RouteLocationEngineTest {
         assertEquals("stage-1", position.stageId)
         assertTrue(position.routeKm > 0.4)
         assertTrue(position.routeKm < 0.6)
+        assertEquals(PositionConfidence.HIGH, position.confidence)
+    }
+
+    @Test
+    fun weakAccuracyProducesMediumConfidenceWhenProjectionRemainsNearRoute() {
+        val route = fixture()
+        val position = RouteLocationEngine.locate(route, gps(40.0003, -7.995, accuracyMeters = 50.0))
+
+        assertTrue(position.distanceToRouteMeters < 80.0)
+        assertEquals(PositionConfidence.MEDIUM, position.confidence)
+    }
+
+    @Test
+    fun farProjectionProducesLowConfidence() {
+        val route = fixture()
+        val position = RouteLocationEngine.locate(route, gps(40.001, -7.995))
+
+        assertTrue(position.distanceToRouteMeters > 80.0)
+        assertEquals(PositionConfidence.LOW, position.confidence)
+    }
+
+    @Test
+    fun missingAccuracyLeavesConfidenceUnknown() {
+        val route = fixture()
+        val position = RouteLocationEngine.locate(route, gps(40.0, -7.995, accuracyMeters = null))
+
+        assertEquals(PositionConfidence.UNKNOWN, position.confidence)
     }
 
     @Test
@@ -38,10 +66,10 @@ class RouteLocationEngineTest {
         assertEquals(1.0, position.routeKm, 0.05)
     }
 
-    private fun gps(latitude: Double, longitude: Double) = RawGpsPosition(
+    private fun gps(latitude: Double, longitude: Double, accuracyMeters: Double? = 5.0) = RawGpsPosition(
         latitude = latitude,
         longitude = longitude,
-        accuracyMeters = 5.0,
+        accuracyMeters = accuracyMeters,
         capturedAt = Instant.parse("2026-09-02T00:00:00Z")
     )
 
