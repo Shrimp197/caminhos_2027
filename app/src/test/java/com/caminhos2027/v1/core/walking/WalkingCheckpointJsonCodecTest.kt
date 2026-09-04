@@ -120,47 +120,50 @@ class WalkingCheckpointJsonCodecTest {
     }
 
     @Test
-    fun invalidNumericPositionIsRejected() {
-        assertNull(
-            WalkingCheckpointJsonCodec.decode(
-                """
-                {
-                  "version": 1,
-                  "routePosition": {
-                    "routeId": "route-1",
-                    "routeKm": -1,
-                    "distanceToRouteMeters": 5,
-                    "stageId": null,
-                    "confidence": "LOW"
-                  },
-                  "gpsState": "ON_ROUTE",
-                  "isOffline": false,
-                  "lastObservedAt": null
-                }
-                """.trimIndent()
-            )
+    fun invalidNumericPositionIsDiscardedWithoutDiscardingCheckpointMetadata() {
+        val decoded = WalkingCheckpointJsonCodec.decode(
+            """
+            {
+              "version": 1,
+              "routePosition": {
+                "routeId": "route-1",
+                "routeKm": -1,
+                "distanceToRouteMeters": 5,
+                "stageId": null,
+                "confidence": "LOW"
+              },
+              "gpsState": "NO_SIGNAL",
+              "isOffline": false,
+              "lastObservedAt": null
+            }
+            """.trimIndent()
         )
+        assertNotNull(decoded)
+        assertEquals(null, decoded!!.routePosition)
+        assertEquals(GpsState.NO_SIGNAL, decoded.gpsState)
+        assertEquals(false, decoded.isOffline)
     }
 
     @Test
-    fun nonFiniteNumericPositionIsRejected() {
-        assertNull(
-            WalkingCheckpointJsonCodec.decode(
-                """
-                {
-                  "version": 1,
-                  "routePosition": {
-                    "routeId": "route-1",
-                    "routeKm": 1e309,
-                    "distanceToRouteMeters": 5,
-                    "stageId": null,
-                    "confidence": "LOW"
-                  },
-                  "gpsState": "ON_ROUTE"
-                }
-                """.trimIndent()
-            )
+    fun nonFiniteNumericPositionIsDiscardedWithoutDiscardingCheckpointMetadata() {
+        val decoded = WalkingCheckpointJsonCodec.decode(
+            """
+            {
+              "version": 1,
+              "routePosition": {
+                "routeId": "route-1",
+                "routeKm": 1e309,
+                "distanceToRouteMeters": 5,
+                "stageId": null,
+                "confidence": "LOW"
+              },
+              "gpsState": "ON_ROUTE"
+            }
+            """.trimIndent()
         )
+        assertNotNull(decoded)
+        assertNull(decoded!!.routePosition)
+        assertEquals(GpsState.ON_ROUTE, decoded.gpsState)
     }
 
     @Test
