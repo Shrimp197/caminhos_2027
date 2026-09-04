@@ -61,6 +61,22 @@ class WalkingSessionRuntimeTest {
         assertNull(service.resumeCheckpoint("walk-stop"))
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun startRejectsPositionFromAnotherRoute() {
+        val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        runtime.prepare(WalkingPlanFactory.create(route, "walk-route", 0.4, 1.8))
+        runtime.start("walk-route", start.copy(routeId = "other"), Instant.parse("2026-09-01T08:00:00Z"))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun startRejectsPositionBeyondPublishedRouteLength() {
+        val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        runtime.prepare(WalkingPlanFactory.create(route, "walk-boundary", 0.4, 1.8))
+        runtime.start("walk-boundary", start.copy(routeKm = 2.001), Instant.parse("2026-09-01T08:00:00Z"))
+    }
+
     @Test fun startOutsideRouteDoesNotPersistAsReliableGpsObservation() {
         val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
         val runtime = WalkingSessionRuntime(route, service, emptyList())
@@ -135,6 +151,17 @@ class WalkingSessionRuntimeTest {
         assertNotNull(resumed)
         assertEquals(0.5, resumed!!.routePosition!!.routeKm, 0.02)
         assertEquals(GpsState.NO_SIGNAL, resumed.gpsState)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun resumeRejectsPersistedWalkFromAnotherRoute() {
+        val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        val otherRouteWalk = WalkingPlanFactory.create(route.copy(id = "other"), "walk-other", 0.4, 1.8)
+        runtime.prepare(otherRouteWalk)
+        runtime.start("walk-other", RoutePosition("other", 0.4, 3.0, "stage-1", PositionConfidence.HIGH), Instant.parse("2026-09-01T08:00:00Z"))
+
+        runtime.resume(Instant.parse("2026-09-01T08:05:00Z"))
     }
 
     @Test fun recoveryAfterSignalLossResumesGpsProgressAndRefreshesNextApoi() {
