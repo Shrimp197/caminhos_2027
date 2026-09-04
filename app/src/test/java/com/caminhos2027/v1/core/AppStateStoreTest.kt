@@ -87,8 +87,7 @@ class AppStateStoreTest {
         store.buildDecision(route(), emptyList())
     }
 
-    @Test
-    fun clearingBrowserDoesNotClearWalkingOrDecision() {
+    @Test fun clearingBrowserDoesNotClearWalkingOrDecision() {
         val route = route()
         val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
         val store = AppStateStore()
@@ -102,8 +101,7 @@ class AppStateStoreTest {
         assertEquals(4.0, store.state.decision?.currentRouteKm ?: -1.0, 0.001)
     }
 
-    @Test
-    fun clearingDecisionDoesNotClearWalkingOrBrowser() {
+    @Test fun clearingDecisionDoesNotClearWalkingOrBrowser() {
         val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
         val store = AppStateStore()
         val browser = ApoiBrowser(catalog(water))
@@ -116,8 +114,7 @@ class AppStateStoreTest {
         assertEquals(listOf("water"), store.state.apoiBrowser?.results?.map { it.apoi.id })
     }
 
-    @Test
-    fun replacingWalkingDoesNotEraseExistingBrowserOrDecisionSlices() {
+    @Test fun replacingWalkingDoesNotEraseExistingBrowserOrDecisionSlices() {
         val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
         val store = AppStateStore()
         val browser = ApoiBrowser(catalog(water))
@@ -130,8 +127,7 @@ class AppStateStoreTest {
         assertEquals(4.0, store.state.decision?.currentRouteKm ?: -1.0, 0.001)
     }
 
-    @Test
-    fun rejectedDecisionLeavesPreviouslyBuiltDecisionUntouched() {
+    @Test fun rejectedDecisionLeavesPreviouslyBuiltDecisionUntouched() {
         val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
         val route = route()
         val store = AppStateStore()
@@ -148,8 +144,7 @@ class AppStateStoreTest {
         assertEquals(before, store.state.decision)
     }
 
-    @Test
-    fun failedApoiSelectionDoesNotEraseExistingBrowserResults() {
+    @Test fun failedApoiSelectionDoesNotEraseExistingBrowserResults() {
         val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
         val store = AppStateStore()
         val browser = ApoiBrowser(catalog(water))
@@ -160,8 +155,7 @@ class AppStateStoreTest {
         assertNull(store.state.apoiBrowser?.selected)
     }
 
-    @Test
-    fun objectiveAndDataVersionChangesPreserveOtherSlices() {
+    @Test fun objectiveAndDataVersionChangesPreserveOtherSlices() {
         val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
         val store = AppStateStore()
         val browser = ApoiBrowser(catalog(water))
@@ -176,8 +170,7 @@ class AppStateStoreTest {
         assertEquals(4.0, store.state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
     }
 
-    @Test
-    fun clearingDecisionIsIdempotentAndPreservesObjectiveAndVersion() {
+    @Test fun clearingDecisionIsIdempotentAndPreservesObjectiveAndVersion() {
         val store = AppStateStore()
         store.setWalking(walkingState(4.0))
         store.setObjective(Objective.REACH_DESTINATION)
@@ -190,8 +183,7 @@ class AppStateStoreTest {
         assertEquals(4.0, store.state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
     }
 
-    @Test
-    fun clearingApoiBrowserIsIdempotentAndPreservesDecision() {
+    @Test fun clearingApoiBrowserIsIdempotentAndPreservesDecision() {
         val route = route()
         val store = AppStateStore()
         store.setWalking(walkingState(4.0))
