@@ -23,13 +23,13 @@ class WalkingSessionRuntime(
         validateRoutePosition(position)
         val started = sessionService.start(walkId, position, now)
         val nextCoordinator = WalkingStateCoordinator(route, started, publishedApoi, policy)
-        coordinator = nextCoordinator
         val state = nextCoordinator.seedStartPosition(position, now)
         sessionService.updatePosition(
             walkId,
             state,
             observedAt = nextCoordinator.lastReliableObservedAt()
         )
+        coordinator = nextCoordinator
         return state
     }
 
@@ -69,16 +69,25 @@ class WalkingSessionRuntime(
     /** Returns the persisted active walk without creating or replacing an in-memory coordinator. */
     fun activeWalk(): Walk? = sessionService.resume()
 
-    /** Rebuilds derived progress/APOI information from the persisted walk and checkpoint. */
+    /**
+     * Rebuilds derived progress/APOI information from the persisted walk and checkpoint.
+     * A missing persisted active session invalidates any stale in-memory coordinator.
+     */
     fun resume(now: Instant = Instant.now()): WalkingState? {
-        val walk = sessionService.resume() ?: return null
+        val walk = sessionService.resume()
+        if (walk == null) {
+            coordinator = null
+            return null
+        }
         require(walk.routeId == route.id) {
             "Active walking session route must match the published V1 route"
         }
+
         val nextCoordinator = WalkingStateCoordinator(route, walk, publishedApoi, policy)
+        val checkpoint = sessionService.resumeCheckpoint(walk.id)
+        val state = checkpoint?.let { nextCoordinator.restoreCheckpoint(it, now) } ?: nextCoordinator.state
         coordinator = nextCoordinator
-        val checkpoint = sessionService.resumeCheckpoint(walk.id) ?: return nextCoordinator.state
-        return nextCoordinator.restoreCheckpoint(checkpoint, now)
+        return state
     }
 
     private fun validateRoutePosition(position: RoutePosition) {
