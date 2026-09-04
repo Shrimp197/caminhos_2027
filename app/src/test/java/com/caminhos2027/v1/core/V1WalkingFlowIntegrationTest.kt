@@ -87,6 +87,62 @@ class V1WalkingFlowIntegrationTest {
         assertEquals(GpsState.ON_ROUTE, rejected.gpsState)
     }
 
+    @Test
+    fun signalLossPreservesDecisionContextUntilRecovery() {
+        val route = fixtureRoute()
+        val water = fixtureApoi()
+        val coordinator = WalkingStateCoordinator(route, Walk(id = "walk-recovery", routeId = route.id, plannedStartKm = 0.0, plannedDestinationKm = 1.0), listOf(water))
+        val store = AppStateStore()
+        val started = coordinator.start(RoutePosition(route.id, 0.0, 0.0), Instant.parse("2026-09-03T12:00:00Z"))
+        val moving = coordinator.accept(RawGpsPosition(40.00225, -8.0, 5.0, Instant.parse("2026-09-03T12:02:00Z")))
+        store.setWalking(moving)
+        store.buildDecision(route, listOf(water))
+        val decisionBefore = store.state.decision
+
+        val noSignal = coordinator.markNoSignal(Instant.parse("2026-09-03T12:02:31Z"))
+        store.setWalking(noSignal)
+
+        assertEquals(GpsState.NO_SIGNAL, noSignal.gpsState)
+        assertEquals(moving.routePosition, noSignal.routePosition)
+        assertEquals(moving.nextApoi, noSignal.nextApoi)
+        assertEquals(moving.nextApoiDistanceKm, noSignal.nextApoiDistanceKm)
+        assertSame(decisionBefore, store.state.decision)
+        assertEquals(started.walk.id, noSignal.walk.id)
+
+        val recovered = coordinator.accept(RawGpsPosition(40.0045, -8.0, 5.0, Instant.parse("2026-09-03T12:04:00Z")))
+        store.setWalking(recovered)
+        store.buildDecision(route, listOf(water))
+
+        assertEquals(GpsState.ON_ROUTE, recovered.gpsState)
+        assertTrue(recovered.routePosition!!.routeKm > moving.routePosition!!.routeKm)
+        assertEquals("water-1", recovered.nextApoi?.id)
+        assertTrue(store.state.decision!!.currentRouteKm > decisionBefore!!.currentRouteKm)
+        assertSame(recovered, store.state.walking)
+    }
+
+    @Test
+    fun offlinePresentationKeepsWalkingAndDecisionContextStable() {
+        val route = fixtureRoute()
+        val water = fixtureApoi()
+        val coordinator = WalkingStateCoordinator(route, Walk(id = "walk-offline", routeId = route.id, plannedStartKm = 0.0, plannedDestinationKm = 1.0), listOf(water))
+        val store = AppStateStore()
+        val moving = coordinator.accept(
+            RawGpsPosition(40.00225, -8.0, 5.0, Instant.parse("2026-09-03T13:02:00Z"))
+        )
+        store.setWalking(moving)
+        store.buildDecision(route, listOf(water))
+        val decisionBefore = store.state.decision
+
+        val offline = moving.copy(isOffline = true)
+        store.setWalking(offline)
+
+        assertTrue(store.state.walking!!.isOffline)
+        assertEquals(moving.routePosition, store.state.walking!!.routePosition)
+        assertEquals(moving.nextApoi, store.state.walking!!.nextApoi)
+        assertEquals(decisionBefore, store.state.decision)
+        assertEquals(moving.walk.id, store.state.walking!!.walk.id)
+    }
+
     private fun fixtureRoute() = Route(
         id = "route-1", name = "TEST/FICTITIOUS route", officialName = "TEST/FICTITIOUS route", totalDistanceKm = 1.0,
         source = "TEST/FICTITIOUS", updatedAt = "2026-09-03",
