@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.core.route
 
 import com.caminhos2027.v1.core.model.GeoPoint
+import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RoutePosition
@@ -15,6 +16,7 @@ import kotlin.math.sqrt
  */
 object RouteLocationEngine {
     private const val EARTH_RADIUS_M = 6_371_008.8
+    private const val HIGH_CONFIDENCE_ACCURACY_M = 20.0
 
     fun locate(route: Route, gps: RawGpsPosition): RoutePosition {
         require(route.geometry.points.size >= 2) { "Route geometry must contain at least two points" }
@@ -37,13 +39,29 @@ object RouteLocationEngine {
         }
 
         val stageId = StageLocator.currentStage(route, bestRouteKm)?.id
+        val confidence = confidenceFor(
+            distanceToRouteMeters = bestDistance,
+            accuracyMeters = gps.accuracyMeters
+        )
 
         return RoutePosition(
             routeId = route.id,
             routeKm = bestRouteKm,
             distanceToRouteMeters = bestDistance,
-            stageId = stageId
+            stageId = stageId,
+            confidence = confidence
         )
+    }
+
+    private fun confidenceFor(distanceToRouteMeters: Double, accuracyMeters: Double?): PositionConfidence {
+        if (accuracyMeters == null || !accuracyMeters.isFinite() || accuracyMeters < 0.0) {
+            return PositionConfidence.UNKNOWN
+        }
+        return when {
+            accuracyMeters <= HIGH_CONFIDENCE_ACCURACY_M && distanceToRouteMeters <= 35.0 -> PositionConfidence.HIGH
+            accuracyMeters <= 50.0 && distanceToRouteMeters <= 80.0 -> PositionConfidence.MEDIUM
+            else -> PositionConfidence.LOW
+        }
     }
 
     private data class Projection(val fraction: Double, val distanceMeters: Double)
