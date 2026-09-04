@@ -31,9 +31,7 @@ class AppStateStoreTest {
         val store = AppStateStore()
         val browser = ApoiBrowser(catalog(water))
         store.setWalking(walkingState(4.0))
-
         store.browseApoi(browser, filter = ApoiFilter(services = setOf(ApoiCategory.AGUA)))
-
         assertEquals(4.0, store.state.apoiBrowser?.query?.currentRouteKm ?: -1.0, 0.001)
         assertEquals(listOf("water"), store.state.apoiBrowser?.results?.map { it.apoi.id })
     }
@@ -44,10 +42,8 @@ class AppStateStoreTest {
         val browser = ApoiBrowser(catalog(water))
         store.setWalking(walkingState(4.0))
         store.browseApoi(browser)
-
         store.selectApoi(browser, "water")
         assertEquals("water", store.state.apoiBrowser?.selected?.id)
-
         store.clearApoiSelection(browser)
         assertNull(store.state.apoiBrowser?.selected)
         assertEquals(listOf("water"), store.state.apoiBrowser?.results?.map { it.apoi.id })
@@ -56,9 +52,7 @@ class AppStateStoreTest {
     @Test fun clearingBrowserIsSafeWhenNoBrowserWasOpened() {
         val store = AppStateStore()
         store.setWalking(walkingState(4.0))
-
         store.clearApoiBrowser()
-
         assertNull(store.state.apoiBrowser)
         assertEquals(4.0, store.state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
     }
@@ -67,9 +61,7 @@ class AppStateStoreTest {
         val route = route()
         val store = AppStateStore()
         store.setWalking(walkingState(4.0, plannedDestinationKm = 8.0))
-
         store.buildDecision(route, emptyList())
-
         assertEquals(4.0, store.state.decision?.currentRouteKm ?: -1.0, 0.001)
         assertEquals(4.0, store.state.decision?.remainingToPlannedDestinationKm ?: -1.0, 0.001)
     }
@@ -80,41 +72,36 @@ class AppStateStoreTest {
         store.browseApoi(ApoiBrowser(catalog()))
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun decisionRejectsWalkingPositionFromAnotherRoute() {
+        val store = AppStateStore()
+        store.setWalking(walkingState(4.0).copy(routePosition = RoutePosition("other-route", 4.0, 0.0, null, PositionConfidence.HIGH)))
+        store.buildDecision(route(), emptyList())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun decisionRejectsNonFiniteWalkingPosition() {
+        val store = AppStateStore()
+        store.setWalking(walkingState(4.0).copy(routePosition = RoutePosition("route", Double.NaN, 0.0, null, PositionConfidence.HIGH)))
+        store.buildDecision(route(), emptyList())
+    }
+
     private fun route() = Route(
-        id = "route",
-        name = "Route",
-        officialName = "Route",
-        totalDistanceKm = 10.0,
-        source = "test",
-        updatedAt = "2026-01-01",
-        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0))),
-        stages = emptyList()
+        id = "route", name = "Route", officialName = "Route", totalDistanceKm = 10.0, source = "test", updatedAt = "2026-01-01",
+        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0))), stages = emptyList()
     )
 
-    private fun catalog(vararg records: Apoi) =
-        PublishedApoiCatalog(ApoiRepository(ApoiDataSource { records.toList() }))
+    private fun catalog(vararg records: Apoi) = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { records.toList() }))
 
     private fun apoi(id: String, name: String, km: Double, category: ApoiCategory) = Apoi(
-        id = id,
-        name = name,
-        description = null,
-        mainCategory = category,
-        services = setOf(category),
-        location = ApoiLocation(
-            40.0, -8.0, LocationPrecision.EXACT,
-            null, null, null, "route", km, 0.0, 0.0, RouteRelation.ON_ROUTE
-        ),
-        publication = ApoiPublication(PublicationStatus.PUBLISHED, null)
+        id, name, null, category, setOf(category),
+        ApoiLocation(40.0, -8.0, LocationPrecision.EXACT, null, null, null, "route", km, 0.0, 0.0, RouteRelation.ON_ROUTE),
+        ApoiPublication(PublicationStatus.PUBLISHED, null)
     )
 
     private fun walkingState(routeKm: Double, plannedDestinationKm: Double = 10.0) = WalkingState(
-        walk = WalkingPlanFactory.create(route(), "walk", 0.0, plannedDestinationKm)
-            .copy(status = WalkStatus.ACTIVE, actualStartKm = 0.0),
+        walk = WalkingPlanFactory.create(route(), "walk", 0.0, plannedDestinationKm).copy(status = WalkStatus.ACTIVE, actualStartKm = 0.0),
         routePosition = RoutePosition("route", routeKm, 0.0, null, PositionConfidence.HIGH),
-        gpsState = GpsState.ON_ROUTE,
-        progress = null,
-        nextApoi = null,
-        nextApoiDistanceKm = null,
-        isOffline = false
+        gpsState = GpsState.ON_ROUTE, progress = null, nextApoi = null, nextApoiDistanceKm = null, isOffline = false
     )
 }
