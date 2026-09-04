@@ -46,7 +46,9 @@ class WalkingStateCoordinator(
             "Walking must be active before seeding a start position"
         }
         require(position.routeId == route.id) { "Start position route must match route" }
-        val reliable = position.distanceToRouteMeters < policy.probableDeviationMeters
+        // A position already outside the possible-deviation threshold is only a provisional
+        // visual anchor. Do not use it as the GPS continuity baseline or persisted observation.
+        val reliable = position.distanceToRouteMeters < policy.possibleDeviationMeters
         locationPipeline.seedRoutePosition(position, now, reliable = reliable)
         state = WalkingStateBuilder.build(
             route = route,
