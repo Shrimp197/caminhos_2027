@@ -33,7 +33,11 @@ internal data class WalkingRouteProgressPresentation(
 internal object WalkingRouteProgressPresenter {
     fun present(progress: WalkingProgress): WalkingRouteProgressPresentation =
         WalkingRouteProgressPresentation(
-            ratio = progress.progressRatio.coerceIn(0.0, 1.0).toFloat(),
+            ratio = if (progress.progressRatio.isFinite()) {
+                progress.progressRatio.coerceIn(0.0, 1.0).toFloat()
+            } else {
+                0.0f
+            },
             currentLabel = "${formatKm(progress.currentRouteKm)} km",
             remainingLabel = "${formatKm(progress.remainingKm)} km restantes",
             destinationLabel = "Destino ${formatKm(progress.targetRouteKm)} km"
