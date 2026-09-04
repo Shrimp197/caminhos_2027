@@ -4,9 +4,11 @@ import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.ApoiAvailability
 import com.caminhos2027.v1.core.model.ApoiAvailabilityStatus
 import com.caminhos2027.v1.core.model.ApoiCategory
+import com.caminhos2027.v1.core.model.ApoiConfidence
 import com.caminhos2027.v1.core.model.ApoiLocation
 import com.caminhos2027.v1.core.model.ApoiPublication
 import com.caminhos2027.v1.core.model.LocationPrecision
+import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.model.PublicationStatus
 import com.caminhos2027.v1.core.model.RouteRelation
 import org.junit.Assert.assertEquals
@@ -20,6 +22,7 @@ class ApoiAheadPresentationMapperTest {
         assertEquals("800 m", result.distanceLabel)
         assertEquals("Água", result.categoryLabel)
         assertEquals("Disponibilidade atual", result.availabilityLabel)
+        assertEquals("Confiança não conhecida", result.confidenceLabel)
         assertNull(result.warningLabel)
     }
 
@@ -45,6 +48,24 @@ class ApoiAheadPresentationMapperTest {
         )
 
         assertEquals("Disponibilidade recorrente", result.availabilityLabel)
+    }
+
+    @Test fun exposesOverallConfidenceWithoutInventingOperationalGuarantee() {
+        val result = ApoiAheadPresentationMapper.map(
+            apoi().copy(
+                confidence = ApoiConfidence(
+                    overall = PositionConfidence.MEDIUM,
+                    location = PositionConfidence.HIGH,
+                    support = PositionConfidence.MEDIUM,
+                    availability = PositionConfidence.LOW,
+                    criticalInformation = PositionConfidence.LOW
+                )
+            ),
+            3.0
+        )
+
+        assertEquals("Confiança média", result.confidenceLabel)
+        assertEquals("Disponibilidade atual", result.availabilityLabel)
     }
 
     private fun apoi() = Apoi(
