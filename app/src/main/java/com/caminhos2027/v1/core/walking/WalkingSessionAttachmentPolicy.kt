@@ -17,7 +17,8 @@ object WalkingSessionAttachmentPolicy {
         requestedWalk: Walk,
         attachedWalkId: String?,
         existingController: Boolean,
-        publishedStateWalk: Walk?
+        publishedStateWalk: Walk?,
+        persistentActiveWalk: Walk? = null
     ) {
         require(requestedWalk.routeId == publishedRoute.id) {
             "Walk route must match the published V1 route"
@@ -25,6 +26,9 @@ object WalkingSessionAttachmentPolicy {
 
         if (!existingController || attachedWalkId == null || attachedWalkId == requestedWalk.id) return
 
+        require(persistentActiveWalk?.status != WalkStatus.ACTIVE) {
+            "Cannot replace an active V1 walking session with a different walk"
+        }
         require(publishedStateWalk?.status != WalkStatus.ACTIVE) {
             "Cannot replace an active V1 walking session with a different walk"
         }
