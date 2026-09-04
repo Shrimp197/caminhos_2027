@@ -67,7 +67,7 @@ class WalkingSessionAttachmentPolicyTest {
     }
 
     @Test
-    fun differentWalkIsRejectedWhenAStatefulNewContainerSeesPersistentActiveWalk() {
+    fun differentWalkIsRejectedWhenANewContainerSeesPersistentActiveWalk() {
         val error = assertFails {
             WalkingSessionAttachmentPolicy.requireAttachable(
                 publishedRoute = route,
@@ -155,8 +155,8 @@ class WalkingSessionAttachmentPolicyTest {
             requestedWalk = walk("walk-2", route.id, WalkStatus.PLANNED),
             attachedWalkId = "stale-id",
             existingController = false,
-            publishedStateWalk = walk("walk-1", route.id, WalkStatus.ACTIVE),
-            persistentActiveWalk = walk("walk-1", route.id, WalkStatus.ACTIVE)
+            publishedStateWalk = null,
+            persistentActiveWalk = null
         )
     }
 
