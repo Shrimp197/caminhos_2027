@@ -66,7 +66,9 @@ class V1MainActivity : ComponentActivity() {
     private var walkingState by mutableStateOf<WalkingState?>(null)
 
     private val locationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) startWalkingLocationSource()
+        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
+            startWalkingLocationSource()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
