@@ -14,7 +14,7 @@ class WalkingStateCoordinator(
     private val route: com.caminhos2027.v1.core.model.Route,
     initialWalk: Walk,
     publishedApoi: List<Apoi>,
-    policy: GpsTrackingPolicy = GpsTrackingPolicy()
+    private val policy: GpsTrackingPolicy = GpsTrackingPolicy()
 ) {
     private val publishedApoi = publishedApoi.toList()
     private val locationPipeline = WalkingLocationPipeline(route, policy)
@@ -36,15 +36,7 @@ class WalkingStateCoordinator(
     /** Starts the planned walk and establishes the supplied real route position as the tracking baseline. */
     fun start(startPosition: RoutePosition, now: Instant = Instant.now()): WalkingState {
         walk = WalkingSessionController.start(walk, startPosition, now)
-        locationPipeline.seedRoutePosition(startPosition, now)
-        state = WalkingStateBuilder.build(
-            route = route,
-            walk = walk,
-            gpsState = GpsState.ACQUIRING,
-            routePosition = startPosition,
-            publishedApoi = publishedApoi,
-            offline = state.isOffline
-        )
+        seedStartPosition(startPosition, now)
         return state
     }
 
@@ -54,7 +46,8 @@ class WalkingStateCoordinator(
             "Walking must be active before seeding a start position"
         }
         require(position.routeId == route.id) { "Start position route must match route" }
-        locationPipeline.seedRoutePosition(position, now)
+        val reliable = position.distanceToRouteMeters < policy.probableDeviationMeters
+        locationPipeline.seedRoutePosition(position, now, reliable = reliable)
         state = WalkingStateBuilder.build(
             route = route,
             walk = walk,
@@ -69,7 +62,11 @@ class WalkingStateCoordinator(
     /** Restores persisted device state and uses its last real observation time as the GPS continuity baseline. */
     fun restoreCheckpoint(checkpoint: WalkingCheckpoint, now: Instant = Instant.now()): WalkingState {
         checkpoint.routePosition?.let {
-            locationPipeline.seedRoutePosition(it, checkpoint.lastObservedAt ?: now)
+            locationPipeline.seedRoutePosition(
+                it,
+                checkpoint.lastObservedAt ?: now,
+                reliable = checkpoint.lastObservedAt != null
+            )
         }
         state = WalkingStateBuilder.build(
             route = route,
