@@ -3,6 +3,7 @@ package com.caminhos2027.v1.core
 import android.content.Context
 import com.caminhos2027.v1.V1AppContainer
 import com.caminhos2027.v1.core.model.Walk
+import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.walking.WalkingApoiDecisionController
 import com.caminhos2027.v1.core.walking.WalkingAppStateController
 import com.caminhos2027.v1.core.walking.WalkingPreparationAppStateController
@@ -28,12 +29,28 @@ class AndroidV1AppContainer(context: Context) {
     )
 
     private var controller: WalkingAppStateController? = null
+    private var attachedWalkId: String? = null
 
+    /** Reuses the controller during repeated UI attachment, while preventing cross-session controller replacement. */
     fun attachWalk(walk: Walk): WalkingAppStateController {
         require(walk.routeId == base.route.id) { "Walk route must match the published V1 route" }
         val existing = controller
-        if (existing != null && store.state.walking?.walk?.id == walk.id) return existing
-        return base.controller(walk).also { controller = it }
+        if (existing != null && attachedWalkId == walk.id) return existing
+
+        val publishedWalk = store.state.walking?.walk
+        require(
+            existing == null ||
+                attachedWalkId == null ||
+                (attachedWalkId == walk.id) ||
+                publishedWalk?.status != WalkStatus.ACTIVE
+        ) {
+            "Cannot replace an active V1 walking session with a different walk"
+        }
+
+        return base.controller(walk).also {
+            controller = it
+            attachedWalkId = walk.id
+        }
     }
 
     fun activeController(): WalkingAppStateController =
@@ -44,6 +61,7 @@ class AndroidV1AppContainer(context: Context) {
 
     fun clearSession() {
         controller = null
+        attachedWalkId = null
         store.setWalking(null)
         store.clearApoiBrowser()
         store.clearDecision()
