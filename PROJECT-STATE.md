@@ -8,9 +8,9 @@
 
 ## Current HEAD
 
-- SHA: `e7ecbf3281d18be3b1973e4eb7f92fb20ba7d77e`
-- Commit: `fix(v1): align preparation test calls with current startSaved API`
-- Parent: `3ec70a5370b311741eef7295be42f03e4ef2ddcf`
+- SHA: `6fd58669419aebfd0d1031714ee8753f1be55209`
+- Commit: `docs(v1): restore authoritative project state`
+- Parent: `e7ecbf3281d18be3b1973e4eb7f92fb20ba7d77e`
 
 ## Route
 
