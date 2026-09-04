@@ -20,8 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsWalk
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -342,17 +342,10 @@ private fun EmptyFlowState(title: String, message: String, onBack: () -> Unit) {
 @Composable
 private fun NoActiveWalkScreen(onPrepare: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Caminhos de Fátima", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
-            IconButton(onClick = {}) { Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Ink) }
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Caminhos de Fátima", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
         Card(
             modifier = Modifier.align(Alignment.Center).fillMaxWidth(),
@@ -411,7 +404,7 @@ private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit, onOpenA
                     }
                 }
             }
-            IconButton(onClick = onStop) { Icon(Icons.Default.Menu, contentDescription = "Terminar caminhada", tint = Ink) }
+            IconButton(onClick = onStop) { Icon(Icons.Default.Close, contentDescription = "Terminar caminhada", tint = Ink) }
         }
         Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             state.routePosition?.let { position ->
@@ -421,8 +414,8 @@ private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit, onOpenA
                         Text("${formatKm(position.routeKm)} km no caminho", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                         Text(gpsPresentation.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(gpsPresentation.detail, style = MaterialTheme.typography.bodySmall, color = Muted)
-                        if (WalkingStatusPresentation.offlineLabel(state.isOffline) != null) {
-                            Text(WalkingStatusPresentation.offlineLabel(state.isOffline)!!, style = MaterialTheme.typography.bodySmall, color = Muted)
+                        WalkingStatusPresentation.offlineLabel(state.isOffline)?.let { label ->
+                            Text(label, style = MaterialTheme.typography.bodySmall, color = Muted)
                         }
                         state.progress?.let { progress ->
                             Text("Faltam ${formatKm(progress.remainingKm)} km até ao destino planeado.", style = MaterialTheme.typography.bodyMedium, color = Muted)
