@@ -50,7 +50,7 @@ class AndroidV1AppContainer(context: Context) {
     fun clearSession() {
         controller = null
         store.setWalking(null)
-        store.clearApoiSelection(com.caminhos2027.v1.core.apoi.ApoiBrowser(base.catalog))
+        store.clearApoiBrowser()
         store.clearDecision()
     }
 }
