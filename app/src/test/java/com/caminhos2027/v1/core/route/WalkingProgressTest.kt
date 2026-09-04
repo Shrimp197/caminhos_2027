@@ -54,12 +54,14 @@ class WalkingProgressTest {
     fun stageIsDerivedFromRoutePosition() {
         val progress = WalkingProgressCalculator.calculate(route(), walk(), 6.0)
         assertEquals("stage-2", progress.stageId)
+        assertEquals("TEST/FICTITIOUS stage", progress.stageName)
     }
 
     @Test
     fun gapsDoNotInventStage() {
         val progress = WalkingProgressCalculator.calculate(routeWithGap(), walk(), 6.5)
         assertNull(progress.stageId)
+        assertNull(progress.stageName)
     }
 
     @Test(expected = IllegalArgumentException::class)
