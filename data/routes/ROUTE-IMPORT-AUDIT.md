@@ -70,7 +70,7 @@ A branch contém validação determinística para:
 
 Os testes `TEST/FICTITIOUS` permanecem separados da fonte de produção.
 
-A workflow de proveniência oficial executa estas verificações automaticamente e, no HEAD atual, terminou com sucesso.
+A workflow de proveniência oficial executa estas verificações automaticamente e, no commit `252384800b99cce89ee8e74c388600ef28a69aa1`, terminou com sucesso.
 
 ## Regras que permanecem
 
@@ -94,6 +94,6 @@ A fase de importação oficial considera-se concluída porque existem simultanea
 5. origem e destino validados;
 6. separação explícita entre fonte oficial e material histórico;
 7. testes do parser/validador separados da produção;
-8. validação automática em CI do HEAD.
+8. validação automática em CI do commit de importação.
 
 A partir daqui, o trabalho do eixo de rota é manutenção de proveniência, eventual atualização quando a ACF publicar uma nova versão oficial e integração da informação de etapas apenas quando comprovada.
