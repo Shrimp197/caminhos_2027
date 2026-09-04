@@ -48,6 +48,10 @@ class AppStateStore(initial: AppState = AppState()) {
         state = state.copy(apoiBrowser = browser.clearSelection(browserState))
     }
 
+    fun clearApoiBrowser() {
+        state = state.copy(apoiBrowser = null)
+    }
+
     fun buildDecision(route: Route, publishedApoi: List<Apoi>) {
         val walking = requireWalkingPosition()
         state = state.copy(
