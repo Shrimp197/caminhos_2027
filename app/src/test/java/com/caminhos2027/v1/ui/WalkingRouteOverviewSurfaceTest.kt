@@ -30,6 +30,30 @@ class WalkingRouteOverviewSurfaceTest {
     }
 
     @Test
+    fun distanceAwareIndexFollowsRouteLengthInsteadOfPointCount() {
+        val geometry = listOf(
+            GeoPoint(41.0, -8.0),
+            GeoPoint(41.001, -8.0),
+            GeoPoint(41.001, -8.02)
+        )
+
+        assertEquals(1, WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry, 0.5f))
+        assertEquals(2, WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry, 0.9f))
+    }
+
+    @Test
+    fun distanceAwareIndexFallsBackForCollapsedGeometry() {
+        val geometry = listOf(
+            GeoPoint(41.0, -8.0),
+            GeoPoint(41.0, -8.0),
+            GeoPoint(41.0, -8.0)
+        )
+
+        assertEquals(1, WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry, 0.5f))
+        assertEquals(2, WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry, 1.0f))
+    }
+
+    @Test
     fun sanitizeGeometryDropsNonFinitePoints() {
         val geometry = listOf(
             GeoPoint(40.0, -8.0),
