@@ -2,6 +2,7 @@ package com.caminhos2027.v1.core.route
 
 import kotlin.math.abs
 import kotlin.math.max
+import java.time.Instant
 
 /**
  * Evaluates a sequence of projected GPS observations without depending on Android APIs.
@@ -11,7 +12,7 @@ object GpsStateEvaluator {
     fun update(
         previous: GpsTrackingState,
         observation: GpsObservation?,
-        now: java.time.Instant,
+        now: Instant,
         policy: GpsTrackingPolicy = GpsTrackingPolicy()
     ): GpsTrackingState {
         if (observation == null) {
@@ -22,6 +23,10 @@ object GpsStateEvaluator {
             } else {
                 previous.copy(state = GpsState.ACQUIRING)
             }
+        }
+
+        if (observation.capturedAt.isAfter(now.plusSeconds(policy.maxFutureSkewSeconds))) {
+            return previous
         }
 
         val lastObservation = previous.lastObservation
