@@ -41,6 +41,26 @@ class WalkingSessionRuntimeTest {
         assertEquals(WalkStatus.COMPLETED, completed.status); assertEquals(1.4, completed.actualEndKm!!, 0.001); assertNull(states.get("walk-1"))
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotStartAlreadyActiveWalkAgain() {
+        val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        runtime.prepare(WalkingPlanFactory.create(route, "walk-duplicate", 0.4, 1.8))
+        runtime.start("walk-duplicate", start, Instant.parse("2026-09-01T08:00:00Z"))
+        runtime.start("walk-duplicate", start, Instant.parse("2026-09-01T08:00:10Z"))
+    }
+
+    @Test fun stopClearsCheckpointAndPreventsResume() {
+        val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        runtime.prepare(WalkingPlanFactory.create(route, "walk-stop", 0.4, 1.8))
+        runtime.start("walk-stop", start, Instant.parse("2026-09-01T08:00:00Z"))
+        runtime.stop(stop, Instant.parse("2026-09-01T12:00:00Z"))
+
+        assertNull(runtime.resume())
+        assertNull(service.resumeCheckpoint("walk-stop"))
+    }
+
     @Test fun startOutsideRouteDoesNotPersistAsReliableGpsObservation() {
         val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
         val runtime = WalkingSessionRuntime(route, service, emptyList())
