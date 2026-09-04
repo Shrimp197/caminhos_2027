@@ -20,6 +20,14 @@ class WalkingStatusPresentationTest {
     }
 
     @Test
+    fun presentationTitleRemainsAnExactAliasOfTheDisplayedLabel() {
+        val presentation = WalkingStatusPresentation.gps(GpsState.ON_ROUTE)
+
+        assertEquals(presentation.label, presentation.title)
+        assertEquals("No caminho", presentation.title)
+    }
+
+    @Test
     fun deviationExplainsThatPositionIsHeldForSafety() {
         val presentation = WalkingStatusPresentation.gps(GpsState.POSSIBLE_DEVIATION)
 
