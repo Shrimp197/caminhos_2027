@@ -20,8 +20,16 @@ class WalkingLocationPipeline(
     var trackingState: GpsTrackingState = initialState
         private set
 
-    /** Seeds the tracker with the real route position selected at walking start. */
-    fun seedRoutePosition(position: RoutePosition, capturedAt: Instant): GpsTrackingState {
+    /**
+     * Seeds the tracker with the route position selected at walking start.
+     * A provisional seed is intentionally not treated as reliable until a subsequent
+     * GPS observation passes the normal evaluator rules.
+     */
+    fun seedRoutePosition(
+        position: RoutePosition,
+        capturedAt: Instant,
+        reliable: Boolean = true
+    ): GpsTrackingState {
         require(position.routeId == route.id) { "Seed position route must match route" }
         val observation = GpsObservation(
             routePosition = position,
@@ -30,7 +38,7 @@ class WalkingLocationPipeline(
         )
         trackingState = GpsTrackingState(
             state = com.caminhos2027.v1.core.route.GpsState.ACQUIRING,
-            lastReliableObservation = observation,
+            lastReliableObservation = observation.takeIf { reliable },
             lastObservation = observation
         )
         return trackingState
