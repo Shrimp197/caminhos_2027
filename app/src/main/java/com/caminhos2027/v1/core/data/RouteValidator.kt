@@ -23,11 +23,14 @@ object RouteValidator {
 
         val geometry = route.geometry.points
         if (geometry.size < 2) errors += "route.geometry must contain at least two points"
+        var geometryCoordinatesValid = true
         geometry.forEachIndexed { index, point ->
             if (!point.latitude.isFinite() || point.latitude !in -90.0..90.0) {
+                geometryCoordinatesValid = false
                 errors += "geometry[$index].latitude must be finite and within -90..90"
             }
             if (!point.longitude.isFinite() || point.longitude !in -180.0..180.0) {
+                geometryCoordinatesValid = false
                 errors += "geometry[$index].longitude must be finite and within -180..180"
             }
             if (index > 0 && point == geometry[index - 1]) {
@@ -35,9 +38,17 @@ object RouteValidator {
             }
         }
 
-        if (geometry.size >= 2 && route.totalDistanceKm.isFinite() && route.totalDistanceKm > 0.0) {
+        if (
+            geometry.size >= 2 &&
+            geometryCoordinatesValid &&
+            route.totalDistanceKm.isFinite() &&
+            route.totalDistanceKm > 0.0
+        ) {
             val measuredKm = RouteGeometryMetrics.lengthKm(route.geometry)
-            val allowedDifference = maxOf(DISTANCE_TOLERANCE_KM, route.totalDistanceKm * GEOMETRY_DISTANCE_TOLERANCE_RATIO)
+            val allowedDifference = maxOf(
+                DISTANCE_TOLERANCE_KM,
+                route.totalDistanceKm * GEOMETRY_DISTANCE_TOLERANCE_RATIO
+            )
             if (abs(measuredKm - route.totalDistanceKm) > allowedDifference) {
                 errors += "route geometry length $measuredKm km differs from declared total distance ${route.totalDistanceKm} km by more than $allowedDifference km"
             }
