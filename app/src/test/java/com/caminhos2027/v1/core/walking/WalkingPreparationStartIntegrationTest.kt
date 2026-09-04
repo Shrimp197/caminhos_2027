@@ -79,7 +79,7 @@ class WalkingPreparationStartIntegrationTest {
         )
         val moved = controller.acceptGps(
             RawGpsPosition(
-                latitude = 40.003,
+                latitude = 40.03,
                 longitude = -8.0,
                 accuracyMeters = 5.0,
                 capturedAt = Instant.parse("2026-09-03T10:01:00Z")
@@ -111,7 +111,7 @@ class WalkingPreparationStartIntegrationTest {
 
         val recovered = resumedController.acceptGps(
             RawGpsPosition(
-                latitude = 40.004,
+                latitude = 40.04,
                 longitude = -8.0,
                 accuracyMeters = 5.0,
                 capturedAt = Instant.parse("2026-09-03T10:04:00Z")
@@ -154,7 +154,7 @@ class WalkingPreparationStartIntegrationTest {
         totalDistanceKm = 10.0,
         source = "test",
         updatedAt = "2026-01-01",
-        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.01, -8.0))),
+        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.09, -8.0))),
         stages = emptyList()
     )
 
