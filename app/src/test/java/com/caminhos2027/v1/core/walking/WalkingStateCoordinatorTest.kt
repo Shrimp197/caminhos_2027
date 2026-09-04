@@ -14,7 +14,6 @@ import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.route.GpsState
-import com.caminhos2027.v1.core.route.GpsTrackingPolicy
 import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -114,12 +113,12 @@ class WalkingStateCoordinatorTest {
     }
 
     @Test
-    fun `malformed checkpoint is not promoted to active route state`() {
+    fun `checkpoint with malformed position is discarded safely`() {
         val route = fixtureRoute()
         val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
         val coordinator = WalkingStateCoordinator(route, walk, emptyList())
         val malformed = WalkingCheckpoint(
-            routePosition = RoutePosition(route.id, Double.NaN, 0.0, "stage-1"),
+            routePosition = RoutePosition(route.id, Double.NaN, -1.0, "stage-1"),
             gpsState = GpsState.ON_ROUTE,
             isOffline = false,
             lastObservedAt = Instant.parse("2026-09-01T14:00:00Z")
@@ -151,9 +150,11 @@ class WalkingStateCoordinatorTest {
         assertEquals(checkpointPosition.routeKm, restored.routePosition!!.routeKm, 0.0001)
         assertNull(coordinator.lastReliableObservedAt())
 
-        val recovered = coordinator.accept(gps(40.00225, "2026-09-01T14:06:00Z"))
+        val gpsAt = Instant.parse("2026-09-01T14:06:00Z")
+        val recovered = coordinator.accept(gps(40.00225, gpsAt.toString()))
         assertEquals(GpsState.ON_ROUTE, recovered.gpsState)
-        assertTrue(recovered.routePosition!!.routeKm > checkpointPosition.routeKm)
+        assertTrue(recovered.routePosition!!.routeKm > 0.2)
+        assertEquals(gpsAt, coordinator.lastReliableObservedAt())
     }
 
     @Test
