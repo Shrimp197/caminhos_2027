@@ -6,22 +6,16 @@ import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.walking.WalkingAppStateController
 import com.caminhos2027.v1.core.walking.WalkingPreparationAppStateController
-import com.caminhos2027.v1.core.walking.WalkingPreparationService
 
 /** Android composition boundary for V1 walking preparation and the persistent session read model. */
 class AndroidV1AppContainer(context: Context) {
     private val base = V1AppContainer.forAndroid(context)
-    private val preparationService = WalkingPreparationService(
-        base.route,
-        // The published catalog is already sourced from the production asset by the shared root.
-        base.catalog
-    )
 
     val store: AppStateStore = base.appStateStore
     val runtime = base.sessionRuntime
     val preparationController = WalkingPreparationAppStateController(
         route = base.route,
-        preparationService = preparationService,
+        preparationService = requireNotNull(base.preparationService) { "Android V1 preparation service is not configured" },
         store = store,
         sessionRuntime = runtime
     )
