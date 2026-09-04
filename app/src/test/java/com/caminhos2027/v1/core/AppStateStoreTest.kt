@@ -86,6 +86,84 @@ class AppStateStoreTest {
         store.buildDecision(route(), emptyList())
     }
 
+    @Test
+    fun clearingBrowserDoesNotClearWalkingOrDecision() {
+        val route = route()
+        val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
+        val store = AppStateStore()
+        val browser = ApoiBrowser(catalog(water))
+        store.setWalking(walkingState(4.0))
+        store.browseApoi(browser)
+        store.buildDecision(route, listOf(water))
+        store.clearApoiBrowser()
+        assertNull(store.state.apoiBrowser)
+        assertEquals(4.0, store.state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(4.0, store.state.decision?.currentRouteKm ?: -1.0, 0.001)
+    }
+
+    @Test
+    fun clearingDecisionDoesNotClearWalkingOrBrowser() {
+        val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
+        val store = AppStateStore()
+        val browser = ApoiBrowser(catalog(water))
+        store.setWalking(walkingState(4.0))
+        store.browseApoi(browser)
+        store.buildDecision(route(), listOf(water))
+        store.clearDecision()
+        assertNull(store.state.decision)
+        assertEquals(4.0, store.state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(listOf("water"), store.state.apoiBrowser?.results?.map { it.apoi.id })
+    }
+
+    @Test
+    fun replacingWalkingDoesNotEraseExistingBrowserOrDecisionSlices() {
+        val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
+        val store = AppStateStore()
+        val browser = ApoiBrowser(catalog(water))
+        store.setWalking(walkingState(4.0))
+        store.browseApoi(browser)
+        store.buildDecision(route(), listOf(water))
+        store.setWalking(walkingState(4.5))
+        assertEquals(4.5, store.state.walking?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(4.0, store.state.apoiBrowser?.query?.currentRouteKm ?: -1.0, 0.001)
+        assertEquals(4.0, store.state.decision?.currentRouteKm ?: -1.0, 0.001)
+    }
+
+    @Test
+    fun rejectedDecisionLeavesPreviouslyBuiltDecisionUntouched() {
+        val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
+        val route = route()
+        val store = AppStateStore()
+        store.setWalking(walkingState(4.0))
+        store.buildDecision(route, listOf(water))
+        val before = store.state.decision
+        store.setWalking(walkingState(4.0).copy(routePosition = RoutePosition("other-route", 4.0, 0.0, null, PositionConfidence.HIGH)))
+        try {
+            store.buildDecision(route, listOf(water))
+            throw AssertionError("Expected decision build to reject a foreign route")
+        } catch (_: IllegalArgumentException) {
+            // Expected boundary rejection; the previous decision must remain intact.
+        }
+        assertEquals(before, store.state.decision)
+    }
+
+    @Test
+    fun failedApoiSelectionDoesNotEraseExistingBrowserResults() {
+        val water = apoi("water", "Fonte", 5.0, ApoiCategory.AGUA)
+        val store = AppStateStore()
+        val browser = ApoiBrowser(catalog(water))
+        store.setWalking(walkingState(4.0))
+        store.browseApoi(browser)
+        try {
+            store.selectApoi(browser, "missing")
+            throw AssertionError("Expected unknown APOI selection to reject")
+        } catch (_: IllegalArgumentException) {
+            // Expected boundary rejection; browser results must remain intact.
+        }
+        assertEquals(listOf("water"), store.state.apoiBrowser?.results?.map { it.apoi.id })
+        assertNull(store.state.apoiBrowser?.selected)
+    }
+
     private fun route() = Route(
         id = "route", name = "Route", officialName = "Route", totalDistanceKm = 10.0, source = "test", updatedAt = "2026-01-01",
         geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0))), stages = emptyList()
