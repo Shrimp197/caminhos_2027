@@ -1,6 +1,8 @@
 package com.caminhos2027.v1.core.route
 
 import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.ApoiAvailability
+import com.caminhos2027.v1.core.model.ApoiAvailabilityStatus
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.ApoiLocation
 import com.caminhos2027.v1.core.model.ApoiPublication
@@ -31,6 +33,20 @@ class NextApoiSelectorTest {
     }
 
     @Test
+    fun excludesClosedExpiredAndHistoricalAvailability() {
+        val selected = NextApoiSelector.next(
+            5.0,
+            listOf(
+                apoi("closed", 5.5, availability = ApoiAvailabilityStatus.CLOSED),
+                apoi("expired", 5.6, availability = ApoiAvailabilityStatus.EXPIRED),
+                apoi("historical", 5.7, availability = ApoiAvailabilityStatus.HISTORICAL),
+                apoi("current", 6.0, availability = ApoiAvailabilityStatus.CURRENT)
+            )
+        )
+        assertEquals("current", selected?.id)
+    }
+
+    @Test
     fun canSelectNextApoiForSpecificService() {
         val selected = NextApoiSelector.next(
             5.0,
@@ -45,7 +61,8 @@ class NextApoiSelectorTest {
         routeKm: Double,
         status: PublicationStatus = PublicationStatus.PUBLISHED,
         relation: RouteRelation = RouteRelation.ON_ROUTE,
-        services: Set<ApoiCategory> = setOf(ApoiCategory.DESCANSO)
+        services: Set<ApoiCategory> = setOf(ApoiCategory.DESCANSO),
+        availability: ApoiAvailabilityStatus = ApoiAvailabilityStatus.CURRENT
     ) = Apoi(
         id = id,
         name = "TEST/FICTITIOUS APOI",
@@ -53,6 +70,15 @@ class NextApoiSelectorTest {
         mainCategory = services.first(),
         services = services,
         location = ApoiLocation(null, null, LocationPrecision.LOCALITY_ONLY, null, null, null, "test-route", routeKm, null, null, relation),
-        publication = ApoiPublication(status, null)
+        publication = ApoiPublication(status, null),
+        availability = ApoiAvailability(
+            status = availability,
+            validFrom = null,
+            validUntil = null,
+            recurrence = null,
+            season = null,
+            openingHours = null,
+            notes = null
+        )
     )
 }
