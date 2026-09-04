@@ -27,6 +27,8 @@ import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.ApoiCostModel
 import com.caminhos2027.v1.core.model.ApoiReservationPolicy
 import com.caminhos2027.v1.core.model.LocationPrecision
+import com.caminhos2027.v1.core.model.PublicationStatus
+import com.caminhos2027.v1.core.model.PositionConfidence
 import java.util.Locale
 
 /** V1 APOI detail presentation. Missing values are omitted instead of being shown as "não informado". */
@@ -54,7 +56,7 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
             ContactCard(apoi)
             ConfidenceCard(apoi)
             Text(
-                "Os dados apresentados dependem da informação disponível e da sua data de confirmação.",
+                "Os dados apresentados dependem da informação disponível e da sua data de confirmação. Uma informação publicada não é, por si só, uma garantia de funcionamento em 2027.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -66,7 +68,10 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(publicationLabel(apoi.publication.status), fontWeight = FontWeight.Bold)
-            Text("Estado atual: ${availabilityLabel(apoi.availability.status)}")
+            Text("Estado de disponibilidade: ${availabilityLabel(apoi.availability.status)}")
+            availabilityCaveat(apoi.availability.status)?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             apoi.publication.reason?.takeIf { it.isNotBlank() }?.let { Text(it) }
             apoi.availability.validFrom?.takeIf { it.isNotBlank() }?.let { Text("Válido desde: $it") }
             apoi.availability.validUntil?.takeIf { it.isNotBlank() }?.let { Text("Válido até: $it") }
@@ -165,21 +170,42 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
     Card {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("Confiança da informação", fontWeight = FontWeight.Bold)
-            confidenceLine("Localização", apoi.confidence.location.name)
-            confidenceLine("Apoio", apoi.confidence.support.name)
-            confidenceLine("Disponibilidade", apoi.confidence.availability.name)
-            confidenceLine("Informação crítica", apoi.confidence.criticalInformation.name)
+            confidenceLine("Global", apoi.confidence.overall)
+            confidenceLine("Localização", apoi.confidence.location)
+            confidenceLine("Apoio", apoi.confidence.support)
+            confidenceLine("Disponibilidade", apoi.confidence.availability)
+            confidenceLine("Informação crítica", apoi.confidence.criticalInformation)
         }
     }
 }
 
-@Composable private fun confidenceLine(label: String, value: String) = Text("$label: ${value.lowercase(Locale("pt", "PT"))}", style = MaterialTheme.typography.bodySmall)
+@Composable private fun confidenceLine(label: String, value: PositionConfidence) = Text(
+    "$label: ${confidenceLabel(value)}",
+    style = MaterialTheme.typography.bodySmall
+)
 
-private fun publicationLabel(status: com.caminhos2027.v1.core.model.PublicationStatus): String = when (status) {
-    com.caminhos2027.v1.core.model.PublicationStatus.PUBLISHED -> "Informação publicada"
-    com.caminhos2027.v1.core.model.PublicationStatus.PUBLISHED_WITH_WARNING -> "Informação publicada com aviso"
-    com.caminhos2027.v1.core.model.PublicationStatus.HISTORICAL -> "Informação histórica"
-    com.caminhos2027.v1.core.model.PublicationStatus.CLOSED -> "APOI encerrado"
+private fun confidenceLabel(value: PositionConfidence): String = when (value) {
+    PositionConfidence.HIGH -> "alta"
+    PositionConfidence.MEDIUM -> "média"
+    PositionConfidence.LOW -> "baixa"
+    PositionConfidence.UNKNOWN -> "por confirmar"
+}
+
+private fun availabilityCaveat(status: ApoiAvailabilityStatus): String? = when (status) {
+    ApoiAvailabilityStatus.CURRENT -> "Informação indicada como válida atualmente; confirme antes de depender deste apoio."
+    ApoiAvailabilityStatus.FUTURE_CONFIRMED -> "Há confirmação para o período indicado; isso não substitui a confirmação de 2027 quando o período for outro."
+    ApoiAvailabilityStatus.RECURRING -> "A recorrência é informativa e pode não cobrir a data concreta da caminhada."
+    ApoiAvailabilityStatus.AWAITING_CONFIRMATION -> "A informação ainda aguarda confirmação."
+    ApoiAvailabilityStatus.HISTORICAL -> "Informação histórica: não deve ser tratada como disponibilidade atual."
+    ApoiAvailabilityStatus.EXPIRED -> "Informação expirada: não deve ser tratada como disponibilidade atual."
+    ApoiAvailabilityStatus.CLOSED -> "Este APOI está indicado como encerrado."
+}
+
+private fun publicationLabel(status: PublicationStatus): String = when (status) {
+    PublicationStatus.PUBLISHED -> "Informação publicada"
+    PublicationStatus.PUBLISHED_WITH_WARNING -> "Informação publicada com aviso"
+    PublicationStatus.HISTORICAL -> "Informação histórica"
+    PublicationStatus.CLOSED -> "APOI encerrado"
     else -> "Informação em revisão"
 }
 
