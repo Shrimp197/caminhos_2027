@@ -80,7 +80,7 @@ class WalkingSessionRuntimePersistenceInvariantTest {
         runtime.accept(firstFix)
         runtime.accept(firstFix.copy(latitude = 40.018, capturedAt = Instant.parse("2026-09-04T08:01:00Z")))
 
-        val resumed = WalkingSessionRuntime(route, service, emptyList()).resume(Instant.parse("2026-09-04T08:02:00Z"))
+        val resumed = WalkingSessionRuntime(route, service, emptyList()).resume(Instant.parse("2026-09-04T08:02:31Z"))
 
         assertNotNull(resumed)
         assertEquals(0.5, resumed!!.routePosition!!.routeKm, 0.02)
