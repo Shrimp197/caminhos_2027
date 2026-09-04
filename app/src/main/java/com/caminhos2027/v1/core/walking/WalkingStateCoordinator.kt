@@ -66,20 +66,21 @@ class WalkingStateCoordinator(
     }
 
     /**
-     * Restores persisted device state, rejecting malformed or stale route positions from becoming
-     * a fresh GPS baseline. A stale checkpoint may still be shown visually until a new GPS fix arrives.
+     * Restores persisted device state. A valid historical timestamp remains a continuity baseline
+     * so a physically implausible jump cannot become the first post-resume fix. GPS freshness is
+     * represented separately: stale checkpoints restore as NO_SIGNAL until a fresh observation arrives.
      */
     fun restoreCheckpoint(checkpoint: WalkingCheckpoint, now: Instant = Instant.now()): WalkingState {
         val validPosition = checkpoint.routePosition?.takeIf(::isValidRoutePosition)
         val timestamp = checkpoint.lastObservedAt
-        val freshTimestamp = timestamp != null &&
-            !timestamp.isAfter(now) &&
-            now.epochSecond - timestamp.epochSecond < policy.noSignalAfterSeconds
+        val usableBaseline = validPosition != null && timestamp != null && !timestamp.isAfter(now)
+        val freshTimestamp = usableBaseline &&
+            now.epochSecond - timestamp!!.epochSecond < policy.noSignalAfterSeconds
         lastReliableRouteKm = null
 
-        if (validPosition != null && freshTimestamp) {
+        if (usableBaseline) {
             locationPipeline.seedRoutePosition(
-                validPosition,
+                validPosition!!,
                 timestamp!!,
                 reliable = true
             )
@@ -89,7 +90,7 @@ class WalkingStateCoordinator(
         state = WalkingStateBuilder.build(
             route = route,
             walk = walk,
-            gpsState = if (validPosition != null && freshTimestamp) checkpoint.gpsState else GpsState.NO_SIGNAL,
+            gpsState = if (freshTimestamp) checkpoint.gpsState else GpsState.NO_SIGNAL,
             routePosition = validPosition,
             publishedApoi = publishedApoi,
             movementCue = null,
