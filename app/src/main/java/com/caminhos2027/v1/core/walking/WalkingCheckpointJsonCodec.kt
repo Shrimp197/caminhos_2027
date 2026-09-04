@@ -1,0 +1,64 @@
+package com.caminhos2027.v1.core.walking
+
+import com.caminhos2027.v1.core.model.PositionConfidence
+import com.caminhos2027.v1.core.model.RoutePosition
+import com.caminhos2027.v1.core.route.GpsState
+import org.json.JSONObject
+import java.time.Instant
+
+/** Stable, defensive JSON boundary for the persisted V1 walking checkpoint. */
+object WalkingCheckpointJsonCodec {
+    private const val VERSION = 1
+
+    fun encode(checkpoint: WalkingCheckpoint): String = JSONObject().apply {
+        put("version", VERSION)
+        put("routePosition", checkpoint.routePosition?.toJson())
+        put("gpsState", checkpoint.gpsState.name)
+        put("isOffline", checkpoint.isOffline)
+        putNullable("lastObservedAt", checkpoint.lastObservedAt?.toString())
+    }.toString()
+
+    fun decode(json: String): WalkingCheckpoint? = runCatching {
+        val root = JSONObject(json)
+        val version = if (root.has("version")) root.getInt("version") else VERSION
+        require(version == VERSION) { "Unsupported walking checkpoint version: $version" }
+        val position = root.optJSONObject("routePosition")?.let(::routePositionFromJson)
+        val gpsState = GpsState.valueOf(root.getString("gpsState"))
+        val lastObservedAt = root.optStringOrNull("lastObservedAt")?.let(Instant::parse)
+        WalkingCheckpoint(
+            routePosition = position,
+            gpsState = gpsState,
+            isOffline = root.optBoolean("isOffline", false),
+            lastObservedAt = lastObservedAt
+        )
+    }.getOrNull()
+
+    private fun RoutePosition.toJson() = JSONObject().apply {
+        put("routeId", routeId)
+        put("routeKm", routeKm)
+        put("distanceToRouteMeters", distanceToRouteMeters)
+        putNullable("stageId", stageId)
+        put("confidence", confidence.name)
+    }
+
+    private fun routePositionFromJson(json: JSONObject): RoutePosition? = runCatching {
+        val routeKm = json.getDouble("routeKm")
+        val distance = json.getDouble("distanceToRouteMeters")
+        require(routeKm.isFinite() && routeKm >= 0.0)
+        require(distance.isFinite() && distance >= 0.0)
+        RoutePosition(
+            routeId = json.getString("routeId"),
+            routeKm = routeKm,
+            distanceToRouteMeters = distance,
+            stageId = json.optStringOrNull("stageId"),
+            confidence = PositionConfidence.valueOf(json.getString("confidence"))
+        )
+    }.getOrNull()
+
+    private fun JSONObject.putNullable(key: String, value: Any?) {
+        put(key, value ?: JSONObject.NULL)
+    }
+
+    private fun JSONObject.optStringOrNull(key: String): String? =
+        if (isNull(key)) null else optString(key)
+}
