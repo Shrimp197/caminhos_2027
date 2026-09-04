@@ -38,6 +38,10 @@ object RouteLocationEngine {
             accumulatedKm += segmentLengthKm
         }
 
+        require(bestDistance.isFinite() && bestRouteKm.isFinite()) {
+            "Route projection produced non-finite metrics"
+        }
+
         val stageId = StageLocator.currentStage(route, bestRouteKm)?.id
         val confidence = confidenceFor(
             distanceToRouteMeters = bestDistance,
@@ -72,6 +76,16 @@ object RouteLocationEngine {
         start: GeoPoint,
         end: GeoPoint
     ): Projection {
+        require(start.latitude.isFinite() && start.longitude.isFinite() && end.latitude.isFinite() && end.longitude.isFinite()) {
+            "Route geometry coordinates must be finite"
+        }
+        require(start.latitude in -90.0..90.0 && end.latitude in -90.0..90.0) {
+            "Route geometry latitude must be within Earth bounds"
+        }
+        require(start.longitude in -180.0..180.0 && end.longitude in -180.0..180.0) {
+            "Route geometry longitude must be within Earth bounds"
+        }
+
         val meanLat = Math.toRadians((start.latitude + end.latitude + latitude) / 3.0)
         val metersPerDegreeLat = 111_320.0
         val metersPerDegreeLon = metersPerDegreeLat * cos(meanLat)
@@ -110,7 +124,7 @@ object RouteLocationEngine {
         val dl = Math.toRadians(lon2 - lon1)
         val sinLat = kotlin.math.sin(dp / 2.0)
         val sinLon = kotlin.math.sin(dl / 2.0)
-        val h = sinLat * sinLat + kotlin.math.cos(p1) * kotlin.math.cos(p2) * sinLon * sinLon
+        val h = (sinLat * sinLat + kotlin.math.cos(p1) * kotlin.math.cos(p2) * sinLon * sinLon).coerceIn(0.0, 1.0)
         return 2.0 * EARTH_RADIUS_M * kotlin.math.atan2(sqrt(h), sqrt(1.0 - h))
     }
 
