@@ -19,6 +19,7 @@ class WalkingSessionService(
 
     fun start(walkId: String, startPosition: RoutePosition, now: Instant = Instant.now()): Walk {
         val walk = requireWalk(walkId)
+        validatePosition(walk, startPosition)
         val started = WalkingSessionController.start(walk, startPosition, now)
         repository.save(started)
         stateRepository?.save(
@@ -37,10 +38,11 @@ class WalkingSessionService(
         val walk = requireWalk(walkId)
         require(walk.status == WalkStatus.ACTIVE) { "Only an active walk can be updated" }
         require(walk.id == state.walk.id) { "Walking state walk must match requested walk" }
-        state.routePosition?.let { position ->
-            require(walk.routeId == position.routeId) { "Walk and position route must match" }
-        }
+        state.routePosition?.let { validatePosition(walk, it) }
         val previousObservedAt = stateRepository?.get(walkId)?.lastObservedAt
+        require(
+            observedAt == null || previousObservedAt == null || !observedAt.isBefore(previousObservedAt)
+        ) { "Observed GPS time cannot move backwards" }
         stateRepository?.save(
             walkId,
             WalkingCheckpoint(
@@ -55,6 +57,7 @@ class WalkingSessionService(
 
     fun stop(walkId: String, endPosition: RoutePosition, now: Instant = Instant.now()): Walk {
         val walk = requireWalk(walkId)
+        validatePosition(walk, endPosition)
         val stopped = WalkingSessionController.stop(walk, endPosition, now)
         repository.save(stopped)
         stateRepository?.clear(walkId)
@@ -69,4 +72,14 @@ class WalkingSessionService(
 
     private fun requireWalk(walkId: String): Walk =
         requireNotNull(repository.getById(walkId)) { "Walk not found: $walkId" }
+
+    private fun validatePosition(walk: Walk, position: RoutePosition) {
+        require(walk.routeId == position.routeId) { "Walk and position route must match" }
+        require(position.routeKm.isFinite() && position.routeKm >= 0.0) {
+            "Position routeKm must be finite and >= 0"
+        }
+        require(position.distanceToRouteMeters.isFinite() && position.distanceToRouteMeters >= 0.0) {
+            "Position distanceToRouteMeters must be finite and >= 0"
+        }
+    }
 }
