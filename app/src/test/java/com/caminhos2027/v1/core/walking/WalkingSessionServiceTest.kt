@@ -63,6 +63,49 @@ class WalkingSessionServiceTest {
     }
 
     @Test
+    fun observedAtIsPreservedWhenOmitted() {
+        service.prepare(planned)
+        service.start("walk-1", position, startTime)
+        val state = WalkingState(service.get("walk-1")!!, position, GpsState.ON_ROUTE, null, null, null)
+        val firstObservedAt = startTime.plusSeconds(10)
+        service.updatePosition("walk-1", state, firstObservedAt)
+
+        service.updatePosition("walk-1", state.copy(gpsState = GpsState.ACQUIRING))
+
+        assertEquals(firstObservedAt, service.resumeCheckpoint("walk-1")!!.lastObservedAt)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun observedAtCannotMoveBackwards() {
+        service.prepare(planned)
+        service.start("walk-1", position, startTime)
+        val state = WalkingState(service.get("walk-1")!!, position, GpsState.ON_ROUTE, null, null, null)
+        service.updatePosition("walk-1", state, startTime.plusSeconds(20))
+
+        service.updatePosition("walk-1", state, startTime.plusSeconds(10))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotPersistNonFiniteRoutePosition() {
+        service.prepare(planned)
+        service.start("walk-1", position, startTime)
+        val badPosition = position.copy(routeKm = Double.NaN)
+        val state = WalkingState(service.get("walk-1")!!, badPosition, GpsState.ON_ROUTE, null, null, null)
+
+        service.updatePosition("walk-1", state)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotPersistNegativeRouteDistance() {
+        service.prepare(planned)
+        service.start("walk-1", position, startTime)
+        val badPosition = position.copy(distanceToRouteMeters = -1.0)
+        val state = WalkingState(service.get("walk-1")!!, badPosition, GpsState.ON_ROUTE, null, null, null)
+
+        service.updatePosition("walk-1", state)
+    }
+
+    @Test
     fun stopPersistsCompletedWalkAndClearsCurrentState() {
         service.prepare(planned)
         service.start("walk-1", position, startTime)
@@ -114,6 +157,12 @@ class WalkingSessionServiceTest {
     fun cannotStartWithWrongRoute() {
         service.prepare(planned)
         service.start("walk-1", position.copy(routeId = "other-route"), startTime)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotStartWithNonFinitePosition() {
+        service.prepare(planned)
+        service.start("walk-1", position.copy(distanceToRouteMeters = Double.POSITIVE_INFINITY), startTime)
     }
 
     @Test(expected = IllegalArgumentException::class)
