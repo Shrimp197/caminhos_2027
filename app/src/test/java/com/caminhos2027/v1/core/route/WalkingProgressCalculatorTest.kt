@@ -6,6 +6,7 @@ import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.Walk
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFailsWith
 import org.junit.Test
 
 class WalkingProgressCalculatorTest {
@@ -73,44 +74,59 @@ class WalkingProgressCalculatorTest {
         assertEquals(1.0, progress.progressRatio, 0.000001)
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
+    fun exactRouteEndIsAlsoCompleteWhenDestinationIsRouteEnd() {
+        val progress = WalkingProgressCalculator.calculate(route(), walk(plannedStartKm = 2.0, plannedDestinationKm = 10.0), 10.0)
+
+        assertEquals(10.0, progress.currentRouteKm, 0.000001)
+        assertEquals(8.0, progress.walkedKm, 0.000001)
+        assertEquals(0.0, progress.remainingKm, 0.000001)
+        assertEquals(1.0, progress.progressRatio, 0.000001)
+        assertEquals("stage-2", progress.stageId)
+    }
+
+    @Test
+    fun positionBetweenStagesDoesNotFabricateStageIdentity() {
+        val progress = WalkingProgressCalculator.calculate(routeWithGap(), walk(plannedStartKm = 0.0, plannedDestinationKm = 10.0), 5.5)
+
+        assertEquals(null, progress.stageId)
+    }
+
+    @Test
     fun routeMismatchIsRejected() {
-        WalkingProgressCalculator.calculate(route(), walk(routeId = "other-route"), 2.0)
+        assertFailsWith<IllegalArgumentException> {
+            WalkingProgressCalculator.calculate(route(), walk(routeId = "other-route"), 2.0)
+        }
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun negativePositionIsRejected() {
-        WalkingProgressCalculator.calculate(route(), walk(), -0.001)
+        assertFailsWith<IllegalArgumentException> {
+            WalkingProgressCalculator.calculate(route(), walk(), -0.001)
+        }
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun nanPositionIsRejected() {
-        WalkingProgressCalculator.calculate(route(), walk(), Double.NaN)
+    @Test
+    fun nonFinitePositionIsRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            WalkingProgressCalculator.calculate(route(), walk(), Double.NaN)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            WalkingProgressCalculator.calculate(route(), walk(), Double.POSITIVE_INFINITY)
+        }
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun infinitePositionIsRejected() {
-        WalkingProgressCalculator.calculate(route(), walk(), Double.POSITIVE_INFINITY)
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun nonFinitePlannedStartIsRejected() {
-        WalkingProgressCalculator.calculate(route(), walk(plannedStartKm = Double.NaN), 2.0)
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun nonFinitePlannedDestinationIsRejected() {
-        WalkingProgressCalculator.calculate(route(), walk(plannedDestinationKm = Double.POSITIVE_INFINITY), 2.0)
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun nonFiniteActualStartIsRejected() {
-        WalkingProgressCalculator.calculate(route(), walk(actualStartKm = Double.NEGATIVE_INFINITY), 2.0)
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun nonFiniteRouteDistanceIsRejected() {
-        WalkingProgressCalculator.calculate(route().copy(totalDistanceKm = Double.NaN), walk(), 2.0)
+    @Test
+    fun nonFiniteWalkPlanningValuesAreRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            WalkingProgressCalculator.calculate(route(), walk(plannedStartKm = Double.NaN), 2.0)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            WalkingProgressCalculator.calculate(route(), walk(plannedDestinationKm = Double.POSITIVE_INFINITY), 2.0)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            WalkingProgressCalculator.calculate(route(), walk(actualStartKm = Double.NEGATIVE_INFINITY), 2.0)
+        }
     }
 
     private fun walk(
@@ -137,6 +153,13 @@ class WalkingProgressCalculatorTest {
         stages = listOf(
             Stage("stage-1", "test-route", 1, "Stage 1", 0.0, 5.0, 5.0, "A", "B", "TEST/FICTITIOUS"),
             Stage("stage-2", "test-route", 2, "Stage 2", 5.0, 10.0, 5.0, "B", "C", "TEST/FICTITIOUS")
+        )
+    )
+
+    private fun routeWithGap() = route().copy(
+        stages = listOf(
+            Stage("stage-1", "test-route", 1, "Stage 1", 0.0, 5.0, 5.0, "A", "B", "TEST/FICTITIOUS"),
+            Stage("stage-2", "test-route", 2, "Stage 2", 6.0, 10.0, 4.0, "B", "C", "TEST/FICTITIOUS")
         )
     )
 }
