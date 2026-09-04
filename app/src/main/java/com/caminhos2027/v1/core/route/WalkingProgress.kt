@@ -11,7 +11,11 @@ data class WalkingProgress(
     val targetRouteKm: Double,
     val progressRatio: Double,
     val stageId: String?
-)
+) {
+    /** Compatibility label for presentation code; the route domain currently exposes the stage identifier. */
+    val stageName: String?
+        get() = stageId
+}
 
 object WalkingProgressCalculator {
     fun calculate(route: Route, walk: Walk, positionKm: Double): WalkingProgress {
