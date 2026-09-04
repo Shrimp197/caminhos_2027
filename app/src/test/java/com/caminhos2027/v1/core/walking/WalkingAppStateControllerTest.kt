@@ -88,6 +88,59 @@ class WalkingAppStateControllerTest {
     }
 
     @Test
+    fun invalidStartRouteDoesNotMutateThePublishedWalkingState() {
+        val store = AppStateStore()
+        val controller = controller(store = store)
+        val before = store.state
+
+        try {
+            controller.start(RoutePosition("wrong-route", 0.5, 0.0), Instant.parse("2026-09-02T12:30:00Z"))
+            throw AssertionError("a mismatched route must be rejected")
+        } catch (_: IllegalArgumentException) {
+            // Expected validation failure before lifecycle mutation.
+        }
+
+        assertEquals(before, store.state)
+        assertEquals(WalkStatus.PLANNED, store.state.walking!!.walk.status)
+        assertEquals(null, store.state.walking!!.routePosition)
+    }
+
+    @Test
+    fun nonFiniteStartPositionDoesNotMutateThePublishedWalkingState() {
+        val store = AppStateStore()
+        val controller = controller(store = store)
+        val before = store.state
+
+        try {
+            controller.start(RoutePosition("route", Double.NaN, 0.0), Instant.parse("2026-09-02T12:31:00Z"))
+            throw AssertionError("a non-finite route position must be rejected")
+        } catch (_: IllegalArgumentException) {
+            // Expected validation failure before lifecycle mutation.
+        }
+
+        assertEquals(before, store.state)
+        assertEquals(WalkStatus.PLANNED, store.state.walking!!.walk.status)
+        assertEquals(null, store.state.walking!!.routePosition)
+    }
+
+    @Test
+    fun outOfOrderGpsDoesNotReplacePublishedReliableState() {
+        val store = AppStateStore()
+        val controller = controller(catalog(waterApoi()), store)
+        controller.start(RoutePosition("route", 0.0, 0.0), Instant.parse("2026-09-02T12:40:00Z"))
+        val reliable = controller.acceptGps(gps(40.00225, "2026-09-02T12:42:00Z"))
+        val before = store.state
+
+        val outOfOrder = controller.acceptGps(gps(40.0045, "2026-09-02T12:41:59Z"))
+
+        assertEquals(before.walking?.routePosition, outOfOrder.walking?.routePosition)
+        assertEquals(before.walking?.nextApoi, outOfOrder.walking?.nextApoi)
+        assertEquals(before.walking?.nextApoiDistanceKm, outOfOrder.walking?.nextApoiDistanceKm)
+        assertEquals(reliable.walking?.routePosition, outOfOrder.walking?.routePosition)
+        assertSame(outOfOrder, store.state)
+    }
+
+    @Test
     fun persistentRuntimeKeepsLastReliableObservedAtAfterRejectedJump() {
         val route = route()
         val walks = InMemoryWalkRepository()
