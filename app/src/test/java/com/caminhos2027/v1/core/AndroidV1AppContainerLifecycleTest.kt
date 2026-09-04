@@ -1,5 +1,6 @@
 package com.caminhos2027.v1.core
 
+import com.caminhos2027.v1.V1AppContainer
 import com.caminhos2027.v1.core.apoi.ApoiBrowser
 import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
 import com.caminhos2027.v1.core.data.ApoiRepository
