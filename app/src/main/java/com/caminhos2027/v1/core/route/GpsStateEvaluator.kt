@@ -54,13 +54,24 @@ object GpsStateEvaluator {
             else -> GpsState.ON_ROUTE
         }
 
-        return previous.copy(
-            state = nextState,
-            lastReliableObservation = observation,
-            lastObservation = observation,
-            consecutiveSuspiciousSamples = nextSuspicious,
-            consecutiveProbableSamples = nextProbable
-        )
+        return if (nextState == GpsState.ON_ROUTE) {
+            previous.copy(
+                state = nextState,
+                lastReliableObservation = observation,
+                lastObservation = observation,
+                consecutiveSuspiciousSamples = nextSuspicious,
+                consecutiveProbableSamples = nextProbable
+            )
+        } else {
+            // A deviation candidate must not replace the last route position presented to the pilgrim.
+            // The sample remains available for diagnosis through lastObservation and counters.
+            previous.copy(
+                state = nextState,
+                lastObservation = observation,
+                consecutiveSuspiciousSamples = nextSuspicious,
+                consecutiveProbableSamples = nextProbable
+            )
+        }
     }
 
     private fun isPlausibleJump(
