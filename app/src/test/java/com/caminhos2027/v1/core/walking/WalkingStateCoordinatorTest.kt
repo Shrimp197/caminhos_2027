@@ -14,6 +14,7 @@ import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.route.GpsState
+import com.caminhos2027.v1.core.route.WalkingMovementCue
 import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -62,6 +63,43 @@ class WalkingStateCoordinatorTest {
     }
 
     @Test
+    fun `coordinator exposes forward movement only after consecutive reliable positions`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+
+        val first = coordinator.accept(gps(40.00225, "2026-09-01T11:10:00Z"))
+        assertNull(first.movementCue)
+
+        val moved = coordinator.accept(gps(40.00350, "2026-09-01T11:11:00Z"))
+        assertEquals(WalkingMovementCue.FORWARD, moved.movementCue)
+    }
+
+    @Test
+    fun `coordinator exposes backward movement when reliable route distance decreases`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+
+        coordinator.accept(gps(40.00550, "2026-09-01T11:20:00Z"))
+        val movedBack = coordinator.accept(gps(40.00425, "2026-09-01T11:21:00Z"))
+
+        assertEquals(WalkingMovementCue.BACKWARD, movedBack.movementCue)
+    }
+
+    @Test
+    fun `small reliable route changes remain stationary`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+
+        coordinator.accept(gps(40.00300, "2026-09-01T11:30:00Z"))
+        val nearlySame = coordinator.accept(gps(40.00308, "2026-09-01T11:31:00Z"))
+
+        assertEquals(WalkingMovementCue.STATIONARY, nearlySame.movementCue)
+    }
+
+    @Test
     fun `implausible GPS jump does not move walking position or next APOI`() {
         val route = fixtureRoute()
         val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
@@ -73,6 +111,7 @@ class WalkingStateCoordinatorTest {
         assertEquals(first.routePosition!!.routeKm, jump.routePosition!!.routeKm, 0.0001)
         assertEquals(first.nextApoi?.id, jump.nextApoi?.id)
         assertEquals(first.nextApoiDistanceKm!!, jump.nextApoiDistanceKm!!, 0.0001)
+        assertNull(jump.movementCue)
     }
 
     @Test
