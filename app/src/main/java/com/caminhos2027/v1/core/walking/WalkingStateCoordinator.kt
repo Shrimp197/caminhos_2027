@@ -93,7 +93,9 @@ class WalkingStateCoordinator(
         val previousReliableRouteKm = lastReliableRouteKm
         val tracking = locationPipeline.accept(position)
         val currentReliableRouteKm = tracking.lastReliableObservation?.routePosition?.routeKm
-        val movementCue = if (currentReliableRouteKm != null && currentReliableRouteKm != previousReliableRouteKm) {
+        // Movement requires two reliable observations. Before that, null means "no reference
+        // available" rather than manufacturing an UNKNOWN movement label for the UI.
+        val movementCue = if (previousReliableRouteKm != null && currentReliableRouteKm != null) {
             WalkingMovementCueEvaluator.evaluate(previousReliableRouteKm, currentReliableRouteKm)
         } else {
             state.movementCue
