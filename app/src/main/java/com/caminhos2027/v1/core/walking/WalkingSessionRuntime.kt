@@ -20,6 +20,7 @@ class WalkingSessionRuntime(
     fun prepare(walk: Walk): Walk = sessionService.prepare(walk)
 
     fun start(walkId: String, position: RoutePosition, now: Instant = Instant.now()): WalkingState {
+        validateRoutePosition(position)
         val started = sessionService.start(walkId, position, now)
         val nextCoordinator = WalkingStateCoordinator(route, started, publishedApoi, policy)
         coordinator = nextCoordinator
@@ -59,6 +60,7 @@ class WalkingSessionRuntime(
 
     fun stop(position: RoutePosition, now: Instant = Instant.now()): Walk {
         val active = requireNotNull(coordinator) { "Walking session has not been started" }
+        validateRoutePosition(position)
         val stopped = sessionService.stop(active.state.walk.id, position, now)
         coordinator = null
         return stopped
@@ -71,5 +73,18 @@ class WalkingSessionRuntime(
         coordinator = nextCoordinator
         val checkpoint = sessionService.resumeCheckpoint(walk.id) ?: return nextCoordinator.state
         return nextCoordinator.restoreCheckpoint(checkpoint, now)
+    }
+
+    private fun validateRoutePosition(position: RoutePosition) {
+        require(position.routeId == route.id) { "Position route must match the published V1 route" }
+        require(position.routeKm.isFinite() && position.routeKm >= 0.0) {
+            "Position routeKm must be finite and >= 0"
+        }
+        require(position.routeKm <= route.totalDistanceKm) {
+            "Position routeKm must not exceed the published route length"
+        }
+        require(position.distanceToRouteMeters.isFinite() && position.distanceToRouteMeters >= 0.0) {
+            "Position distanceToRouteMeters must be finite and >= 0"
+        }
     }
 }
