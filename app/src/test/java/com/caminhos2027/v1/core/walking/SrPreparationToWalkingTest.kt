@@ -13,7 +13,10 @@ import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 
@@ -63,4 +66,131 @@ class SrPreparationToWalkingTest {
         assertEquals(WalkStatus.COMPLETED, completed.status)
         assertEquals(1.4, completed.actualEndKm!!, 0.001)
     }
+
+    @Test
+    fun plannedWalkIsNotResumableBeforeItStarts() {
+        val walks = InMemoryWalkRepository()
+        val states = InMemoryWalkingStateRepository()
+        val service = WalkingSessionService(walks, states)
+        val preparation = WalkingPreparationService(
+            route,
+            walks,
+            emptyCatalog()
+        ).save("sr-planned", 0.2, 1.2)
+
+        assertEquals(WalkStatus.PLANNED, preparation.walk.status)
+        assertNull(WalkingSessionRuntime(route, service, emptyList()).resume())
+        assertNull(states.get(preparation.walk.id))
+    }
+
+    @Test
+    fun rejectedStartPositionDoesNotActivatePreparedWalk() {
+        val walks = InMemoryWalkRepository()
+        val states = InMemoryWalkingStateRepository()
+        val service = WalkingSessionService(walks, states)
+        val preparation = WalkingPreparationService(route, walks, emptyCatalog()).save("sr-start-boundary", 0.4, 1.8)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+
+        try {
+            runtime.start(
+                preparation.walk.id,
+                RoutePosition("foreign-route", 0.4, 3.0, "stage-1", PositionConfidence.HIGH),
+                Instant.parse("2026-09-01T08:00:00Z")
+            )
+            throw AssertionError("Expected foreign route start to be rejected")
+        } catch (_: IllegalArgumentException) {
+            // Expected boundary rejection.
+        }
+
+        assertEquals(WalkStatus.PLANNED, walks.getById(preparation.walk.id)!!.status)
+        assertNull(states.get(preparation.walk.id))
+    }
+
+    @Test
+    fun rejectedStopLeavesActiveCheckpointAndWalkUntouched() {
+        val walks = InMemoryWalkRepository()
+        val states = InMemoryWalkingStateRepository()
+        val service = WalkingSessionService(walks, states)
+        val preparation = WalkingPreparationService(route, walks, emptyCatalog()).save("sr-stop-boundary", 0.4, 1.8)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        runtime.start(
+            preparation.walk.id,
+            RoutePosition("sr-route", 0.4, 3.0, "stage-1", PositionConfidence.HIGH),
+            Instant.parse("2026-09-01T08:00:00Z")
+        )
+        val checkpointBefore = states.get(preparation.walk.id)
+        val walkBefore = walks.getById(preparation.walk.id)
+
+        try {
+            runtime.stop(
+                RoutePosition("foreign-route", 1.0, 3.0, "stage-2", PositionConfidence.HIGH),
+                Instant.parse("2026-09-01T12:00:00Z")
+            )
+            throw AssertionError("Expected foreign route stop to be rejected")
+        } catch (_: IllegalArgumentException) {
+            // Expected boundary rejection.
+        }
+
+        assertEquals(WalkStatus.ACTIVE, walks.getById(preparation.walk.id)!!.status)
+        assertEquals(walkBefore, walks.getById(preparation.walk.id))
+        assertEquals(checkpointBefore, states.get(preparation.walk.id))
+    }
+
+    @Test
+    fun completionClearsCheckpointAndCannotBeResumed() {
+        val walks = InMemoryWalkRepository()
+        val states = InMemoryWalkingStateRepository()
+        val service = WalkingSessionService(walks, states)
+        val preparation = WalkingPreparationService(route, walks, emptyCatalog()).save("sr-terminal", 0.4, 1.8)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        runtime.start(
+            preparation.walk.id,
+            RoutePosition("sr-route", 0.4, 3.0, "stage-1", PositionConfidence.HIGH),
+            Instant.parse("2026-09-01T08:00:00Z")
+        )
+
+        val completed = runtime.stop(
+            RoutePosition("sr-route", 1.4, 3.0, "stage-2", PositionConfidence.HIGH),
+            Instant.parse("2026-09-01T12:00:00Z")
+        )
+
+        assertEquals(WalkStatus.COMPLETED, completed.status)
+        assertNull(states.get(preparation.walk.id))
+        assertNull(WalkingSessionRuntime(route, service, emptyList()).resume())
+    }
+
+    @Test
+    fun resumedRuntimeCanContinueFromPersistedCheckpoint() {
+        val walks = InMemoryWalkRepository()
+        val states = InMemoryWalkingStateRepository()
+        val service = WalkingSessionService(walks, states)
+        val preparation = WalkingPreparationService(route, walks, emptyCatalog()).save("sr-recreate", 0.4, 1.8)
+        val firstRuntime = WalkingSessionRuntime(route, service, emptyList())
+        firstRuntime.start(
+            preparation.walk.id,
+            RoutePosition("sr-route", 0.4, 3.0, "stage-1", PositionConfidence.HIGH),
+            Instant.parse("2026-09-01T08:00:00Z")
+        )
+        firstRuntime.accept(
+            com.caminhos2027.v1.core.model.RawGpsPosition(
+                latitude = 40.0045,
+                longitude = -8.0,
+                accuracyMeters = 5.0,
+                observedAt = Instant.parse("2026-09-01T08:01:00Z")
+            )
+        )
+
+        val recreated = WalkingSessionRuntime(route, service, emptyList())
+        val resumed = recreated.resume(Instant.parse("2026-09-01T08:01:10Z"))
+
+        assertNotNull(resumed)
+        assertEquals(WalkStatus.ACTIVE, resumed!!.walk.status)
+        assertNotNull(resumed.routePosition)
+        assertTrue(resumed.routePosition!!.routeKm >= 0.4)
+        assertFalse(resumed.isOffline)
+    }
+
+    private fun emptyCatalog() = PublishedApoiCatalog(
+        ApoiRepository(ApoiDataSource { emptyList<Apoi>() })
+    )
 }
