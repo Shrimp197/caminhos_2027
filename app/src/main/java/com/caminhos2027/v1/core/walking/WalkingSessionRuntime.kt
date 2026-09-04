@@ -69,6 +69,9 @@ class WalkingSessionRuntime(
     /** Rebuilds derived progress/APOI information from the persisted walk and checkpoint. */
     fun resume(now: Instant = Instant.now()): WalkingState? {
         val walk = sessionService.resume() ?: return null
+        require(walk.routeId == route.id) {
+            "Active walking session route must match the published V1 route"
+        }
         val nextCoordinator = WalkingStateCoordinator(route, walk, publishedApoi, policy)
         coordinator = nextCoordinator
         val checkpoint = sessionService.resumeCheckpoint(walk.id) ?: return nextCoordinator.state
