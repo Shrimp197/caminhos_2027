@@ -54,4 +54,18 @@ class WalkingRouteProgressSurfaceTest {
         assertEquals(0.5f, WalkingRouteProgressPresenter.present(progress).ratio, 0.0f)
         assertTrue(WalkingRouteProgressPresenter.present(progress).remainingLabel.contains("50.0 km"))
     }
+
+    @Test
+    fun nonFiniteProgressRatioFallsBackToZero() {
+        val progress = WalkingProgress(
+            currentRouteKm = 10.0,
+            walkedKm = 10.0,
+            remainingKm = 90.0,
+            targetRouteKm = 100.0,
+            progressRatio = Double.NaN,
+            stageId = "stage-1"
+        )
+
+        assertEquals(0.0f, WalkingRouteProgressPresenter.present(progress).ratio, 0.0f)
+    }
 }
