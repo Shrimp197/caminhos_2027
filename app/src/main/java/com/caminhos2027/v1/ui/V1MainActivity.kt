@@ -56,7 +56,6 @@ import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.route.RouteLocationEngine
 import com.caminhos2027.v1.core.route.WalkingProgress
-import com.caminhos2027.v1.core.walking.WalkingDecisionContext
 import com.caminhos2027.v1.core.walking.WalkingState
 import com.caminhos2027.v1.gps.AndroidLocationSource
 import java.time.Instant
@@ -216,10 +215,6 @@ class V1MainActivity : ComponentActivity() {
         surface = WalkingSurface.APOI_DETAIL
     }
 
-    private fun selectApoiFromAhead(item: ApoiAhead) {
-        selectApoi(item.apoi)
-    }
-
     private fun openDecision() {
         if (walkingState?.routePosition == null) return
         appContainer.apoiDecisionController.buildDecision()
@@ -294,7 +289,7 @@ private fun WalkingScreenV1(
                 if (browser == null) {
                     EmptyFlowState("Consulta de APOI indisponível", "Não foi possível preparar a consulta para a posição atual.", onBackToWalking)
                 } else {
-                    NextApoiScreenV1(browser.results, onApoiSelected = onApoiSelectedFromAhead)
+                    NextApoiScreenV1(browser.results, onApoiSelected = { item -> onApoiSelected(item.apoi) })
                     BrowserBackAction(onBackToWalking)
                 }
             }
@@ -303,7 +298,7 @@ private fun WalkingScreenV1(
                 if (selected == null) {
                     EmptyFlowState("APOI não selecionado", "Selecione um apoio a partir da consulta.", onBackToApoiBrowser)
                 } else {
-                    ApoiDetailScreenV1(selected, onBackToApoiBrowser, onOpenDecision = onOpenDecision)
+                    ApoiDetailScreenV1(selected, onBackToApoiBrowser)
                 }
             }
             surface == WalkingSurface.DECISION -> {
@@ -371,15 +366,9 @@ private fun NoActiveWalkScreen(onPrepare: () -> Unit) {
             Column(modifier = Modifier.padding(22.dp)) {
                 Text("Nenhuma caminhada ativa", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    "Prepare uma caminhada para começar a acompanhar a sua posição, progresso e APOI.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Muted
-                )
+                Text("Prepare uma caminhada para começar a acompanhar a sua posição, progresso e APOI.", style = MaterialTheme.typography.bodyLarge, color = Muted)
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = onPrepare, modifier = Modifier.fillMaxWidth()) {
-                    Text("Preparar caminhada")
-                }
+                Button(onClick = onPrepare, modifier = Modifier.fillMaxWidth()) { Text("Preparar caminhada") }
             }
         }
     }
@@ -399,87 +388,42 @@ private fun PreparedWalkScreen(walk: Walk, onStart: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 Text("Caminho do Centenário", style = MaterialTheme.typography.titleMedium, color = Forest)
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    "Percurso planeado: ${formatKm(walk.plannedStartKm ?: 0.0)} → ${formatKm(walk.plannedDestinationKm ?: 0.0)} km",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Muted
-                )
+                Text("Percurso planeado: ${formatKm(walk.plannedStartKm ?: 0.0)} → ${formatKm(walk.plannedDestinationKm ?: 0.0)} km", style = MaterialTheme.typography.bodyMedium, color = Muted)
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    "Ao iniciar, o primeiro sinal GPS define a sua posição real no caminho.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Muted
-                )
+                Text("Ao iniciar, o primeiro sinal GPS define a sua posição real no caminho.", style = MaterialTheme.typography.bodyMedium, color = Muted)
                 Spacer(Modifier.height(18.dp))
-                Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
-                    Text("Iniciar caminhada")
-                }
+                Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) { Text("Iniciar caminhada") }
             }
         }
     }
 }
 
 @Composable
-private fun ActiveWalkingScreen(
-    state: WalkingState,
-    onStop: () -> Unit,
-    onOpenApoi: () -> Unit,
-    onOpenDecision: () -> Unit
-) {
+private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit, onOpenApoi: () -> Unit, onOpenDecision: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         WalkingMapSurface(gpsState = state.gpsState, hasPosition = state.routePosition != null)
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
                     Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(7.dp))
-                    Column {
-                        Text("Caminhada atual", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                        Text(stageLabel(state.progress), style = MaterialTheme.typography.labelSmall, color = Muted)
-                    }
+                    Column { Text("Caminhada atual", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold); Text(stageLabel(state.progress), style = MaterialTheme.typography.labelSmall, color = Muted) }
                 }
             }
             IconButton(onClick = onStop) { Icon(Icons.Default.Menu, contentDescription = "Terminar caminhada", tint = Ink) }
         }
-
-        Column(
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+        Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             state.routePosition?.let { position ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
-                ) {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)) {
                     Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Está aqui", style = MaterialTheme.typography.labelLarge, color = Forest)
                         Text("${formatKm(position.routeKm)} km no caminho", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        state.progress?.let { progress ->
-                            Text(
-                                "Faltam ${formatKm(progress.remainingKm)} km até ao destino planeado.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Muted
-                            )
-                        }
+                        state.progress?.let { progress -> Text("Faltam ${formatKm(progress.remainingKm)} km até ao destino planeado.", style = MaterialTheme.typography.bodyMedium, color = Muted) }
                         state.nextApoi?.let { apoi ->
                             Text("Próximo APOI: ${apoi.name}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                            state.nextApoiDistanceKm?.let { distance ->
-                                Text("${formatKm(distance)} km pelo caminho", style = MaterialTheme.typography.bodySmall, color = Muted)
-                            }
+                            state.nextApoiDistanceKm?.let { distance -> Text("${formatKm(distance)} km pelo caminho", style = MaterialTheme.typography.bodySmall, color = Muted) }
                         }
-                        if (state.gpsState != GpsState.ON_ROUTE) {
-                            Text(
-                                "O último sinal fiável continua a ser usado enquanto a localização não estiver disponível.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Warning
-                            )
-                        }
+                        if (state.gpsState != GpsState.ON_ROUTE) Text("O último sinal fiável continua a ser usado enquanto a localização não estiver disponível.", style = MaterialTheme.typography.bodySmall, color = Warning)
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(onClick = onOpenApoi, modifier = Modifier.weight(1f)) { Text("Consultar APOI") }
                             Button(onClick = onOpenDecision, modifier = Modifier.weight(1f)) { Text("Decidir") }
@@ -498,19 +442,10 @@ private fun WalkingMapSurface(gpsState: GpsState, hasPosition: Boolean) {
             Icon(Icons.Default.Navigation, contentDescription = null, tint = Forest, modifier = Modifier.size(46.dp))
             Spacer(Modifier.height(8.dp))
             Text("Mapa do caminho", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(
-                when {
-                    !hasPosition -> "A aguardar localização"
-                    gpsState == GpsState.ON_ROUTE -> "Localização ativa"
-                    else -> "Localização temporariamente indisponível"
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = Muted
-            )
+            Text(when { !hasPosition -> "A aguardar localização"; gpsState == GpsState.ON_ROUTE -> "Localização ativa"; else -> "Localização temporariamente indisponível" }, style = MaterialTheme.typography.bodySmall, color = Muted)
         }
     }
 }
 
 private fun stageLabel(progress: WalkingProgress?): String = progress?.stageName ?: "Percurso em acompanhamento"
-
 private fun formatKm(value: Double): String = String.format(Locale("pt", "PT"), "%.1f", value)
