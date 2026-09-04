@@ -30,16 +30,13 @@ class AndroidV1AppContainer(context: Context) {
         require(walk.routeId == route.id) { "Walk route must match the published V1 route" }
         val existing = controller
         if (existing != null && store.state.walking?.walk?.id == walk.id) return existing
-        return WalkingAppStateController(route, walk, catalog, store, runtime).also {
-            controller = it
-        }
+        return WalkingAppStateController(route, walk, catalog, store, runtime).also { controller = it }
     }
 
     fun activeController(): WalkingAppStateController =
         requireNotNull(controller) { "No V1 walking session is attached" }
 
     fun publishedRoute() = route
-
     fun publishedApoiCatalog() = catalog
 
     fun clearSession() {
