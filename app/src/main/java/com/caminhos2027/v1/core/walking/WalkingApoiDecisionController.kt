@@ -25,6 +25,9 @@ class WalkingApoiDecisionController(
     }
 
     fun selectApoi(apoiId: String): AppState {
+        // APOI detail is a child of the browser flow. A previous decision must not make
+        // Android back navigation from detail jump into an unrelated stale decision flow.
+        store.clearDecision()
         store.selectApoi(browser, apoiId)
         return store.state
     }
