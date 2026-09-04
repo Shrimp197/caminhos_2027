@@ -210,6 +210,48 @@ class WalkingStateCoordinatorTest {
     }
 
     @Test
+    fun `stale checkpoint keeps visual position but resets GPS to no signal`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+        val checkpointPosition = RoutePosition(route.id, 0.3, 0.0, "stage-1")
+        val now = Instant.parse("2026-09-01T14:05:00Z")
+        val checkpoint = WalkingCheckpoint(
+            routePosition = checkpointPosition,
+            gpsState = GpsState.ON_ROUTE,
+            isOffline = false,
+            lastObservedAt = now.minusSeconds(31)
+        )
+
+        val restored = coordinator.restoreCheckpoint(checkpoint, now)
+
+        assertEquals(GpsState.NO_SIGNAL, restored.gpsState)
+        assertEquals(checkpointPosition.routeKm, restored.routePosition!!.routeKm, 0.0001)
+        assertNull(coordinator.lastReliableObservedAt())
+    }
+
+    @Test
+    fun `future checkpoint keeps visual position but is not promoted to GPS baseline`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+        val checkpointPosition = RoutePosition(route.id, 0.3, 0.0, "stage-1")
+        val now = Instant.parse("2026-09-01T14:05:00Z")
+        val checkpoint = WalkingCheckpoint(
+            routePosition = checkpointPosition,
+            gpsState = GpsState.ON_ROUTE,
+            isOffline = false,
+            lastObservedAt = now.plusSeconds(1)
+        )
+
+        val restored = coordinator.restoreCheckpoint(checkpoint, now)
+
+        assertEquals(GpsState.NO_SIGNAL, restored.gpsState)
+        assertEquals(checkpointPosition.routeKm, restored.routePosition!!.routeKm, 0.0001)
+        assertNull(coordinator.lastReliableObservedAt())
+    }
+
+    @Test
     fun `checkpoint from another route is discarded safely`() {
         val route = fixtureRoute()
         val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
