@@ -33,6 +33,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
@@ -46,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.AndroidV1AppContainer
+import com.caminhos2027.v1.core.AppState
 import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Walk
@@ -53,6 +55,7 @@ import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.route.RouteLocationEngine
 import com.caminhos2027.v1.core.route.WalkingProgress
+import com.caminhos2027.v1.core.walking.WalkingDecisionContext
 import com.caminhos2027.v1.core.walking.WalkingState
 import com.caminhos2027.v1.gps.AndroidLocationSource
 import java.time.Instant
@@ -65,12 +68,15 @@ private val Ink = Color(0xFF1E2521)
 private val Muted = Color(0xFF68736D)
 private val Warning = Color(0xFF8A6412)
 
+private enum class WalkingSurface { ACTIVE, APOI_BROWSER, APOI_DETAIL, DECISION }
+
 class V1MainActivity : ComponentActivity() {
     private lateinit var appContainer: AndroidV1AppContainer
     private var locationSource: AndroidLocationSource? = null
     private var walkingState by mutableStateOf<WalkingState?>(null)
     private var preparedWalk by mutableStateOf<Walk?>(null)
     private var startRequested by mutableStateOf(false)
+    private var surface by mutableStateOf(WalkingSurface.ACTIVE)
 
     private val locationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
         if (hasLocationPermissionAfterResult(permissions)) startWalkingLocationSource()
@@ -84,9 +90,16 @@ class V1MainActivity : ComponentActivity() {
                 WalkingScreenV1(
                     state = walkingState,
                     preparedWalk = preparedWalk,
+                    appState = appContainer.store.state,
+                    surface = surface,
                     onPrepare = ::prepareWalking,
                     onStart = ::requestStartPreparedWalk,
-                    onStop = ::stopWalking
+                    onStop = ::stopWalking,
+                    onOpenApoi = ::openApoiBrowser,
+                    onOpenDecision = ::openDecision,
+                    onApoiSelected = ::selectApoi,
+                    onBackToWalking = ::returnToWalking,
+                    onBackToApoiBrowser = ::returnToApoiBrowser
                 )
             }
         }
@@ -126,6 +139,7 @@ class V1MainActivity : ComponentActivity() {
         walkingState = appContainer.activeController().resume().walking
         preparedWalk = null
         startRequested = false
+        surface = WalkingSurface.ACTIVE
     }
 
     private fun prepareWalking() {
@@ -137,6 +151,7 @@ class V1MainActivity : ComponentActivity() {
         preparedWalk = prepared.walking?.walk
         walkingState = null
         startRequested = false
+        surface = WalkingSurface.ACTIVE
     }
 
     private fun requestStartPreparedWalk() {
@@ -158,6 +173,7 @@ class V1MainActivity : ComponentActivity() {
         walkingState = appContainer.activeController().resume().walking
         preparedWalk = null
         startRequested = false
+        surface = WalkingSurface.ACTIVE
         return true
     }
 
@@ -187,6 +203,33 @@ class V1MainActivity : ComponentActivity() {
         locationSource?.start()
     }
 
+    private fun openApoiBrowser() {
+        if (walkingState?.routePosition == null) return
+        appContainer.apoiDecisionController.browseApoi()
+        surface = WalkingSurface.APOI_BROWSER
+    }
+
+    private fun selectApoi(apoi: Apoi) {
+        appContainer.apoiDecisionController.selectApoi(apoi.id)
+        surface = WalkingSurface.APOI_DETAIL
+    }
+
+    private fun openDecision() {
+        if (walkingState?.routePosition == null) return
+        appContainer.apoiDecisionController.buildDecision()
+        surface = WalkingSurface.DECISION
+    }
+
+    private fun returnToWalking() {
+        appContainer.apoiDecisionController.clearApoiSelection()
+        surface = WalkingSurface.ACTIVE
+    }
+
+    private fun returnToApoiBrowser() {
+        appContainer.apoiDecisionController.clearApoiSelection()
+        surface = WalkingSurface.APOI_BROWSER
+    }
+
     private fun stopWalking() {
         val position = walkingState?.routePosition ?: return
         appContainer.runtime.stop(position, Instant.now())
@@ -196,6 +239,7 @@ class V1MainActivity : ComponentActivity() {
         walkingState = null
         preparedWalk = null
         startRequested = false
+        surface = WalkingSurface.ACTIVE
     }
 }
 
@@ -218,16 +262,67 @@ private fun CaminhosTheme(content: @Composable () -> Unit) {
 private fun WalkingScreenV1(
     state: WalkingState?,
     preparedWalk: Walk?,
+    appState: AppState,
+    surface: WalkingSurface,
     onPrepare: () -> Unit,
     onStart: () -> Unit,
-    onStop: () -> Unit
+    onStop: () -> Unit,
+    onOpenApoi: () -> Unit,
+    onOpenDecision: () -> Unit,
+    onApoiSelected: (Apoi) -> Unit,
+    onBackToWalking: () -> Unit,
+    onBackToApoiBrowser: () -> Unit
 ) {
     Surface(modifier = Modifier.fillMaxSize(), color = Sand) {
         when {
-            state != null -> ActiveWalkingScreen(state, onStop)
+            state != null && surface == WalkingSurface.ACTIVE -> ActiveWalkingScreen(state, onStop, onOpenApoi, onOpenDecision)
+            surface == WalkingSurface.APOI_BROWSER -> {
+                val browser = appState.apoiBrowser
+                if (browser == null) {
+                    EmptyFlowState("Consulta de APOI indisponível", "Não foi possível preparar a consulta para a posição atual.", onBackToWalking)
+                } else {
+                    NextApoiScreenV1(browser.results, onApoiSelected)
+                    BrowserBackAction(onBackToWalking)
+                }
+            }
+            surface == WalkingSurface.APOI_DETAIL -> {
+                val selected = appState.apoiBrowser?.selected
+                if (selected == null) {
+                    EmptyFlowState("APOI não selecionado", "Selecione um apoio a partir da consulta.", onBackToApoiBrowser)
+                } else {
+                    ApoiDetailScreenV1(selected, onBackToApoiBrowser)
+                }
+            }
+            surface == WalkingSurface.DECISION -> {
+                val decision = appState.decision
+                if (decision == null) {
+                    EmptyFlowState("Decisão indisponível", "Não foi possível calcular as opções para a posição atual.", onBackToWalking)
+                } else {
+                    WalkingDecisionScreenV1(decision, onApoiSelected)
+                    BrowserBackAction(onBackToWalking)
+                }
+            }
             preparedWalk != null -> PreparedWalkScreen(preparedWalk, onStart)
             else -> NoActiveWalkScreen(onPrepare)
         }
+    }
+}
+
+@Composable
+private fun BrowserBackAction(onBack: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.Start) {
+        OutlinedButton(onClick = onBack) { Text("Voltar à caminhada") }
+    }
+}
+
+@Composable
+private fun EmptyFlowState(title: String, message: String, onBack: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center) {
+        Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Text(message, style = MaterialTheme.typography.bodyLarge, color = Muted)
+        Spacer(Modifier.height(16.dp))
+        OutlinedButton(onClick = onBack) { Text("Voltar") }
     }
 }
 
@@ -304,7 +399,12 @@ private fun PreparedWalkScreen(walk: Walk, onStart: () -> Unit) {
 }
 
 @Composable
-private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit) {
+private fun ActiveWalkingScreen(
+    state: WalkingState,
+    onStop: () -> Unit,
+    onOpenApoi: () -> Unit,
+    onOpenDecision: () -> Unit
+) {
     Box(modifier = Modifier.fillMaxSize()) {
         WalkingMapSurface(gpsState = state.gpsState, hasPosition = state.routePosition != null)
         Row(
@@ -327,7 +427,12 @@ private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit) {
         if (state.gpsState != GpsState.ON_ROUTE) GpsStatusChip(state.gpsState, modifier = Modifier.align(Alignment.TopCenter).padding(top = 78.dp))
         PositionContextCard(state, modifier = Modifier.align(Alignment.TopStart).padding(top = 126.dp, start = 12.dp, end = 12.dp))
         Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(12.dp)) {
-            NextSupportCard(state.nextApoi, state.nextApoiDistanceKm)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onOpenApoi, modifier = Modifier.weight(1f)) { Text("Consultar APOI") }
+                Button(onClick = onOpenDecision, modifier = Modifier.weight(1f)) { Text("Decidir") }
+            }
+            Spacer(Modifier.height(8.dp))
+            NextSupportCard(state.nextApoi, state.nextApoiDistanceKm, onOpenApoi)
             Spacer(Modifier.height(8.dp))
             ProgressCard(state.progress)
         }
@@ -367,8 +472,14 @@ private fun PositionContextCard(state: WalkingState, modifier: Modifier = Modifi
 }
 
 @Composable
-private fun NextSupportCard(nextApoi: Apoi?, distanceKm: Double?) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
+private fun NextSupportCard(nextApoi: Apoi?, distanceKm: Double?, onOpenApoi: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        onClick = onOpenApoi
+    ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(42.dp).background(ForestSoft, CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.WaterDrop, contentDescription = null, tint = Forest) }
             Spacer(Modifier.width(12.dp))
