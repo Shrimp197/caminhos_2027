@@ -41,5 +41,8 @@ object WalkingStatusPresentation {
     }
 
     fun offlineLabel(isOffline: Boolean): String? =
-        if (isOffline) "Dados locais disponíveis" else null
+        if (isOffline) "Dados do percurso disponíveis offline" else null
+
+    fun offlineDetail(isOffline: Boolean): String? =
+        if (isOffline) "O percurso e o progresso guardados localmente podem continuar sem rede; o mapa cartográfico offline não está disponível." else null
 }
