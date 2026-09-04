@@ -23,7 +23,7 @@ class WalkingSessionService(
         repository.save(started)
         stateRepository?.save(
             walkId,
-            WalkingCheckpoint(startPosition, GpsState.ACQUIRING, false, lastObservedAt = now)
+            WalkingCheckpoint(startPosition, GpsState.ACQUIRING, false, lastObservedAt = null)
         )
         return started
     }
