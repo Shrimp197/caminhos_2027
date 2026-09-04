@@ -17,6 +17,7 @@ import com.caminhos2027.v1.core.model.RouteRelation
 import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class WalkingPreparationAppStateControllerTest {
@@ -40,6 +41,46 @@ class WalkingPreparationAppStateControllerTest {
         assertEquals(GpsState.NO_SIGNAL, state.walking?.gpsState)
         assertEquals(null, state.walking?.routePosition)
         assertEquals(null, state.walking?.nextApoi)
+    }
+
+    @Test
+    fun invalidSaveDoesNotPublishPartialWalkingState() {
+        val route = route()
+        val store = AppStateStore()
+        val service = WalkingPreparationService(
+            route = route,
+            walkRepository = InMemoryWalkRepository(),
+            apoiCatalog = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { emptyList() }))
+        )
+        val controller = WalkingPreparationAppStateController(route, service, store)
+
+        try {
+            controller.save("walk-invalid", 8.0, 7.0)
+        } catch (_: IllegalArgumentException) {
+            // Expected: preparation validation must precede AppState publication.
+        }
+
+        assertNull(store.state.walking)
+    }
+
+    @Test
+    fun blankWalkIdDoesNotPublishPartialWalkingState() {
+        val route = route()
+        val store = AppStateStore()
+        val service = WalkingPreparationService(
+            route = route,
+            walkRepository = InMemoryWalkRepository(),
+            apoiCatalog = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { emptyList() }))
+        )
+        val controller = WalkingPreparationAppStateController(route, service, store)
+
+        try {
+            controller.save("   ", 1.0, 5.0)
+        } catch (_: IllegalArgumentException) {
+            // Expected: invalid preparation must not reach shared state.
+        }
+
+        assertNull(store.state.walking)
     }
 
     private fun route() = Route(
