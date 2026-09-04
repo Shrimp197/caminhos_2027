@@ -99,6 +99,26 @@ class WalkingSessionRuntimeTest {
         assertNotNull(resumed); assertEquals(0.4, resumed!!.routePosition!!.routeKm, 0.001); assertEquals(GpsState.NO_SIGNAL, resumed.gpsState)
     }
 
+    @Test fun repeatedResumeKeepsOneActiveWalkAndUsesTheSamePersistedCheckpoint() {
+        val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        runtime.prepare(WalkingPlanFactory.create(route, "walk-repeat-resume", 0.4, 1.8))
+        runtime.start("walk-repeat-resume", start, Instant.parse("2026-09-01T08:00:00Z"))
+        runtime.accept(RawGpsPosition(40.0045, -8.0, 5.0, Instant.parse("2026-09-01T08:02:00Z")))
+
+        val first = runtime.resume(Instant.parse("2026-09-01T08:10:00Z"))
+        val second = runtime.resume(Instant.parse("2026-09-01T08:10:01Z"))
+
+        assertNotNull(first)
+        assertNotNull(second)
+        assertEquals(first!!.walk.id, second!!.walk.id)
+        assertEquals(first.routePosition!!.routeKm, second.routePosition!!.routeKm, 0.0001)
+        assertEquals(GpsState.NO_SIGNAL, first.gpsState)
+        assertEquals(GpsState.NO_SIGNAL, second.gpsState)
+        assertNotNull(service.resume())
+        assertEquals(Instant.parse("2026-09-01T08:02:00Z"), service.resumeCheckpoint("walk-repeat-resume")!!.lastObservedAt)
+    }
+
     @Test fun checkpointPreservesLastAcceptedGpsTimestampAcrossRuntimeRecreation() {
         val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
         val runtime = WalkingSessionRuntime(route, service, emptyList())
