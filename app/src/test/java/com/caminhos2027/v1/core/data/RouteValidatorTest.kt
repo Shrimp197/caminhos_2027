@@ -60,6 +60,26 @@ class RouteValidatorTest {
         assertTrue(RouteValidator.validate(route).any { it.contains("duplicates previous point") })
     }
 
+    @Test
+    fun nonFiniteRouteDistanceIsRejected() {
+        val route = fixture().copy(totalDistanceKm = Double.NaN)
+        assertTrue(RouteValidator.validate(route).any { it.contains("totalDistanceKm") })
+    }
+
+    @Test
+    fun nonFiniteStageMetricsAreRejected() {
+        val stage = fixture().stages.first().copy(
+            startRouteKm = Double.NaN,
+            endRouteKm = Double.POSITIVE_INFINITY,
+            distanceKm = Double.NaN
+        )
+        val route = fixture().copy(stages = listOf(stage))
+        val errors = RouteValidator.validate(route)
+        assertTrue(errors.any { it.contains("startRouteKm") && it.contains("finite") })
+        assertTrue(errors.any { it.contains("endRouteKm") && it.contains("finite") })
+        assertTrue(errors.any { it.contains("distanceKm") && it.contains("finite") })
+    }
+
     private fun fixture() = Route(
         id = "test-route",
         name = "TEST/FICTITIOUS route",
