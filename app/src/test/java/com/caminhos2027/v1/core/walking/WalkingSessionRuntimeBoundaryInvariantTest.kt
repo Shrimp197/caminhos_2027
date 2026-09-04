@@ -59,14 +59,14 @@ class WalkingSessionRuntimeBoundaryInvariantTest {
     }
 
     @Test
-    fun staleCheckpointRestoresPositionButForcesNoSignal() {
+    fun freshCheckpointJustInsideBoundaryRestoresItsGpsState() {
         val (runtime, _, service) = runtimeWithService()
-        runtime.prepare(WalkingPlanFactory.create(route, "stale", 0.0, 1.0))
-        runtime.start("stale", RoutePosition(route.id, 0.4, 0.0), at("08:00:00"))
+        runtime.prepare(WalkingPlanFactory.create(route, "fresh", 0.0, 1.0))
+        runtime.start("fresh", RoutePosition(route.id, 0.4, 0.0), at("08:00:00"))
         runtime.accept(RawGpsPosition(40.0045, -8.0, 5.0, at("08:02:00")))
-        val resumed = WalkingSessionRuntime(route, service, emptyList()).resume(at("08:02:30"))
+        val resumed = WalkingSessionRuntime(route, service, emptyList()).resume(at("08:02:29"))
         assertNotNull(resumed)
-        assertEquals(GpsState.ACQUIRING, resumed!!.gpsState)
+        assertEquals(GpsState.ON_ROUTE, resumed!!.gpsState)
         assertEquals(0.5, resumed.routePosition!!.routeKm, 0.02)
     }
 
