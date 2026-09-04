@@ -91,6 +91,10 @@ class AndroidV1AppContainer(
         return store.state
     }
 
+    /** Restores a saved plan without transitioning it to ACTIVE. */
+    fun restorePreparedWalk() =
+        requireNotNull(base.preparationService) { "Android V1 preparation service is not configured" }.restorePlanned()
+
     fun activeController(): WalkingAppStateController =
         requireNotNull(controller) { "No V1 walking session is attached" }
 
