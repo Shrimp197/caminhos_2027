@@ -8,6 +8,7 @@ import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.route.GpsTrackingPolicy
 import com.caminhos2027.v1.core.route.WalkingMovementCueEvaluator
 import com.caminhos2027.v1.gps.WalkingLocationPipeline
+import java.time.Duration
 import java.time.Instant
 
 /** Single coordinator for the active walking read model. */
@@ -75,7 +76,8 @@ class WalkingStateCoordinator(
         val validPosition = checkpoint.routePosition?.takeIf(::isValidRoutePosition)
         val timestamp = checkpoint.lastObservedAt
         val usableBaseline = validPosition != null && timestamp != null && !timestamp.isAfter(now)
-        val freshTimestamp = usableBaseline && now.epochSecond - timestamp!!.epochSecond < policy.noSignalAfterSeconds
+        val freshTimestamp = usableBaseline &&
+            Duration.between(timestamp, now) < Duration.ofSeconds(policy.noSignalAfterSeconds.toLong())
         lastReliableRouteKm = null
         lastFreshReliableObservedAt = null
 
