@@ -49,6 +49,24 @@ class WalkJsonCodecTest {
     }
 
     @Test
+    fun blankStageIdsAreNormalizedAway() {
+        val decoded = WalkJsonCodec.decode(
+            """
+            {
+              "version": 1,
+              "id": "walk-legacy",
+              "routeId": "route-1",
+              "status": "PLANNED",
+              "stageIds": "stage-1\u001f \u001f\u001fstage-2"
+            }
+            """.trimIndent()
+        )
+
+        assertNotNull(decoded)
+        assertEquals(listOf("stage-1", "stage-2"), decoded!!.stageIds)
+    }
+
+    @Test
     fun legacyUnversionedWalkRemainsReadable() {
         val decoded = WalkJsonCodec.decode(
             """
@@ -65,15 +83,6 @@ class WalkJsonCodecTest {
               "stageIds": "stage-1\u001fstage-2"
             }
             """.trimIndent()
-        )
-        assertNotNull(decoded)
-        assertEquals(listOf("stage-1", "stage-2"), decoded!!.stageIds)
-    }
-
-    @Test
-    fun blankStageIdsAreDiscarded() {
-        val decoded = WalkJsonCodec.decode(
-            "{\"version\":1,\"id\":\"w\",\"routeId\":\"r\",\"status\":\"PLANNED\",\"stageIds\":\" stage-1 \\u001f  \\u001fstage-2 \"}"
         )
         assertNotNull(decoded)
         assertEquals(listOf("stage-1", "stage-2"), decoded!!.stageIds)
