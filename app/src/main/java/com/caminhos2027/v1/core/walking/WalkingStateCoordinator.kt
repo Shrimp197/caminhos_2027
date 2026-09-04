@@ -21,6 +21,7 @@ class WalkingStateCoordinator(
     private val locationPipeline = WalkingLocationPipeline(route, policy)
     private var walk: Walk = initialWalk
     private var lastReliableRouteKm: Double? = null
+    private var lastFreshReliableObservedAt: Instant? = null
 
     var state: WalkingState = WalkingStateBuilder.build(
         route = route,
@@ -31,9 +32,8 @@ class WalkingStateCoordinator(
     )
         private set
 
-    /** Timestamp of the last observation accepted as reliable by the GPS pipeline. */
-    fun lastReliableObservedAt(): Instant? =
-        locationPipeline.trackingState.lastReliableObservation?.capturedAt
+    /** Timestamp of the last fresh observation accepted during this runtime instance. */
+    fun lastReliableObservedAt(): Instant? = lastFreshReliableObservedAt
 
     /** Starts the planned walk and establishes the supplied real route position as the tracking baseline. */
     fun start(startPosition: RoutePosition, now: Instant = Instant.now()): WalkingState {
@@ -53,6 +53,7 @@ class WalkingStateCoordinator(
         val reliable = position.distanceToRouteMeters < policy.possibleDeviationMeters
         locationPipeline.seedRoutePosition(position, now, reliable = reliable)
         lastReliableRouteKm = position.routeKm.takeIf { reliable }
+        lastFreshReliableObservedAt = now.takeIf { reliable }
         state = WalkingStateBuilder.build(
             route = route,
             walk = walk,
@@ -74,9 +75,9 @@ class WalkingStateCoordinator(
         val validPosition = checkpoint.routePosition?.takeIf(::isValidRoutePosition)
         val timestamp = checkpoint.lastObservedAt
         val usableBaseline = validPosition != null && timestamp != null && !timestamp.isAfter(now)
-        val freshTimestamp = usableBaseline &&
-            now.epochSecond - timestamp!!.epochSecond < policy.noSignalAfterSeconds
+        val freshTimestamp = usableBaseline && now.epochSecond - timestamp!!.epochSecond < policy.noSignalAfterSeconds
         lastReliableRouteKm = null
+        lastFreshReliableObservedAt = null
 
         if (usableBaseline) {
             locationPipeline.seedRoutePosition(
@@ -85,6 +86,9 @@ class WalkingStateCoordinator(
                 reliable = true
             )
             lastReliableRouteKm = validPosition.routeKm
+            if (freshTimestamp) {
+                lastFreshReliableObservedAt = timestamp
+            }
         }
 
         state = WalkingStateBuilder.build(
@@ -101,11 +105,16 @@ class WalkingStateCoordinator(
 
     fun accept(position: com.caminhos2027.v1.core.model.RawGpsPosition): WalkingState {
         val previousReliableRouteKm = lastReliableRouteKm
+        val previousFreshObservedAt = lastFreshReliableObservedAt
         val tracking = locationPipeline.accept(position)
-        val currentReliableRouteKm = tracking.lastReliableObservation?.routePosition?.routeKm
-        // Movement requires two reliable observations. Before that, null means "no reference
-        // available" rather than manufacturing an UNKNOWN movement label for the UI.
-        val movementCue = if (previousReliableRouteKm != null && currentReliableRouteKm != null) {
+        val currentReliableObservation = tracking.lastReliableObservation
+        val currentReliableRouteKm = currentReliableObservation?.routePosition?.routeKm
+        // A fresh movement cue requires a genuinely new reliable observation. Rejected or
+        // suspicious samples must not manufacture STATIONARY, FORWARD or BACKWARD labels.
+        val newReliableObservation = currentReliableObservation?.capturedAt != previousFreshObservedAt &&
+            currentReliableRouteKm != null &&
+            currentReliableObservation.capturedAt == position.capturedAt
+        val movementCue = if (newReliableObservation && previousReliableRouteKm != null) {
             WalkingMovementCueEvaluator.evaluate(previousReliableRouteKm, currentReliableRouteKm)
         } else {
             state.movementCue
@@ -113,9 +122,12 @@ class WalkingStateCoordinator(
         if (currentReliableRouteKm != null) {
             lastReliableRouteKm = currentReliableRouteKm
         }
+        if (newReliableObservation) {
+            lastFreshReliableObservedAt = currentReliableObservation.capturedAt
+        }
         return rebuild(
             gpsState = tracking.state,
-            routePosition = tracking.lastReliableObservation?.routePosition ?: state.routePosition,
+            routePosition = currentReliableObservation?.routePosition ?: state.routePosition,
             movementCue = movementCue,
             offline = state.isOffline
         )
