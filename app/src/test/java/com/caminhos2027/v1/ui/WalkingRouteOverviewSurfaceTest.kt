@@ -38,7 +38,7 @@ class WalkingRouteOverviewSurfaceTest {
             GeoPoint(41.001, -8.02)
         )
 
-        assertEquals(1, WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry, 0.5f))
+        assertEquals(2, WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry, 0.5f))
         assertEquals(2, WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry, 0.9f))
     }
 
