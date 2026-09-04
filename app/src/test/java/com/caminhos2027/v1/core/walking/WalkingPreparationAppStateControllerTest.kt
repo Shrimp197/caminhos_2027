@@ -31,8 +31,7 @@ class WalkingPreparationAppStateControllerTest {
         val water = apoi("water", 3.0)
         val repository = InMemoryWalkRepository()
         val store = AppStateStore()
-        val service = service(route, repository, water)
-        val controller = WalkingPreparationAppStateController(route, service, store)
+        val controller = WalkingPreparationAppStateController(route, service(route, repository, water), store)
 
         val state = controller.save("walk", 1.0, 5.0)
 
@@ -82,11 +81,7 @@ class WalkingPreparationAppStateControllerTest {
         val after = apoi("after", 9.0)
         val repository = InMemoryWalkRepository()
         val store = AppStateStore()
-        val controller = WalkingPreparationAppStateController(
-            route,
-            service(route, repository, inside, before, after),
-            store
-        )
+        val controller = WalkingPreparationAppStateController(route, service(route, repository, inside, before, after), store)
 
         val preview = controller.preview("walk", 2.0, 8.0)
 
@@ -146,19 +141,11 @@ class WalkingPreparationAppStateControllerTest {
         val repository = InMemoryWalkRepository()
         val store = AppStateStore()
         val catalog = catalog(apoi("water", 5.0))
-        val controller = WalkingPreparationAppStateController(
-            route,
-            WalkingPreparationService(route, repository, catalog),
-            store
-        )
+        val controller = WalkingPreparationAppStateController(route, WalkingPreparationService(route, repository, catalog), store)
         controller.save("walk", 2.0, 8.0)
 
         val now = Instant.parse("2026-09-04T10:00:00Z")
-        controller.startSaved(
-            catalog,
-            RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH),
-            now
-        )
+        controller.startSaved(catalog, RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), now)
 
         val walking = requireNotNull(store.state.walking)
         assertEquals("walk", walking.walk.id)
@@ -175,19 +162,11 @@ class WalkingPreparationAppStateControllerTest {
         val repository = InMemoryWalkRepository()
         val store = AppStateStore()
         val catalog = catalog()
-        val controller = WalkingPreparationAppStateController(
-            route,
-            WalkingPreparationService(route, repository, catalog),
-            store
-        )
+        val controller = WalkingPreparationAppStateController(route, WalkingPreparationService(route, repository, catalog), store)
         controller.save("prepared", 2.0, 8.0)
         repository.save(WalkingPlanFactory.create(route, "different", 1.0, 6.0))
 
-        controller.startSaved(
-            catalog,
-            RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH),
-            Instant.parse("2026-09-04T10:00:00Z")
-        )
+        controller.startSaved(catalog, RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
 
         assertEquals("prepared", store.state.walking?.walk?.id)
         assertEquals(WalkStatus.ACTIVE, store.state.walking?.walk?.status)
@@ -203,11 +182,7 @@ class WalkingPreparationAppStateControllerTest {
         controller.save("walk", 2.0, 8.0)
 
         try {
-            controller.startSaved(
-                catalog,
-                RoutePosition("other-route", 2.5, 0.0, null, PositionConfidence.HIGH),
-                Instant.parse("2026-09-04T10:00:00Z")
-            )
+            controller.startSaved(catalog, RoutePosition("other-route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
             throw AssertionError("Expected foreign route rejection")
         } catch (_: IllegalArgumentException) {
             // Expected boundary rejection.
@@ -227,11 +202,7 @@ class WalkingPreparationAppStateControllerTest {
         controller.save("walk", 2.0, 8.0)
 
         try {
-            controller.startSaved(
-                catalog,
-                RoutePosition("route", Double.NaN, 0.0, null, PositionConfidence.HIGH),
-                Instant.parse("2026-09-04T10:00:00Z")
-            )
+            controller.startSaved(catalog, RoutePosition("route", Double.NaN, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
             throw AssertionError("Expected non-finite position rejection")
         } catch (_: IllegalArgumentException) {
             // Expected boundary rejection.
@@ -247,23 +218,16 @@ class WalkingPreparationAppStateControllerTest {
         val repository = InMemoryWalkRepository()
         val store = AppStateStore()
         val catalog = catalog(apoi("water", 5.0))
-        val controller = WalkingPreparationAppStateController(
-            route,
-            WalkingPreparationService(route, repository, catalog),
-            store
-        )
+        val controller = WalkingPreparationAppStateController(route, WalkingPreparationService(route, repository, catalog), store)
         val browser = com.caminhos2027.v1.core.apoi.ApoiBrowser(catalog)
         store.setObjective(com.caminhos2027.v1.core.model.Objective.REACH_DESTINATION)
         store.setDataVersion("2027-test")
         controller.save("walk", 2.0, 8.0)
+        store.setWalking(requireNotNull(store.state.walking).copy(routePosition = RoutePosition("route", 2.0, 0.0, null, PositionConfidence.HIGH)))
         store.browseApoi(browser)
         val beforeBrowser = store.state.apoiBrowser
 
-        controller.startSaved(
-            catalog,
-            RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH),
-            Instant.parse("2026-09-04T10:00:00Z")
-        )
+        controller.startSaved(catalog, RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
 
         assertEquals(beforeBrowser, store.state.apoiBrowser)
         assertEquals(com.caminhos2027.v1.core.model.Objective.REACH_DESTINATION, store.state.objective)
@@ -277,40 +241,23 @@ class WalkingPreparationAppStateControllerTest {
         val catalog = catalog()
         val controller = WalkingPreparationAppStateController(route, service(route, InMemoryWalkRepository()), store)
 
-        controller.startSaved(
-            catalog,
-            RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH),
-            Instant.parse("2026-09-04T10:00:00Z")
-        )
+        controller.startSaved(catalog, RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
     }
 
-    private fun service(route: Route, repository: WalkRepository, vararg records: Apoi) =
-        WalkingPreparationService(route, repository, catalog(*records))
+    private fun service(route: Route, repository: WalkRepository, vararg records: Apoi) = WalkingPreparationService(route, repository, catalog(*records))
 
-    private fun catalog(vararg records: Apoi) =
-        PublishedApoiCatalog(ApoiRepository(ApoiDataSource { records.toList() }))
+    private fun catalog(vararg records: Apoi) = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { records.toList() }))
 
     private fun route() = Route(
-        id = "route",
-        name = "Route",
-        officialName = "Route",
-        totalDistanceKm = 10.0,
-        source = "test",
-        updatedAt = "2026-01-01",
-        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.0, -7.8828))),
-        stages = emptyList()
+        id = "route", name = "Route", officialName = "Route", totalDistanceKm = 10.0,
+        source = "test", updatedAt = "2026-01-01",
+        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.0, -7.8828))), stages = emptyList()
     )
 
     private fun apoi(id: String, km: Double) = Apoi(
-        id = id,
-        name = "Fonte",
-        description = null,
-        mainCategory = ApoiCategory.AGUA,
+        id = id, name = "Fonte", description = null, mainCategory = ApoiCategory.AGUA,
         services = setOf(ApoiCategory.AGUA),
-        location = ApoiLocation(
-            40.0, -8.0, LocationPrecision.EXACT,
-            null, null, null, "route", km, 0.0, 0.0, RouteRelation.ON_ROUTE
-        ),
+        location = ApoiLocation(40.0, -8.0, LocationPrecision.EXACT, null, null, null, "route", km, 0.0, 0.0, RouteRelation.ON_ROUTE),
         publication = ApoiPublication(PublicationStatus.PUBLISHED, null)
     )
 }
