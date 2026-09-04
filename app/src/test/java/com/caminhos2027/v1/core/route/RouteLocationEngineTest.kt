@@ -82,6 +82,34 @@ class RouteLocationEngineTest {
         assertEquals(1.0, position.routeKm, 0.05)
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteLatitudeIsRejected() {
+        RouteLocationEngine.locate(fixture(), gps(Double.NaN, -7.995))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun latitudeOutsideEarthBoundsIsRejected() {
+        RouteLocationEngine.locate(fixture(), gps(90.1, -7.995))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun longitudeOutsideEarthBoundsIsRejected() {
+        RouteLocationEngine.locate(fixture(), gps(40.0, -180.1))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteRouteGeometryIsRejectedBeforeProjection() {
+        val route = fixture().copy(
+            geometry = RouteGeometry(
+                listOf(
+                    GeoPoint(Double.NaN, -8.0),
+                    GeoPoint(40.0, -7.98827)
+                )
+            )
+        )
+        RouteLocationEngine.locate(route, gps(40.0, -7.995))
+    }
+
     private fun gps(latitude: Double, longitude: Double, accuracyMeters: Double? = 5.0) = RawGpsPosition(
         latitude = latitude,
         longitude = longitude,
