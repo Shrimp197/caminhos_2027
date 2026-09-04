@@ -53,6 +53,26 @@ class WalkingSessionRecreationContractTest {
     }
 
     @Test
+    fun existingRuntimeInvalidatesStaleCoordinatorWhenPersistedWalkIsNoLongerActive() {
+        val repositories = Repositories()
+        repositories.start("walk-1", 0.25)
+        val runtime = repositories.runtime()
+        runtime.resume() ?: error("expected active session")
+
+        repositories.service.stop("walk-1", position(0.75), Instant.parse("2026-01-01T10:00:00Z"))
+
+        assertNull(runtime.resume())
+
+        val error = try {
+            runtime.accept(rawPosition(0.80, "2026-01-01T10:01:00Z"))
+            null
+        } catch (expected: IllegalArgumentException) {
+            expected
+        }
+        assertTrue(error?.message.orEmpty().contains("has not been started"))
+    }
+
+    @Test
     fun rejectedForeignRouteResumeLeavesCurrentCoordinatorUntouched() {
         val repositories = Repositories()
         repositories.start("walk-1", 0.25)
