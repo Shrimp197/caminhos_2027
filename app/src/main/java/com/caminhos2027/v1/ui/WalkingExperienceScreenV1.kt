@@ -54,6 +54,8 @@ fun WalkingExperienceScreenV1(
                 Text("Está aqui: %.1f km no caminho".format(position.routeKm))
             } ?: Text("A posição atual ainda não está disponível.")
 
+            WalkingRouteProgressSurface(walking.progress)
+
             if (selectedApoi != null) {
                 ApoiDetailScreenV1(
                     apoi = selectedApoi,
