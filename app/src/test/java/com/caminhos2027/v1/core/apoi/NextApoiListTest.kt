@@ -55,4 +55,19 @@ class NextApoiListTest {
         val result = NextApoiList.findAhead((1..10).map { apoi("a$it", it.toDouble()) }, "route", 0.0, 3)
         assertEquals(listOf("a1", "a2", "a3"), result.map { it.apoi.id })
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteCurrentRouteKmIsRejected() {
+        NextApoiList.findAhead(listOf(apoi("valid", 2.0)), "route", Double.NaN)
+    }
+
+    @Test
+    fun nonFiniteApoiRouteKmIsIgnored() {
+        val result = NextApoiList.findAhead(
+            listOf(apoi("nan", Double.NaN), apoi("infinite", Double.POSITIVE_INFINITY), apoi("valid", 2.0)),
+            "route",
+            1.0
+        )
+        assertEquals(listOf("valid"), result.map { it.apoi.id })
+    }
 }
