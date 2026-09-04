@@ -1,5 +1,6 @@
 package com.caminhos2027.v1.ui
 
+import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.route.GpsState
 
 /** User-facing labels for walking tracking state. Domain transitions remain in the GPS evaluator. */
@@ -30,6 +31,13 @@ object WalkingStatusPresentation {
             label = "Provável desvio",
             detail = "Vários sinais afastados do traçado foram observados. Confirme visualmente o caminho antes de continuar."
         )
+    }
+
+    fun confidence(confidence: PositionConfidence): String = when (confidence) {
+        PositionConfidence.HIGH -> "Confiança da posição: alta"
+        PositionConfidence.MEDIUM -> "Confiança da posição: média"
+        PositionConfidence.LOW -> "Confiança da posição: baixa"
+        PositionConfidence.UNKNOWN -> "Confiança da posição: não conhecida"
     }
 
     fun offlineLabel(isOffline: Boolean): String? =
