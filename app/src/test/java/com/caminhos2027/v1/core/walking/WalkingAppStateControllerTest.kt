@@ -20,6 +20,7 @@ import com.caminhos2027.v1.core.model.WalkStatus
 import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -105,10 +106,7 @@ class WalkingAppStateControllerTest {
         controller.acceptGps(gps(40.00225, "2026-09-02T13:02:00Z"))
         controller.acceptGps(gps(40.009, "2026-09-02T13:02:01Z"))
 
-        assertEquals(
-            Instant.parse("2026-09-02T13:02:00Z"),
-            checkpoints.get("walk-persist-time")?.lastObservedAt
-        )
+        assertEquals(Instant.parse("2026-09-02T13:02:00Z"), checkpoints.get("walk-persist-time")?.lastObservedAt)
     }
 
     @Test
@@ -150,6 +148,38 @@ class WalkingAppStateControllerTest {
         assertEquals(resumed, resumedStore.state)
     }
 
+    @Test
+    fun rejectedGpsPreservesPublishedWalkingState() {
+        val store = AppStateStore()
+        val controller = controller(catalog(waterApoi()), store)
+        controller.start(RoutePosition("route", 0.0, 0.0), Instant.parse("2026-09-02T14:00:00Z"))
+        val reliable = controller.acceptGps(gps(40.00225, "2026-09-02T14:02:00Z"))
+        val before = store.state
+
+        val after = controller.acceptGps(gps(40.009, "2026-09-02T14:02:01Z"))
+
+        assertEquals(before.walking?.routePosition, after.walking?.routePosition)
+        assertEquals(before.walking?.nextApoi, after.walking?.nextApoi)
+        assertEquals(before.walking?.nextApoiDistanceKm, after.walking?.nextApoiDistanceKm)
+        assertEquals(reliable.walking?.gpsState, after.walking?.gpsState)
+        assertSame(after, store.state)
+    }
+
+    @Test
+    fun signalLossPreservesPublishedReliablePositionAndApoi() {
+        val store = AppStateStore()
+        val controller = controller(catalog(waterApoi()), store)
+        controller.start(RoutePosition("route", 0.0, 0.0), Instant.parse("2026-09-02T15:00:00Z"))
+        val moving = controller.acceptGps(gps(40.00225, "2026-09-02T15:02:00Z"))
+
+        val noSignal = controller.markNoSignal(Instant.parse("2026-09-02T15:02:31Z"))
+
+        assertEquals(com.caminhos2027.v1.core.route.GpsState.NO_SIGNAL, noSignal.walking?.gpsState)
+        assertEquals(moving.walking?.routePosition, noSignal.walking?.routePosition)
+        assertEquals(moving.walking?.nextApoi, noSignal.walking?.nextApoi)
+        assertEquals(moving.walking?.nextApoiDistanceKm, noSignal.walking?.nextApoiDistanceKm)
+    }
+
     private fun controller(
         catalog: PublishedApoiCatalog = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { emptyList() })),
         store: AppStateStore = AppStateStore()
@@ -160,52 +190,19 @@ class WalkingAppStateControllerTest {
         store = store
     )
 
-    private fun catalog(vararg records: Apoi) =
-        PublishedApoiCatalog(ApoiRepository(ApoiDataSource { records.toList() }))
+    private fun catalog(vararg records: Apoi) = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { records.toList() }))
 
-    private fun gps(latitude: Double, capturedAt: String) = RawGpsPosition(
-        latitude = latitude,
-        longitude = -8.0,
-        accuracyMeters = 5.0,
-        capturedAt = Instant.parse(capturedAt)
-    )
+    private fun gps(latitude: Double, capturedAt: String) = RawGpsPosition(latitude, -8.0, 5.0, Instant.parse(capturedAt))
 
     private fun waterApoi() = Apoi(
-        id = "water",
-        name = "Fonte",
-        description = "APOI fictício de teste",
-        mainCategory = ApoiCategory.AGUA,
+        id = "water", name = "Fonte", description = "APOI fictício de teste", mainCategory = ApoiCategory.AGUA,
         services = setOf(ApoiCategory.AGUA),
-        location = ApoiLocation(
-            latitude = 40.0063,
-            longitude = -8.0,
-            precision = LocationPrecision.EXACT,
-            locality = "SR",
-            municipality = "SR",
-            reference = "Fixture",
-            routeId = "route",
-            routeKm = 0.7,
-            distanceToRouteM = 0.0,
-            accessDistanceM = 0.0,
-            routeRelation = RouteRelation.ON_ROUTE
-        ),
+        location = ApoiLocation(40.0063, -8.0, LocationPrecision.EXACT, "SR", "SR", "Fixture", "route", 0.7, 0.0, 0.0, RouteRelation.ON_ROUTE),
         publication = ApoiPublication(PublicationStatus.PUBLISHED, "SR test data")
     )
 
     private fun route() = Route(
-        id = "route",
-        name = "Route",
-        officialName = "Route",
-        totalDistanceKm = 1.0,
-        source = "test",
-        updatedAt = "2026-01-01",
-        geometry = RouteGeometry(
-            listOf(
-                GeoPoint(40.0, -8.0),
-                GeoPoint(40.0045, -8.0),
-                GeoPoint(40.009, -8.0)
-            )
-        ),
-        stages = emptyList()
+        id = "route", name = "Route", officialName = "Route", totalDistanceKm = 1.0, source = "test", updatedAt = "2026-01-01",
+        geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.0045, -8.0), GeoPoint(40.009, -8.0))), stages = emptyList()
     )
 }
