@@ -50,7 +50,7 @@ class V1AppContainerTest {
             now = Instant.parse("2026-09-04T08:00:00Z")
         )
 
-        assertSame(state, store.state.walking)
+        assertSame(state.walking, store.state.walking)
         assertEquals("walk-container", state.walking?.walk?.id)
         assertEquals(0.0, state.walking?.routePosition?.routeKm ?: -1.0, 0.0001)
     }
