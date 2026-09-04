@@ -114,6 +114,67 @@ class WalkingStateCoordinatorTest {
     }
 
     @Test
+    fun `malformed checkpoint is not promoted to active route state`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+        val malformed = WalkingCheckpoint(
+            routePosition = RoutePosition(route.id, Double.NaN, 0.0, "stage-1"),
+            gpsState = GpsState.ON_ROUTE,
+            isOffline = false,
+            lastObservedAt = Instant.parse("2026-09-01T14:00:00Z")
+        )
+
+        val restored = coordinator.restoreCheckpoint(malformed, Instant.parse("2026-09-01T14:05:00Z"))
+
+        assertEquals(GpsState.NO_SIGNAL, restored.gpsState)
+        assertNull(restored.routePosition)
+        assertNull(coordinator.lastReliableObservedAt())
+    }
+
+    @Test
+    fun `checkpoint without observation timestamp restores position but waits for fresh GPS baseline`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+        val checkpointPosition = RoutePosition(route.id, 0.3, 0.0, "stage-1")
+        val checkpoint = WalkingCheckpoint(
+            routePosition = checkpointPosition,
+            gpsState = GpsState.NO_SIGNAL,
+            isOffline = true,
+            lastObservedAt = null
+        )
+
+        val restored = coordinator.restoreCheckpoint(checkpoint, Instant.parse("2026-09-01T14:05:00Z"))
+
+        assertEquals(GpsState.NO_SIGNAL, restored.gpsState)
+        assertEquals(checkpointPosition.routeKm, restored.routePosition!!.routeKm, 0.0001)
+        assertNull(coordinator.lastReliableObservedAt())
+
+        val recovered = coordinator.accept(gps(40.00225, "2026-09-01T14:06:00Z"))
+        assertEquals(GpsState.ON_ROUTE, recovered.gpsState)
+        assertTrue(recovered.routePosition!!.routeKm > checkpointPosition.routeKm)
+    }
+
+    @Test
+    fun `checkpoint from another route is discarded safely`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+        val checkpoint = WalkingCheckpoint(
+            routePosition = RoutePosition("another-route", 0.3, 0.0, "stage-1"),
+            gpsState = GpsState.ON_ROUTE,
+            isOffline = false,
+            lastObservedAt = Instant.parse("2026-09-01T15:00:00Z")
+        )
+
+        val restored = coordinator.restoreCheckpoint(checkpoint, Instant.parse("2026-09-01T15:05:00Z"))
+
+        assertEquals(GpsState.NO_SIGNAL, restored.gpsState)
+        assertNull(restored.routePosition)
+    }
+
+    @Test
     fun `offline flag changes presentation state without changing route position`() {
         val route = fixtureRoute()
         val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
