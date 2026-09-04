@@ -25,8 +25,13 @@ object WalkJsonCodec {
 
     fun decode(json: String): Walk? = runCatching {
         val root = JSONObject(json)
-        val version = if (root.has("version")) root.getInt("version") else VERSION
-        require(version == VERSION) { "Unsupported walking plan version: $version" }
+        val versionValue = if (root.has("version")) root.get("version") else VERSION
+        require(versionValue is Number && versionValue.toDouble() == VERSION.toDouble()) {
+            "Unsupported walking plan version type"
+        }
+        require(versionValue.toInt() == VERSION) {
+            "Unsupported walking plan version: $versionValue"
+        }
 
         val id = root.getString("id").takeIf { it.isNotBlank() }
             ?: throw IllegalArgumentException("walk id must not be blank")
@@ -53,7 +58,10 @@ object WalkJsonCodec {
             startedAt = startedAt,
             endedAt = endedAt,
             status = WalkStatus.valueOf(root.getString("status")),
-            stageIds = root.optString("stageIds").takeIf { it.isNotEmpty() }?.split("\u001f") ?: emptyList()
+            stageIds = root.optString("stageIds")
+                .split("\u001f")
+                .map(String::trim)
+                .filter(String::isNotEmpty)
         )
     }.getOrNull()
 
