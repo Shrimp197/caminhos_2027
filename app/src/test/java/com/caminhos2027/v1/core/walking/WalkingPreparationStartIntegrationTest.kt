@@ -82,14 +82,14 @@ class WalkingPreparationStartIntegrationTest {
                 latitude = 40.03,
                 longitude = -8.0,
                 accuracyMeters = 5.0,
-                capturedAt = Instant.parse("2026-09-03T10:01:00Z")
+                capturedAt = Instant.parse("2026-09-03T10:11:00Z")
             )
         )
         assertNotNull(moved.walking?.routePosition)
         val acceptedKm = moved.walking!!.routePosition!!.routeKm
         assertEquals(GpsState.ON_ROUTE, moved.walking.gpsState)
 
-        val lost = controller.markNoSignal(Instant.parse("2026-09-03T10:02:00Z"))
+        val lost = controller.markNoSignal(Instant.parse("2026-09-03T10:12:00Z"))
         assertEquals(GpsState.NO_SIGNAL, lost.walking?.gpsState)
         assertEquals(acceptedKm, lost.walking?.routePosition?.routeKm ?: -1.0, 0.0001)
 
@@ -105,7 +105,7 @@ class WalkingPreparationStartIntegrationTest {
             store = AppStateStore(),
             sessionRuntime = resumedRuntime
         )
-        val resumed = resumedController.resume(Instant.parse("2026-09-03T10:03:00Z"))
+        val resumed = resumedController.resume(Instant.parse("2026-09-03T10:13:00Z"))
         assertEquals(GpsState.NO_SIGNAL, resumed.walking?.gpsState)
         assertEquals(acceptedKm, resumed.walking?.routePosition?.routeKm ?: -1.0, 0.0001)
 
@@ -114,7 +114,7 @@ class WalkingPreparationStartIntegrationTest {
                 latitude = 40.04,
                 longitude = -8.0,
                 accuracyMeters = 5.0,
-                capturedAt = Instant.parse("2026-09-03T10:04:00Z")
+                capturedAt = Instant.parse("2026-09-03T10:24:00Z")
             )
         )
         assertEquals(GpsState.ON_ROUTE, recovered.walking?.gpsState)
@@ -122,7 +122,7 @@ class WalkingPreparationStartIntegrationTest {
 
         val stopped = resumedRuntime.stop(
             requireNotNull(recovered.walking).routePosition!!,
-            Instant.parse("2026-09-03T10:05:00Z")
+            Instant.parse("2026-09-03T10:25:00Z")
         )
         assertEquals(WalkStatus.COMPLETED, stopped.status)
         assertEquals(null, checkpointRepository.get("walk"))
