@@ -11,7 +11,8 @@ import java.time.Instant
 class WalkingPreparationAppStateController(
     private val route: Route,
     private val preparationService: WalkingPreparationService,
-    private val store: AppStateStore
+    private val store: AppStateStore,
+    private val sessionRuntime: WalkingSessionRuntime? = null
 ) {
     fun preview(walkId: String, startRouteKm: Double, destinationRouteKm: Double): WalkingPreparation =
         preparationService.preview(walkId, startRouteKm, destinationRouteKm)
@@ -41,7 +42,8 @@ class WalkingPreparationAppStateController(
             route = route,
             walk = walking.walk,
             catalog = catalog,
-            store = store
+            store = store,
+            sessionRuntime = sessionRuntime
         )
         return controller.start(position, now)
     }
