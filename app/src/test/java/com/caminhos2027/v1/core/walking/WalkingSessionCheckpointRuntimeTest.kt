@@ -46,7 +46,7 @@ class WalkingSessionCheckpointRuntimeTest {
         )
 
         val restoredRuntime = WalkingSessionRuntime(route, sessionService, emptyList())
-        val restored = restoredRuntime.resume()
+        val restored = restoredRuntime.resume(Instant.parse("2026-09-03T08:10:05Z"))
 
         assertNotNull(restored)
         assertEquals(WalkStatus.ACTIVE, restored!!.walk.status)
