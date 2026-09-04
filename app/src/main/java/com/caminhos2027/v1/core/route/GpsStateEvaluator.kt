@@ -54,7 +54,7 @@ object GpsStateEvaluator {
             else -> GpsState.ON_ROUTE
         }
 
-        return if (nextState == GpsState.ON_ROUTE) {
+        return if (!suspicious) {
             previous.copy(
                 state = nextState,
                 lastReliableObservation = observation,
@@ -63,8 +63,8 @@ object GpsStateEvaluator {
                 consecutiveProbableSamples = nextProbable
             )
         } else {
-            // A deviation candidate must not replace the last route position presented to the pilgrim.
-            // The sample remains available for diagnosis through lastObservation and counters.
+            // A suspicious sample may keep the public state temporarily as ON_ROUTE while
+            // hysteresis accumulates. It must not replace the last route position considered reliable.
             previous.copy(
                 state = nextState,
                 lastObservation = observation,
