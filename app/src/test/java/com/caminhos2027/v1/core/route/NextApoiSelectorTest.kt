@@ -56,6 +56,41 @@ class NextApoiSelectorTest {
         assertEquals("water", selected?.id)
     }
 
+    @Test
+    fun invalidCurrentRouteDistanceIsRejected() {
+        val invalidValues = listOf(Double.NaN, Double.POSITIVE_INFINITY, -0.1)
+        invalidValues.forEach { value ->
+            try {
+                NextApoiSelector.next(value, emptyList())
+                throw AssertionError("Expected invalid currentRouteKm=$value to be rejected")
+            } catch (_: IllegalArgumentException) {
+                // Expected.
+            }
+        }
+    }
+
+    @Test
+    fun nonFiniteApoiRouteDistanceIsIgnored() {
+        val selected = NextApoiSelector.next(
+            5.0,
+            listOf(
+                apoi("nan", Double.NaN),
+                apoi("infinite", Double.POSITIVE_INFINITY),
+                apoi("valid", 6.0)
+            )
+        )
+        assertEquals("valid", selected?.id)
+    }
+
+    @Test
+    fun invalidApoiRouteDistancesDoNotProduceSelection() {
+        val selected = NextApoiSelector.next(
+            5.0,
+            listOf(apoi("nan", Double.NaN), apoi("infinite", Double.POSITIVE_INFINITY))
+        )
+        assertNull(selected)
+    }
+
     private fun apoi(
         id: String,
         routeKm: Double,
