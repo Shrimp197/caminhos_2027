@@ -14,16 +14,18 @@ CATEGORIES = {
     "ALIMENTACAO", "AGUA", "DESCANSO", "PERNOITA",
     "DUCHES", "CARREGAMENTO", "TRANSPORTE", "EMERGENCIA",
 }
-TARGET_STATUSES = {"awaiting_confirmation", "historical", "candidate"}
+TARGET_STATUSES = {"awaiting_confirmation", "historical", "candidate", "excluded"}
 EXPECTED_PUBLICATION = {
     "awaiting_confirmation": "REVIEW",
     "historical": "HISTORICAL",
     "candidate": "CANDIDATE",
+    "excluded": "EXCLUDED",
 }
 EXPECTED_AVAILABILITY = {
     "awaiting_confirmation": "AWAITING_CONFIRMATION",
     "historical": "HISTORICAL",
     "candidate": "AWAITING_CONFIRMATION",
+    "excluded": "AWAITING_CONFIRMATION",
 }
 
 
@@ -92,7 +94,7 @@ def validate(transition_path: Path, master_path: Path) -> list[str]:
             errors.append(f"{prefix}.published_services must be a list")
         elif any(service not in CATEGORIES for service in services):
             errors.append(f"{prefix}.published_services contains an invalid category")
-        elif status in {"historical", "candidate"} and services:
+        elif status in {"historical", "candidate", "excluded"} and services:
             errors.append(f"{prefix} {status} entries cannot expose published services")
 
     if len(seen) != len(master_by_id):
