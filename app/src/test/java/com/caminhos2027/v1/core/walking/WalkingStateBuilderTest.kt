@@ -13,6 +13,7 @@ import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.route.GpsState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -32,6 +33,20 @@ class WalkingStateBuilderTest {
         assertEquals(GpsState.ON_ROUTE, state.gpsState)
         assertNotNull(state.routePosition)
         assertTrue(!state.isOffline)
+    }
+
+    @Test
+    fun nullPositionProducesStateWithoutFabricatedProgressOrApoi() {
+        val route = fixture()
+        val walk = Walk("walk-null", route.id, plannedStartKm = 0.0, plannedDestinationKm = 2.0)
+
+        val state = WalkingStateBuilder.build(route, walk, GpsState.NO_SIGNAL, null, listOf(apoi()))
+
+        assertNull(state.routePosition)
+        assertNull(state.progress)
+        assertNull(state.nextApoi)
+        assertNull(state.nextApoiDistanceKm)
+        assertEquals(GpsState.NO_SIGNAL, state.gpsState)
     }
 
     @Test
