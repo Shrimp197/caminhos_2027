@@ -8,9 +8,9 @@
 
 ## Current HEAD
 
-- SHA: `6fd58669419aebfd0d1031714ee8753f1be55209`
-- Commit: `docs(v1): restore authoritative project state`
-- Parent: `e7ecbf3281d18be3b1973e4eb7f92fb20ba7d77e`
+- SHA: `3aa2a118ed94e9735cf74eedae8678362db3b563`
+- Commit: `refactor(v1): centralize persisted walking restoration`
+- Parent: `84b078223fe0e61338073c34d6b9ce212e4acb54`
 
 ## Route
 
@@ -44,10 +44,7 @@ Implemented in the current branch:
 - `WalkingPreparationAppStateController` owns preparation publication and the explicit saved-plan start transition.
 - `WalkingAppStateController` bridges runtime/coordinator state into `AppStateStore`.
 - `V1MainActivity` owns Android lifecycle and presentation/navigation only.
-
-## Known consolidation point
-
-`V1MainActivity` currently restores an active session by calling `runtime.resume()` and then attaching the returned walk manually. `AndroidV1AppContainer` already provides `resumePersistedWalk(...)`, which centralizes this boundary and should be preferred in the next consolidation block. This is a local architectural cleanup, not a product change.
+- Persisted Android walking restoration now goes through `AndroidV1AppContainer.resumePersistedWalk(...)`; the Activity no longer calls `runtime.resume()` directly.
 
 ## Data
 
@@ -63,14 +60,13 @@ Workflows present on `v1-route-import` include:
 - `v1-route-import-validation.yml`
 - `v1-route-source-provenance.yml`
 
-The branch HEAD currently has no recorded combined status checks available through the GitHub connector. Do not report CI as green without an observed completed workflow run.
+CI for the current restoration-consolidation commit must be reported only from completed workflow results.
 
 ## Next logical block
 
-1. Consolidate Android session restoration through `AndroidV1AppContainer.resumePersistedWalk(...)`.
-2. Add/strengthen a regression test around restored-session attachment where feasible without introducing Android UI test infrastructure.
-3. Validate the branch through the existing JVM/build workflows.
-4. Then continue end-to-end UX consolidation rather than adding unrelated features.
+1. Validate the current Activity/container consolidation through completed JVM/build workflows.
+2. Consolidate the preparation/start UX only where it improves clarity without changing the explicit `PLANNED → ACTIVE` contract.
+3. Continue end-to-end UX consolidation and then physical Android GPS validation.
 
 ## Integrity rule
 
