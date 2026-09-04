@@ -26,6 +26,24 @@ class WalkingSessionControllerTest {
     }
 
     @Test
+    fun startClearsStaleCompletionMetadata() {
+        val stale = planned.copy(
+            actualStartKm = 11.0,
+            actualEndKm = 19.0,
+            startedAt = startTime.minusSeconds(60),
+            endedAt = stopTime,
+            status = WalkStatus.PLANNED
+        )
+
+        val started = WalkingSessionController.start(stale, routePosition, startTime)
+
+        assertEquals(12.5, started.actualStartKm!!, 0.001)
+        assertEquals(null, started.actualEndKm)
+        assertEquals(startTime, started.startedAt)
+        assertEquals(null, started.endedAt)
+    }
+
+    @Test
     fun stopMarksActiveWalkCompletedAndRecordsEnd() {
         val started = WalkingSessionController.start(planned, routePosition, startTime)
         val stopped = WalkingSessionController.stop(started, routePosition.copy(routeKm = 15.0), stopTime)
