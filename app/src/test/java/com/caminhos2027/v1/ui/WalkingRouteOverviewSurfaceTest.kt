@@ -3,6 +3,7 @@ package com.caminhos2027.v1.ui
 import com.caminhos2027.v1.core.model.GeoPoint
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class WalkingRouteOverviewSurfaceTest {
     @Test
@@ -51,6 +52,33 @@ class WalkingRouteOverviewSurfaceTest {
 
         assertEquals(1, WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry, 0.5f))
         assertEquals(2, WalkingRouteOverviewPresenter.visiblePathPointIndex(geometry, 1.0f))
+    }
+
+    @Test
+    fun routeBearingAndDirectionDescribeTheCurrentRouteSegment() {
+        val geometry = listOf(
+            GeoPoint(40.0, -8.0),
+            GeoPoint(40.01, -8.0),
+            GeoPoint(40.01, -7.99)
+        )
+
+        assertEquals("Norte", WalkingRouteOverviewPresenter.routeDirectionLabel(
+            WalkingRouteOverviewPresenter.routeBearingDegrees(geometry, 0f)
+        ))
+        assertEquals("Este", WalkingRouteOverviewPresenter.routeDirectionLabel(
+            WalkingRouteOverviewPresenter.routeBearingDegrees(geometry, 0.9f)
+        ))
+    }
+
+    @Test
+    fun routeDirectionRejectsDegenerateOrInvalidGeometry() {
+        assertNull(WalkingRouteOverviewPresenter.routeBearingDegrees(emptyList(), 0.5f))
+        assertNull(WalkingRouteOverviewPresenter.routeBearingDegrees(listOf(GeoPoint(40.0, -8.0)), 0.5f))
+        assertNull(WalkingRouteOverviewPresenter.routeBearingDegrees(listOf(
+            GeoPoint(40.0, -8.0),
+            GeoPoint(40.0, -8.0)
+        ), 0.5f))
+        assertNull(WalkingRouteOverviewPresenter.routeDirectionLabel(Double.NaN))
     }
 
     @Test
