@@ -10,12 +10,9 @@ data class WalkingProgress(
     val remainingKm: Double,
     val targetRouteKm: Double,
     val progressRatio: Double,
-    val stageId: String?
-) {
-    /** Compatibility label for presentation code; the route domain currently exposes the stage identifier. */
-    val stageName: String?
-        get() = stageId
-}
+    val stageId: String?,
+    val stageName: String? = null
+)
 
 object WalkingProgressCalculator {
     fun calculate(route: Route, walk: Walk, positionKm: Double): WalkingProgress {
@@ -29,8 +26,16 @@ object WalkingProgressCalculator {
         val remaining = max(0.0, target - current)
         val plannedDistance = target - start
         val ratio = if (plannedDistance == 0.0) 1.0 else (walked / plannedDistance).coerceIn(0.0, 1.0)
-        val stageId = StageLocator.currentStage(route, current)?.id
+        val stage = StageLocator.currentStage(route, current)
 
-        return WalkingProgress(current, walked, remaining, target, ratio, stageId)
+        return WalkingProgress(
+            currentRouteKm = current,
+            walkedKm = walked,
+            remainingKm = remaining,
+            targetRouteKm = target,
+            progressRatio = ratio,
+            stageId = stage?.id,
+            stageName = stage?.name
+        )
     }
 }
