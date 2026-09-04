@@ -15,10 +15,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsWalk
@@ -401,6 +404,7 @@ private fun PreparedWalkScreen(walk: Walk, onStart: () -> Unit) {
 @Composable
 private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit, onOpenApoi: () -> Unit, onOpenDecision: () -> Unit) {
     val gpsPresentation = WalkingStatusPresentation.gps(state.gpsState)
+    val bottomScrollState = rememberScrollState()
     Box(modifier = Modifier.fillMaxSize()) {
         WalkingMapSurface(gpsState = state.gpsState, hasPosition = state.routePosition != null)
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -416,32 +420,47 @@ private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit, onOpenA
             }
             IconButton(onClick = onStop) { Icon(Icons.Default.Close, contentDescription = "Terminar caminhada", tint = Ink) }
         }
-        Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            WalkingRouteProgressSurface(state.progress)
-            state.routePosition?.let { position ->
-                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)) {
-                    Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Está aqui", style = MaterialTheme.typography.labelLarge, color = Forest)
-                        Text("${formatKm(position.routeKm)} km no caminho", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text(gpsPresentation.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text(gpsPresentation.detail, style = MaterialTheme.typography.bodySmall, color = Muted)
-                        Text(WalkingStatusPresentation.confidence(position.confidence), style = MaterialTheme.typography.bodySmall, color = Muted)
-                        WalkingStatusPresentation.offlineLabel(state.isOffline)?.let { label ->
-                            Text(label, style = MaterialTheme.typography.bodySmall, color = Muted)
-                        }
-                        state.progress?.let { progress ->
-                            Text("Faltam ${formatKm(progress.remainingKm)} km até ao destino planeado.", style = MaterialTheme.typography.bodyMedium, color = Muted)
-                        }
-                        state.nextApoi?.let { apoi ->
-                            Text("Próximo APOI: ${apoi.name}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                            state.nextApoiDistanceKm?.let { distance -> Text("${formatKm(distance)} km pelo caminho", style = MaterialTheme.typography.bodySmall, color = Muted) }
-                        }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(onClick = onOpenApoi, modifier = Modifier.weight(1f)) { Text("Consultar APOI") }
-                            Button(onClick = onOpenDecision, modifier = Modifier.weight(1f)) { Text("Decidir") }
+        Surface(
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            color = Sand,
+            shadowElevation = 4.dp,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 520.dp)
+                    .verticalScroll(bottomScrollState)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                WalkingRouteProgressSurface(state.progress)
+                state.routePosition?.let { position ->
+                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)) {
+                        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Está aqui", style = MaterialTheme.typography.labelLarge, color = Forest)
+                            Text("${formatKm(position.routeKm)} km no caminho", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            Text(gpsPresentation.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(gpsPresentation.detail, style = MaterialTheme.typography.bodySmall, color = Muted)
+                            Text(WalkingStatusPresentation.confidence(position.confidence), style = MaterialTheme.typography.bodySmall, color = Muted)
+                            WalkingStatusPresentation.offlineLabel(state.isOffline)?.let { label ->
+                                Text(label, style = MaterialTheme.typography.bodySmall, color = Muted)
+                            }
+                            state.progress?.let { progress ->
+                                Text("Faltam ${formatKm(progress.remainingKm)} km até ao destino planeado.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                            }
+                            state.nextApoi?.let { apoi ->
+                                Text("Próximo APOI: ${apoi.name}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                state.nextApoiDistanceKm?.let { distance -> Text("${formatKm(distance)} km pelo caminho", style = MaterialTheme.typography.bodySmall, color = Muted) }
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(onClick = onOpenApoi, modifier = Modifier.weight(1f)) { Text("Consultar APOI") }
+                                Button(onClick = onOpenDecision, modifier = Modifier.weight(1f)) { Text("Decidir") }
+                            }
                         }
                     }
                 }
+                Spacer(Modifier.height(8.dp))
             }
         }
     }
