@@ -49,6 +49,7 @@ import com.caminhos2027.v1.core.AndroidV1AppContainer
 import com.caminhos2027.v1.core.AppState
 import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.RawGpsPosition
+import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
@@ -98,6 +99,7 @@ class V1MainActivity : ComponentActivity() {
                     state = walkingState,
                     preparedWalk = preparedWalk,
                     appState = appContainer.store.state,
+                    route = appContainer.publishedRoute(),
                     surface = surface,
                     onPrepare = ::prepareWalking,
                     onStart = ::requestStartPreparedWalk,
@@ -280,6 +282,7 @@ private fun WalkingScreenV1(
     state: WalkingState?,
     preparedWalk: Walk?,
     appState: AppState,
+    route: Route,
     surface: WalkingSurface,
     onPrepare: () -> Unit,
     onStart: () -> Unit,
@@ -293,7 +296,7 @@ private fun WalkingScreenV1(
 ) {
     Surface(modifier = Modifier.fillMaxSize(), color = Sand) {
         when {
-            state != null && surface == WalkingSurface.ACTIVE -> ActiveWalkingScreen(state, onStop, onOpenApoi, onOpenDecision)
+            state != null && surface == WalkingSurface.ACTIVE -> ActiveWalkingScreen(state, route, onStop, onOpenApoi, onOpenDecision)
             surface == WalkingSurface.APOI_BROWSER -> {
                 val browser = appState.apoiBrowser
                 if (browser == null) {
@@ -402,11 +405,23 @@ private fun PreparedWalkScreen(walk: Walk, onStart: () -> Unit) {
 }
 
 @Composable
-private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit, onOpenApoi: () -> Unit, onOpenDecision: () -> Unit) {
+private fun ActiveWalkingScreen(
+    state: WalkingState,
+    route: Route,
+    onStop: () -> Unit,
+    onOpenApoi: () -> Unit,
+    onOpenDecision: () -> Unit
+) {
     val gpsPresentation = WalkingStatusPresentation.gps(state.gpsState)
     val bottomScrollState = rememberScrollState()
     Box(modifier = Modifier.fillMaxSize()) {
-        WalkingMapSurface(gpsState = state.gpsState, hasPosition = state.routePosition != null)
+        WalkingMapSurface(
+            geometry = route.geometry.points,
+            currentRouteKm = state.progress?.currentRouteKm,
+            totalDistanceKm = route.totalDistanceKm,
+            gpsState = state.gpsState,
+            hasPosition = state.routePosition != null
+        )
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
@@ -467,12 +482,24 @@ private fun ActiveWalkingScreen(state: WalkingState, onStop: () -> Unit, onOpenA
 }
 
 @Composable
-private fun WalkingMapSurface(gpsState: GpsState, hasPosition: Boolean) {
+private fun WalkingMapSurface(
+    geometry: List<com.caminhos2027.v1.core.model.GeoPoint>,
+    currentRouteKm: Double?,
+    totalDistanceKm: Double,
+    gpsState: GpsState,
+    hasPosition: Boolean
+) {
     Box(modifier = Modifier.fillMaxSize().background(ForestSoft)) {
-        Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Default.Navigation, contentDescription = null, tint = Forest, modifier = Modifier.size(46.dp))
-            Spacer(Modifier.height(8.dp))
-            Text("Superfície do percurso", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        WalkingRouteOverviewSurface(
+            geometry = geometry,
+            currentRouteKm = currentRouteKm,
+            totalDistanceKm = totalDistanceKm,
+            modifier = Modifier.align(Alignment.Center).padding(bottom = 190.dp)
+        )
+        Column(modifier = Modifier.align(Alignment.Center).padding(top = 170.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Default.Navigation, contentDescription = null, tint = Forest, modifier = Modifier.size(36.dp))
+            Spacer(Modifier.height(6.dp))
+            Text("Cartografia detalhada ainda não disponível", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = Ink)
             Text(
                 when {
                     !hasPosition -> "A aguardar localização"
