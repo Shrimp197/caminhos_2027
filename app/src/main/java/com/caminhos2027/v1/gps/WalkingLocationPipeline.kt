@@ -14,6 +14,7 @@ import java.time.Instant
 class WalkingLocationPipeline(
     private val route: Route,
     private val policy: GpsTrackingPolicy = GpsTrackingPolicy(),
+    private val clock: () -> Instant = Instant::now,
     initialState: GpsTrackingState = GpsTrackingState(com.caminhos2027.v1.core.route.GpsState.NO_SIGNAL)
 ) {
     var trackingState: GpsTrackingState = initialState
@@ -45,7 +46,7 @@ class WalkingLocationPipeline(
         trackingState = GpsStateEvaluator.update(
             previous = trackingState,
             observation = observation,
-            now = position.capturedAt,
+            now = clock(),
             policy = policy
         )
         return trackingState
