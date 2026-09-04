@@ -2,7 +2,6 @@ package com.caminhos2027.v1.core.route
 
 import com.caminhos2027.v1.core.model.RoutePosition
 import kotlin.math.abs
-import kotlin.math.max
 import java.time.Duration
 import java.time.Instant
 
@@ -19,8 +18,13 @@ object GpsStateEvaluator {
     ): GpsTrackingState {
         if (observation == null) {
             val last = previous.lastObservation
-            val elapsed = if (last == null) Long.MAX_VALUE else max(0, now.epochSecond - last.capturedAt.epochSecond)
-            return if (elapsed >= policy.noSignalAfterSeconds) {
+            val elapsedSeconds = if (last == null) {
+                Long.MAX_VALUE
+            } else {
+                val elapsedMillis = Duration.between(last.capturedAt, now).toMillis()
+                if (elapsedMillis < 0) 0 else elapsedMillis / 1000
+            }
+            return if (elapsedSeconds >= policy.noSignalAfterSeconds) {
                 previous.copy(state = GpsState.NO_SIGNAL)
             } else {
                 previous.copy(state = GpsState.ACQUIRING)
