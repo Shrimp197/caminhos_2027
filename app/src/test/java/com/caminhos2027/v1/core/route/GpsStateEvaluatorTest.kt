@@ -115,6 +115,32 @@ class GpsStateEvaluatorTest {
     }
 
     @Test
+    fun suspiciousObservationRefreshesObservationClockWithoutReplacingReliableBaseline() {
+        var state = GpsTrackingState(GpsState.ACQUIRING)
+        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
+
+        val suspicious = observation(0.7, 40.0, 5.0, t0.plusSeconds(10))
+        state = GpsStateEvaluator.update(state, suspicious, t0.plusSeconds(10))
+
+        assertEquals(0.5, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(t0, state.lastReliableObservation?.capturedAt)
+        assertEquals(0.7, state.lastObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(t0.plusSeconds(10), state.lastObservation?.capturedAt)
+    }
+
+    @Test
+    fun suspiciousObservationDoesNotBecomeReliableEvenWhenNextPointIsPlausibleFromOldBaseline() {
+        var state = GpsTrackingState(GpsState.ACQUIRING)
+        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
+        state = GpsStateEvaluator.update(state, observation(0.7, 40.0, 5.0, t0.plusSeconds(10)), t0.plusSeconds(10))
+
+        state = GpsStateEvaluator.update(state, observation(0.52, 5.0, 5.0, t0.plusSeconds(20)), t0.plusSeconds(20))
+
+        assertEquals(0.52, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(t0.plusSeconds(20), state.lastReliableObservation?.capturedAt)
+    }
+
+    @Test
     fun malformedRouteMetricsAreIgnored() {
         var state = GpsTrackingState(GpsState.ON_ROUTE)
         state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
