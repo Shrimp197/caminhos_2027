@@ -6,6 +6,7 @@ import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.route.GpsState
+import com.caminhos2027.v1.core.route.WalkingMovementCue
 import com.caminhos2027.v1.core.route.WalkingProgressCalculator
 
 /** Builds the single walking read model from domain components. */
@@ -16,6 +17,7 @@ object WalkingStateBuilder {
         gpsState: GpsState,
         routePosition: RoutePosition?,
         publishedApoi: List<Apoi>,
+        movementCue: WalkingMovementCue? = null,
         offline: Boolean = false
     ): WalkingState {
         val progress = routePosition?.let {
@@ -35,6 +37,7 @@ object WalkingStateBuilder {
             progress = progress,
             nextApoi = nextApoi,
             nextApoiDistanceKm = nextApoiDistanceKm,
+            movementCue = movementCue,
             isOffline = offline
         )
     }
