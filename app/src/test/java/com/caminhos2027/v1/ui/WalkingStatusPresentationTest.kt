@@ -1,5 +1,6 @@
 package com.caminhos2027.v1.ui
 
+import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.route.GpsState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -37,6 +38,14 @@ class WalkingStatusPresentationTest {
             "Vários sinais afastados do traçado foram observados. Confirme visualmente o caminho antes de continuar.",
             presentation.detail
         )
+    }
+
+    @Test
+    fun positionConfidenceUsesExplicitPortugueseLabels() {
+        assertEquals("Confiança da posição: alta", WalkingStatusPresentation.confidence(PositionConfidence.HIGH))
+        assertEquals("Confiança da posição: média", WalkingStatusPresentation.confidence(PositionConfidence.MEDIUM))
+        assertEquals("Confiança da posição: baixa", WalkingStatusPresentation.confidence(PositionConfidence.LOW))
+        assertEquals("Confiança da posição: não conhecida", WalkingStatusPresentation.confidence(PositionConfidence.UNKNOWN))
     }
 
     @Test
