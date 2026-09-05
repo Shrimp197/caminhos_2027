@@ -19,7 +19,7 @@ object RouteValidator {
             errors += "route.totalDistanceKm must be finite and > 0"
         }
         if (route.source.isBlank()) errors += "route.source must not be blank"
-        if (route.updatedAt.isBlank()) errors += "route.updatedAt must not be blank"
+        if (route.updatedAt?.isBlank() == true) errors += "route.updatedAt must not be blank when present"
 
         val geometry = route.geometry.points
         if (geometry.size < 2) errors += "route.geometry must contain at least two points"
