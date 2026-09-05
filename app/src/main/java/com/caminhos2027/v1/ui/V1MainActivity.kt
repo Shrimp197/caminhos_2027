@@ -48,14 +48,15 @@ import com.caminhos2027.v1.core.AppState
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
+import com.caminhos2027.v1.core.route.RouteLocationEngine
 import com.caminhos2027.v1.core.walking.WalkingState
 import com.caminhos2027.v1.gps.AndroidLocationSource
 import com.caminhos2027.v1.gps.GpxSimulationLocationSource
 import com.caminhos2027.v1.gps.LocationSource
-import com.caminhos2027.v1.core.model.RawGpsPosition
 import java.time.Instant
 import java.util.Locale
 
@@ -206,13 +207,16 @@ class V1MainActivity : ComponentActivity() {
     private fun isTestRoute(): Boolean = AndroidRouteCatalog.options.firstOrNull { it.id == selectedRouteId }?.testOnly == true
 
     private fun startTestRouteIfNeeded() {
-        if (!startRequested || walkingState != null || preparedWalk == null) return
         if (testLocationSource != null) return
+        if (walkingState == null && (!startRequested || preparedWalk == null)) return
+
         val source = GpxSimulationLocationSource(
             points = appContainer.publishedRoute().geometry.points,
             onPosition = { position ->
                 runOnUiThread {
-                    handleGpsForPreparedWalk(position)
+                    if (!handleGpsForPreparedWalk(position) && walkingState != null) {
+                        walkingState = appContainer.activeController().acceptGps(position).walking
+                    }
                 }
             }
         )
@@ -228,7 +232,7 @@ class V1MainActivity : ComponentActivity() {
 
     private fun handleGpsForPreparedWalk(position: RawGpsPosition): Boolean {
         if (!startRequested || walkingState != null || preparedWalk == null) return false
-        val routePosition = com.caminhos2027.v1.core.route.RouteLocationEngine.locate(appContainer.publishedRoute(), position)
+        val routePosition = RouteLocationEngine.locate(appContainer.publishedRoute(), position)
         val started = try {
             appContainer.preparationController.startSaved(
                 catalog = appContainer.publishedApoiCatalog(),
