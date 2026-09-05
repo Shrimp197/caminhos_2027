@@ -90,6 +90,120 @@ class GpsStateEvaluatorTest {
         assertEquals(1.0, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
     }
 
+    @Test
+    fun shortSubsecondObservationUsesElapsedMilliseconds() {
+        var state = GpsTrackingState(GpsState.ACQUIRING)
+        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
+        state = GpsStateEvaluator.update(
+            state,
+            observation(0.5005, 5.0, 5.0, t0.plusMillis(500)),
+            t0.plusMillis(500)
+        )
+
+        assertEquals(0.5005, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.00001)
+    }
+
+    @Test
+    fun outOfOrderObservationIsIgnoredForStateAndSignalClock() {
+        var state = GpsTrackingState(GpsState.ON_ROUTE)
+        state = GpsStateEvaluator.update(state, observation(1.0, 5.0, 5.0, t0.plusSeconds(20)), t0.plusSeconds(20))
+        state = GpsStateEvaluator.update(state, observation(1.1, 5.0, 5.0, t0.plusSeconds(10)), t0.plusSeconds(21))
+
+        assertEquals(1.0, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(1.0, state.lastObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(t0.plusSeconds(20), state.lastObservation?.capturedAt)
+    }
+
+    @Test
+    fun suspiciousObservationRefreshesObservationClockWithoutReplacingReliableBaseline() {
+        var state = GpsTrackingState(GpsState.ACQUIRING)
+        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
+
+        val suspicious = observation(0.7, 40.0, 5.0, t0.plusSeconds(10))
+        state = GpsStateEvaluator.update(state, suspicious, t0.plusSeconds(10))
+
+        assertEquals(0.5, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(t0, state.lastReliableObservation?.capturedAt)
+        assertEquals(0.7, state.lastObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(t0.plusSeconds(10), state.lastObservation?.capturedAt)
+    }
+
+    @Test
+    fun suspiciousObservationDoesNotBecomeReliableEvenWhenNextPointIsPlausibleFromOldBaseline() {
+        var state = GpsTrackingState(GpsState.ACQUIRING)
+        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
+        state = GpsStateEvaluator.update(state, observation(0.7, 40.0, 5.0, t0.plusSeconds(10)), t0.plusSeconds(10))
+
+        state = GpsStateEvaluator.update(state, observation(0.52, 5.0, 5.0, t0.plusSeconds(20)), t0.plusSeconds(20))
+
+        assertEquals(0.52, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(t0.plusSeconds(20), state.lastReliableObservation?.capturedAt)
+    }
+
+    @Test
+    fun malformedRouteMetricsAreIgnored() {
+        var state = GpsTrackingState(GpsState.ON_ROUTE)
+        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
+        val result = GpsStateEvaluator.update(
+            state,
+            observation(Double.NaN, 5.0, 5.0, t0.plusSeconds(10)),
+            t0.plusSeconds(10)
+        )
+
+        assertSame(state, result)
+        assertEquals(0.5, result.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+    }
+
+    @Test
+    fun malformedDistanceOrAccuracyIsIgnored() {
+        var state = GpsTrackingState(GpsState.ON_ROUTE)
+        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
+        val badDistance = GpsStateEvaluator.update(
+            state,
+            observation(0.6, Double.POSITIVE_INFINITY, 5.0, t0.plusSeconds(10)),
+            t0.plusSeconds(10)
+        )
+        assertSame(state, badDistance)
+
+        val badAccuracy = GpsStateEvaluator.update(
+            state,
+            observation(0.6, 5.0, -1.0, t0.plusSeconds(10)),
+            t0.plusSeconds(10)
+        )
+        assertSame(state, badAccuracy)
+    }
+
+    @Test
+    fun materiallyFutureObservationIsIgnored() {
+        var state = GpsTrackingState(GpsState.ON_ROUTE)
+        val now = t0.plusSeconds(10)
+        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
+        val result = GpsStateEvaluator.update(
+            state,
+            observation(4.0, 5.0, 5.0, now.plusSeconds(16)),
+            now
+        )
+
+        assertSame(state, result)
+        assertEquals(0.5, result.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(t0, result.lastObservation?.capturedAt)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun invalidNegativeSignalTimeoutPolicyIsRejected() {
+        GpsTrackingPolicy(noSignalAfterSeconds = -1)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun invalidDeviationOrderingPolicyIsRejected() {
+        GpsTrackingPolicy(possibleDeviationMeters = 100.0, probableDeviationMeters = 50.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteSpeedPolicyIsRejected() {
+        GpsTrackingPolicy(maxPlausibleSpeedKmh = Double.NaN)
+    }
+
     private fun observation(
         routeKm: Double,
         distanceToRouteMeters: Double,

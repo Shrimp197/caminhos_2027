@@ -6,8 +6,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,39 +17,47 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.DirectionsWalk
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Navigation
-import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.caminhos2027.v1.core.AndroidV1AppContainer
+import com.caminhos2027.v1.core.AppState
+import com.caminhos2027.v1.core.data.AndroidRouteCatalog
+import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.Apoi
-import com.caminhos2027.v1.core.route.GpsState
-import com.caminhos2027.v1.core.route.WalkingProgress
+import com.caminhos2027.v1.core.model.RawGpsPosition
+import com.caminhos2027.v1.core.model.Route
+import com.caminhos2027.v1.core.model.Walk
+import com.caminhos2027.v1.core.model.WalkStatus
+import com.caminhos2027.v1.core.route.RouteLocationEngine
 import com.caminhos2027.v1.core.walking.WalkingState
 import com.caminhos2027.v1.gps.AndroidLocationSource
+import com.caminhos2027.v1.gps.GpxSimulationLocationSource
+import com.caminhos2027.v1.gps.LocationSource
+import java.time.Instant
 import java.util.Locale
 
 private val Forest = Color(0xFF165B43)
@@ -59,35 +65,79 @@ private val ForestSoft = Color(0xFFE8F2ED)
 private val Sand = Color(0xFFF7F4EE)
 private val Ink = Color(0xFF1E2521)
 private val Muted = Color(0xFF68736D)
-private val RouteLine = Color(0xFF6E8E7F)
-private val Warning = Color(0xFF8A6412)
+
+private enum class WalkingSurface { ACTIVE, PREPARATION, APOI_BROWSER, APOI_DETAIL, DECISION }
 
 class V1MainActivity : ComponentActivity() {
-    private var locationSource: AndroidLocationSource? = null
+    private lateinit var appContainer: AndroidV1AppContainer
+    private var locationSource: LocationSource? = null
+    private var testLocationSource: GpxSimulationLocationSource? = null
+    private var walkingState by mutableStateOf<WalkingState?>(null)
+    private var preparedWalk by mutableStateOf<Walk?>(null)
+    private var startRequested by mutableStateOf(false)
+    private var surface by mutableStateOf(WalkingSurface.ACTIVE)
+    private var selectedRouteId by mutableStateOf(AndroidRouteCatalog.CENTENARIO_ID)
 
-    private val locationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        ) {
-            startRawLocationSource()
-        }
+    private val locationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+        if (hasLocationPermissionAfterResult(permissions)) startWalkingLocationSource()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { CaminhosTheme { WalkingScreenV1() } }
+        appContainer = AndroidV1AppContainer(this)
+        selectedRouteId = appContainer.publishedRoute().id
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                when (surface) {
+                    WalkingSurface.ACTIVE -> finish()
+                    WalkingSurface.PREPARATION -> surface = WalkingSurface.ACTIVE
+                    WalkingSurface.APOI_BROWSER -> returnToWalking()
+                    WalkingSurface.APOI_DETAIL -> returnToApoiBrowser()
+                    WalkingSurface.DECISION -> returnToWalking()
+                }
+            }
+        })
+        setContent {
+            CaminhosTheme {
+                WalkingScreenV1(
+                    state = walkingState,
+                    preparedWalk = preparedWalk,
+                    startRequested = startRequested,
+                    appState = appContainer.store.state,
+                    route = appContainer.publishedRoute(),
+                    routeOptions = AndroidRouteCatalog.options,
+                    selectedRouteId = selectedRouteId,
+                    surface = surface,
+                    onPrepare = ::openPreparation,
+                    onSelectRoute = ::selectRoute,
+                    onConfirmPreparation = ::prepareSelectedWalking,
+                    onStart = ::requestStartPreparedWalk,
+                    onStop = ::stopWalking,
+                    onSimulateStep = ::simulateStep,
+                    onOpenApoi = ::openApoiBrowser,
+                    onOpenDecision = ::openDecision,
+                    onApoiSelected = ::selectApoi,
+                    onBackToWalking = ::returnToWalking,
+                    onBackToApoiBrowser = ::returnToApoiBrowser,
+                    onBackToDecision = ::returnToDecision
+                )
+            }
+        }
+        restoreWalkingSession()
     }
 
     override fun onStart() {
         super.onStart()
-        if (hasLocationPermission()) startRawLocationSource()
-        else requestLocationPermission()
+        if (walkingState != null || startRequested) {
+            if (isTestRoute()) startTestRouteIfNeeded()
+            else if (hasLocationPermission()) startWalkingLocationSource() else requestLocationPermission()
+        }
     }
 
     override fun onStop() {
         locationSource?.stop()
+        locationSource = null
+        testLocationSource = null
         super.onStop()
     }
 
@@ -95,24 +145,181 @@ class V1MainActivity : ComponentActivity() {
         checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
+    private fun hasLocationPermissionAfterResult(permissions: Map<String, Boolean>): Boolean =
+        permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
     private fun requestLocationPermission() {
-        locationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
+        locationPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
     }
 
-    private fun startRawLocationSource() {
-        if (locationSource == null) {
-            locationSource = AndroidLocationSource(
-                context = this,
-                onPosition = { /* Raw GPS is connected after a validated route is available. */ },
-                onAvailabilityChanged = { /* Availability is represented by the walking state. */ }
-            )
+    private fun restoreWalkingSession() {
+        val restored = appContainer.resumePersistedWalk()
+        val state = restored.walking
+        if (state != null) {
+            walkingState = state
+            selectedRouteId = state.walk.routeId
+            preparedWalk = null
+            startRequested = false
+            surface = WalkingSurface.ACTIVE
+            return
         }
-        locationSource?.start()
+        preparedWalk = appContainer.restorePreparedWalk()?.walk
+        preparedWalk?.let { selectedRouteId = it.routeId }
+        walkingState = null
+        startRequested = false
+        surface = WalkingSurface.ACTIVE
+    }
+
+    private fun openPreparation() {
+        if (walkingState != null || startRequested) return
+        surface = WalkingSurface.PREPARATION
+    }
+
+    private fun selectRoute(routeId: String) {
+        if (walkingState != null || startRequested) return
+        appContainer = AndroidV1AppContainer(this, routeId)
+        selectedRouteId = routeId
+        preparedWalk = appContainer.restorePreparedWalk()?.walk
+        walkingState = null
+        startRequested = false
+        surface = WalkingSurface.PREPARATION
+    }
+
+    private fun prepareSelectedWalking() {
+        val prepared = appContainer.preparationController.save(
+            walkId = "walk-${System.currentTimeMillis()}",
+            startRouteKm = 0.0,
+            destinationRouteKm = appContainer.publishedRoute().totalDistanceKm
+        )
+        preparedWalk = prepared.walking?.walk
+        walkingState = null
+        startRequested = false
+        surface = WalkingSurface.ACTIVE
+    }
+
+    private fun requestStartPreparedWalk() {
+        require(preparedWalk?.status == WalkStatus.PLANNED) { "A planned walk is required before starting" }
+        startRequested = true
+        if (isTestRoute()) startTestRouteIfNeeded()
+        else if (hasLocationPermission()) startWalkingLocationSource() else requestLocationPermission()
+    }
+
+    private fun isTestRoute(): Boolean = AndroidRouteCatalog.options.firstOrNull { it.id == selectedRouteId }?.testOnly == true
+
+    private fun startTestRouteIfNeeded() {
+        if (testLocationSource != null) return
+        if (walkingState == null && (!startRequested || preparedWalk == null)) return
+
+        val source = GpxSimulationLocationSource(
+            points = appContainer.publishedRoute().geometry.points,
+            onPosition = { position ->
+                runOnUiThread {
+                    if (!handleGpsForPreparedWalk(position) && walkingState != null) {
+                        walkingState = appContainer.activeController().acceptGps(position).walking
+                    }
+                }
+            }
+        )
+        testLocationSource = source
+        locationSource = source
+        source.start()
+    }
+
+    private fun simulateStep() {
+        if (!isTestRoute() || walkingState == null) return
+        testLocationSource?.advance()
+    }
+
+    private fun handleGpsForPreparedWalk(position: RawGpsPosition): Boolean {
+        if (!startRequested || walkingState != null || preparedWalk == null) return false
+        val routePosition = RouteLocationEngine.locate(appContainer.publishedRoute(), position)
+        val started = try {
+            appContainer.preparationController.startSaved(
+                catalog = appContainer.publishedApoiCatalog(),
+                position = routePosition,
+                now = position.capturedAt
+            )
+        } catch (_: IllegalArgumentException) {
+            return false
+        }
+        val walking = started.walking ?: return false
+        appContainer.attachWalk(walking.walk)
+        appContainer.store.setWalking(walking)
+        walkingState = walking
+        preparedWalk = null
+        startRequested = false
+        surface = WalkingSurface.ACTIVE
+        return true
+    }
+
+    private fun startWalkingLocationSource() {
+        if (locationSource != null || (walkingState == null && !startRequested)) return
+        val source = AndroidLocationSource(
+            context = this,
+            onPosition = { position ->
+                runOnUiThread {
+                    if (!handleGpsForPreparedWalk(position) && walkingState != null) {
+                        walkingState = appContainer.activeController().acceptGps(position).walking
+                    }
+                }
+            },
+            onAvailabilityChanged = { available ->
+                if (!available) runOnUiThread {
+                    if (walkingState != null) walkingState = appContainer.activeController().markNoSignal(Instant.now()).walking
+                }
+            }
+        )
+        locationSource = source
+        source.start()
+    }
+
+    private fun openApoiBrowser() {
+        if (walkingState?.routePosition == null) return
+        appContainer.apoiDecisionController.clearDecision()
+        appContainer.apoiDecisionController.browseApoi()
+        surface = WalkingSurface.APOI_BROWSER
+    }
+
+    private fun selectApoi(apoi: Apoi) {
+        appContainer.apoiDecisionController.selectApoi(apoi.id)
+        surface = WalkingSurface.APOI_DETAIL
+    }
+
+    private fun openDecision() {
+        if (walkingState?.routePosition == null) return
+        appContainer.apoiDecisionController.clearApoiSelection()
+        appContainer.apoiDecisionController.buildDecision()
+        surface = WalkingSurface.DECISION
+    }
+
+    private fun returnToWalking() {
+        appContainer.apoiDecisionController.clearApoiSelection()
+        appContainer.apoiDecisionController.clearDecision()
+        surface = WalkingSurface.ACTIVE
+    }
+
+    private fun returnToApoiBrowser() {
+        val cameFromDecision = appContainer.store.state.decision != null
+        appContainer.apoiDecisionController.clearApoiSelection()
+        surface = if (cameFromDecision) WalkingSurface.DECISION else WalkingSurface.APOI_BROWSER
+    }
+
+    private fun returnToDecision() {
+        appContainer.apoiDecisionController.clearApoiSelection()
+        surface = WalkingSurface.DECISION
+    }
+
+    private fun stopWalking() {
+        val position = walkingState?.routePosition ?: return
+        appContainer.runtime.stop(position, Instant.now())
+        appContainer.clearSession()
+        locationSource?.stop()
+        locationSource = null
+        testLocationSource = null
+        walkingState = null
+        preparedWalk = null
+        startRequested = false
+        surface = WalkingSurface.ACTIVE
     }
 }
 
@@ -131,214 +338,234 @@ private fun CaminhosTheme(content: @Composable () -> Unit) {
     )
 }
 
-/** Walking experience shell. Null means there is no active walk; no route data is fabricated. */
 @Composable
-private fun WalkingScreenV1(state: WalkingState? = null) {
+private fun WalkingScreenV1(
+    state: WalkingState?,
+    preparedWalk: Walk?,
+    startRequested: Boolean,
+    appState: AppState,
+    route: Route,
+    routeOptions: List<AndroidRouteOption>,
+    selectedRouteId: String,
+    surface: WalkingSurface,
+    onPrepare: () -> Unit,
+    onSelectRoute: (String) -> Unit,
+    onConfirmPreparation: () -> Unit,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onSimulateStep: () -> Unit,
+    onOpenApoi: () -> Unit,
+    onOpenDecision: () -> Unit,
+    onApoiSelected: (Apoi) -> Unit,
+    onBackToWalking: () -> Unit,
+    onBackToApoiBrowser: () -> Unit,
+    onBackToDecision: () -> Unit
+) {
     Surface(modifier = Modifier.fillMaxSize(), color = Sand) {
-        if (state == null) NoActiveWalkScreen() else ActiveWalkingScreen(state)
+        when {
+            state != null && surface == WalkingSurface.ACTIVE -> ActiveWalkingScreen(state, route, routeOptions, onStop, onSimulateStep, onOpenApoi, onOpenDecision)
+            surface == WalkingSurface.PREPARATION -> PreparationMenuScreen(routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking)
+            surface == WalkingSurface.APOI_BROWSER -> {
+                val browser = appState.apoiBrowser
+                if (browser == null) EmptyFlowState("Consulta de APOI indisponível", "Não foi possível preparar a consulta para a posição atual.", onBackToWalking)
+                else {
+                    NextApoiScreenV1(browser.results, onApoiSelected = { item -> onApoiSelected(item.apoi) })
+                    BrowserBackAction(onBackToWalking)
+                }
+            }
+            surface == WalkingSurface.APOI_DETAIL -> {
+                val selected = appState.apoiBrowser?.selected
+                if (selected == null) EmptyFlowState("APOI não selecionado", "Selecione um apoio a partir da consulta.", onBackToApoiBrowser)
+                else ApoiDetailScreenV1(selected, onBackToApoiBrowser)
+            }
+            surface == WalkingSurface.DECISION -> {
+                val decision = appState.decision
+                if (decision == null) EmptyFlowState("Decisão indisponível", "Não foi possível calcular as opções para a posição atual.", onBackToWalking)
+                else {
+                    WalkingDecisionScreenV1(decision, onApoiSelected)
+                    DecisionBackActions(onBackToWalking, onOpenApoi)
+                }
+            }
+            preparedWalk != null -> PreparedWalkScreen(preparedWalk, route, startRequested, onStart)
+            else -> NoActiveWalkScreen(onPrepare)
+        }
     }
 }
 
 @Composable
-private fun NoActiveWalkScreen() {
-    Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Caminhos de Fátima", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+private fun PreparationMenuScreen(
+    options: List<AndroidRouteOption>,
+    selectedRouteId: String,
+    onSelectRoute: (String) -> Unit,
+    onConfirmPreparation: () -> Unit,
+    onBack: () -> Unit
+) {
+    val selected = options.firstOrNull { it.id == selectedRouteId } ?: options.first()
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Prepare a sua caminhada", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("Escolha o percurso antes de definir a caminhada. Os percursos de teste estão identificados e não entram nos dados de produção.", color = Muted)
+        options.forEach { option ->
+            val isSelected = option.id == selectedRouteId
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (isSelected) ForestSoft else Color.White)) {
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(option.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    if (option.testOnly) Text("AMBIENTE DE TESTE", color = Forest, fontWeight = FontWeight.Bold)
+                    Text(option.description, color = Muted)
+                    if (!isSelected) OutlinedButton(onClick = { onSelectRoute(option.id) }) { Text("Selecionar") }
+                    else Text("Percurso selecionado", color = Forest, fontWeight = FontWeight.Bold)
+                }
             }
-            IconButton(onClick = {}) { Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Ink) }
         }
+        Button(onClick = onConfirmPreparation, modifier = Modifier.fillMaxWidth()) { Text("Preparar ${selected.title}") }
+        OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Voltar") }
+        Spacer(Modifier.height(16.dp))
+    }
+}
 
-        Card(
-            modifier = Modifier.align(Alignment.Center).fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-        ) {
+@Composable
+private fun BrowserBackAction(onBack: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.Start) { OutlinedButton(onClick = onBack) { Text("Voltar à caminhada") } }
+}
+
+@Composable
+private fun DecisionBackActions(onBackToWalking: () -> Unit, onOpenApoi: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(onClick = onBackToWalking) { Text("Voltar à caminhada") }
+        OutlinedButton(onClick = onOpenApoi) { Text("Consultar APOI") }
+    }
+}
+
+@Composable
+private fun EmptyFlowState(title: String, message: String, onBack: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center) {
+        Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Text(message, style = MaterialTheme.typography.bodyLarge, color = Muted)
+        Spacer(Modifier.height(16.dp))
+        OutlinedButton(onClick = onBack) { Text("Voltar") }
+    }
+}
+
+@Composable
+private fun NoActiveWalkScreen(onPrepare: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Caminhos de Fátima", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+        Card(modifier = Modifier.align(Alignment.Center).fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)) {
             Column(modifier = Modifier.padding(22.dp)) {
                 Text("Nenhuma caminhada ativa", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    "Prepare uma caminhada para começar a acompanhar a sua posição, progresso e APOI.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Muted
-                )
+                Text("Prepare uma caminhada para começar a acompanhar a sua posição, progresso e APOI.", style = MaterialTheme.typography.bodyLarge, color = Muted)
                 Spacer(Modifier.height(16.dp))
-                Text("Preparar caminhada", color = Forest, fontWeight = FontWeight.Bold)
+                Button(onClick = onPrepare, modifier = Modifier.fillMaxWidth()) { Text("Preparar caminhada") }
             }
         }
     }
 }
 
 @Composable
-private fun ActiveWalkingScreen(state: WalkingState) {
-    val gpsState = state.gpsState
-    val progress = state.progress
-    val nextApoi = state.nextApoi
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        RouteMapPreview(modifier = Modifier.fillMaxSize(), gpsState = gpsState, hasPosition = state.routePosition != null)
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
-                    Icon(Icons.Default.DirectionsWalk, contentDescription = null, tint = Forest, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(7.dp))
-                    Column {
-                        Text("Caminhada atual", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                        Text(stageLabel(progress), style = MaterialTheme.typography.labelSmall, color = Muted)
-                    }
+private fun PreparedWalkScreen(walk: Walk, route: Route, startRequested: Boolean, onStart: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+        Card(modifier = Modifier.align(Alignment.Center).fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)) {
+            Column(modifier = Modifier.padding(22.dp)) {
+                Text("Caminhada preparada", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+                Text(route.officialName, style = MaterialTheme.typography.titleMedium, color = Forest)
+                Spacer(Modifier.height(4.dp))
+                Text("Percurso planeado: ${formatKm(walk.plannedStartKm ?: 0.0)} → ${formatKm(walk.plannedDestinationKm ?: 0.0)} km", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                Spacer(Modifier.height(8.dp))
+                if (startRequested) {
+                    Text(if (AndroidRouteCatalog.options.firstOrNull { it.id == route.id }?.testOnly == true) "A iniciar simulação de GPS…" else "A procurar GPS…", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Forest)
+                    Spacer(Modifier.height(4.dp))
+                    Text(if (AndroidRouteCatalog.options.firstOrNull { it.id == route.id }?.testOnly == true) "Neste ambiente de teste a posição é simulada a partir do GPX selecionado." else "A caminhada continua preparada. Só passa a ativa quando existir uma posição GPS válida no caminho.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                    Spacer(Modifier.height(18.dp))
+                    OutlinedButton(onClick = onStart, modifier = Modifier.fillMaxWidth()) { Text("Tentar novamente") }
+                } else {
+                    Text("Ao iniciar, o primeiro sinal GPS define a sua posição real no caminho.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                    Spacer(Modifier.height(18.dp))
+                    Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) { Text("Iniciar caminhada") }
                 }
             }
-            IconButton(onClick = {}) { Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Ink) }
-        }
-
-        if (gpsState != GpsState.ON_ROUTE) {
-            GpsStatusChip(gpsState, modifier = Modifier.align(Alignment.TopCenter).padding(top = 78.dp))
-        }
-
-        PositionContextCard(
-            state,
-            modifier = Modifier.align(Alignment.TopStart).padding(top = 126.dp, start = 12.dp, end = 12.dp)
-        )
-
-        Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(12.dp)) {
-            NextSupportCard(nextApoi, state.nextApoiDistanceKm)
-            Spacer(Modifier.height(8.dp))
-            ProgressCard(progress)
         }
     }
 }
 
-private fun stageLabel(progress: WalkingProgress?): String =
-    progress?.stageId?.let { "Etapa $it" } ?: "Etapa de referência"
-
 @Composable
-private fun GpsStatusChip(gpsState: GpsState, modifier: Modifier = Modifier) {
-    val text = when (gpsState) {
-        GpsState.NO_SIGNAL -> "Sem sinal GPS — última posição mantida"
-        GpsState.ACQUIRING -> "A obter posição GPS…"
-        GpsState.POSSIBLE_DEVIATION -> "Possível desvio do caminho"
-        GpsState.PROBABLE_DEVIATION -> "Provável desvio do caminho"
-        GpsState.ON_ROUTE -> "No caminho"
-    }
-    Card(modifier = modifier, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)) {
-        Text(text, modifier = Modifier.padding(horizontal = 13.dp, vertical = 8.dp), style = MaterialTheme.typography.labelMedium, color = if (gpsState == GpsState.PROBABLE_DEVIATION) Warning else Ink)
-    }
-}
-
-@Composable
-private fun PositionContextCard(state: WalkingState, modifier: Modifier = Modifier) {
-    val position = state.routePosition ?: return
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .94f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 13.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.LocationOn, contentDescription = null, tint = Forest, modifier = Modifier.size(20.dp))
+private fun ActiveWalkingScreen(
+    state: WalkingState,
+    route: Route,
+    routeOptions: List<AndroidRouteOption>,
+    onStop: () -> Unit,
+    onSimulateStep: () -> Unit,
+    onOpenApoi: () -> Unit,
+    onOpenDecision: () -> Unit
+) {
+    val gpsPresentation = WalkingStatusPresentation.gps(state.gpsState)
+    val bottomScrollState = rememberScrollState()
+    val testRoute = routeOptions.firstOrNull { it.id == route.id }?.testOnly == true
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(bottomScrollState).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Navigation, contentDescription = null, tint = Forest, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text("Está aqui", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                Text("${formatKm(position.routeKm)} km no caminho", style = MaterialTheme.typography.bodyMedium)
+                Text(route.officialName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(gpsPresentation.title, style = MaterialTheme.typography.bodyMedium, color = Muted)
             }
-            Text(
-                "±${position.distanceToRouteMeters.toInt()} m",
-                style = MaterialTheme.typography.labelSmall,
-                color = Muted
-            )
+            IconButton(onClick = onStop) { Icon(Icons.Filled.Close, contentDescription = "Terminar caminhada") }
         }
-    }
-}
-
-@Composable
-private fun NextSupportCard(nextApoi: Apoi?, distanceKm: Double?) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(42.dp).clip(CircleShape).background(ForestSoft), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.WaterDrop, contentDescription = null, tint = Forest)
+        WalkingRouteOverviewSurface(route = route, state = state)
+        Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Posição", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(state.routePosition?.let { "${formatKm(it.routeKm)} km" } ?: "Ainda sem posição fiável", style = MaterialTheme.typography.headlineSmall)
+                Text("GPS: ${gpsPresentation.detail}", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                state.routePosition?.let { position -> Text("Confiança da posição: ${confidenceLabel(position.confidence)}", style = MaterialTheme.typography.bodyMedium, color = Muted) }
+                Text(movementLabel(state.movementCue), style = MaterialTheme.typography.bodyMedium, color = Muted)
+                Text(if (state.isOffline) "Modo offline ativo" else "Dados locais ativos", style = MaterialTheme.typography.bodyMedium, color = Muted)
+            }
+        }
+        WalkingRouteProgressSurface(state)
+        state.nextApoi?.let { next ->
+            Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = ForestSoft)) {
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Próximo APOI", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(next.name, style = MaterialTheme.typography.titleLarge)
+                    Text(state.nextApoiDistanceKm?.let { formatKm(it) + " km" } ?: "Distância indisponível", color = Muted)
                 }
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Próximo APOI", style = MaterialTheme.typography.labelMedium, color = Muted)
-                    Text(nextApoi?.name ?: "A procurar apoio…", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    if (nextApoi != null) Text(nextApoi.services.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = Muted)
+            }
+        }
+        if (testRoute) {
+            Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = ForestSoft)) {
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Simulação QA", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("A posição simulada usa os pontos do GPX do percurso selecionado. Estes dados não são GPS real.", color = Muted)
+                    Button(onClick = onSimulateStep, modifier = Modifier.fillMaxWidth()) { Text("Avançar no percurso") }
                 }
-                Icon(Icons.Default.ChevronRight, contentDescription = "Ver detalhe", tint = Muted)
-            }
-            Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.LocationOn, contentDescription = null, tint = Forest, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(5.dp))
-                Text(
-                    distanceKm?.let { "${formatKm(it)} km pelo caminho" } ?: "Sem APOI seguinte confirmado",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
             }
         }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onOpenApoi, modifier = Modifier.weight(1f)) { Text("Consultar APOI") }
+            OutlinedButton(onClick = onOpenDecision, modifier = Modifier.weight(1f)) { Text("Decidir apoio") }
+        }
+        Spacer(Modifier.height(16.dp))
     }
 }
 
-@Composable
-private fun ProgressCard(progress: WalkingProgress?) {
-    val walked = progress?.walkedKm ?: 0.0
-    val remaining = progress?.remainingKm ?: 0.0
-    val ratio = progress?.progressRatio ?: 0.0
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Forest)) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("${formatKm(walked)} km percorridos", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("${formatKm(remaining)} km até ao objetivo", color = Color.White.copy(alpha = .82f), style = MaterialTheme.typography.bodySmall)
-                }
-                Icon(Icons.Default.Navigation, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-            }
-            Spacer(Modifier.height(9.dp))
-            Box(modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(4.dp)).background(Color.White.copy(alpha = .25f))) {
-                Box(modifier = Modifier.fillMaxWidth(ratio.toFloat().coerceIn(0f, 1f)).height(5.dp).clip(RoundedCornerShape(4.dp)).background(Color.White))
-            }
-        }
-    }
+private fun movementLabel(cue: com.caminhos2027.v1.core.route.WalkingMovementCue?): String = when (cue) {
+    com.caminhos2027.v1.core.route.WalkingMovementCue.FORWARD -> "Movimento: no sentido do percurso"
+    com.caminhos2027.v1.core.route.WalkingMovementCue.BACKWARD -> "Movimento: em sentido inverso ao percurso"
+    com.caminhos2027.v1.core.route.WalkingMovementCue.STATIONARY -> "Movimento: sem deslocação relevante"
+    com.caminhos2027.v1.core.route.WalkingMovementCue.UNKNOWN, null -> "Movimento: ainda sem referência suficiente"
 }
 
-private fun formatKm(value: Double): String = String.format(Locale("pt", "PT"), "%.1f", value)
-
-@Composable
-private fun RouteMapPreview(
-    modifier: Modifier = Modifier,
-    gpsState: GpsState = GpsState.ON_ROUTE,
-    hasPosition: Boolean = false
-) {
-    Canvas(modifier = modifier.background(Color(0xFFE9E7E0))) {
-        val route = Path().apply {
-            moveTo(size.width * .15f, size.height * .25f)
-            cubicTo(size.width * .32f, size.height * .42f, size.width * .46f, size.height * .18f, size.width * .60f, size.height * .38f)
-            cubicTo(size.width * .72f, size.height * .56f, size.width * .65f, size.height * .70f, size.width * .84f, size.height * .82f)
-        }
-        drawPath(route, color = RouteLine, style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round))
-        if (hasPosition) {
-            val position = Offset(size.width * .47f, size.height * .30f)
-            drawCircle(color = Forest, radius = 12.dp.toPx(), center = position)
-            drawCircle(color = Color.White, radius = 5.dp.toPx(), center = position)
-            if (gpsState == GpsState.POSSIBLE_DEVIATION || gpsState == GpsState.PROBABLE_DEVIATION) {
-                drawCircle(color = Warning.copy(alpha = .18f), radius = 25.dp.toPx(), center = position)
-            }
-        }
-    }
+private fun confidenceLabel(confidence: com.caminhos2027.v1.core.model.PositionConfidence): String = when (confidence) {
+    com.caminhos2027.v1.core.model.PositionConfidence.HIGH -> "alta"
+    com.caminhos2027.v1.core.model.PositionConfidence.MEDIUM -> "média"
+    com.caminhos2027.v1.core.model.PositionConfidence.LOW -> "baixa"
+    com.caminhos2027.v1.core.model.PositionConfidence.UNKNOWN -> "não conhecida"
 }
+
+private fun formatKm(km: Double): String = String.format(Locale.US, "%.2f", km)

@@ -26,6 +26,24 @@ class WalkingSessionControllerTest {
     }
 
     @Test
+    fun startClearsStaleCompletionMetadata() {
+        val stale = planned.copy(
+            actualStartKm = 11.0,
+            actualEndKm = 19.0,
+            startedAt = startTime.minusSeconds(60),
+            endedAt = stopTime,
+            status = WalkStatus.PLANNED
+        )
+
+        val started = WalkingSessionController.start(stale, routePosition, startTime)
+
+        assertEquals(12.5, started.actualStartKm!!, 0.001)
+        assertEquals(null, started.actualEndKm)
+        assertEquals(startTime, started.startedAt)
+        assertEquals(null, started.endedAt)
+    }
+
+    @Test
     fun stopMarksActiveWalkCompletedAndRecordsEnd() {
         val started = WalkingSessionController.start(planned, routePosition, startTime)
         val stopped = WalkingSessionController.stop(started, routePosition.copy(routeKm = 15.0), stopTime)
@@ -46,6 +64,21 @@ class WalkingSessionControllerTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
+    fun cannotStartWithBlankPositionRouteId() {
+        WalkingSessionController.start(planned, routePosition.copy(routeId = "   "), startTime)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotStartWithNonFinitePositionRouteKm() {
+        WalkingSessionController.start(planned, routePosition.copy(routeKm = Double.NaN), startTime)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotStartWithNegativePositionDistance() {
+        WalkingSessionController.start(planned, routePosition.copy(distanceToRouteMeters = -1.0), startTime)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
     fun cannotStopPlannedWalk() {
         WalkingSessionController.stop(planned, routePosition, stopTime)
     }
@@ -54,5 +87,17 @@ class WalkingSessionControllerTest {
     fun cannotCrossRoutesWhenStopping() {
         val started = WalkingSessionController.start(planned, routePosition, startTime)
         WalkingSessionController.stop(started, routePosition.copy(routeId = "other-route"), stopTime)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotStopBeforeWalkStart() {
+        val started = WalkingSessionController.start(planned, routePosition, startTime)
+        WalkingSessionController.stop(started, routePosition.copy(routeKm = 15.0), startTime.minusSeconds(1))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotStopWithNonFinitePositionRouteKm() {
+        val started = WalkingSessionController.start(planned, routePosition, startTime)
+        WalkingSessionController.stop(started, routePosition.copy(routeKm = Double.POSITIVE_INFINITY), stopTime)
     }
 }

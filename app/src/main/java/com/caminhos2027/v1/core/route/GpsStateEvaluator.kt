@@ -1,7 +1,9 @@
 package com.caminhos2027.v1.core.route
 
+import com.caminhos2027.v1.core.model.RoutePosition
 import kotlin.math.abs
-import kotlin.math.max
+import java.time.Duration
+import java.time.Instant
 
 /**
  * Evaluates a sequence of projected GPS observations without depending on Android APIs.
@@ -11,17 +13,35 @@ object GpsStateEvaluator {
     fun update(
         previous: GpsTrackingState,
         observation: GpsObservation?,
-        now: java.time.Instant,
+        now: Instant,
         policy: GpsTrackingPolicy = GpsTrackingPolicy()
     ): GpsTrackingState {
         if (observation == null) {
             val last = previous.lastObservation
-            val elapsed = if (last == null) Long.MAX_VALUE else max(0, now.epochSecond - last.capturedAt.epochSecond)
-            return if (elapsed >= policy.noSignalAfterSeconds) {
+            val elapsedSeconds = if (last == null) {
+                Long.MAX_VALUE
+            } else {
+                val elapsedMillis = Duration.between(last.capturedAt, now).toMillis()
+                if (elapsedMillis < 0) 0 else elapsedMillis / 1000
+            }
+            return if (elapsedSeconds >= policy.noSignalAfterSeconds) {
                 previous.copy(state = GpsState.NO_SIGNAL)
             } else {
                 previous.copy(state = GpsState.ACQUIRING)
             }
+        }
+
+        if (!isValidObservation(observation)) {
+            return previous
+        }
+
+        if (observation.capturedAt.isAfter(now.plusSeconds(policy.maxFutureSkewSeconds))) {
+            return previous
+        }
+
+        val lastObservation = previous.lastObservation
+        if (lastObservation != null && observation.capturedAt.isBefore(lastObservation.capturedAt)) {
+            return previous
         }
 
         val lastReliable = previous.lastReliableObservation
@@ -44,13 +64,34 @@ object GpsStateEvaluator {
             else -> GpsState.ON_ROUTE
         }
 
-        return previous.copy(
-            state = nextState,
-            lastReliableObservation = observation,
-            lastObservation = observation,
-            consecutiveSuspiciousSamples = nextSuspicious,
-            consecutiveProbableSamples = nextProbable
-        )
+        return if (!suspicious) {
+            previous.copy(
+                state = nextState,
+                lastReliableObservation = observation,
+                lastObservation = observation,
+                consecutiveSuspiciousSamples = nextSuspicious,
+                consecutiveProbableSamples = nextProbable
+            )
+        } else {
+            // A suspicious sample may keep the public state temporarily as ON_ROUTE while
+            // hysteresis accumulates. It must not replace the last route position considered reliable.
+            previous.copy(
+                state = nextState,
+                lastObservation = observation,
+                consecutiveSuspiciousSamples = nextSuspicious,
+                consecutiveProbableSamples = nextProbable
+            )
+        }
+    }
+
+    private fun isValidObservation(observation: GpsObservation): Boolean {
+        val position: RoutePosition = observation.routePosition
+        return position.routeKm.isFinite() &&
+            position.routeKm >= 0.0 &&
+            position.distanceToRouteMeters.isFinite() &&
+            position.distanceToRouteMeters >= 0.0 &&
+            (observation.accuracyMeters == null ||
+                (observation.accuracyMeters.isFinite() && observation.accuracyMeters >= 0.0))
     }
 
     private fun isPlausibleJump(
@@ -58,10 +99,10 @@ object GpsStateEvaluator {
         current: GpsObservation,
         policy: GpsTrackingPolicy
     ): Boolean {
-        val seconds = current.capturedAt.epochSecond - previous.capturedAt.epochSecond
-        if (seconds <= 0) return false
+        val elapsedMillis = Duration.between(previous.capturedAt, current.capturedAt).toMillis()
+        if (elapsedMillis <= 0) return false
         val distanceKm = abs(current.routePosition.routeKm - previous.routePosition.routeKm)
-        val speedKmh = distanceKm / (seconds / 3600.0)
+        val speedKmh = distanceKm / (elapsedMillis / 3_600_000.0)
         return speedKmh <= policy.maxPlausibleSpeedKmh
     }
 }

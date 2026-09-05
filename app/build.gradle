@@ -47,4 +47,5 @@ dependencies {
     implementation 'androidx.webkit:webkit:1.12.1'
     implementation 'org.json:json:20240303'
     testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test:2.0.21'
 }

@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.core.route
 
 import com.caminhos2027.v1.core.model.GeoPoint
+import com.caminhos2027.v1.core.model.PositionConfidence
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
@@ -20,6 +21,49 @@ class RouteLocationEngineTest {
         assertEquals("stage-1", position.stageId)
         assertTrue(position.routeKm > 0.4)
         assertTrue(position.routeKm < 0.6)
+        assertEquals(PositionConfidence.HIGH, position.confidence)
+    }
+
+    @Test
+    fun weakAccuracyProducesMediumConfidenceWhenProjectionRemainsNearRoute() {
+        val route = fixture()
+        val position = RouteLocationEngine.locate(route, gps(40.0003, -7.995, accuracyMeters = 50.0))
+
+        assertTrue(position.distanceToRouteMeters < 80.0)
+        assertEquals(PositionConfidence.MEDIUM, position.confidence)
+    }
+
+    @Test
+    fun farProjectionProducesLowConfidence() {
+        val route = fixture()
+        val position = RouteLocationEngine.locate(route, gps(40.001, -7.995))
+
+        assertTrue(position.distanceToRouteMeters > 80.0)
+        assertEquals(PositionConfidence.LOW, position.confidence)
+    }
+
+    @Test
+    fun missingAccuracyLeavesConfidenceUnknown() {
+        val route = fixture()
+        val position = RouteLocationEngine.locate(route, gps(40.0, -7.995, accuracyMeters = null))
+
+        assertEquals(PositionConfidence.UNKNOWN, position.confidence)
+    }
+
+    @Test
+    fun nonFiniteAccuracyLeavesConfidenceUnknown() {
+        val route = fixture()
+        val position = RouteLocationEngine.locate(route, gps(40.0, -7.995, accuracyMeters = Double.NaN))
+
+        assertEquals(PositionConfidence.UNKNOWN, position.confidence)
+    }
+
+    @Test
+    fun negativeAccuracyLeavesConfidenceUnknown() {
+        val route = fixture()
+        val position = RouteLocationEngine.locate(route, gps(40.0, -7.995, accuracyMeters = -1.0))
+
+        assertEquals(PositionConfidence.UNKNOWN, position.confidence)
     }
 
     @Test
@@ -38,10 +82,38 @@ class RouteLocationEngineTest {
         assertEquals(1.0, position.routeKm, 0.05)
     }
 
-    private fun gps(latitude: Double, longitude: Double) = RawGpsPosition(
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteLatitudeIsRejected() {
+        RouteLocationEngine.locate(fixture(), gps(Double.NaN, -7.995))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun latitudeOutsideEarthBoundsIsRejected() {
+        RouteLocationEngine.locate(fixture(), gps(90.1, -7.995))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun longitudeOutsideEarthBoundsIsRejected() {
+        RouteLocationEngine.locate(fixture(), gps(40.0, -180.1))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteRouteGeometryIsRejectedBeforeProjection() {
+        val route = fixture().copy(
+            geometry = RouteGeometry(
+                listOf(
+                    GeoPoint(Double.NaN, -8.0),
+                    GeoPoint(40.0, -7.98827)
+                )
+            )
+        )
+        RouteLocationEngine.locate(route, gps(40.0, -7.995))
+    }
+
+    private fun gps(latitude: Double, longitude: Double, accuracyMeters: Double? = 5.0) = RawGpsPosition(
         latitude = latitude,
         longitude = longitude,
-        accuracyMeters = 5.0,
+        accuracyMeters = accuracyMeters,
         capturedAt = Instant.parse("2026-09-02T00:00:00Z")
     )
 
@@ -55,7 +127,7 @@ class RouteLocationEngineTest {
         geometry = RouteGeometry(
             listOf(
                 GeoPoint(40.0, -8.0),
-                GeoPoint(40.0, -7.99)
+                GeoPoint(40.0, -7.98827)
             )
         ),
         stages = listOf(

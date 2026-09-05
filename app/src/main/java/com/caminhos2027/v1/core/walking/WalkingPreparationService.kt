@@ -2,6 +2,7 @@ package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
 import com.caminhos2027.v1.core.model.Route
+import com.caminhos2027.v1.core.model.WalkStatus
 
 /**
  * Application service for preparing a walk.
@@ -30,6 +31,15 @@ class WalkingPreparationService(
         walkRepository.save(preparation.walk)
         return preparation
     }
+
+    /** Restores the most recently stored planned walk without starting it. */
+    fun restorePlanned(): WalkingPreparation? =
+        walkRepository.list()
+            .asReversed()
+            .firstOrNull { it.status == WalkStatus.PLANNED && it.routeId == route.id }
+            ?.let { walk ->
+                WalkingPreparationBuilder.build(route, walk, relevantApoi(walk))
+            }
 
     private fun relevantApoi(walk: com.caminhos2027.v1.core.model.Walk) =
         apoiCatalog.filter(

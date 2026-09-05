@@ -49,7 +49,11 @@ class PublishedApoiCatalogTest {
         assertEquals("valid", catalog.next("route", 2.0)?.id)
     }
 
-    private fun apoi(id: String, km: Double, publication: PublicationStatus) = Apoi(
+    private fun apoi(
+        id: String,
+        km: Double,
+        publication: PublicationStatus = PublicationStatus.PUBLISHED
+    ) = Apoi(
         id = id,
         name = id,
         description = null,

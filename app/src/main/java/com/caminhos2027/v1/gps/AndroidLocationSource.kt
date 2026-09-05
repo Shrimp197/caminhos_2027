@@ -6,6 +6,7 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
+import android.util.Log
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import java.time.Instant
 
@@ -14,18 +15,24 @@ class AndroidLocationSource(
     context: Context,
     private val onPosition: (RawGpsPosition) -> Unit,
     private val onAvailabilityChanged: (Boolean) -> Unit = {}
-) {
+) : LocationSource {
     private val locationManager = context.getSystemService(LocationManager::class.java)
     private val listener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
-            onPosition(
-                RawGpsPosition(
-                    latitude = location.latitude,
-                    longitude = location.longitude,
-                    accuracyMeters = if (location.hasAccuracy()) location.accuracy.toDouble() else null,
-                    capturedAt = Instant.ofEpochMilli(location.time)
-                )
+            val position = RawGpsPosition(
+                latitude = location.latitude,
+                longitude = location.longitude,
+                accuracyMeters = if (location.hasAccuracy()) location.accuracy.toDouble() else null,
+                capturedAt = Instant.ofEpochMilli(location.time)
             )
+            try {
+                onPosition(position)
+            } catch (error: IllegalArgumentException) {
+                // A prepared walk may legitimately reject a first fix that is outside the
+                // possible-deviation threshold. That is a domain/UI condition, not a reason
+                // for the Android location callback to terminate the application.
+                Log.w(TAG, "Location rejected by walking state: ${error.message}")
+            }
         }
 
         override fun onProviderEnabled(provider: String) {
@@ -41,7 +48,7 @@ class AndroidLocationSource(
     }
 
     @SuppressLint("MissingPermission")
-    fun start() {
+    override fun start() {
         if (!hasProvider()) {
             onAvailabilityChanged(false)
             return
@@ -55,10 +62,14 @@ class AndroidLocationSource(
         )
     }
 
-    fun stop() {
+    override fun stop() {
         locationManager.removeUpdates(listener)
     }
 
     private fun hasProvider(): Boolean =
         locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+
+    private companion object {
+        const val TAG = "AndroidLocationSource"
+    }
 }

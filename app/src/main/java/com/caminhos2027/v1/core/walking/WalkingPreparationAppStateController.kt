@@ -1,0 +1,62 @@
+package com.caminhos2027.v1.core.walking
+
+import com.caminhos2027.v1.core.AppState
+import com.caminhos2027.v1.core.AppStateStore
+import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
+import com.caminhos2027.v1.core.model.Route
+import com.caminhos2027.v1.core.model.RoutePosition
+import com.caminhos2027.v1.core.route.GpsTrackingPolicy
+import java.time.Instant
+
+/** Publishes preparation into shared V1 state and starts the saved walk explicitly. */
+class WalkingPreparationAppStateController(
+    private val route: Route,
+    private val preparationService: WalkingPreparationService,
+    private val store: AppStateStore,
+    private val sessionRuntime: WalkingSessionRuntime? = null,
+    private val gpsPolicy: GpsTrackingPolicy = GpsTrackingPolicy()
+) {
+    fun preview(walkId: String, startRouteKm: Double, destinationRouteKm: Double): WalkingPreparation =
+        preparationService.preview(walkId, startRouteKm, destinationRouteKm)
+
+    fun save(walkId: String, startRouteKm: Double, destinationRouteKm: Double): AppState {
+        val preparation = preparationService.save(walkId, startRouteKm, destinationRouteKm)
+        store.setWalking(
+            WalkingStateBuilder.build(
+                route = route,
+                walk = preparation.walk,
+                gpsState = com.caminhos2027.v1.core.route.GpsState.NO_SIGNAL,
+                routePosition = null,
+                publishedApoi = preparation.relevantApoi
+            )
+        )
+        return store.state
+    }
+
+    /** Starts only the walk that was previously saved into the shared AppState. */
+    fun startSaved(
+        catalog: PublishedApoiCatalog,
+        position: RoutePosition,
+        now: Instant = Instant.now()
+    ): AppState {
+        val walking = requireNotNull(store.state.walking) { "No prepared walk in AppState" }
+        require(position.routeId == route.id) { "Start position route must match the published V1 route" }
+        require(position.routeKm.isFinite() && position.routeKm in 0.0..route.totalDistanceKm) {
+            "Start position routeKm must be finite and within the published route"
+        }
+        require(position.distanceToRouteMeters.isFinite() && position.distanceToRouteMeters >= 0.0) {
+            "Start position distanceToRouteMeters must be finite and >= 0"
+        }
+        require(position.distanceToRouteMeters < gpsPolicy.possibleDeviationMeters) {
+            "A valid GPS position on the route is required before starting the walk"
+        }
+        val controller = WalkingAppStateController(
+            route = route,
+            walk = walking.walk,
+            catalog = catalog,
+            store = store,
+            sessionRuntime = sessionRuntime
+        )
+        return controller.start(position, now)
+    }
+}

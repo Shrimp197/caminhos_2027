@@ -115,15 +115,13 @@ button,select,input,textarea{font:inherit}.hidden{display:none!important}
 <script>
 (function(){
 'use strict';
-const ROUTE='data/route.geojson', SUPPORTS='data/apoios-2026.json', TESTGPX='data/percurso-teste-casa-trabalho.gpx';
+const ROUTE='data/route.geojson', ROUTE_POLICY='data/routes/route-runtime-policy.json', SUPPORTS='data/published/webview-supports.json', TESTGPX='data/percurso-teste-casa-trabalho.gpx';
 const SET='cp.settings.v1', RES='cp.resume.v1', NOTES='cp.notes.v1', ROUTES='cp.routes.v1';
 const $=id=>document.getElementById(id);
 let map,routeLayers=[],markers=[],userMarker=null,accCircle=null,gpsWatch=null,compassOn=false;
-let features=[],lines=[],supports=[],activeRoute='centenario',activeName='Caminho do Centenário',totalKm=0;
+let features=[],lines=[],supports=[],activeRoute='centenario',activeName='Caminho do Centenário',totalKm=0,publishedDistanceKm=211.87;
 let stageStart=0,stageEnd=0,currentKm=0,following=false,walking=false,orientation='north',audio='immersive';
 let supportFilters=new Set(['all']),lastOff=false,lastPauseKm=0,lastPauseTime=0,walkStartedAt=0,simKm=0,reverse=false;
-
-const places=[['Porto',0],['São João da Madeira',32.1],['Cucujães',36],['Oliveira de Azeméis',41],['Albergaria-a-Velha',56],['Águeda',74],['Anadia',91],['Mealhada',98.7],['Coimbra',126.3],['Condeixa-a-Nova',145],['Soure',160],['Pombal',188.2],['Leiria',201],['Ourém',214.8],['Fátima',216.1]];
 
 function fmt(n){return Number(n||0).toLocaleString('pt-PT',{minimumFractionDigits:1,maximumFractionDigits:1})}
 function hav(a,b){const R=6371000,p1=a[1]*Math.PI/180,p2=b[1]*Math.PI/180,dp=(b[1]-a[1])*Math.PI/180,dl=(b[0]-a[0])*Math.PI/180,h=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(Math.max(0,Math.min(1,h))))}
@@ -194,12 +192,11 @@ function renderSupports(){
     list.appendChild(d)
   })
 }
-function routeStore(){let r=[];try{r=JSON.parse(localStorage.getItem(ROUTES)||'[]')}catch(e){}return[{id:'centenario',name:'Caminho do Centenário',distance:216.099,builtin:true},...r]}
-function renderRouteLibrary(){let b=$('routeLibrary');b.innerHTML='';routeStore().forEach(r=>{let d=document.createElement('div');d.className='routeItem'+(r.id===activeRoute?' active':'');d.innerHTML='<b>'+r.name+'</b><small style="display:block;color:var(--muted)">'+fmt(r.distance)+' km</small><button type="button">'+(r.id===activeRoute?'✓ Ativo':'Usar percurso')+'</button>';d.querySelector('button').onclick=()=>selectRoute(r.id);b.appendChild(d)})}
+function routeStore(){let r=[];try{r=JSON.parse(localStorage.getItem(ROUTES)||'[]')}catch(e){}return[{id:'centenario',name:'Caminho do Centenário',distance:publishedDistanceKm,builtin:true},...r]}
 function fillRouteSelectors(){
   fillRoutes();
-  const list=activeRoute==='centenario'?places:[['Início do percurso',0],['Fim do percurso',totalKm]];
-  [$('prepStart'),$('prepEnd'),$('navStart'),$('navEnd')].forEach((sel,i)=>{sel.innerHTML='';list.forEach(p=>{let o=document.createElement('option');o.value=p[1];o.textContent=p[0]+' · km '+fmt(p[1]);sel.appendChild(o)})});
+  const list=activeRoute==='centenario'?[['Início do percurso',0],['Fim do percurso',totalKm]]:[['Início do percurso',0],['Fim do percurso',totalKm]];
+  [$('prepStart'),$('prepEnd'),$('navStart'),$('navEnd')].forEach((sel,i)=>{sel.innerHTML='';list.forEach((p,pi)=>{let o=document.createElement('option');o.value=p[1];o.textContent=p[0]+' · km '+fmt(activeRoute==='centenario'&&pi===1?publishedDistanceKm:p[1]);sel.appendChild(o)})});
   $('prepEnd').value=String(totalKm);$('navEnd').value=String(totalKm);stageStart=Number($('prepStart').value);stageEnd=Number($('prepEnd').value);
 }
 function fillRoutes(){let sel=$('prepRoute');sel.innerHTML='';routeStore().forEach(r=>{let o=document.createElement('option');o.value=r.id;o.textContent=r.name+' · '+fmt(r.distance)+' km';sel.appendChild(o)});sel.value=activeRoute;sel.onchange=()=>selectRoute(sel.value)}
@@ -333,16 +330,25 @@ function bindControls(){
 function init(){
   Promise.all([
     fetch(ROUTE).then(function(r){if(!r.ok)throw new Error('Percurso não encontrado');return r.json()}),
-    fetch(SUPPORTS).then(function(r){if(!r.ok)throw new Error('Base de apoios não encontrada');return r.json()})
+    fetch(SUPPORTS).then(function(r){if(!r.ok)throw new Error('Base de apoios não encontrada');return r.json()}),
+    fetch(ROUTE_POLICY).then(function(r){if(!r.ok)throw new Error('Política de distância não encontrada');return r.json()})
   ]).then(function(result){
-    const routeData=result[0], supportData=result[1];
+    const routeData=result[0], supportData=result[1], routePolicy=result[2];
     if(!routeData || !Array.isArray(routeData.features) || !routeData.features.length)
       throw new Error('Percurso sem dados utilizáveis.');
+    if(!routePolicy || routePolicy.schema_version!==1 || routePolicy.route_id!=='caminho-do-centenario')
+      throw new Error('Política de runtime incompatível com o Caminho do Centenário.');
+    if(!Number.isFinite(Number(routePolicy.published_distance_km)) || !Number.isFinite(Number(routePolicy.geometry_distance_km)))
+      throw new Error('Política de runtime sem distâncias válidas.');
 
     supports=Array.isArray(supportData.items)?supportData.items.filter(Boolean):[];
     buildLines(routeData.features);
 
     if(!lines.length || !totalKm) throw new Error('Não foi possível preparar o percurso.');
+    if(Math.abs(totalKm-Number(routePolicy.geometry_distance_km))>0.01)
+      throw new Error('Geometria do percurso não corresponde à política de runtime.');
+
+    publishedDistanceKm=Number(routePolicy.published_distance_km);
 
     // Important: startup never touches Leaflet, map markers, GPS or user coordinates.
     stageStart=0;

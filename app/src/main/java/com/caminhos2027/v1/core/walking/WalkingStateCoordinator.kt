@@ -1,23 +1,28 @@
 package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.model.Apoi
-import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
+import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.route.GpsTrackingPolicy
+import com.caminhos2027.v1.core.route.WalkingMovementCueEvaluator
 import com.caminhos2027.v1.gps.WalkingLocationPipeline
+import java.time.Duration
 import java.time.Instant
 
 /** Single coordinator for the active walking read model. */
 class WalkingStateCoordinator(
     private val route: com.caminhos2027.v1.core.model.Route,
-    private val walk: Walk,
+    initialWalk: Walk,
     publishedApoi: List<Apoi>,
-    policy: GpsTrackingPolicy = GpsTrackingPolicy()
+    private val policy: GpsTrackingPolicy = GpsTrackingPolicy()
 ) {
     private val publishedApoi = publishedApoi.toList()
     private val locationPipeline = WalkingLocationPipeline(route, policy)
+    private var walk: Walk = initialWalk
+    private var lastReliableRouteKm: Double? = null
+    private var lastFreshReliableObservedAt: Instant? = null
 
     var state: WalkingState = WalkingStateBuilder.build(
         route = route,
@@ -28,38 +33,104 @@ class WalkingStateCoordinator(
     )
         private set
 
-    /** Seeds the state with the route position selected when the walk starts. No fake GPS coordinates are used. */
-    fun seedStartPosition(position: RoutePosition): WalkingState {
+    /** Timestamp of the last fresh observation accepted during this runtime instance. */
+    fun lastReliableObservedAt(): Instant? = lastFreshReliableObservedAt
+
+    /** Starts the planned walk and establishes the supplied real route position as the tracking baseline. */
+    fun start(startPosition: RoutePosition, now: Instant = Instant.now()): WalkingState {
+        walk = WalkingSessionController.start(walk, startPosition, now)
+        seedStartPosition(startPosition, now)
+        return state
+    }
+
+    /** Compatibility entry point for tests/consumers that already own the lifecycle transition. */
+    fun seedStartPosition(position: RoutePosition, now: Instant = Instant.now()): WalkingState {
+        require(walk.status == WalkStatus.ACTIVE) {
+            "Walking must be active before seeding a start position"
+        }
         require(position.routeId == route.id) { "Start position route must match route" }
+        // A position already outside the possible-deviation threshold is only a provisional
+        // visual anchor. Do not use it as the GPS continuity baseline or persisted observation.
+        val reliable = position.distanceToRouteMeters < policy.possibleDeviationMeters
+        locationPipeline.seedRoutePosition(position, now, reliable = reliable)
+        lastReliableRouteKm = position.routeKm.takeIf { reliable }
+        lastFreshReliableObservedAt = now.takeIf { reliable }
         state = WalkingStateBuilder.build(
             route = route,
             walk = walk,
             gpsState = GpsState.ACQUIRING,
             routePosition = position,
             publishedApoi = publishedApoi,
+            movementCue = null,
             offline = state.isOffline
         )
         return state
     }
 
-    /** Restores only persisted device-derived state; derived APOI/progress values are rebuilt. */
-    fun restoreCheckpoint(checkpoint: WalkingCheckpoint): WalkingState {
+    /**
+     * Restores persisted device state. A valid historical timestamp remains a continuity baseline
+     * so a physically implausible jump cannot become the first post-resume fix. GPS freshness is
+     * represented separately: stale checkpoints restore as NO_SIGNAL until a fresh observation arrives.
+     */
+    fun restoreCheckpoint(checkpoint: WalkingCheckpoint, now: Instant = Instant.now()): WalkingState {
+        val validPosition = checkpoint.routePosition?.takeIf(::isValidRoutePosition)
+        val timestamp = checkpoint.lastObservedAt
+        val usableBaseline = validPosition != null && timestamp != null && !timestamp.isAfter(now)
+        val freshTimestamp = usableBaseline &&
+            Duration.between(timestamp, now) < Duration.ofSeconds(policy.noSignalAfterSeconds.toLong())
+        lastReliableRouteKm = null
+        lastFreshReliableObservedAt = null
+
+        if (usableBaseline) {
+            locationPipeline.seedRoutePosition(
+                validPosition!!,
+                timestamp!!,
+                reliable = true
+            )
+            lastReliableRouteKm = validPosition.routeKm
+            if (freshTimestamp) {
+                lastFreshReliableObservedAt = timestamp
+            }
+        }
+
         state = WalkingStateBuilder.build(
             route = route,
             walk = walk,
-            gpsState = checkpoint.gpsState,
-            routePosition = checkpoint.routePosition,
+            gpsState = if (freshTimestamp) checkpoint.gpsState else GpsState.NO_SIGNAL,
+            routePosition = validPosition,
             publishedApoi = publishedApoi,
+            movementCue = null,
             offline = checkpoint.isOffline
         )
         return state
     }
 
-    fun accept(position: RawGpsPosition): WalkingState {
+    fun accept(position: com.caminhos2027.v1.core.model.RawGpsPosition): WalkingState {
+        val previousReliableRouteKm = lastReliableRouteKm
+        val previousFreshObservedAt = lastFreshReliableObservedAt
         val tracking = locationPipeline.accept(position)
+        val currentReliableObservation = tracking.lastReliableObservation
+        val currentReliableRouteKm = currentReliableObservation?.routePosition?.routeKm
+        // A fresh movement cue requires a genuinely new reliable observation. Rejected or
+        // suspicious samples must not manufacture STATIONARY, FORWARD or BACKWARD labels.
+        val newReliableObservation = currentReliableObservation?.capturedAt != previousFreshObservedAt &&
+            currentReliableRouteKm != null &&
+            currentReliableObservation.capturedAt == position.capturedAt
+        val movementCue = if (newReliableObservation && previousReliableRouteKm != null) {
+            WalkingMovementCueEvaluator.evaluate(previousReliableRouteKm, currentReliableRouteKm)
+        } else {
+            state.movementCue
+        }
+        if (currentReliableRouteKm != null) {
+            lastReliableRouteKm = currentReliableRouteKm
+        }
+        if (newReliableObservation) {
+            lastFreshReliableObservedAt = currentReliableObservation.capturedAt
+        }
         return rebuild(
             gpsState = tracking.state,
-            routePosition = tracking.lastReliableObservation?.routePosition ?: state.routePosition,
+            routePosition = currentReliableObservation?.routePosition ?: state.routePosition,
+            movementCue = movementCue,
             offline = state.isOffline
         )
     }
@@ -69,6 +140,7 @@ class WalkingStateCoordinator(
         return rebuild(
             gpsState = tracking.state,
             routePosition = tracking.lastReliableObservation?.routePosition ?: state.routePosition,
+            movementCue = state.movementCue,
             offline = state.isOffline
         )
     }
@@ -76,12 +148,14 @@ class WalkingStateCoordinator(
     fun setOffline(offline: Boolean): WalkingState = rebuild(
         gpsState = state.gpsState,
         routePosition = state.routePosition,
+        movementCue = state.movementCue,
         offline = offline
     )
 
     private fun rebuild(
         gpsState: GpsState,
         routePosition: RoutePosition?,
+        movementCue: com.caminhos2027.v1.core.route.WalkingMovementCue?,
         offline: Boolean
     ): WalkingState {
         state = WalkingStateBuilder.build(
@@ -90,8 +164,16 @@ class WalkingStateCoordinator(
             gpsState = gpsState,
             routePosition = routePosition,
             publishedApoi = publishedApoi,
+            movementCue = movementCue,
             offline = offline
         )
         return state
     }
+
+    private fun isValidRoutePosition(position: RoutePosition): Boolean =
+        position.routeId == route.id &&
+            position.routeKm.isFinite() &&
+            position.routeKm in 0.0..route.totalDistanceKm &&
+            position.distanceToRouteMeters.isFinite() &&
+            position.distanceToRouteMeters >= 0.0
 }

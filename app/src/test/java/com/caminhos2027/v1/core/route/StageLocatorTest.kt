@@ -26,6 +26,33 @@ class StageLocatorTest {
         assertEquals("stage-2", stage?.id)
     }
 
+    @Test
+    fun positionBeyondRouteEndIsClampedToLastStage() {
+        val stage = StageLocator.currentStage(route(), 11.0)
+        assertEquals("stage-2", stage?.id)
+    }
+
+    @Test
+    fun emptyStageCatalogReturnsNoStage() {
+        val stage = StageLocator.currentStage(route().copy(stages = emptyList()), 5.0)
+        assertEquals(null, stage)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun negativeRoutePositionIsRejected() {
+        StageLocator.currentStage(route(), -0.001)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteRoutePositionIsRejected() {
+        StageLocator.currentStage(route(), Double.POSITIVE_INFINITY)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteRouteDistanceIsRejected() {
+        StageLocator.currentStage(route().copy(totalDistanceKm = Double.NaN), 5.0)
+    }
+
     private fun route() = Route(
         id = "test-route",
         name = "TEST/FICTITIOUS route",

@@ -7,7 +7,7 @@ data class Route(
     val officialName: String,
     val totalDistanceKm: Double,
     val source: String,
-    val updatedAt: String,
+    val updatedAt: String?,
     val geometry: RouteGeometry,
     val stages: List<Stage>
 )

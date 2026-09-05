@@ -1,7 +1,6 @@
 package com.caminhos2027.v1.core.data
 
 import com.caminhos2027.v1.core.model.Route
-import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.route.RouteGeometryMetrics
 import kotlin.math.abs
 
@@ -16,17 +15,22 @@ object RouteValidator {
         if (route.id.isBlank()) errors += "route.id must not be blank"
         if (route.name.isBlank()) errors += "route.name must not be blank"
         if (route.officialName.isBlank()) errors += "route.officialName must not be blank"
-        if (route.totalDistanceKm <= 0.0) errors += "route.totalDistanceKm must be > 0"
+        if (!route.totalDistanceKm.isFinite() || route.totalDistanceKm <= 0.0) {
+            errors += "route.totalDistanceKm must be finite and > 0"
+        }
         if (route.source.isBlank()) errors += "route.source must not be blank"
-        if (route.updatedAt.isBlank()) errors += "route.updatedAt must not be blank"
+        if (route.updatedAt?.isBlank() == true) errors += "route.updatedAt must not be blank when present"
 
         val geometry = route.geometry.points
         if (geometry.size < 2) errors += "route.geometry must contain at least two points"
+        var geometryCoordinatesValid = true
         geometry.forEachIndexed { index, point ->
             if (!point.latitude.isFinite() || point.latitude !in -90.0..90.0) {
+                geometryCoordinatesValid = false
                 errors += "geometry[$index].latitude must be finite and within -90..90"
             }
             if (!point.longitude.isFinite() || point.longitude !in -180.0..180.0) {
+                geometryCoordinatesValid = false
                 errors += "geometry[$index].longitude must be finite and within -180..180"
             }
             if (index > 0 && point == geometry[index - 1]) {
@@ -34,9 +38,17 @@ object RouteValidator {
             }
         }
 
-        if (geometry.size >= 2 && route.totalDistanceKm > 0.0) {
+        if (
+            geometry.size >= 2 &&
+            geometryCoordinatesValid &&
+            route.totalDistanceKm.isFinite() &&
+            route.totalDistanceKm > 0.0
+        ) {
             val measuredKm = RouteGeometryMetrics.lengthKm(route.geometry)
-            val allowedDifference = maxOf(DISTANCE_TOLERANCE_KM, route.totalDistanceKm * GEOMETRY_DISTANCE_TOLERANCE_RATIO)
+            val allowedDifference = maxOf(
+                DISTANCE_TOLERANCE_KM,
+                route.totalDistanceKm * GEOMETRY_DISTANCE_TOLERANCE_RATIO
+            )
             if (abs(measuredKm - route.totalDistanceKm) > allowedDifference) {
                 errors += "route geometry length $measuredKm km differs from declared total distance ${route.totalDistanceKm} km by more than $allowedDifference km"
             }
@@ -56,17 +68,28 @@ object RouteValidator {
             if (stage.startName.isBlank()) errors += "stage ${stage.id}.startName must not be blank"
             if (stage.endName.isBlank()) errors += "stage ${stage.id}.endName must not be blank"
             if (stage.source.isBlank()) errors += "stage ${stage.id}.source must not be blank"
-            if (stage.startRouteKm < 0.0) errors += "stage ${stage.id}.startRouteKm must be >= 0"
-            if (stage.endRouteKm <= stage.startRouteKm) errors += "stage ${stage.id}.endRouteKm must be > startRouteKm"
-            if (stage.distanceKm <= 0.0) errors += "stage ${stage.id}.distanceKm must be > 0"
-            if (stage.endRouteKm > route.totalDistanceKm) errors += "stage ${stage.id} exceeds route total distance"
-            if (stage.startRouteKm + DISTANCE_TOLERANCE_KM < previousEnd) {
+            if (!stage.startRouteKm.isFinite()) errors += "stage ${stage.id}.startRouteKm must be finite"
+            if (!stage.endRouteKm.isFinite()) errors += "stage ${stage.id}.endRouteKm must be finite"
+            if (!stage.distanceKm.isFinite()) errors += "stage ${stage.id}.distanceKm must be finite"
+            if (stage.startRouteKm.isFinite() && stage.startRouteKm < 0.0) errors += "stage ${stage.id}.startRouteKm must be >= 0"
+            if (stage.endRouteKm.isFinite() && stage.startRouteKm.isFinite() && stage.endRouteKm <= stage.startRouteKm) {
+                errors += "stage ${stage.id}.endRouteKm must be > startRouteKm"
+            }
+            if (stage.distanceKm.isFinite() && stage.distanceKm <= 0.0) errors += "stage ${stage.id}.distanceKm must be > 0"
+            if (stage.endRouteKm.isFinite() && route.totalDistanceKm.isFinite() && stage.endRouteKm > route.totalDistanceKm) {
+                errors += "stage ${stage.id} exceeds route total distance"
+            }
+            if (stage.startRouteKm.isFinite() && previousEnd.isFinite() && stage.startRouteKm + DISTANCE_TOLERANCE_KM < previousEnd) {
                 errors += "stage ${stage.id} is out of route order"
             }
-            if (abs(stage.distanceKm - (stage.endRouteKm - stage.startRouteKm)) > DISTANCE_TOLERANCE_KM) {
+            if (stage.startRouteKm.isFinite() && stage.endRouteKm.isFinite() && stage.distanceKm.isFinite() &&
+                abs(stage.distanceKm - (stage.endRouteKm - stage.startRouteKm)) > DISTANCE_TOLERANCE_KM
+            ) {
                 errors += "stage ${stage.id}.distanceKm differs from route-km interval by more than $DISTANCE_TOLERANCE_KM km"
             }
-            previousEnd = maxOf(previousEnd, stage.endRouteKm)
+            if (stage.endRouteKm.isFinite()) {
+                previousEnd = maxOf(previousEnd, stage.endRouteKm)
+            }
         }
 
         return errors

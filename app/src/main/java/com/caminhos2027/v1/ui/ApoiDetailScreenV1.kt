@@ -8,10 +8,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -20,10 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.ApoiAvailabilityStatus
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.ApoiCostModel
 import com.caminhos2027.v1.core.model.ApoiReservationPolicy
 import com.caminhos2027.v1.core.model.LocationPrecision
+import com.caminhos2027.v1.core.model.PositionConfidence
+import com.caminhos2027.v1.core.model.PublicationStatus
 import java.util.Locale
 
 /** V1 APOI detail presentation. Missing values are omitted instead of being shown as "não informado". */
@@ -34,8 +39,15 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
             modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text(apoi.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Text(apoi.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                }
+            }
             apoi.description?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
             StatusCard(apoi)
             LocationCard(apoi)
@@ -44,7 +56,7 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
             ContactCard(apoi)
             ConfidenceCard(apoi)
             Text(
-                "Os dados apresentados dependem da informação disponível e da sua data de confirmação.",
+                "Os dados apresentados dependem da informação disponível e da sua data de confirmação. Uma informação publicada não é, por si só, uma garantia de funcionamento em 2027.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -56,7 +68,15 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(publicationLabel(apoi.publication.status), fontWeight = FontWeight.Bold)
+            Text("Estado de disponibilidade: ${availabilityLabel(apoi.availability.status)}")
+            availabilityCaveat(apoi.availability.status)?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             apoi.publication.reason?.takeIf { it.isNotBlank() }?.let { Text(it) }
+            apoi.availability.validFrom?.takeIf { it.isNotBlank() }?.let { Text("Válido desde: $it") }
+            apoi.availability.validUntil?.takeIf { it.isNotBlank() }?.let { Text("Válido até: $it") }
+            apoi.availability.recurrence?.takeIf { it.isNotBlank() }?.let { Text("Recorrência: $it") }
+            apoi.availability.season?.takeIf { it.isNotBlank() }?.let { Text("Época: $it") }
             apoi.availability.openingHours?.takeIf { it.isNotBlank() }?.let { Text("Horário: $it") }
             apoi.availability.notes?.takeIf { it.isNotBlank() }?.let { Text(it) }
         }
@@ -150,22 +170,53 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
     Card {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("Confiança da informação", fontWeight = FontWeight.Bold)
-            confidenceLine("Localização", apoi.confidence.location.name)
-            confidenceLine("Apoio", apoi.confidence.support.name)
-            confidenceLine("Disponibilidade", apoi.confidence.availability.name)
-            confidenceLine("Informação crítica", apoi.confidence.criticalInformation.name)
+            confidenceLine("Global", apoi.confidence.overall)
+            confidenceLine("Localização", apoi.confidence.location)
+            confidenceLine("Apoio", apoi.confidence.support)
+            confidenceLine("Disponibilidade", apoi.confidence.availability)
+            confidenceLine("Informação crítica", apoi.confidence.criticalInformation)
         }
     }
 }
 
-@Composable private fun confidenceLine(label: String, value: String) = Text("$label: ${value.lowercase(Locale("pt", "PT"))}", style = MaterialTheme.typography.bodySmall)
+@Composable private fun confidenceLine(label: String, value: PositionConfidence) = Text(
+    "$label: ${confidenceLabel(value)}",
+    style = MaterialTheme.typography.bodySmall
+)
 
-private fun publicationLabel(status: com.caminhos2027.v1.core.model.PublicationStatus): String = when (status) {
-    com.caminhos2027.v1.core.model.PublicationStatus.PUBLISHED -> "Informação publicada"
-    com.caminhos2027.v1.core.model.PublicationStatus.PUBLISHED_WITH_WARNING -> "Informação publicada com aviso"
-    com.caminhos2027.v1.core.model.PublicationStatus.HISTORICAL -> "Informação histórica"
-    com.caminhos2027.v1.core.model.PublicationStatus.CLOSED -> "APOI encerrado"
+private fun confidenceLabel(value: PositionConfidence): String = when (value) {
+    PositionConfidence.HIGH -> "alta"
+    PositionConfidence.MEDIUM -> "média"
+    PositionConfidence.LOW -> "baixa"
+    PositionConfidence.UNKNOWN -> "por confirmar"
+}
+
+private fun availabilityCaveat(status: ApoiAvailabilityStatus): String? = when (status) {
+    ApoiAvailabilityStatus.CURRENT -> "Informação indicada como válida atualmente; confirme antes de depender deste apoio."
+    ApoiAvailabilityStatus.FUTURE_CONFIRMED -> "Há confirmação para o período indicado; isso não substitui a confirmação de 2027 quando o período for outro."
+    ApoiAvailabilityStatus.RECURRING -> "A recorrência é informativa e pode não cobrir a data concreta da caminhada."
+    ApoiAvailabilityStatus.AWAITING_CONFIRMATION -> "A informação ainda aguarda confirmação."
+    ApoiAvailabilityStatus.HISTORICAL -> "Informação histórica: não deve ser tratada como disponibilidade atual."
+    ApoiAvailabilityStatus.EXPIRED -> "Informação expirada: não deve ser tratada como disponibilidade atual."
+    ApoiAvailabilityStatus.CLOSED -> "Este APOI está indicado como encerrado."
+}
+
+private fun publicationLabel(status: PublicationStatus): String = when (status) {
+    PublicationStatus.PUBLISHED -> "Informação publicada"
+    PublicationStatus.PUBLISHED_WITH_WARNING -> "Informação publicada com aviso"
+    PublicationStatus.HISTORICAL -> "Informação histórica"
+    PublicationStatus.CLOSED -> "APOI encerrado"
     else -> "Informação em revisão"
+}
+
+private fun availabilityLabel(status: ApoiAvailabilityStatus): String = when (status) {
+    ApoiAvailabilityStatus.CURRENT -> "atual"
+    ApoiAvailabilityStatus.FUTURE_CONFIRMED -> "futura confirmada"
+    ApoiAvailabilityStatus.RECURRING -> "recorrente"
+    ApoiAvailabilityStatus.HISTORICAL -> "histórica"
+    ApoiAvailabilityStatus.EXPIRED -> "expirada"
+    ApoiAvailabilityStatus.AWAITING_CONFIRMATION -> "aguarda confirmação"
+    ApoiAvailabilityStatus.CLOSED -> "encerrada"
 }
 
 private fun locationPrecisionLabel(value: LocationPrecision): String = when (value) {

@@ -1,0 +1,154 @@
+name: V1 Route Source Provenance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ v1-route-import ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-official-gpx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Capture official ACF GPX
+        env:
+          SOURCE_URL: https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx
+          EXPECTED_SHA256: 1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266
+        run: |
+          set -euo pipefail
+          mkdir -p build/source
+          curl --fail --location --retry 3 --silent --show-error "$SOURCE_URL" --output build/source/Caminho_do_centenario.gpx
+          ACTUAL_SHA256="$(sha256sum build/source/Caminho_do_centenario.gpx | cut -d' ' -f1)"
+          test "$ACTUAL_SHA256" = "$EXPECTED_SHA256"
+          echo "Official source SHA-256 verified: $ACTUAL_SHA256"
+
+      - name: Validate official GPX structure and metrics
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import math
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          expected = '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
+          path = Path('build/source/Caminho_do_centenario.gpx')
+          raw = path.read_bytes()
+          assert hashlib.sha256(raw).hexdigest() == expected
+          ns = 'http://www.topografix.com/GPX/1/1'
+          root = ET.fromstring(raw)
+          assert len(root.findall(f'.//{{{ns}}}trk')) == 1
+          assert len(root.findall(f'.//{{{ns}}}trkseg')) == 1
+          points = []
+          for p in root.findall(f'.//{{{ns}}}trkpt'):
+              lat = float(p.attrib['lat']); lon = float(p.attrib['lon'])
+              assert math.isfinite(lat) and math.isfinite(lon)
+              assert -90 <= lat <= 90 and -180 <= lon <= 180
+              points.append((lat, lon))
+          assert len(points) == 5082
+          assert all(a != b for a, b in zip(points, points[1:]))
+          radius = 6371.0088
+          def hav(a, b):
+              lat1, lon1 = map(math.radians, a); lat2, lon2 = map(math.radians, b)
+              dlat = lat2-lat1; dlon = lon2-lon1
+              h = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
+              return 2*radius*math.asin(math.sqrt(h))
+          lengths = [hav(a,b) for a,b in zip(points, points[1:])]
+          total = sum(lengths)
+          assert 214.70 < total < 214.90
+          assert points[0] == (41.1390874108962, -8.60912359669724)
+          assert points[-1] == (39.6295907550017, -8.67756042435647)
+          print(f'tracks=1 segments=1 points={len(points)} geometry_km={total:.6f} max_segment_m={max(lengths)*1000:.2f}')
+          PY
+
+      - name: Verify committed GPX bytes and normalized geometry
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          expected = '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
+          committed = Path('data/routes/Caminho_do_centenario.gpx')
+          assert committed.exists() and committed.stat().st_size == 377117
+          assert hashlib.sha256(committed.read_bytes()).hexdigest() == expected
+          ns = {'g':'http://www.topografix.com/GPX/1/1'}
+          root = ET.fromstring(committed.read_bytes())
+          source_points = [[float(p.attrib['lon']), float(p.attrib['lat'])] for p in root.findall('.//g:trkpt', ns)]
+          route = json.loads(Path('app/src/main/assets/data/route.geojson').read_text(encoding='utf-8'))
+          assert route['type'] == 'FeatureCollection'
+          assert len(route['features']) == 1
+          feature = route['features'][0]
+          assert feature['geometry']['type'] == 'LineString'
+          assert feature['geometry']['coordinates'] == source_points
+          assert feature['properties']['source_sha256'] == expected
+          assert feature['properties']['source'] == 'ACF official GPX'
+          print('Committed GPX and normalized GeoJSON match exactly.')
+          PY
+
+      - name: Verify production runtime inputs
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          html = Path('app/src/main/assets/index.html').read_text(encoding='utf-8')
+          assert "const ROUTE='data/route.geojson', ROUTE_POLICY='data/routes/route-runtime-policy.json', SUPPORTS='data/published/webview-supports.json'" in html
+          assert 'data/apoios-2026.json' not in html
+          assert "publishedDistanceKm=211.87" in html
+          assert "routePolicy.published_distance_km" in html
+          assert "routePolicy.geometry_distance_km" in html
+          supports = json.loads(Path('app/src/main/assets/data/published/webview-supports.json').read_text(encoding='utf-8'))
+          assert supports['target_year'] == 2027
+          assert supports['environment'] == 'production'
+          assert supports['route_id'] == 'caminho-do-centenario'
+          assert isinstance(supports['items'], list)
+          production = json.loads(Path('data/published/apoi-production.json').read_text(encoding='utf-8'))
+          assert production['target_year'] == 2027
+          assert production['environment'] == 'production'
+          assert production['route_id'] == 'caminho-do-centenario'
+          assert isinstance(production['items'], list)
+          print('Production runtime inputs: OK')
+          PY
+
+      - name: Verify route manifest
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          expected = '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
+          manifest = json.loads(Path('data/routes/route-source-manifest.json').read_text(encoding='utf-8'))
+          assert manifest['status'] == 'official_gpx_bytes_ingested_validated'
+          source = next(x for x in manifest['official_source_files'] if x.get('format') == 'gpx')
+          assert source['sha256'] == expected
+          assert source['capture_status'] == 'official_bytes_ingested_and_validated'
+          assert source['allowed_for_production'] is True
+          assert source['repository_path'] == 'data/routes/Caminho_do_centenario.gpx'
+          assert source['normalized_geometry_path'] == 'app/src/main/assets/data/route.geojson'
+          print('Route manifest: OK')
+          PY
+
+      - name: Verify route runtime policy
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          policy = json.loads(Path('data/routes/route-runtime-policy.json').read_text(encoding='utf-8'))
+          assert policy['schema_version'] == 1
+          assert policy['route_id'] == 'caminho-do-centenario'
+          assert policy['published_distance_km'] == 211.87
+          assert abs(policy['geometry_distance_km'] - 214.77816498997424) < 1e-12
+          assert policy['endpoint_policy'] == 'navigation_uses_official_gpx_endpoint'
+          assert policy['display_policy'] == 'never_silently_substitute_geometry_for_published_distance'
+          assert policy['source']['sha256'] == '1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266'
+          print('Route runtime policy: OK')
+          PY
+
+      - name: Run release validator
+        run: |
+          python3 scripts/validate_release.py
+          node --check /tmp/index-app.js
