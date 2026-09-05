@@ -90,9 +90,8 @@ class AndroidV1AppContainerTest {
             publishedApoi = emptyList()
         )
         val preparationRepository = InMemoryWalkRepository()
-        val first = container(route, runtime, preparationRepository)
-
-        val preparation = first.preparationService!!.save(
+        val catalog = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { emptyList() }))
+        val preparation = WalkingPreparationService(route, preparationRepository, catalog).save(
             walkId = "walk-planned-recreated",
             startRouteKm = 0.0,
             destinationRouteKm = 1.0
