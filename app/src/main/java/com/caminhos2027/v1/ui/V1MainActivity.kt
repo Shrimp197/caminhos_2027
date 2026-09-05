@@ -48,13 +48,14 @@ import com.caminhos2027.v1.core.AppState
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.Apoi
-import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
-import com.caminhos2027.v1.core.route.RouteLocationEngine
 import com.caminhos2027.v1.core.walking.WalkingState
 import com.caminhos2027.v1.gps.AndroidLocationSource
+import com.caminhos2027.v1.gps.GpxSimulationLocationSource
+import com.caminhos2027.v1.gps.LocationSource
+import com.caminhos2027.v1.core.model.RawGpsPosition
 import java.time.Instant
 import java.util.Locale
 
@@ -68,13 +69,13 @@ private enum class WalkingSurface { ACTIVE, PREPARATION, APOI_BROWSER, APOI_DETA
 
 class V1MainActivity : ComponentActivity() {
     private lateinit var appContainer: AndroidV1AppContainer
-    private var locationSource: AndroidLocationSource? = null
+    private var locationSource: LocationSource? = null
+    private var testLocationSource: GpxSimulationLocationSource? = null
     private var walkingState by mutableStateOf<WalkingState?>(null)
     private var preparedWalk by mutableStateOf<Walk?>(null)
     private var startRequested by mutableStateOf(false)
     private var surface by mutableStateOf(WalkingSurface.ACTIVE)
     private var selectedRouteId by mutableStateOf(AndroidRouteCatalog.CENTENARIO_ID)
-    private var simulationIndex by mutableStateOf(0)
 
     private val locationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
         if (hasLocationPermissionAfterResult(permissions)) startWalkingLocationSource()
@@ -135,6 +136,7 @@ class V1MainActivity : ComponentActivity() {
     override fun onStop() {
         locationSource?.stop()
         locationSource = null
+        testLocationSource = null
         super.onStop()
     }
 
@@ -179,7 +181,6 @@ class V1MainActivity : ComponentActivity() {
         preparedWalk = appContainer.restorePreparedWalk()?.walk
         walkingState = null
         startRequested = false
-        simulationIndex = 0
         surface = WalkingSurface.PREPARATION
     }
 
@@ -192,14 +193,12 @@ class V1MainActivity : ComponentActivity() {
         preparedWalk = prepared.walking?.walk
         walkingState = null
         startRequested = false
-        simulationIndex = 0
         surface = WalkingSurface.ACTIVE
     }
 
     private fun requestStartPreparedWalk() {
         require(preparedWalk?.status == WalkStatus.PLANNED) { "A planned walk is required before starting" }
         startRequested = true
-        simulationIndex = 0
         if (isTestRoute()) startTestRouteIfNeeded()
         else if (hasLocationPermission()) startWalkingLocationSource() else requestLocationPermission()
     }
@@ -208,38 +207,28 @@ class V1MainActivity : ComponentActivity() {
 
     private fun startTestRouteIfNeeded() {
         if (!startRequested || walkingState != null || preparedWalk == null) return
-        val points = appContainer.publishedRoute().geometry.points
-        if (points.isEmpty()) return
-        handleGpsForPreparedWalk(
-            RawGpsPosition(
-                latitude = points.first().latitude,
-                longitude = points.first().longitude,
-                accuracyMeters = 1.0,
-                capturedAt = Instant.now()
-            )
+        if (testLocationSource != null) return
+        val source = GpxSimulationLocationSource(
+            points = appContainer.publishedRoute().geometry.points,
+            onPosition = { position ->
+                runOnUiThread {
+                    handleGpsForPreparedWalk(position)
+                }
+            }
         )
+        testLocationSource = source
+        locationSource = source
+        source.start()
     }
 
     private fun simulateStep() {
         if (!isTestRoute() || walkingState == null) return
-        val points = appContainer.publishedRoute().geometry.points
-        if (points.isEmpty()) return
-        val next = (simulationIndex + 1).coerceAtMost(points.lastIndex)
-        if (next == simulationIndex) return
-        simulationIndex = next
-        val point = points[next]
-        val position = RawGpsPosition(
-            latitude = point.latitude,
-            longitude = point.longitude,
-            accuracyMeters = 1.0,
-            capturedAt = Instant.now()
-        )
-        walkingState = appContainer.activeController().acceptGps(position).walking
+        testLocationSource?.advance()
     }
 
     private fun handleGpsForPreparedWalk(position: RawGpsPosition): Boolean {
         if (!startRequested || walkingState != null || preparedWalk == null) return false
-        val routePosition = RouteLocationEngine.locate(appContainer.publishedRoute(), position)
+        val routePosition = com.caminhos2027.v1.core.route.RouteLocationEngine.locate(appContainer.publishedRoute(), position)
         val started = try {
             appContainer.preparationController.startSaved(
                 catalog = appContainer.publishedApoiCatalog(),
@@ -261,7 +250,7 @@ class V1MainActivity : ComponentActivity() {
 
     private fun startWalkingLocationSource() {
         if (locationSource != null || (walkingState == null && !startRequested)) return
-        locationSource = AndroidLocationSource(
+        val source = AndroidLocationSource(
             context = this,
             onPosition = { position ->
                 runOnUiThread {
@@ -276,7 +265,8 @@ class V1MainActivity : ComponentActivity() {
                 }
             }
         )
-        locationSource?.start()
+        locationSource = source
+        source.start()
     }
 
     private fun openApoiBrowser() {
@@ -321,10 +311,10 @@ class V1MainActivity : ComponentActivity() {
         appContainer.clearSession()
         locationSource?.stop()
         locationSource = null
+        testLocationSource = null
         walkingState = null
         preparedWalk = null
         startRequested = false
-        simulationIndex = 0
         surface = WalkingSurface.ACTIVE
     }
 }
