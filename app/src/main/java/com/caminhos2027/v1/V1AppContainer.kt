@@ -6,6 +6,7 @@ import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
 import com.caminhos2027.v1.core.data.ApoiRepository
 import com.caminhos2027.v1.core.data.AssetApoiDataSource
 import com.caminhos2027.v1.core.data.AssetRouteDataSource
+import com.caminhos2027.v1.core.data.RouteJsonMetadata
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.walking.AndroidWalkRepository
@@ -43,7 +44,14 @@ class V1AppContainer(
             routeAssetPath: String = "data/route.geojson",
             apoiAssetPath: String = "data/published/apoi-production.json"
         ): V1AppContainer {
-            val route = AssetRouteDataSource(context, routeAssetPath).loadRoute()
+            val route = AssetRouteDataSource(
+                context = context,
+                assetPath = routeAssetPath,
+                metadata = RouteJsonMetadata(
+                    officialDistanceKm = 211.87,
+                    officialName = "Caminho do Centenário"
+                )
+            ).loadRoute()
             val catalog = PublishedApoiCatalog(
                 ApoiRepository(AssetApoiDataSource(context, apoiAssetPath))
             )
