@@ -50,9 +50,7 @@ import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
-import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.route.RouteLocationEngine
-import com.caminhos2027.v1.core.route.WalkingProgress
 import com.caminhos2027.v1.core.walking.WalkingState
 import com.caminhos2027.v1.gps.AndroidLocationSource
 import java.time.Instant
@@ -96,6 +94,7 @@ class V1MainActivity : ComponentActivity() {
                 WalkingScreenV1(
                     state = walkingState,
                     preparedWalk = preparedWalk,
+                    startRequested = startRequested,
                     appState = appContainer.store.state,
                     route = appContainer.publishedRoute(),
                     surface = surface,
@@ -288,6 +287,7 @@ private fun CaminhosTheme(content: @Composable () -> Unit) {
 private fun WalkingScreenV1(
     state: WalkingState?,
     preparedWalk: Walk?,
+    startRequested: Boolean,
     appState: AppState,
     route: Route,
     surface: WalkingSurface,
@@ -330,7 +330,7 @@ private fun WalkingScreenV1(
                     DecisionBackActions(onBackToWalking, onOpenApoi)
                 }
             }
-            preparedWalk != null -> PreparedWalkScreen(preparedWalk, startRequested = startRequested, onStart)
+            preparedWalk != null -> PreparedWalkScreen(preparedWalk, startRequested, onStart)
             else -> NoActiveWalkScreen(onPrepare)
         }
     }
