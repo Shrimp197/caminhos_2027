@@ -88,6 +88,15 @@ class WalkingPreparationAppStateControllerTest {
         assertEquals("walk", walking.walk.id); assertEquals(WalkStatus.ACTIVE, walking.walk.status); assertEquals(2.5, walking.routePosition?.routeKm ?: -1.0, 0.001); assertEquals("route", walking.routePosition?.routeId); assertNotNull(walking.walk.startedAt); assertEquals(now, walking.walk.startedAt)
     }
 
+    @Test fun startSavedRejectsGpsPositionTooFarFromRouteWithoutActivatingWalk() {
+        val route = route(); val repository = InMemoryWalkRepository(); val store = AppStateStore(); val catalog = catalog(); val controller = WalkingPreparationAppStateController(route, WalkingPreparationService(route, repository, catalog), store)
+        controller.save("walk", 2.0, 8.0)
+        try { controller.startSaved(catalog, RoutePosition("route", 2.5, 35.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z")); throw AssertionError("Expected off-route GPS rejection") } catch (_: IllegalArgumentException) { }
+        assertEquals(WalkStatus.PLANNED, store.state.walking?.walk?.status)
+        assertNull(store.state.walking?.routePosition)
+        assertEquals(WalkStatus.PLANNED, repository.getById("walk")?.status)
+    }
+
     @Test fun startSavedUsesOnlyTheWalkAlreadyStoredInSharedState() {
         val route = route(); val repository = InMemoryWalkRepository(); val store = AppStateStore(); val catalog = catalog(); val controller = WalkingPreparationAppStateController(route, WalkingPreparationService(route, repository, catalog), store); controller.save("prepared", 2.0, 8.0); repository.save(WalkingPlanFactory.create(route, "different", 1.0, 6.0))
         controller.startSaved(catalog, RoutePosition("route", 2.5, 0.0, null, PositionConfidence.HIGH), Instant.parse("2026-09-04T10:00:00Z"))
