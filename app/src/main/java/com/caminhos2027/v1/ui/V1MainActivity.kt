@@ -330,7 +330,7 @@ private fun WalkingScreenV1(
                     DecisionBackActions(onBackToWalking, onOpenApoi)
                 }
             }
-            preparedWalk != null -> PreparedWalkScreen(preparedWalk, onStart)
+            preparedWalk != null -> PreparedWalkScreen(preparedWalk, startRequested = startRequested, onStart)
             else -> NoActiveWalkScreen(onPrepare)
         }
     }
@@ -388,7 +388,7 @@ private fun NoActiveWalkScreen(onPrepare: () -> Unit) {
 }
 
 @Composable
-private fun PreparedWalkScreen(walk: Walk, onStart: () -> Unit) {
+private fun PreparedWalkScreen(walk: Walk, startRequested: Boolean, onStart: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
         Card(
             modifier = Modifier.align(Alignment.Center).fillMaxWidth(),
@@ -403,9 +403,17 @@ private fun PreparedWalkScreen(walk: Walk, onStart: () -> Unit) {
                 Spacer(Modifier.height(4.dp))
                 Text("Percurso planeado: ${formatKm(walk.plannedStartKm ?: 0.0)} → ${formatKm(walk.plannedDestinationKm ?: 0.0)} km", style = MaterialTheme.typography.bodyMedium, color = Muted)
                 Spacer(Modifier.height(8.dp))
-                Text("Ao iniciar, o primeiro sinal GPS define a sua posição real no caminho.", style = MaterialTheme.typography.bodyMedium, color = Muted)
-                Spacer(Modifier.height(18.dp))
-                Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) { Text("Iniciar caminhada") }
+                if (startRequested) {
+                    Text("A procurar GPS…", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Forest)
+                    Spacer(Modifier.height(4.dp))
+                    Text("A caminhada continua preparada. Só passa a ativa quando existir uma posição GPS válida no caminho.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                    Spacer(Modifier.height(18.dp))
+                    OutlinedButton(onClick = onStart, modifier = Modifier.fillMaxWidth()) { Text("Continuar a procurar GPS") }
+                } else {
+                    Text("Ao iniciar, o primeiro sinal GPS define a sua posição real no caminho.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                    Spacer(Modifier.height(18.dp))
+                    Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) { Text("Iniciar caminhada") }
+                }
             }
         }
     }
