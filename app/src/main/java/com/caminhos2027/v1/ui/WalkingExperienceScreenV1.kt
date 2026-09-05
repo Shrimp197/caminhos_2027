@@ -2,7 +2,6 @@ package com.caminhos2027.v1.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -75,13 +74,17 @@ fun WalkingExperienceScreenV1(
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("APOI à frente", fontWeight = FontWeight.Bold)
-                            results.forEach { item ->
-                                ApoiAheadCard(
-                                    title = null,
-                                    apoi = item.apoi,
-                                    distanceKm = item.distanceKm,
-                                    onOpen = { onOpenApoi(item.apoi) }
-                                )
+                            if (results.isEmpty()) {
+                                Text("Não foram encontrados APOI publicados à frente nesta seleção.")
+                            } else {
+                                results.forEach { item ->
+                                    ApoiAheadCard(
+                                        title = null,
+                                        apoi = item.apoi,
+                                        distanceKm = item.distanceKm,
+                                        onOpen = { onOpenApoi(item.apoi) }
+                                    )
+                                }
                             }
                         }
                     }
@@ -120,6 +123,7 @@ private fun ApoiAheadCard(
             presentation?.let {
                 Text("${it.categoryLabel} · ${it.distanceLabel}", style = MaterialTheme.typography.bodyMedium)
                 Text(it.availabilityLabel, style = MaterialTheme.typography.bodySmall)
+                Text(it.confidenceLabel, style = MaterialTheme.typography.bodySmall)
                 it.warningLabel?.let { warning ->
                     Text(warning, style = MaterialTheme.typography.bodySmall)
                 }
