@@ -8,9 +8,9 @@
 
 ## Current HEAD
 
-- SHA: `7b1d2a2f6756d919fb57cfd9d4d431ddfc4f5bc8`
-- Commit: `docs(v1): synchronize project state after GPS start validation`
-- Parent: `1e70276273c9f396df73d984950d53ab1ee53685`
+- SHA: `eb704cd2d1f1f0124f81910f4636079aff2737ef`
+- Commit: `docs(v1): synchronize project state with verified branch head`
+- Parent: `7b1d2a2f6756d919fb57cfd9d4d431ddfc4f5bc8`
 
 ## Route
 
@@ -65,10 +65,9 @@ Implemented in the current branch:
 
 ## Validation
 
-The current HEAD has completed successfully in CI:
-
-- `Build Android APK` #785 — success.
-- `V1 Route Source Provenance` #848 — success after controlled retry of the external official-source capture.
+- `Build Android APK` #785 — success on the functional parent `7b1d2a2f6756d919fb57cfd9d4d431ddfc4f5bc8`.
+- `V1 Route Source Provenance` #848 — success on the same functional parent after controlled retry of the external official-source capture.
+- The documentation-only synchronization commits do not alter the functional Android artefacts.
 - GPS evaluator and walking-location pipeline tests cover stable route tracking, deviation hysteresis/recovery, weak accuracy, signal loss, implausible jumps, timestamp ordering, malformed observations, future timestamps and prepared-walk GPS start validation.
 
 ## Next logical block
