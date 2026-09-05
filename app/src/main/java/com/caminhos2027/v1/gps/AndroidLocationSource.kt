@@ -15,7 +15,7 @@ class AndroidLocationSource(
     context: Context,
     private val onPosition: (RawGpsPosition) -> Unit,
     private val onAvailabilityChanged: (Boolean) -> Unit = {}
-) {
+) : LocationSource {
     private val locationManager = context.getSystemService(LocationManager::class.java)
     private val listener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
@@ -48,7 +48,7 @@ class AndroidLocationSource(
     }
 
     @SuppressLint("MissingPermission")
-    fun start() {
+    override fun start() {
         if (!hasProvider()) {
             onAvailabilityChanged(false)
             return
@@ -62,7 +62,7 @@ class AndroidLocationSource(
         )
     }
 
-    fun stop() {
+    override fun stop() {
         locationManager.removeUpdates(listener)
     }
 
