@@ -38,8 +38,7 @@ object RouteJsonParser {
     }
 
     private fun parseV1Contract(root: JSONObject): Route {
-        val geometryJson = root.getJSONObject("geometry")
-        val geometry = parseLineString(geometryJson)
+        val geometry = parseLineString(root.getJSONObject("geometry"))
         val stagesJson = root.getJSONArray("stages")
         val stages = buildList(stagesJson.length()) {
             for (i in 0 until stagesJson.length()) {
@@ -78,10 +77,6 @@ object RouteJsonParser {
         val lineStringFeatures = buildList {
             for (i in 0 until features.length()) {
                 val feature = features.getJSONObject(i)
-                if (feature.optString("geometry").isNotBlank()) {
-                    // Defensive: geometry is an object in valid GeoJSON, not a string.
-                    continue
-                }
                 val geometry = feature.optJSONObject("geometry") ?: continue
                 if (geometry.optString("type") == "LineString") add(feature)
             }
