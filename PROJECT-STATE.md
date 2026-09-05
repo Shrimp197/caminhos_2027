@@ -6,11 +6,12 @@
 - Do not write V1 development changes to `main`.
 - State verified against GitHub on 2026-09-05.
 
-## Current HEAD
+## Current functional baseline
 
-- SHA: `eb704cd2d1f1f0124f81910f4636079aff2737ef`
-- Commit: `docs(v1): synchronize project state with verified branch head`
-- Parent: `7b1d2a2f6756d919fb57cfd9d4d431ddfc4f5bc8`
+- Functional baseline SHA: `7b1d2a2f6756d919fb57cfd9d4d431ddfc4f5bc8`
+- Commit: `docs(v1): synchronize project state after GPS start validation`
+- The branch currently contains documentation-only synchronization commits after this functional baseline.
+- No functional Android change has been introduced after the validated baseline.
 
 ## Route
 
@@ -65,9 +66,9 @@ Implemented in the current branch:
 
 ## Validation
 
-- `Build Android APK` #785 — success on the functional parent `7b1d2a2f6756d919fb57cfd9d4d431ddfc4f5bc8`.
-- `V1 Route Source Provenance` #848 — success on the same functional parent after controlled retry of the external official-source capture.
-- The documentation-only synchronization commits do not alter the functional Android artefacts.
+- `Build Android APK` #785 — success on the validated functional baseline.
+- `V1 Route Source Provenance` #848 — success on the validated functional baseline after controlled retry of the external official-source capture.
+- Subsequent commits only synchronize project-state documentation and do not alter the functional Android artefacts.
 - GPS evaluator and walking-location pipeline tests cover stable route tracking, deviation hysteresis/recovery, weak accuracy, signal loss, implausible jumps, timestamp ordering, malformed observations, future timestamps and prepared-walk GPS start validation.
 
 ## Next logical block
