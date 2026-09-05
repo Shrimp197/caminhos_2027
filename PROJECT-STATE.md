@@ -8,9 +8,9 @@
 
 ## Current HEAD
 
-- SHA: `1e70276273c9f396df73d984950d53ab1ee53685`
-- Commit: `test(v1): reject off-route GPS at walking start`
-- Parent: `0034820fc8983d09a4843d84f458297d3ef9c49c`
+- SHA: `7b1d2a2f6756d919fb57cfd9d4d431ddfc4f5bc8`
+- Commit: `docs(v1): synchronize project state after GPS start validation`
+- Parent: `1e70276273c9f396df73d984950d53ab1ee53685`
 
 ## Route
 
@@ -50,6 +50,13 @@ Implemented in the current branch:
 - `WalkingLocationPipeline` bridges raw positions to route-aware GPS state without Compose/Android policy leakage.
 - Persisted Android walking restoration goes through `AndroidV1AppContainer.resumePersistedWalk(...)`; the Activity does not call `runtime.resume()` directly.
 
+## Active walking UX
+
+- `WalkingExperienceScreenV1` consumes `AppState.walking` as the single read model.
+- GPS state is presented as information rather than navigation authority.
+- Signal acquisition, `ON_ROUTE`, possible/probable deviation and loss-of-signal semantics are represented by the walking read model; the UI does not reproduce GPS thresholds or hysteresis.
+- The active surface keeps the projected position and walking progress visible and leaves the walking decision with the pilgrim.
+
 ## Data
 
 - Published production APOI catalogue is intentionally empty until qualified 2027 evidence exists.
@@ -60,16 +67,17 @@ Implemented in the current branch:
 
 The current HEAD has completed successfully in CI:
 
-- `Build Android APK` #784 — success.
-- `V1 Route Source Provenance` #846 — success after controlled retry of the external official-source capture.
+- `Build Android APK` #785 — success.
+- `V1 Route Source Provenance` #848 — success after controlled retry of the external official-source capture.
 - GPS evaluator and walking-location pipeline tests cover stable route tracking, deviation hysteresis/recovery, weak accuracy, signal loss, implausible jumps, timestamp ordering, malformed observations, future timestamps and prepared-walk GPS start validation.
 
 ## Next logical block
 
-1. Consolidate the active walking UX around the GPS read model without adding navigation authority or duplicating domain rules.
-2. Ensure GPS state, last reliable position and signal-loss semantics are visible where the pilgrim needs them.
-3. Validate the resulting Android build through completed CI.
-4. Then move to physical Android GPS validation before offline-map or 2027 APOI expansion.
+1. Physical Android GPS validation of permissions, acquisition and first on-route start.
+2. Validate signal loss, recovery and possible/probable deviation against the real device behaviour.
+3. Record only observed defects and apply targeted corrections on `v1-route-import`.
+4. Re-run CI after any functional correction.
+5. After physical validation, consolidate the PR state before considering removal of draft status.
 
 ## Integrity rule
 
