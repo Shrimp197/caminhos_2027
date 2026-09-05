@@ -4,13 +4,13 @@
 
 - Development branch: `v1-route-import`
 - Do not write V1 development changes to `main`.
-- State verified against GitHub on 2026-09-04.
+- State verified against GitHub on 2026-09-05.
 
 ## Current HEAD
 
-- SHA: `3aa2a118ed94e9735cf74eedae8678362db3b563`
-- Commit: `refactor(v1): centralize persisted walking restoration`
-- Parent: `84b078223fe0e61338073c34d6b9ce212e4acb54`
+- SHA: `1e70276273c9f396df73d984950d53ab1ee53685`
+- Commit: `test(v1): reject off-route GPS at walking start`
+- Parent: `0034820fc8983d09a4843d84f458297d3ef9c49c`
 
 ## Route
 
@@ -27,10 +27,12 @@ Implemented in the current branch:
 - preparation produces `PLANNED` state;
 - explicit `startSaved(...)` transition to `ACTIVE`;
 - first GPS observation establishes the actual start position;
+- start is rejected when the projected GPS position is outside the shared possible-deviation threshold;
 - route projection through the validated route geometry;
 - persistent walking session/checkpoint runtime;
 - last reliable position retained during signal loss;
 - GPS timestamp/movement protections;
+- GPS deviation hysteresis with recovery to `ON_ROUTE`;
 - shared `AppState` / `AppStateStore` read model;
 - APOI catalogue, filtering, search and next-APOI context;
 - APOI detail and decision-support surfaces;
@@ -44,7 +46,9 @@ Implemented in the current branch:
 - `WalkingPreparationAppStateController` owns preparation publication and the explicit saved-plan start transition.
 - `WalkingAppStateController` bridges runtime/coordinator state into `AppStateStore`.
 - `V1MainActivity` owns Android lifecycle and presentation/navigation only.
-- Persisted Android walking restoration now goes through `AndroidV1AppContainer.resumePersistedWalk(...)`; the Activity no longer calls `runtime.resume()` directly.
+- `AndroidLocationSource` reports raw device positions; route projection remains in the domain/GPS pipeline.
+- `WalkingLocationPipeline` bridges raw positions to route-aware GPS state without Compose/Android policy leakage.
+- Persisted Android walking restoration goes through `AndroidV1AppContainer.resumePersistedWalk(...)`; the Activity does not call `runtime.resume()` directly.
 
 ## Data
 
@@ -54,19 +58,18 @@ Implemented in the current branch:
 
 ## Validation
 
-Workflows present on `v1-route-import` include:
+The current HEAD has completed successfully in CI:
 
-- `v1-route-import-build.yml`
-- `v1-route-import-validation.yml`
-- `v1-route-source-provenance.yml`
-
-CI for the current restoration-consolidation commit must be reported only from completed workflow results.
+- `Build Android APK` #784 — success.
+- `V1 Route Source Provenance` #846 — success after controlled retry of the external official-source capture.
+- GPS evaluator and walking-location pipeline tests cover stable route tracking, deviation hysteresis/recovery, weak accuracy, signal loss, implausible jumps, timestamp ordering, malformed observations, future timestamps and prepared-walk GPS start validation.
 
 ## Next logical block
 
-1. Validate the current Activity/container consolidation through completed JVM/build workflows.
-2. Consolidate the preparation/start UX only where it improves clarity without changing the explicit `PLANNED → ACTIVE` contract.
-3. Continue end-to-end UX consolidation and then physical Android GPS validation.
+1. Consolidate the active walking UX around the GPS read model without adding navigation authority or duplicating domain rules.
+2. Ensure GPS state, last reliable position and signal-loss semantics are visible where the pilgrim needs them.
+3. Validate the resulting Android build through completed CI.
+4. Then move to physical Android GPS validation before offline-map or 2027 APOI expansion.
 
 ## Integrity rule
 
