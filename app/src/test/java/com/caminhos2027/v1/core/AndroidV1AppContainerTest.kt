@@ -10,6 +10,7 @@ import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.Walk
+import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.walking.InMemoryWalkRepository
 import com.caminhos2027.v1.core.walking.InMemoryWalkingStateRepository
 import com.caminhos2027.v1.core.walking.WalkingPreparationService
@@ -33,7 +34,6 @@ class AndroidV1AppContainerTest {
             ),
             publishedApoi = emptyList()
         )
-        val first = container(route, runtime)
         val walk = Walk(
             id = "walk-recreated",
             routeId = route.id,
@@ -78,9 +78,45 @@ class AndroidV1AppContainerTest {
         assertNull(container.store.state.walking)
     }
 
-    private fun container(route: Route, runtime: WalkingSessionRuntime): AndroidV1AppContainer {
-        val catalog = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { emptyList() }))
+    @Test
+    fun restorePreparedWalkRebuildsPlannedStateWithoutStartingIt() {
+        val route = fixtureRoute()
+        val runtime = WalkingSessionRuntime(
+            route = route,
+            sessionService = WalkingSessionService(
+                repository = InMemoryWalkRepository(),
+                stateRepository = InMemoryWalkingStateRepository()
+            ),
+            publishedApoi = emptyList()
+        )
         val preparationRepository = InMemoryWalkRepository()
+        val first = container(route, runtime, preparationRepository)
+        val walk = Walk(
+            id = "walk-planned-recreated",
+            routeId = route.id,
+            plannedStartKm = 0.0,
+            plannedDestinationKm = 1.0
+        )
+
+        val preparation = first.preparationService!!.save(walk)
+        assertEquals(WalkStatus.PLANNED, preparation.walk.status)
+
+        val recreated = container(route, runtime, preparationRepository)
+        val restored = recreated.restorePreparedWalk()
+
+        assertNotNull(restored)
+        assertEquals(walk.id, restored?.walk?.id)
+        assertEquals(WalkStatus.PLANNED, restored?.walk?.status)
+        assertNull(recreated.store.state.walking)
+        assertNull(runtime.activeWalk())
+    }
+
+    private fun container(
+        route: Route,
+        runtime: WalkingSessionRuntime,
+        preparationRepository: InMemoryWalkRepository = InMemoryWalkRepository()
+    ): AndroidV1AppContainer {
+        val catalog = PublishedApoiCatalog(ApoiRepository(ApoiDataSource { emptyList() }))
         return AndroidV1AppContainer(
             V1AppContainer(
                 route = route,
