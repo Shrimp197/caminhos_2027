@@ -6,7 +6,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,9 +21,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Navigation
-import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -144,11 +142,18 @@ class V1MainActivity : ComponentActivity() {
     }
 
     private fun restoreWalkingSession() {
-        val restored = appContainer.resumePersistedWalk() 
+        val restored = appContainer.resumePersistedWalk()
         val state = restored.walking
-        if (state == null) return
-        walkingState = state
-        preparedWalk = null
+        if (state != null) {
+            walkingState = state
+            preparedWalk = null
+            startRequested = false
+            surface = WalkingSurface.ACTIVE
+            return
+        }
+
+        preparedWalk = appContainer.restorePreparedWalk()?.walk
+        walkingState = null
         startRequested = false
         surface = WalkingSurface.ACTIVE
     }
