@@ -91,21 +91,19 @@ class AndroidV1AppContainerTest {
         )
         val preparationRepository = InMemoryWalkRepository()
         val first = container(route, runtime, preparationRepository)
-        val walk = Walk(
-            id = "walk-planned-recreated",
-            routeId = route.id,
-            plannedStartKm = 0.0,
-            plannedDestinationKm = 1.0
-        )
 
-        val preparation = first.preparationService!!.save(walk)
+        val preparation = first.preparationService!!.save(
+            walkId = "walk-planned-recreated",
+            startRouteKm = 0.0,
+            destinationRouteKm = 1.0
+        )
         assertEquals(WalkStatus.PLANNED, preparation.walk.status)
 
         val recreated = container(route, runtime, preparationRepository)
         val restored = recreated.restorePreparedWalk()
 
         assertNotNull(restored)
-        assertEquals(walk.id, restored?.walk?.id)
+        assertEquals("walk-planned-recreated", restored?.walk?.id)
         assertEquals(WalkStatus.PLANNED, restored?.walk?.status)
         assertNull(recreated.store.state.walking)
         assertNull(runtime.activeWalk())
