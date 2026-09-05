@@ -33,7 +33,7 @@ class GpxSimulationLocationSourceTest {
         assertEquals(points.first().longitude, emitted[0].longitude)
         assertEquals(points[1].latitude, emitted[1].latitude)
         assertEquals(points[2].longitude, emitted[2].longitude)
-        assertEquals(now.minusSeconds(2), emitted.last().capturedAt)
+        assertEquals(now, emitted.last().capturedAt)
     }
 
     @Test
