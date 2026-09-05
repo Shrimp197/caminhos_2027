@@ -14,7 +14,9 @@ import java.time.Instant
 class AndroidV1AppContainer(
     private val base: V1AppContainer
 ) {
-    constructor(context: Context) : this(V1AppContainer.forAndroid(context.applicationContext))
+    constructor(context: Context, routeId: String? = null) : this(
+        V1AppContainer.forAndroid(context.applicationContext, routeId)
+    )
 
     val store: AppStateStore = base.appStateStore
     val runtime: WalkingSessionRuntime = base.sessionRuntime
