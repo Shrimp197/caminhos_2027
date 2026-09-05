@@ -20,6 +20,7 @@ import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class AndroidV1AppContainerTest {
@@ -76,6 +77,81 @@ class AndroidV1AppContainerTest {
 
         assertNull(restored.walking)
         assertNull(container.store.state.walking)
+    }
+
+    @Test
+    fun completedPersistedWalkIsNotResurrectedAsActiveCompositionState() {
+        val route = fixtureRoute()
+        val walks = InMemoryWalkRepository()
+        val runtime = WalkingSessionRuntime(
+            route = route,
+            sessionService = WalkingSessionService(
+                repository = walks,
+                stateRepository = InMemoryWalkingStateRepository()
+            ),
+            publishedApoi = emptyList()
+        )
+        val walk = Walk(
+            id = "walk-completed",
+            routeId = route.id,
+            plannedStartKm = 0.0,
+            plannedDestinationKm = 1.0
+        )
+        runtime.prepare(walk)
+        runtime.start(
+            walkId = walk.id,
+            position = RoutePosition(route.id, 0.0, 0.0, "stage-1"),
+            now = Instant.parse("2026-09-04T08:00:00Z")
+        )
+        runtime.stop(
+            position = RoutePosition(route.id, 1.0, 0.0, "stage-1"),
+            now = Instant.parse("2026-09-04T09:00:00Z")
+        )
+
+        val recreated = container(route, runtime)
+        val restored = recreated.resumePersistedWalk(Instant.parse("2026-09-04T09:05:00Z"))
+
+        assertNull(restored.walking)
+        assertNull(recreated.store.state.walking)
+        assertEquals(WalkStatus.COMPLETED, walks.getById(walk.id)?.status)
+        assertNull(runtime.activeWalk())
+    }
+
+    @Test
+    fun clearSessionClearsCompositionButDoesNotErasePersistentActiveWalk() {
+        val route = fixtureRoute()
+        val runtime = WalkingSessionRuntime(
+            route = route,
+            sessionService = WalkingSessionService(
+                repository = InMemoryWalkRepository(),
+                stateRepository = InMemoryWalkingStateRepository()
+            ),
+            publishedApoi = emptyList()
+        )
+        val walk = Walk(
+            id = "walk-clear-session",
+            routeId = route.id,
+            plannedStartKm = 0.0,
+            plannedDestinationKm = 1.0
+        )
+        runtime.prepare(walk)
+        runtime.start(
+            walkId = walk.id,
+            position = RoutePosition(route.id, 0.0, 0.0, "stage-1"),
+            now = Instant.parse("2026-09-04T08:00:00Z")
+        )
+
+        val attached = container(route, runtime)
+        attached.resumePersistedWalk(Instant.parse("2026-09-04T08:01:00Z"))
+        attached.clearSession()
+
+        assertNull(attached.store.state.walking)
+        assertNotNull(runtime.activeWalk())
+        assertThrows(IllegalArgumentException::class.java) {
+            attached.attachWalk(
+                walk.copy(id = "walk-different", status = WalkStatus.PLANNED)
+            )
+        }
     }
 
     @Test
