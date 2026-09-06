@@ -44,7 +44,7 @@ class ApoiBrowserTest {
 
         assertEquals(listOf("near"), state.results.map { it.apoi.id })
         assertEquals(5.0, state.results.single().distanceKm, 0.001)
-        assertEquals(10.0, state.query.maxDistanceKm, 0.001)
+        assertEquals(10.0, requireNotNull(state.query.maxDistanceKm), 0.001)
     }
 
     @Test fun selectOnlySelectsAnItemFromCurrentResults() {
