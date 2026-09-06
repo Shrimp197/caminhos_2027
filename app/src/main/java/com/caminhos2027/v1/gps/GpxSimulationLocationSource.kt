@@ -13,11 +13,16 @@ class GpxSimulationLocationSource(
     points: List<GeoPoint>,
     private val onPosition: (RawGpsPosition) -> Unit,
     private val onAvailabilityChanged: (Boolean) -> Unit = {},
-    private val clock: () -> Instant = Instant::now
+    private val clock: () -> Instant = Instant::now,
+    private val initialIndex: Int = 0
 ) : LocationSource {
     private val points = points.toList()
-    private var index = 0
+    private var index = initialIndex.coerceIn(0, (points.size - 1).coerceAtLeast(0))
     private var started = false
+
+    init {
+        require(initialIndex >= 0) { "Initial index must be non-negative" }
+    }
 
     override fun start() {
         if (started || points.isEmpty()) return
