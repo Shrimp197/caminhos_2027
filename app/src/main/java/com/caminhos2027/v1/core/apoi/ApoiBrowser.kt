@@ -11,7 +11,8 @@ data class ApoiBrowserQuery(
     val currentRouteKm: Double,
     val text: String = "",
     val filter: ApoiFilter = ApoiFilter(),
-    val limit: Int = 8
+    val limit: Int = 8,
+    val maxDistanceKm: Double? = null
 )
 
 data class ApoiBrowserState(
@@ -24,13 +25,18 @@ class ApoiBrowser(
     private val catalog: PublishedApoiCatalog
 ) {
     fun browse(query: ApoiBrowserQuery): ApoiBrowserState {
-        val results = catalog.ahead(
+        val candidates = catalog.ahead(
             routeId = query.routeId,
             currentRouteKm = query.currentRouteKm,
             query = query.text,
             filter = query.filter,
-            limit = query.limit
+            limit = query.limit.coerceAtLeast(1) * 8
         )
+        val results = candidates
+            .asSequence()
+            .filter { ahead -> query.maxDistanceKm == null || ahead.distanceKm <= query.maxDistanceKm }
+            .take(query.limit.coerceAtLeast(1))
+            .toList()
         return ApoiBrowserState(query = query, results = results)
     }
 
