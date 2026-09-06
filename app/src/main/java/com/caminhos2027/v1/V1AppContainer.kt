@@ -1,6 +1,7 @@
 package com.caminhos2027.v1
 
 import android.content.Context
+import com.caminhos2027.BuildConfig
 import com.caminhos2027.v1.core.AppStateStore
 import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
@@ -41,15 +42,19 @@ class V1AppContainer(
         fun forAndroid(
             context: Context,
             routeId: String? = null,
-            apoiAssetPath: String = "data/published/apoi-production.json"
+            apoiAssetPath: String? = null
         ): V1AppContainer {
             val applicationContext = context.applicationContext
             val selectedRouteId = routeId
                 ?: AndroidRouteCatalog.preferredPersistedRouteId(applicationContext)
                 ?: AndroidRouteCatalog.CENTENARIO_ID
             val route = AndroidRouteCatalog.loadRoute(applicationContext, selectedRouteId)
+            val selectedApoiAssetPath = apoiAssetPath ?: when {
+                BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(selectedRouteId) -> "data/qa/apoi-qa.json"
+                else -> "data/published/apoi-production.json"
+            }
             val catalog = PublishedApoiCatalog(
-                ApoiRepository(AssetApoiDataSource(applicationContext, apoiAssetPath))
+                ApoiRepository(AssetApoiDataSource(applicationContext, selectedApoiAssetPath))
             )
             val walkRepository = AndroidWalkRepository(applicationContext)
             val checkpointRepository = AndroidWalkingStateRepository(applicationContext)
