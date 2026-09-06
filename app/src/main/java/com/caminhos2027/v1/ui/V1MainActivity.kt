@@ -122,6 +122,9 @@ class V1MainActivity : ComponentActivity() {
                     onCancelPendingStart = ::cancelPendingStart,
                     onStop = ::stopWalking,
                     onSimulateStep = ::simulateStep,
+                    onSimulateSignalLoss = ::simulateSignalLoss,
+                    onSimulateSignalRecovery = ::simulateSignalRecovery,
+                    onSimulateDeviation = ::simulateDeviation,
                     onOpenApoi = ::openApoiBrowser,
                     onOpenDecision = ::openDecision,
                     onApoiSelected = ::selectApoi,
@@ -243,6 +246,11 @@ class V1MainActivity : ComponentActivity() {
                     }
                 }
             },
+            onAvailabilityChanged = { available ->
+                if (!available && walkingState != null) {
+                    walkingState = appContainer.activeController().markNoSignal(Instant.now()).walking
+                }
+            },
             initialIndex = GpxSimulationStartIndex.nearestPointIndex(route, plannedStartKm)
         )
         testLocationSource = source
@@ -253,6 +261,21 @@ class V1MainActivity : ComponentActivity() {
     private fun simulateStep() {
         if (!isTestRoute() || walkingState == null) return
         testLocationSource?.advance()
+    }
+
+    private fun simulateSignalLoss() {
+        if (!isTestRoute() || walkingState == null) return
+        testLocationSource?.setAvailable(false)
+    }
+
+    private fun simulateSignalRecovery() {
+        if (!isTestRoute() || walkingState == null) return
+        testLocationSource?.setAvailable(true)
+    }
+
+    private fun simulateDeviation() {
+        if (!isTestRoute() || walkingState == null) return
+        testLocationSource?.simulateDeviation()
     }
 
     private fun handleGpsForPreparedWalk(position: RawGpsPosition): Boolean {
@@ -384,6 +407,9 @@ private fun WalkingScreenV1(
     onCancelPendingStart: () -> Unit,
     onStop: () -> Unit,
     onSimulateStep: () -> Unit,
+    onSimulateSignalLoss: () -> Unit,
+    onSimulateSignalRecovery: () -> Unit,
+    onSimulateDeviation: () -> Unit,
     onOpenApoi: () -> Unit,
     onOpenDecision: () -> Unit,
     onApoiSelected: (Apoi) -> Unit,
@@ -393,7 +419,7 @@ private fun WalkingScreenV1(
 ) {
     Surface(modifier = Modifier.fillMaxSize(), color = Sand) {
         when {
-            state != null && surface == WalkingSurface.ACTIVE -> ActiveWalkingScreen(state, route, routeOptions, onStop, onSimulateStep, onOpenApoi, onOpenDecision)
+            state != null && surface == WalkingSurface.ACTIVE -> ActiveWalkingScreen(state, route, routeOptions, onStop, onSimulateStep, onSimulateSignalLoss, onSimulateSignalRecovery, onSimulateDeviation, onOpenApoi, onOpenDecision)
             surface == WalkingSurface.PREPARATION -> PreparationMenuScreen(route, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking)
             surface == WalkingSurface.APOI_BROWSER -> {
                 val browser = appState.apoiBrowser
@@ -603,6 +629,9 @@ private fun ActiveWalkingScreen(
     routeOptions: List<AndroidRouteOption>,
     onStop: () -> Unit,
     onSimulateStep: () -> Unit,
+    onSimulateSignalLoss: () -> Unit,
+    onSimulateSignalRecovery: () -> Unit,
+    onSimulateDeviation: () -> Unit,
     onOpenApoi: () -> Unit,
     onOpenDecision: () -> Unit
 ) {
@@ -646,6 +675,12 @@ private fun ActiveWalkingScreen(
                     Text("Simulação QA", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("A posição simulada usa os pontos do GPX do percurso selecionado. Estes dados não são GPS real.", color = Muted)
                     Button(onClick = onSimulateStep, modifier = Modifier.fillMaxWidth()) { Text("Avançar no percurso") }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = onSimulateSignalLoss, modifier = Modifier.weight(1f)) { Text("Perder GPS") }
+                        OutlinedButton(onClick = onSimulateSignalRecovery, modifier = Modifier.weight(1f)) { Text("Recuperar GPS") }
+                    }
+                    OutlinedButton(onClick = onSimulateDeviation, modifier = Modifier.fillMaxWidth()) { Text("Simular desvio") }
+                    Text("Os controlos acima exercitam a mesma cadeia de estado usada pelo GPS real.", style = MaterialTheme.typography.bodySmall, color = Muted)
                 }
             }
         }
