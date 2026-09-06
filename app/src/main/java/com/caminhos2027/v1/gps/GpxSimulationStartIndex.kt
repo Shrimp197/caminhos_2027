@@ -12,7 +12,7 @@ import kotlin.math.abs
  */
 object GpxSimulationStartIndex {
     fun nearestPointIndex(route: Route, plannedStartKm: Double): Int {
-        require(route.geometry.points.isNotEmpty()) { "Route geometry must contain at least one point" }
+        require(route.geometry.points.size >= 2) { "Route geometry must contain at least two points" }
         require(plannedStartKm.isFinite()) { "Planned start kilometre must be finite" }
 
         val target = plannedStartKm.coerceIn(0.0, route.totalDistanceKm)
