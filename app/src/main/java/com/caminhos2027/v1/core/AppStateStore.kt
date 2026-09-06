@@ -22,7 +22,8 @@ class AppStateStore(initial: AppState = AppState()) {
         browser: ApoiBrowser,
         text: String = "",
         filter: ApoiFilter = ApoiFilter(),
-        limit: Int = 8
+        limit: Int = 8,
+        maxDistanceKm: Double? = null
     ) {
         val walking = requireWalkingPosition()
         state = state.copy(
@@ -32,7 +33,8 @@ class AppStateStore(initial: AppState = AppState()) {
                     currentRouteKm = walking.routePosition.routeKm,
                     text = text,
                     filter = filter,
-                    limit = limit
+                    limit = limit,
+                    maxDistanceKm = maxDistanceKm
                 )
             )
         )
