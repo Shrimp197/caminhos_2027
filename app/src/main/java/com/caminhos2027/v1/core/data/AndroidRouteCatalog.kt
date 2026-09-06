@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.core.data
 
 import android.content.Context
+import com.caminhos2027.BuildConfig
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.walking.AndroidWalkRepository
@@ -18,13 +19,14 @@ object AndroidRouteCatalog {
     const val SR_ID = "sr-test"
     const val HF_ID = "hf-test"
 
-    val options: List<AndroidRouteOption> = listOf(
-        AndroidRouteOption(
-            id = CENTENARIO_ID,
-            title = "Caminho do Centenário",
-            description = "Percurso real de referência; os dados 2026 permanecem históricos enquanto não existirem os de 2027.",
-            testOnly = false
-        ),
+    private val production = AndroidRouteOption(
+        id = CENTENARIO_ID,
+        title = "Caminho do Centenário",
+        description = "Percurso real de referência; os dados 2026 permanecem históricos enquanto não existirem os de 2027.",
+        testOnly = false
+    )
+
+    private val qa = listOf(
         AndroidRouteOption(
             id = SR_ID,
             title = "SR",
@@ -39,6 +41,13 @@ object AndroidRouteCatalog {
         )
     )
 
+    /** QA route choices exist only in debug builds; release navigation remains production-only. */
+    val options: List<AndroidRouteOption>
+        get() = if (BuildConfig.DEBUG) listOf(production) + qa else listOf(production)
+
+    fun isTestRoute(routeId: String): Boolean =
+        BuildConfig.DEBUG && (routeId == SR_ID || routeId == HF_ID)
+
     fun loadRoute(context: Context, routeId: String): Route = when (routeId) {
         CENTENARIO_ID -> AssetRouteDataSource(
             context = context,
@@ -48,28 +57,37 @@ object AndroidRouteCatalog {
                 officialName = "Caminho do Centenário"
             )
         ).loadRoute()
-        SR_ID -> AssetGpxRouteDataSource(
-            context = context,
-            assetPath = "data/percurso-teste-casa-trabalho.gpx",
-            routeId = SR_ID,
-            name = "SR — trajeto de teste",
-            source = "GPX fornecido para cenário QA SR"
-        ).loadRoute()
-        HF_ID -> AssetGpxRouteDataSource(
-            context = context,
-            assetPath = "data/percurso-teste-hf.gpx",
-            routeId = HF_ID,
-            name = "HF — trajeto de teste",
-            source = "GPX fornecido para cenário QA HF"
-        ).loadRoute()
+        SR_ID -> {
+            check(BuildConfig.DEBUG) { "QA route is available only in debug builds" }
+            AssetGpxRouteDataSource(
+                context = context,
+                assetPath = "data/percurso-teste-casa-trabalho.gpx",
+                routeId = SR_ID,
+                name = "SR — trajeto de teste",
+                source = "GPX fornecido para cenário QA SR"
+            ).loadRoute()
+        }
+        HF_ID -> {
+            check(BuildConfig.DEBUG) { "QA route is available only in debug builds" }
+            AssetGpxRouteDataSource(
+                context = context,
+                assetPath = "data/percurso-teste-hf.gpx",
+                routeId = HF_ID,
+                name = "HF — trajeto de teste",
+                source = "GPX fornecido para cenário QA HF"
+            ).loadRoute()
+        }
         else -> error("Unknown V1 route: $routeId")
     }
 
-    /** Prefer an existing active/planed route so Android recreation never silently switches route. */
+    /** Prefer an existing active/planned route only when that route is available in this build. */
     fun preferredPersistedRouteId(context: Context): String? =
         AndroidWalkRepository(context.applicationContext)
             .list()
             .asReversed()
-            .firstOrNull { it.status == WalkStatus.ACTIVE || it.status == WalkStatus.PLANNED }
+            .firstOrNull {
+                (it.status == WalkStatus.ACTIVE || it.status == WalkStatus.PLANNED) &&
+                    (it.routeId == CENTENARIO_ID || isTestRoute(it.routeId))
+            }
             ?.routeId
 }
