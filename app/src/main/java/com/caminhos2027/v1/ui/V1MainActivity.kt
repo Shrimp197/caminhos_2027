@@ -75,6 +75,7 @@ class V1MainActivity : ComponentActivity() {
     private var walkingState by mutableStateOf<WalkingState?>(null)
     private var preparedWalk by mutableStateOf<Walk?>(null)
     private var startRequested by mutableStateOf(false)
+    private var pendingStartDistanceMeters by mutableStateOf<Double?>(null)
     private var surface by mutableStateOf(WalkingSurface.ACTIVE)
     private var selectedRouteId by mutableStateOf(AndroidRouteCatalog.CENTENARIO_ID)
 
@@ -88,12 +89,14 @@ class V1MainActivity : ComponentActivity() {
         selectedRouteId = appContainer.publishedRoute().id
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                when (surface) {
-                    WalkingSurface.ACTIVE -> finish()
-                    WalkingSurface.PREPARATION -> surface = WalkingSurface.ACTIVE
-                    WalkingSurface.APOI_BROWSER -> returnToWalking()
-                    WalkingSurface.APOI_DETAIL -> returnToApoiBrowser()
-                    WalkingSurface.DECISION -> returnToWalking()
+                when {
+                    startRequested -> cancelPendingStart()
+                    surface == WalkingSurface.ACTIVE && walkingState == null && preparedWalk != null -> surface = WalkingSurface.PREPARATION
+                    surface == WalkingSurface.ACTIVE -> finish()
+                    surface == WalkingSurface.PREPARATION -> surface = WalkingSurface.ACTIVE
+                    surface == WalkingSurface.APOI_BROWSER -> returnToWalking()
+                    surface == WalkingSurface.APOI_DETAIL -> returnToApoiBrowser()
+                    surface == WalkingSurface.DECISION -> returnToWalking()
                 }
             }
         })
@@ -103,6 +106,7 @@ class V1MainActivity : ComponentActivity() {
                     state = walkingState,
                     preparedWalk = preparedWalk,
                     startRequested = startRequested,
+                    pendingStartDistanceMeters = pendingStartDistanceMeters,
                     appState = appContainer.store.state,
                     route = appContainer.publishedRoute(),
                     routeOptions = AndroidRouteCatalog.options,
@@ -112,6 +116,7 @@ class V1MainActivity : ComponentActivity() {
                     onSelectRoute = ::selectRoute,
                     onConfirmPreparation = ::prepareSelectedWalking,
                     onStart = ::requestStartPreparedWalk,
+                    onCancelPendingStart = ::cancelPendingStart,
                     onStop = ::stopWalking,
                     onSimulateStep = ::simulateStep,
                     onOpenApoi = ::openApoiBrowser,
@@ -160,6 +165,7 @@ class V1MainActivity : ComponentActivity() {
             selectedRouteId = state.walk.routeId
             preparedWalk = null
             startRequested = false
+            pendingStartDistanceMeters = null
             surface = WalkingSurface.ACTIVE
             return
         }
@@ -167,6 +173,7 @@ class V1MainActivity : ComponentActivity() {
         preparedWalk?.let { selectedRouteId = it.routeId }
         walkingState = null
         startRequested = false
+        pendingStartDistanceMeters = null
         surface = WalkingSurface.ACTIVE
     }
 
@@ -182,6 +189,7 @@ class V1MainActivity : ComponentActivity() {
         preparedWalk = appContainer.restorePreparedWalk()?.walk
         walkingState = null
         startRequested = false
+        pendingStartDistanceMeters = null
         surface = WalkingSurface.PREPARATION
     }
 
@@ -194,14 +202,25 @@ class V1MainActivity : ComponentActivity() {
         preparedWalk = prepared.walking?.walk
         walkingState = null
         startRequested = false
+        pendingStartDistanceMeters = null
         surface = WalkingSurface.ACTIVE
     }
 
     private fun requestStartPreparedWalk() {
         require(preparedWalk?.status == WalkStatus.PLANNED) { "A planned walk is required before starting" }
         startRequested = true
+        pendingStartDistanceMeters = null
         if (isTestRoute()) startTestRouteIfNeeded()
         else if (hasLocationPermission()) startWalkingLocationSource() else requestLocationPermission()
+    }
+
+    private fun cancelPendingStart() {
+        startRequested = false
+        pendingStartDistanceMeters = null
+        locationSource?.stop()
+        locationSource = null
+        testLocationSource = null
+        surface = WalkingSurface.ACTIVE
     }
 
     private fun isTestRoute(): Boolean = AndroidRouteCatalog.options.firstOrNull { it.id == selectedRouteId }?.testOnly == true
@@ -233,6 +252,7 @@ class V1MainActivity : ComponentActivity() {
     private fun handleGpsForPreparedWalk(position: RawGpsPosition): Boolean {
         if (!startRequested || walkingState != null || preparedWalk == null) return false
         val routePosition = RouteLocationEngine.locate(appContainer.publishedRoute(), position)
+        pendingStartDistanceMeters = routePosition.distanceToRouteMeters.takeIf { it.isFinite() }
         val started = try {
             appContainer.preparationController.startSaved(
                 catalog = appContainer.publishedApoiCatalog(),
@@ -248,6 +268,7 @@ class V1MainActivity : ComponentActivity() {
         walkingState = walking
         preparedWalk = null
         startRequested = false
+        pendingStartDistanceMeters = null
         surface = WalkingSurface.ACTIVE
         return true
     }
@@ -319,6 +340,7 @@ class V1MainActivity : ComponentActivity() {
         walkingState = null
         preparedWalk = null
         startRequested = false
+        pendingStartDistanceMeters = null
         surface = WalkingSurface.ACTIVE
     }
 }
@@ -343,6 +365,7 @@ private fun WalkingScreenV1(
     state: WalkingState?,
     preparedWalk: Walk?,
     startRequested: Boolean,
+    pendingStartDistanceMeters: Double?,
     appState: AppState,
     route: Route,
     routeOptions: List<AndroidRouteOption>,
@@ -352,6 +375,7 @@ private fun WalkingScreenV1(
     onSelectRoute: (String) -> Unit,
     onConfirmPreparation: () -> Unit,
     onStart: () -> Unit,
+    onCancelPendingStart: () -> Unit,
     onStop: () -> Unit,
     onSimulateStep: () -> Unit,
     onOpenApoi: () -> Unit,
@@ -386,7 +410,14 @@ private fun WalkingScreenV1(
                     DecisionBackActions(onBackToWalking, onOpenApoi)
                 }
             }
-            preparedWalk != null -> PreparedWalkScreen(preparedWalk, route, startRequested, onStart)
+            preparedWalk != null -> PreparedWalkScreen(
+                preparedWalk,
+                route,
+                startRequested,
+                pendingStartDistanceMeters,
+                onStart,
+                onCancelPendingStart
+            )
             else -> NoActiveWalkScreen(onPrepare)
         }
     }
@@ -467,7 +498,15 @@ private fun NoActiveWalkScreen(onPrepare: () -> Unit) {
 }
 
 @Composable
-private fun PreparedWalkScreen(walk: Walk, route: Route, startRequested: Boolean, onStart: () -> Unit) {
+private fun PreparedWalkScreen(
+    walk: Walk,
+    route: Route,
+    startRequested: Boolean,
+    pendingStartDistanceMeters: Double?,
+    onStart: () -> Unit,
+    onCancelPendingStart: () -> Unit
+) {
+    val waitingForRoute = pendingStartDistanceMeters != null && pendingStartDistanceMeters > 0.0
     Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
         Card(modifier = Modifier.align(Alignment.Center).fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)) {
             Column(modifier = Modifier.padding(22.dp)) {
@@ -478,11 +517,28 @@ private fun PreparedWalkScreen(walk: Walk, route: Route, startRequested: Boolean
                 Text("Percurso planeado: ${formatKm(walk.plannedStartKm ?: 0.0)} → ${formatKm(walk.plannedDestinationKm ?: 0.0)} km", style = MaterialTheme.typography.bodyMedium, color = Muted)
                 Spacer(Modifier.height(8.dp))
                 if (startRequested) {
-                    Text(if (AndroidRouteCatalog.options.firstOrNull { it.id == route.id }?.testOnly == true) "A iniciar simulação de GPS…" else "A procurar GPS…", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Forest)
+                    Text(
+                        if (AndroidRouteCatalog.options.firstOrNull { it.id == route.id }?.testOnly == true) "A iniciar simulação de GPS…" else if (waitingForRoute) "Está fora do percurso" else "A procurar GPS…",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Forest
+                    )
                     Spacer(Modifier.height(4.dp))
-                    Text(if (AndroidRouteCatalog.options.firstOrNull { it.id == route.id }?.testOnly == true) "Neste ambiente de teste a posição é simulada a partir do GPX selecionado." else "A caminhada continua preparada. Só passa a ativa quando existir uma posição GPS válida no caminho.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                    when {
+                        AndroidRouteCatalog.options.firstOrNull { it.id == route.id }?.testOnly == true ->
+                            Text("Neste ambiente de teste a posição é simulada a partir do GPX selecionado.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                        waitingForRoute -> {
+                            Text("Está a ${formatMeters(pendingStartDistanceMeters ?: 0.0)} do percurso. Aproxime-se do traçado; a aplicação iniciará a caminhada quando a sua posição entrar no percurso.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                            Text("A distância é uma referência para se orientar; não foi criado nenhum ponto GPS no percurso.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                        }
+                        else ->
+                            Text("A caminhada continua preparada. Só passa a ativa quando existir uma posição GPS válida no caminho.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                    }
                     Spacer(Modifier.height(18.dp))
-                    OutlinedButton(onClick = onStart, modifier = Modifier.fillMaxWidth()) { Text("Tentar novamente") }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = onCancelPendingStart, modifier = Modifier.weight(1f)) { Text("Cancelar início") }
+                        if (waitingForRoute) OutlinedButton(onClick = onStart, modifier = Modifier.weight(1f)) { Text("Continuar a procurar") }
+                    }
                 } else {
                     Text("Ao iniciar, o primeiro sinal GPS define a sua posição real no caminho.", style = MaterialTheme.typography.bodyMedium, color = Muted)
                     Spacer(Modifier.height(18.dp))
@@ -569,3 +625,7 @@ private fun confidenceLabel(confidence: com.caminhos2027.v1.core.model.PositionC
 }
 
 private fun formatKm(km: Double): String = String.format(Locale.US, "%.2f", km)
+
+private fun formatMeters(meters: Double): String =
+    if (meters >= 1000.0) String.format(Locale.US, "%.1f km", meters / 1000.0)
+    else String.format(Locale.US, "%.0f m", meters)
