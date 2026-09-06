@@ -18,9 +18,10 @@ class WalkingApoiDecisionController(
     fun browseApoi(
         text: String = "",
         filter: ApoiFilter = ApoiFilter(),
-        limit: Int = 8
+        limit: Int = 8,
+        maxDistanceKm: Double? = null
     ): AppState {
-        store.browseApoi(browser, text, filter, limit)
+        store.browseApoi(browser, text, filter, limit, maxDistanceKm)
         return store.state
     }
 
