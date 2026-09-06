@@ -33,6 +33,20 @@ class ApoiBrowserTest {
         assertEquals(1.0, state.results.single().distanceKm, 0.001)
     }
 
+    @Test fun maxDistanceScopesResultsWithoutChangingRouteOrdering() {
+        val near = apoi("near", "Apoio perto", 5.0, ApoiCategory.AGUA)
+        val edge = apoi("edge", "Apoio no limite", 12.0, ApoiCategory.ALIMENTACAO)
+        val far = apoi("far", "Apoio distante", 18.0, ApoiCategory.PERNOITA)
+
+        val state = ApoiBrowser(catalog(near, edge, far)).browse(
+            ApoiBrowserQuery(routeId = "route", currentRouteKm = 0.0, limit = 8, maxDistanceKm = 10.0)
+        )
+
+        assertEquals(listOf("near"), state.results.map { it.apoi.id })
+        assertEquals(5.0, state.results.single().distanceKm, 0.001)
+        assertEquals(10.0, state.query.maxDistanceKm, 0.001)
+    }
+
     @Test fun selectOnlySelectsAnItemFromCurrentResults() {
         val water = apoi("water", "Fonte de água", 3.0, ApoiCategory.AGUA)
         val browser = ApoiBrowser(catalog(water))
