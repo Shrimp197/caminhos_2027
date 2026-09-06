@@ -11,13 +11,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.caminhos2027.v1.core.AndroidV1AppContainer
+import com.caminhos2027.v1.core.apoi.ApoiFilter
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.route.RouteLocationEngine
-import com.caminhos2027.v1.core.apoi.ApoiFilter
 import com.caminhos2027.v1.core.walking.WalkingState
 import com.caminhos2027.v1.gps.AndroidLocationSource
 import com.caminhos2027.v1.gps.GpxSimulationLocationSource
@@ -81,6 +81,9 @@ class V1MainActivity : ComponentActivity() {
                     onApoiScopeChanged = ::updateApoiScope,
                     onApoiSearchChanged = ::updateApoiSearch,
                     onApoiFilterToggled = ::toggleApoiFilter,
+                    onQaAdvance = ::qaAdvance,
+                    onQaToggleGps = ::qaSetGpsAvailability,
+                    onQaDeviation = ::qaSimulateDeviation,
                     onBackToWalking = ::returnToWalking,
                     onBackToApoiBrowser = ::returnToApoiBrowser
                 )
@@ -255,13 +258,17 @@ class V1MainActivity : ComponentActivity() {
         source.start()
     }
 
+    private fun qaAdvance() { testLocationSource?.advance() }
+    private fun qaSetGpsAvailability(available: Boolean) { testLocationSource?.setAvailable(available) }
+    private fun qaSimulateDeviation() { testLocationSource?.simulateDeviation() }
+
     private fun openApoiBrowser() {
         if (walkingState?.routePosition == null) return
-        val currentQuery = appContainer.store.state.apoiBrowser?.query
+        val query = appContainer.store.state.apoiBrowser?.query
         appContainer.apoiDecisionController.browseApoi(
-            text = currentQuery?.text ?: "",
-            filter = currentQuery?.filter ?: ApoiFilter(),
-            limit = 8,
+            text = query?.text ?: "",
+            filter = query?.filter ?: ApoiFilter(),
+            limit = if (query?.maxDistanceKm == null) 50 else 8,
             maxDistanceKm = 10.0
         )
         appContainer.apoiDecisionController.clearDecision()
@@ -270,35 +277,18 @@ class V1MainActivity : ComponentActivity() {
 
     private fun updateApoiScope(maxDistanceKm: Double?) {
         val query = appContainer.store.state.apoiBrowser?.query ?: return
-        appContainer.apoiDecisionController.browseApoi(
-            text = query.text,
-            filter = query.filter,
-            limit = if (maxDistanceKm == null) 50 else 8,
-            maxDistanceKm = maxDistanceKm
-        )
+        appContainer.apoiDecisionController.browseApoi(query.text, query.filter, if (maxDistanceKm == null) 50 else 8, maxDistanceKm)
     }
 
     private fun updateApoiSearch(text: String) {
         val query = appContainer.store.state.apoiBrowser?.query ?: return
-        appContainer.apoiDecisionController.browseApoi(
-            text = text,
-            filter = query.filter,
-            limit = if (query.maxDistanceKm == null) 50 else 8,
-            maxDistanceKm = query.maxDistanceKm
-        )
+        appContainer.apoiDecisionController.browseApoi(text, query.filter, if (query.maxDistanceKm == null) 50 else 8, query.maxDistanceKm)
     }
 
     private fun toggleApoiFilter(category: ApoiCategory) {
         val query = appContainer.store.state.apoiBrowser?.query ?: return
-        val nextServices = query.filter.services.toMutableSet().apply {
-            if (!add(category)) remove(category)
-        }
-        appContainer.apoiDecisionController.browseApoi(
-            text = query.text,
-            filter = query.filter.copy(services = nextServices),
-            limit = if (query.maxDistanceKm == null) 50 else 8,
-            maxDistanceKm = query.maxDistanceKm
-        )
+        val services = query.filter.services.toMutableSet().apply { if (!add(category)) remove(category) }
+        appContainer.apoiDecisionController.browseApoi(query.text, query.filter.copy(services = services), if (query.maxDistanceKm == null) 50 else 8, query.maxDistanceKm)
     }
 
     private fun selectApoi(apoi: com.caminhos2027.v1.core.model.Apoi) {
