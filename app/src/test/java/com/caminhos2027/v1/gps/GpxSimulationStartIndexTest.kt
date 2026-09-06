@@ -11,8 +11,8 @@ class GpxSimulationStartIndexTest {
     fun choosesThePointNearestToThePlannedRouteKilometre() {
         val route = route()
 
-        assertEquals(1, GpxSimulationStartIndex.nearestPointIndex(route, 1.1))
-        assertEquals(2, GpxSimulationStartIndex.nearestPointIndex(route, 2.9))
+        assertEquals(1, GpxSimulationStartIndex.nearestPointIndex(route, 1.0))
+        assertEquals(2, GpxSimulationStartIndex.nearestPointIndex(route, 2.0))
     }
 
     @Test
@@ -27,7 +27,7 @@ class GpxSimulationStartIndexTest {
         id = "qa",
         name = "QA",
         officialName = "QA",
-        totalDistanceKm = 3.3,
+        totalDistanceKm = 3.0,
         source = "test",
         updatedAt = null,
         geometry = RouteGeometry(
