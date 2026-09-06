@@ -39,11 +39,14 @@ def main() -> None:
         fail("schema_version must be 1.0-qa")
     if data.get("environment") != "TEST":
         fail("environment must be TEST")
-    if set(data.get("items", [])) == set():
+
+    items = data.get("items")
+    if not isinstance(items, list) or not items:
         fail("dataset must contain QA items")
 
-    items = data["items"]
     ids = [item.get("id") for item in items]
+    if any(not isinstance(item_id, str) or not item_id for item_id in ids):
+        fail("every item must have a non-empty string id")
     if len(ids) != len(set(ids)):
         fail("item ids must be unique")
 
@@ -55,12 +58,18 @@ def main() -> None:
     multi_service = False
 
     for item in items:
+        if not isinstance(item, dict):
+            fail("every item must be an object")
         location = item.get("location", {})
+        if not isinstance(location, dict):
+            fail(f"item {item.get('id')} location must be an object")
+
         route_id = location.get("route_id")
         if route_id not in ROUTES:
             fail(f"item {item.get('id')} uses unsupported route_id {route_id!r}")
         if not str(item.get("name", "")).endswith("TESTE"):
             fail(f"item {item.get('id')} must be visibly marked TESTE")
+
         route_km = location.get("route_km")
         if not isinstance(route_km, (int, float)) or route_km < 0:
             fail(f"item {item.get('id')} must have a non-negative route_km")
