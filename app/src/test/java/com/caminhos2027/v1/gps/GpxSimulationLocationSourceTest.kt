@@ -37,6 +37,47 @@ class GpxSimulationLocationSourceTest {
     }
 
     @Test
+    fun startsAtTheRequestedInitialIndex() {
+        val points = listOf(
+            GeoPoint(41.1000, -8.5800),
+            GeoPoint(41.1010, -8.5800),
+            GeoPoint(41.1020, -8.5800)
+        )
+        val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
+        val source = GpxSimulationLocationSource(
+            points = points,
+            onPosition = emitted::add,
+            initialIndex = 1
+        )
+
+        source.start()
+        source.advance()
+
+        assertEquals(2, emitted.size)
+        assertEquals(points[1].latitude, emitted[0].latitude)
+        assertEquals(points[2].latitude, emitted[1].latitude)
+    }
+
+    @Test
+    fun clampsAnInitialIndexPastTheLastPointToTheLastPoint() {
+        val points = listOf(
+            GeoPoint(41.1000, -8.5800),
+            GeoPoint(41.1010, -8.5800)
+        )
+        val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
+        val source = GpxSimulationLocationSource(
+            points = points,
+            onPosition = emitted::add,
+            initialIndex = 99
+        )
+
+        source.start()
+
+        assertEquals(1, emitted.size)
+        assertEquals(points.last().latitude, emitted.single().latitude)
+    }
+
+    @Test
     fun stopPreventsFurtherSimulation() {
         val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
         val source = GpxSimulationLocationSource(
