@@ -31,12 +31,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +58,7 @@ import com.caminhos2027.v1.core.route.RouteLocationEngine
 import com.caminhos2027.v1.core.walking.WalkingState
 import com.caminhos2027.v1.gps.AndroidLocationSource
 import com.caminhos2027.v1.gps.GpxSimulationLocationSource
+import com.caminhos2027.v1.gps.GpxSimulationStartIndex
 import com.caminhos2027.v1.gps.LocationSource
 import java.time.Instant
 import java.util.Locale
@@ -193,11 +196,11 @@ class V1MainActivity : ComponentActivity() {
         surface = WalkingSurface.PREPARATION
     }
 
-    private fun prepareSelectedWalking() {
+    private fun prepareSelectedWalking(startRouteKm: Double, destinationRouteKm: Double) {
         val prepared = appContainer.preparationController.save(
             walkId = "walk-${System.currentTimeMillis()}",
-            startRouteKm = 0.0,
-            destinationRouteKm = appContainer.publishedRoute().totalDistanceKm
+            startRouteKm = startRouteKm,
+            destinationRouteKm = destinationRouteKm
         )
         preparedWalk = prepared.walking?.walk
         walkingState = null
@@ -229,15 +232,18 @@ class V1MainActivity : ComponentActivity() {
         if (testLocationSource != null) return
         if (walkingState == null && (!startRequested || preparedWalk == null)) return
 
+        val route = appContainer.publishedRoute()
+        val plannedStartKm = preparedWalk?.plannedStartKm ?: 0.0
         val source = GpxSimulationLocationSource(
-            points = appContainer.publishedRoute().geometry.points,
+            points = route.geometry.points,
             onPosition = { position ->
                 runOnUiThread {
                     if (!handleGpsForPreparedWalk(position) && walkingState != null) {
                         walkingState = appContainer.activeController().acceptGps(position).walking
                     }
                 }
-            }
+            },
+            initialIndex = GpxSimulationStartIndex.nearestPointIndex(route, plannedStartKm)
         )
         testLocationSource = source
         locationSource = source
@@ -373,7 +379,7 @@ private fun WalkingScreenV1(
     surface: WalkingSurface,
     onPrepare: () -> Unit,
     onSelectRoute: (String) -> Unit,
-    onConfirmPreparation: () -> Unit,
+    onConfirmPreparation: (Double, Double) -> Unit,
     onStart: () -> Unit,
     onCancelPendingStart: () -> Unit,
     onStop: () -> Unit,
@@ -388,7 +394,7 @@ private fun WalkingScreenV1(
     Surface(modifier = Modifier.fillMaxSize(), color = Sand) {
         when {
             state != null && surface == WalkingSurface.ACTIVE -> ActiveWalkingScreen(state, route, routeOptions, onStop, onSimulateStep, onOpenApoi, onOpenDecision)
-            surface == WalkingSurface.PREPARATION -> PreparationMenuScreen(routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking)
+            surface == WalkingSurface.PREPARATION -> PreparationMenuScreen(route, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking)
             surface == WalkingSurface.APOI_BROWSER -> {
                 val browser = appState.apoiBrowser
                 if (browser == null) EmptyFlowState("Consulta de APOI indisponível", "Não foi possível preparar a consulta para a posição atual.", onBackToWalking)
@@ -425,16 +431,21 @@ private fun WalkingScreenV1(
 
 @Composable
 private fun PreparationMenuScreen(
+    route: Route,
     options: List<AndroidRouteOption>,
     selectedRouteId: String,
     onSelectRoute: (String) -> Unit,
-    onConfirmPreparation: () -> Unit,
+    onConfirmPreparation: (Double, Double) -> Unit,
     onBack: () -> Unit
 ) {
     val selected = options.firstOrNull { it.id == selectedRouteId } ?: options.first()
+    var startText by remember(selectedRouteId) { mutableStateOf("0.00") }
+    var destinationText by remember(selectedRouteId) { mutableStateOf(formatKm(route.totalDistanceKm)) }
+    var validationMessage by remember(selectedRouteId) { mutableStateOf<String?>(null) }
+
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Prepare a sua caminhada", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Escolha o percurso antes de definir a caminhada. Os percursos de teste estão identificados e não entram nos dados de produção.", color = Muted)
+        Text("Escolha o percurso e defina livremente o início e o destino. As etapas oficiais são referência; a caminhada pode começar ou terminar noutro ponto do percurso.", color = Muted)
         options.forEach { option ->
             val isSelected = option.id == selectedRouteId
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (isSelected) ForestSoft else Color.White)) {
@@ -442,12 +453,48 @@ private fun PreparationMenuScreen(
                     Text(option.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     if (option.testOnly) Text("AMBIENTE DE TESTE", color = Forest, fontWeight = FontWeight.Bold)
                     Text(option.description, color = Muted)
-                    if (!isSelected) OutlinedButton(onClick = { onSelectRoute(option.id) }) { Text("Selecionar") }
-                    else Text("Percurso selecionado", color = Forest, fontWeight = FontWeight.Bold)
+                    if (isSelected) Text("Percurso selecionado", color = Forest, fontWeight = FontWeight.Bold)
+                    else OutlinedButton(onClick = { onSelectRoute(option.id) }) { Text("Selecionar") }
                 }
             }
         }
-        Button(onClick = onConfirmPreparation, modifier = Modifier.fillMaxWidth()) { Text("Preparar ${selected.title}") }
+
+        Text("Configuração da caminhada", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text("Percurso selecionado: ${selected.title} · ${formatKm(route.totalDistanceKm)} km", color = Muted)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedTextField(
+                value = startText,
+                onValueChange = { startText = it; validationMessage = null },
+                label = { Text("Início (km)") },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = destinationText,
+                onValueChange = { destinationText = it; validationMessage = null },
+                label = { Text("Destino (km)") },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+        }
+        Text("Intervalo válido: 0.00 → ${formatKm(route.totalDistanceKm)} km. O plano é guardado sem iniciar a caminhada.", style = MaterialTheme.typography.bodySmall, color = Muted)
+        validationMessage?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
+
+        Button(
+            onClick = {
+                val start = startText.replace(',', '.').toDoubleOrNull()
+                val destination = destinationText.replace(',', '.').toDoubleOrNull()
+                when {
+                    start == null || destination == null -> validationMessage = "Indique valores numéricos para o início e o destino."
+                    !start.isFinite() || !destination.isFinite() -> validationMessage = "Os valores têm de ser números válidos."
+                    start < 0.0 || destination < 0.0 -> validationMessage = "O início e o destino não podem ser negativos."
+                    start > route.totalDistanceKm || destination > route.totalDistanceKm -> validationMessage = "Os valores ultrapassam a extensão disponível do percurso."
+                    start >= destination -> validationMessage = "O destino tem de ficar depois do início."
+                    else -> onConfirmPreparation(start, destination)
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Preparar ${selected.title}") }
         OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Voltar") }
         Spacer(Modifier.height(16.dp))
     }
