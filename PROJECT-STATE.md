@@ -9,6 +9,7 @@
 ## Current functional baseline
 
 - Current functional HEAD: `828590fab93af3aaf66d3f612f9f348c16bd7864`
+- Current branch HEAD: `ec88abae35155ca33e2272e8090d09913783729d` (documentation-only synchronization after the functional QA UI change).
 - Recent commits:
   - `639a7600b164f8c69ac1980eca9ba34b37dbade1` — `test(v1): add deterministic QA GPS loss and deviation controls`
   - `86dc3d6156386cfb6a11de103de27cfca8bd7ccd` — `test(v1): cover controlled QA GPS loss recovery and deviation`
@@ -90,19 +91,19 @@ Implemented in the current branch:
 ## Validation
 
 - `V1 Route Source Provenance` #964 — success for `828590fab93af3aaf66d3f612f9f348c16bd7864`.
-- `Build Android APK` #843 — was still running after JVM tests entered execution; final completion must be observed before claiming a green build or publishing a new APK.
-- The prior debug isolation change has a successful provenance/build baseline.
+- `Build Android APK` #843 — success for the PR merge containing `828590fab93af3aaf66d3f612f9f348c16bd7864`.
+- JVM tests passed; debug APK assembled, verified as non-empty and uploaded successfully.
+- Verified APK SHA-256: `6da223d2589b9ed210e440a31b281a894522ee0fcf6925f91039c7bb02b80fb1`.
+- Uploaded artifact: `Caminhos-do-Peregrino-v1-route-import-debug`, artifact `9995192841`.
 - Deterministic QA simulation tests cover availability loss/recovery, frozen emission during loss, resume from the last route point, deliberate deviation raw-position emission, and invalid deviation parameters.
-- The QA UI change itself is a small wiring/presentation change; its correctness still requires the fresh Android build to complete and the QA flow to be exercised.
 - Physical Android GPS behaviour has not yet been revalidated after the latest QA controls; it remains human/device validation.
 
 ## Next logical block
 
-1. Finish and verify `Build Android APK` #843 for the QA-control commit.
-2. Execute the complete SR/HF QA scenario: planned non-zero start → first GPS → progress → APOI ahead → APOI detail → back → decision → signal loss/recovery → deviation/recovery → persistence.
-3. Produce and verify the new debug APK only after the build succeeds; record its artifact/hash in the project state.
-4. Re-run the physical Android test of Centenário outside-route guidance and on-route start with the new APK.
-5. Keep navigation turn instructions and external map handoff deferred until their geometry/data prerequisites are validated.
+1. Execute the complete SR/HF QA scenario on the validated debug APK: planned non-zero start → first GPS → progress → APOI ahead → APOI detail → back → decision → signal loss/recovery → deviation/recovery → persistence.
+2. Record the QA execution result and any reproducible defects before changing architecture or thresholds.
+3. Re-run the physical Android test of Centenário outside-route guidance and on-route start with the validated APK.
+4. Keep navigation turn instructions and external map handoff deferred until their geometry/data prerequisites are validated.
 
 ## Integrity rule
 
