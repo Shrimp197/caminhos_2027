@@ -4,13 +4,16 @@
 
 - Development branch: `v1-route-import`
 - Do not write V1 development changes to `main`.
-- State verified against GitHub on 2026-09-05.
+- State verified against GitHub on 2026-09-06.
 
 ## Current functional baseline
 
-- Functional baseline SHA: `943c3b70ba8ab3149ae8ffc5ec94d63c78a75275`
-- Commit: `test(v1): correct QA GPS simulation timestamp assertion`
-- The baseline includes the validated QA route-selection and GPX simulation changes described below.
+- Current functional HEAD: `86dc3d6156386cfb6a11de103de27cfca8bd7ccd`
+- Recent commits:
+  - `7fcd18ce925d35a73bf05aec0027871a13dc6070` — `build(v1): enable BuildConfig for debug QA isolation`
+  - `639a7600b164f8c69ac1980eca9ba34b37dbade1` — `test(v1): add deterministic QA GPS loss and deviation controls`
+  - `86dc3d6156386cfb6a11de103de27cfca8bd7ccd` — `test(v1): cover controlled QA GPS loss recovery and deviation`
+- The branch now enforces debug-only QA route/catalog access and has deterministic raw GPS simulation controls for signal loss/recovery and deliberate deviation testing.
 
 ## Route
 
@@ -38,15 +41,18 @@ Implemented in the current branch:
 - APOI detail and decision-support surfaces;
 - walking map read model with protection against fabricated geometry.
 
-## QA route execution
+## Preparation and QA route execution
 
-- Walking preparation now exposes three explicit route choices: production `Caminho do Centenário`, `SR` and `HF`.
+- Walking preparation exposes three explicit choices in debug builds: production `Caminho do Centenário`, `SR` and `HF`.
 - `SR` and `HF` are explicitly marked as test environments in the preparation UI.
+- Preparation allows an explicit planned start and destination route km inside the selected route geometry.
+- Saving the plan remains distinct from starting the walk; saved plans remain `PLANNED` until a valid GPS position starts the walk.
 - QA route geometry is loaded from the committed GPX assets `percurso-teste-casa-trabalho.gpx` and `percurso-teste-hf.gpx`.
 - GPX parsing is isolated in `AssetGpxRouteDataSource` / `GpxRouteParser`; invalid or insufficient GPX geometry is rejected.
 - QA simulation is implemented as `GpxSimulationLocationSource`, a raw-position source only.
+- QA simulation starts at the route point nearest the planned start km so SR/HF can exercise non-zero planned starts.
+- QA simulation now supports deterministic temporary signal loss/recovery and one deliberate off-route raw-position emission for GPS deviation QA.
 - Real Android GPS and QA simulation enter the same downstream walking callback/pipeline; route projection, validation and walking-state rules are not duplicated for QA.
-- QA stepping is controlled separately from the raw location-source abstraction and does not replace the real Android location source.
 - Test route identifiers are explicit and are not used as production APOI data or as the production route default.
 - Test fixtures are labelled `TEST/FICTITIOUS` and remain isolated from production datasets.
 
@@ -59,7 +65,7 @@ Implemented in the current branch:
 - `WalkingAppStateController` bridges runtime/coordinator state into `AppStateStore`.
 - `V1MainActivity` owns Android lifecycle and presentation/navigation only; QA route stepping is delegated to `GpxSimulationLocationSource`.
 - `AndroidLocationSource` reports raw device positions; route projection remains in the domain/GPS pipeline.
-- `GpxSimulationLocationSource` reports raw simulated positions only; it does not calculate route progress or deviation.
+- `GpxSimulationLocationSource` reports raw simulated positions only; it does not calculate route progress, deviation or navigation instructions.
 - `WalkingLocationPipeline` bridges raw positions to route-aware GPS state without Compose/Android policy leakage.
 - Persisted Android walking restoration goes through `AndroidV1AppContainer.resumePersistedWalk(...)`; the Activity does not call `runtime.resume()` directly.
 
@@ -69,6 +75,7 @@ Implemented in the current branch:
 - GPS state is presented as information rather than navigation authority.
 - Signal acquisition, `ON_ROUTE`, possible/probable deviation and loss-of-signal semantics are represented by the walking read model; the UI does not reproduce GPS thresholds or hysteresis.
 - The active surface keeps the projected position and walking progress visible and leaves the walking decision with the pilgrim.
+- Progress is calculated against the actual walking start and planned destination route km; it is never recalculated from official stage execution.
 
 ## Data
 
@@ -76,26 +83,24 @@ Implemented in the current branch:
 - 2026 data remains historical/reference data and must not be presented as a 2027 guarantee.
 - No invented route, stage or APOI data is to be introduced.
 - SR/HF GPX assets are QA inputs and must not enter production datasets.
+- Debug-only QA APOI selection uses `data/qa/apoi-qa.json`; production composition uses `data/published/apoi-production.json`.
 
 ## Validation
 
-- `Build Android APK` #810 — success for commit `943c3b70ba8ab3149ae8ffc5ec94d63c78a75275`.
-- Build job completed all validation steps, including JVM tests, debug APK build, APK verification and artifact upload.
-- `V1 Route Source Provenance` #898 — success for commit `943c3b70ba8ab3149ae8ffc5ec94d63c78a75275`.
-- The generated debug artifact is `Caminhos-do-Peregrino-v1-route-import-debug`; artifact SHA-256: `3555830d229d7b64ac2451fd2f0ca1eb9e4f62967015f6a969b553633416d61c`.
-- JVM test suite passed on the validated build; the earlier QA simulation timestamp assertion failure was corrected before this baseline.
-- Tests cover route parsing/catalog exposure, QA raw-position emission, walking GPS pipeline behaviour, walking/APOI/decision integration, persistence/restoration and production-data isolation constraints.
-- Physical Android GPS behaviour has not yet been validated in this baseline.
+- `V1 Route Source Provenance` #956 — success for `7fcd18ce925d35a73bf05aec0027871a13dc6070`.
+- `Build Android APK` #839 — success for `7fcd18ce925d35a73bf05aec0027871a13dc6070`.
+- JVM test suite passed on the validated build for the debug isolation change.
+- New deterministic QA simulation tests cover availability loss/recovery, frozen emission during loss, resume from the last route point, deliberate deviation raw-position emission, and invalid deviation parameters.
+- The current HEAD `86dc3d6156386cfb6a11de103de27cfca8bd7ccd` triggered fresh CI; `V1 Route Source Provenance` completed successfully and `Build Android APK` was still running at the time of this state synchronization.
+- Physical Android GPS behaviour has not yet been revalidated after the latest QA controls; it remains human/device validation.
 
 ## Next logical block
 
-1. Install the validated debug APK on the physical Android device and validate the preparation menu for production/SR/HF.
-2. Exercise SR and HF from `PLANNED` through first simulated GPS fix, route projection, progress updates and controlled stepping.
-3. Validate persisted active-walk restoration and route selection after Activity/process recreation.
-4. Validate the real production route start with physical GPS while off-route first, then on-route; confirm no crash and clear state transition.
-5. Validate signal loss, recovery and possible/probable deviation against real device behaviour.
-6. Record only observed defects and apply targeted corrections on `v1-route-import`.
-7. Re-run CI after any functional correction.
+1. Finish and verify the fresh `Build Android APK` run for the current HEAD.
+2. Expose the deterministic QA signal-loss/recovery and deviation controls in the debug walking surface so SR/HF can exercise the complete GPS-state flow without editing code.
+3. Add or execute the end-to-end QA scenario: planned non-zero start → first GPS → progress → APOI ahead → APOI detail → back → decision → signal loss/recovery → deviation/recovery → persistence.
+4. Re-run the physical Android test of Centenário outside-route guidance and on-route start after the new APK is produced.
+5. Keep navigation turn instructions and external map handoff deferred until their geometry/data prerequisites are validated.
 
 ## Integrity rule
 
