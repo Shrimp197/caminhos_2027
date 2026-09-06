@@ -83,17 +83,27 @@ for item in production['items']:
     if availability_status in blocked_availability:
         raise SystemExit(f'Production APOI {item.get("id")} has blocked availability: {availability_status}')
 
-required_test_assets = [
-    ROOT / 'app/src/main/assets/data/percurso-teste-casa-trabalho.gpx',
-    ROOT / 'app/src/main/assets/data/percurso-teste-hf.gpx',
+# QA routes are debug-only inputs. They must be present for the internal executable
+# test build, while the old main-source copies must be absent so they cannot ship in release.
+qa_asset_paths = [
+    ROOT / 'app/src/debug/assets/data/percurso-teste-casa-trabalho.gpx',
+    ROOT / 'app/src/debug/assets/data/percurso-teste-hf.gpx',
 ]
-for path in required_test_assets:
+for path in qa_asset_paths:
     if not path.exists() or path.stat().st_size < 100:
-        raise SystemExit(f'Missing/empty required test asset: {path}')
+        raise SystemExit(f'Missing/empty required debug QA asset: {path}')
     tree = ET.parse(path)
     points = tree.getroot().findall('.//{http://www.topografix.com/GPX/1/1}trkpt')
     if len(points) < 2:
         raise SystemExit(f'GPX has fewer than 2 track points: {path}')
+
+for path in [
+    ROOT / 'app/src/main/assets/data/percurso-teste-casa-trabalho.gpx',
+    ROOT / 'app/src/main/assets/data/percurso-teste-hf.gpx',
+    ROOT / 'app/src/main/assets/data/percurso-teste-meta.json',
+]:
+    if path.exists():
+        raise SystemExit(f'QA asset must not remain in main production source set: {path}')
 
 json.loads((ROOT / 'app/src/main/assets/data/apoios-2026.json').read_text(encoding='utf-8'))
 ET.parse(MANIFEST_PATH)
