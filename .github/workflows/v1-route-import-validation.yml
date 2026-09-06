@@ -30,6 +30,9 @@ jobs:
       - name: Validate APOI 2026 to 2027 transition
         run: python3 tools/validate_apoi_transition.py
 
+      - name: Validate SR and HF QA APOI dataset
+        run: python3 tools/validate_qa_apoi.py
+
       - name: Run route import JVM tests
         run: gradle --no-daemon :app:testDebugUnitTest
 
