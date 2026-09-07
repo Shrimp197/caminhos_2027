@@ -268,7 +268,7 @@ private fun RouteSelectionCard(route: Route, isTest: Boolean, onClick: () -> Uni
             Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
                 Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall)
                 Text(routeDisplay(route), color = Color.White, fontWeight = FontWeight.Bold)
-                Text(if (isTest) "Percurso de teste" else "Percurso em 8 etapas", color = Color.White.copy(alpha = .92f))
+                Text(if (isTest) "Percurso de teste" else "Percurso em ${route.stages.size} etapas", color = Color.White.copy(alpha = .92f))
             }
             Button(
                 onClick = onClick,
