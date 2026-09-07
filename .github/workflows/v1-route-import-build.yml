@@ -65,7 +65,7 @@ jobs:
               time.sleep(5)
           print('Android emulator failed to reach sys.boot_completed=1 within 360s.', file=sys.stderr)
           try:
-              print(subprocess.run(['adb','devices','-l'], text=True, capture_output=True).stdout)
+              print(subprocess.run(['adb','devices','-l'], text=True, capture_output=True, timeout=10).stdout)
           except Exception:
               pass
           sys.exit(1)
@@ -95,11 +95,29 @@ jobs:
         run: |
           set +e
           echo '=== adb devices ==='
-          adb devices -l
+          python3 - <<'PY'
+          import subprocess
+          for cmd in (['adb','devices','-l'], ['adb','shell','getprop','sys.boot_completed'], ['adb','shell','pidof','com.caminhos2027']):
+              print('$', ' '.join(cmd))
+              try:
+                  p = subprocess.run(cmd, text=True, capture_output=True, timeout=15)
+                  print(p.stdout)
+                  print(p.stderr)
+              except Exception as exc:
+                  print('diagnostic command failed:', exc)
+          PY
           echo '=== emulator log ==='
           cat "$RUNNER_TEMP/emulator.log" 2>/dev/null || true
           echo '=== app logcat ==='
-          adb logcat -d -t 500 2>/dev/null || true
+          python3 - <<'PY'
+          import subprocess
+          try:
+              p = subprocess.run(['adb','logcat','-d','-t','500'], text=True, capture_output=True, timeout=20)
+              print(p.stdout)
+              print(p.stderr)
+          except Exception as exc:
+              print('logcat diagnostic failed:', exc)
+          PY
 
       - name: Stop Android emulator
         if: always()
