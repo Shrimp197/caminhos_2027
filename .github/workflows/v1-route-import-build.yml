@@ -35,6 +35,17 @@ jobs:
           test -s app/build/outputs/apk/debug/app-debug.apk
           sha256sum app/build/outputs/apk/debug/app-debug.apk
 
+      - name: Launch V1 on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+          disable-animations: true
+          script: gradle --no-daemon :app:connectedDebugAndroidTest
+
       - name: Build unsigned release APK
         run: gradle --no-daemon :app:assembleRelease
 
