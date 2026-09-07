@@ -5,6 +5,7 @@ import com.caminhos2027.v1.core.AppStateStore
 import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RoutePosition
+import com.caminhos2027.v1.core.model.WalkingPreparationConfig
 import com.caminhos2027.v1.core.route.GpsTrackingPolicy
 import java.time.Instant
 
@@ -19,15 +20,20 @@ class WalkingPreparationAppStateController(
     fun preview(walkId: String, startRouteKm: Double, destinationRouteKm: Double): WalkingPreparation =
         preparationService.preview(walkId, startRouteKm, destinationRouteKm)
 
-    fun save(walkId: String, startRouteKm: Double, destinationRouteKm: Double): AppState {
-        val preparation = preparationService.save(walkId, startRouteKm, destinationRouteKm)
+    fun save(
+        walkId: String,
+        startRouteKm: Double,
+        destinationRouteKm: Double,
+        preparation: WalkingPreparationConfig = WalkingPreparationConfig()
+    ): AppState {
+        val prepared = preparationService.save(walkId, startRouteKm, destinationRouteKm, preparation)
         store.setWalking(
             WalkingStateBuilder.build(
                 route = route,
-                walk = preparation.walk,
+                walk = prepared.walk,
                 gpsState = com.caminhos2027.v1.core.route.GpsState.NO_SIGNAL,
                 routePosition = null,
-                publishedApoi = preparation.relevantApoi
+                publishedApoi = prepared.relevantApoi
             )
         )
         return store.state
