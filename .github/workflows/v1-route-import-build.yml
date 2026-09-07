@@ -35,52 +35,79 @@ jobs:
           test -s app/build/outputs/apk/debug/app-debug.apk
           shasum -a 256 app/build/outputs/apk/debug/app-debug.apk
 
+      - name: Set up Android emulator manually
+        timeout-minutes: 8
+        env:
+          ANDROID_AVD_HOME: ${{ runner.temp }}/avd
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          AVDMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager"
+          EMULATOR="$ANDROID_HOME/emulator/emulator"
+          adb start-server
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "emulator" "platforms;android-35" "system-images;android-35;google_apis;x86_64"
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo "no" | "$AVDMANAGER" create avd --force --name caminhos-api35 --package "system-images;android-35;google_apis;x86_64" --device "pixel_2"
+          nohup "$EMULATOR" -avd caminhos-api35 -no-window -no-audio -no-boot-anim -no-snapshot -no-save -gpu swiftshader_indirect >"$RUNNER_TEMP/emulator.log" 2>&1 &
+          echo $! >"$RUNNER_TEMP/emulator.pid"
+          python3 - <<'PY'
+          import subprocess, time, sys
+          deadline = time.time() + 360
+          while time.time() < deadline:
+              devices = subprocess.run(['adb','devices'], text=True, capture_output=True).stdout
+              print(devices, end='')
+              if 'emulator-' in devices and '\tdevice' in devices:
+                  boot = subprocess.run(['adb','shell','getprop','sys.boot_completed'], text=True, capture_output=True).stdout.strip()
+                  if boot == '1':
+                      print('Android emulator boot completed.')
+                      sys.exit(0)
+              time.sleep(5)
+          print('Android emulator failed to reach sys.boot_completed=1 within 360s.', file=sys.stderr)
+          try:
+              print(subprocess.run(['adb','devices','-l'], text=True, capture_output=True).stdout)
+          except Exception:
+              pass
+          sys.exit(1)
+          PY
+
       - name: Launch V1 on Android emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        timeout-minutes: 10
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          emulator-boot-timeout: 300
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
-          disable-animations: true
-          pre-emulator-launch-script: |
-            set -euo pipefail
-            adb start-server
-            adb devices
-          script: |
-            set -euo pipefail
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell am force-stop com.caminhos2027
-            adb logcat -c
-            set +e
-            START_OUTPUT="$(python3 -c 'import subprocess,sys; p=subprocess.run(sys.argv[1:],capture_output=True,text=True,timeout=60); print(p.stdout,end=""); print(p.stderr,end="",file=sys.stderr); sys.exit(p.returncode)' adb shell am start -W -n com.caminhos2027/.v1.ui.V1MainActivity 2>&1)"
-            START_STATUS=$?
-            set -e
-            echo "$START_OUTPUT"
-            if [ "$START_STATUS" -ne 0 ]; then
-              echo 'V1 launch command failed or timed out.'
-              adb logcat -d -t 300
-              exit "$START_STATUS"
-            fi
-            echo "$START_OUTPUT" | grep -q 'Status: ok'
-            sleep 5
-            RESUMED="$(adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | head -n 1 || true)"
-            echo "$RESUMED"
-            if ! echo "$RESUMED" | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'; then
-              echo 'V1 main activity is not resumed after launch.'
-              adb logcat -d -t 300
-              exit 1
-            fi
-            if adb shell pidof com.caminhos2027 >/dev/null 2>&1; then
-              echo 'V1 application process is running after launch.'
-            else
-              echo 'V1 application process is not running after launch.'
-              adb logcat -d -t 300
-              exit 1
-            fi
+        timeout-minutes: 3
+        env:
+          ANDROID_AVD_HOME: ${{ runner.temp }}/avd
+        run: |
+          set -euo pipefail
+          adb wait-for-device
+          adb install -r app/build/outputs/apk/debug/app-debug.apk
+          adb shell am force-stop com.caminhos2027
+          adb logcat -c
+          START_OUTPUT="$(adb shell am start -W -n com.caminhos2027/.v1.ui.V1MainActivity 2>&1)"
+          echo "$START_OUTPUT"
+          echo "$START_OUTPUT" | grep -q 'Status: ok'
+          sleep 5
+          RESUMED="$(adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | head -n 1 || true)"
+          echo "$RESUMED"
+          echo "$RESUMED" | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'
+          adb shell pidof com.caminhos2027
+
+      - name: Dump emulator diagnostics on failure
+        if: failure()
+        run: |
+          set +e
+          echo '=== adb devices ==='
+          adb devices -l
+          echo '=== emulator log ==='
+          cat "$RUNNER_TEMP/emulator.log" 2>/dev/null || true
+          echo '=== app logcat ==='
+          adb logcat -d -t 500 2>/dev/null || true
+
+      - name: Stop Android emulator
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/emulator.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/emulator.pid")" 2>/dev/null || true
+          fi
+          adb kill-server 2>/dev/null || true
 
       - name: Build unsigned release APK
         run: gradle --no-daemon :app:assembleRelease
