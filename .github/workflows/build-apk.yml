@@ -1,5 +1,4 @@
 name: Build Android APK
-
 on:
   workflow_dispatch:
   push:
@@ -52,12 +51,17 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           disable-animations: true
           script: |
-            set -e
+            set -euo pipefail
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             adb shell am force-stop com.caminhos2027
-            adb shell am start -W -n com.caminhos2027/.v1.ui.V1MainActivity
+            adb logcat -c
+            START_OUTPUT="$(adb shell am start -W -n com.caminhos2027/.v1.ui.V1MainActivity 2>&1)"
+            echo "$START_OUTPUT"
+            echo "$START_OUTPUT" | grep -q 'Status: ok'
             sleep 5
-            dumpsys activity activities | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'
+            RESUMED="$(adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | head -n 1 || true)"
+            echo "$RESUMED"
+            echo "$RESUMED" | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'
             if adb shell pidof com.caminhos2027 >/dev/null 2>&1; then
               echo 'V1 application process is running after launch.'
             else
