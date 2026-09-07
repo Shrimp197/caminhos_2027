@@ -4,12 +4,13 @@
 
 - Development branch: `v1-route-import`
 - Do not write V1 development changes to `main`.
-- State verified against GitHub on 2026-09-06.
+- State verified against GitHub on 2026-09-07.
 
 ## Current functional baseline
 
-- Current branch / functional baseline: `9a577f7abdf8175b15e8fb7b433ddc6e8aaf0000`.
-- The six primary walking surfaces are the explicit acceptance baseline: preparation, active walking map, contextual bottom sheet, next-APOI horizon, APOI list/cards and walking progress.
+- Current branch / functional baseline: `d32c803e408d7478defe92e28d568228b9970d07`.
+- The six primary walking surfaces remain the acceptance baseline: preparation, active walking map, contextual bottom sheet, next-APOI horizon, APOI list/cards and walking progress.
+- The preparation surface is now composed as a product flow with secondary subsections for route, stage/start/end, audio, map orientation, breaks, APOIs and notes.
 - Debug-only QA route/catalog access, deterministic raw GPS simulation controls and visible walking QA controls remain enforced.
 
 ## Route
@@ -18,6 +19,7 @@
 - Source declared by the asset: ACF official GPX.
 - Published route distance remains distinct from technical geometry length.
 - Historical `ACF_2020` KML remains reference-only.
+- The Centenário preparation hero uses the existing bundled resource `caminho_centenario_hero.jpg`; QA routes use an explicit non-production visual treatment.
 
 ## Walking V1
 
@@ -44,6 +46,8 @@ Implemented and covered by JVM validation:
 - `SR` and `HF` are explicitly marked as test environments.
 - Preparation allows explicit planned start and destination route km inside the selected route geometry.
 - Saving the plan remains distinct from starting the walk; saved plans remain `PLANNED` until valid GPS starts the walk.
+- Route stages are loaded from `app/src/main/assets/data/route-stages.json` and enriched into the route model.
+- The preparation surface keeps route, stage/start/end and other choices in the walking preparation model instead of introducing a second navigation/domain state machine.
 - QA route geometry is loaded from the committed GPX assets `percurso-teste-casa-trabalho.gpx` and `percurso-teste-hf.gpx`.
 - `GpxSimulationLocationSource` reports raw simulated positions only; QA does not duplicate projection, progress or deviation policy.
 - Real Android GPS and QA simulation enter the same downstream walking callback/pipeline.
@@ -67,11 +71,11 @@ Implemented and covered by JVM validation:
 
 ## Validation
 
-- `Build Android APK` #864 — **success** for `9a577f7abdf8175b15e8fb7b433ddc6e8aaf0000`.
-- `V1 Route Source Provenance` #1006 — **success** for the same commit.
+- `Build Android APK` #910 — **success** for `d32c803e408d7478defe92e28d568228b9970d07`.
+- `V1 Route Source Provenance` #1098 — **success** for the same commit.
 - JVM tests passed; debug APK assembled, verified and uploaded.
-- Current debug artifact: `Caminhos-do-Peregrino-v1-route-import-debug`, artifact `9997881198`.
-- Artifact SHA-256 digest reported by GitHub Actions: `sha256:bbf56174b3b708b4c1ae4b0b0008ddecdc146675ead879ec30d65ba2f3ceb168`.
+- Current debug artifact: `Caminhos-do-Peregrino-v1-route-import-debug`, artifact `10010436765`.
+- Artifact SHA-256 digest reported by GitHub Actions: `sha256:6e62f3f64af019a6282b466d682f440ae7a4c21a86b39fd5724bbdfb748a5e6d`.
 - Physical Android GPS and real-user HF validation are not replaceable by CI; they remain device/human validation steps.
 
 ## Acceptance scenario
@@ -80,10 +84,11 @@ The executable SR/HF scenario is documented in `docs/QA-SR-HF-SCENARIO.md` and i
 
 ## Next logical block
 
-1. Execute SR/HF on the current debug APK: non-zero planned start → first GPS → progress → next APOI → detail → back → decision → signal loss/recovery → deviation/recovery → persistence/resume.
-2. Record only reproducible defects from that execution; do not alter thresholds or architecture without evidence.
-3. Re-run the physical Android Centenário GPS validation with the current APK.
-4. Move to HF human evaluation after the functional SR path is demonstrably stable.
+1. Consolidate the preparation visual hierarchy against the approved visual reference without changing domain/state rules.
+2. Run SR/HF on the current debug APK: non-zero planned start → first GPS → progress → next APOI → detail → back → decision → signal loss/recovery → deviation/recovery → persistence/resume.
+3. Record only reproducible defects from that execution; do not alter thresholds or architecture without evidence.
+4. Re-run the physical Android Centenário GPS validation with the current APK.
+5. Move to HF human evaluation after the functional SR path is demonstrably stable.
 
 ## Integrity rule
 
