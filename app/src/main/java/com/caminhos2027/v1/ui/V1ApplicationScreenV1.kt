@@ -1,18 +1,15 @@
 package com.caminhos2027.v1.ui
 
 import com.caminhos2027.v1.core.AppState
-import com.caminhos2027.v1.core.apoi.ApoiBrowserState
-import com.caminhos2027.v1.core.apoi.ApoiFilter
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkingPreparationConfig
-import com.caminhos2027.v1.core.walking.WalkingDecisionContext
 import com.caminhos2027.v1.core.walking.WalkingState
 
-/** Visual composition root: the preparation surface is refined independently; the existing walking surfaces remain intact. */
+/** Preparation owns the refined visual entry point; existing walking/APOI/decision surfaces remain the functional seam. */
 @androidx.compose.runtime.Composable
 internal fun V1ApplicationScreenV1(
     state: WalkingState?,
@@ -43,14 +40,7 @@ internal fun V1ApplicationScreenV1(
     onBackToApoiBrowser: () -> Unit
 ) {
     if (surface == WalkingSurface.PREPARATION) {
-        PreparationExperienceV1(
-            route = route,
-            routeOptions = routeOptions,
-            selectedRouteId = selectedRouteId,
-            onSelectRoute = onSelectRoute,
-            onConfirm = onConfirmPreparation,
-            onBack = onBackToWalking
-        )
+        PreparationExperienceV1(route, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking)
     } else {
         V1PrimaryExperienceScreen(
             state = state,
@@ -82,5 +72,3 @@ internal fun V1ApplicationScreenV1(
         )
     }
 }
-
-private enum class PreparationSubscreen { ROUTE, STAGE, AUDIO, ORIENTATION, BREAKS, APOIS, NOTES }
