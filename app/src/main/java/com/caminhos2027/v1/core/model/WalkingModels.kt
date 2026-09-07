@@ -13,7 +13,8 @@ data class Walk(
     val startedAt: Instant? = null,
     val endedAt: Instant? = null,
     val status: WalkStatus = WalkStatus.PLANNED,
-    val stageIds: List<String> = emptyList()
+    val stageIds: List<String> = emptyList(),
+    val preparation: WalkingPreparationConfig = WalkingPreparationConfig()
 )
 
 enum class WalkStatus {
