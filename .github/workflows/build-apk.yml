@@ -43,11 +43,13 @@ jobs:
 
       - name: Launch V1 on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 10
         with:
           api-level: 35
           target: google_apis
           arch: x86_64
           profile: pixel_2
+          emulator-boot-timeout: 300
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           disable-animations: true
           script: |
@@ -55,13 +57,25 @@ jobs:
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             adb shell am force-stop com.caminhos2027
             adb logcat -c
-            START_OUTPUT="$(adb shell am start -W -n com.caminhos2027/.v1.ui.V1MainActivity 2>&1)"
+            set +e
+            START_OUTPUT="$(timeout 60s adb shell am start -W -n com.caminhos2027/.v1.ui.V1MainActivity 2>&1)"
+            START_STATUS=$?
+            set -e
             echo "$START_OUTPUT"
+            if [ "$START_STATUS" -ne 0 ]; then
+              echo 'V1 launch command failed or timed out.'
+              adb logcat -d -t 300
+              exit "$START_STATUS"
+            fi
             echo "$START_OUTPUT" | grep -q 'Status: ok'
             sleep 5
             RESUMED="$(adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | head -n 1 || true)"
             echo "$RESUMED"
-            echo "$RESUMED" | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'
+            if ! echo "$RESUMED" | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'; then
+              echo 'V1 main activity is not resumed after launch.'
+              adb logcat -d -t 300
+              exit 1
+            fi
             if adb shell pidof com.caminhos2027 >/dev/null 2>&1; then
               echo 'V1 application process is running after launch.'
             else
