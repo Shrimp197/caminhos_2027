@@ -5,6 +5,10 @@ on:
   push:
     branches: [ v1-route-import ]
 
+concurrency:
+  group: v1-route-import-android-smoke
+  cancel-in-progress: true
+
 jobs:
   validate-and-build:
     runs-on: macos-15-intel
@@ -55,10 +59,10 @@ jobs:
           import subprocess, time, sys
           deadline = time.time() + 360
           while time.time() < deadline:
-              devices = subprocess.run(['adb','devices'], text=True, capture_output=True).stdout
+              devices = subprocess.run(['adb','devices'], text=True, capture_output=True, timeout=10).stdout
               print(devices, end='')
               if 'emulator-' in devices and '\tdevice' in devices:
-                  boot = subprocess.run(['adb','shell','getprop','sys.boot_completed'], text=True, capture_output=True).stdout.strip()
+                  boot = subprocess.run(['adb','shell','getprop','sys.boot_completed'], text=True, capture_output=True, timeout=10).stdout.strip()
                   if boot == '1':
                       print('Android emulator boot completed.')
                       sys.exit(0)
