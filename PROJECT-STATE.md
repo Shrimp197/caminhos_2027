@@ -8,7 +8,7 @@
 
 ## Current functional baseline
 
-- Current branch / functional baseline: `d32c803e408d7478defe92e28d568228b9970d07`.
+- Current branch / functional baseline: `a07b9d1a29bdf27be5fa0122e777429aaec6f359`.
 - The six primary walking surfaces remain the acceptance baseline: preparation, active walking map, contextual bottom sheet, next-APOI horizon, APOI list/cards and walking progress.
 - The preparation surface is now composed as a product flow with secondary subsections for route, stage/start/end, audio, map orientation, breaks, APOIs and notes.
 - Debug-only QA route/catalog access, deterministic raw GPS simulation controls and visible walking QA controls remain enforced.
@@ -73,9 +73,9 @@ Implemented and covered by JVM validation:
 
 - `Build Android APK` #910 — **success** for `d32c803e408d7478defe92e28d568228b9970d07`.
 - `V1 Route Source Provenance` #1098 — **success** for the same commit.
-- JVM tests passed; debug APK assembled, verified and uploaded.
-- Current debug artifact: `Caminhos-do-Peregrino-v1-route-import-debug`, artifact `10010436765`.
-- Artifact SHA-256 digest reported by GitHub Actions: `sha256:6e62f3f64af019a6282b466d682f440ae7a4c21a86b39fd5724bbdfb748a5e6d`.
+- The subsequent UI/documentation baseline commits are queued for new CI validation; they must not be described as green until those runs complete.
+- Previous debug artifact: `Caminhos-do-Peregrino-v1-route-import-debug`, artifact `10010436765`, built from `d32c803e...`.
+- Previous artifact SHA-256 digest reported by GitHub Actions: `sha256:6e62f3f64af019a6282b466d682f440ae7a4c21a86b39fd5724bbdfb748a5e6d`.
 - Physical Android GPS and real-user HF validation are not replaceable by CI; they remain device/human validation steps.
 
 ## Acceptance scenario
@@ -84,9 +84,9 @@ The executable SR/HF scenario is documented in `docs/QA-SR-HF-SCENARIO.md` and i
 
 ## Next logical block
 
-1. Consolidate the preparation visual hierarchy against the approved visual reference without changing domain/state rules.
-2. Run SR/HF on the current debug APK: non-zero planned start → first GPS → progress → next APOI → detail → back → decision → signal loss/recovery → deviation/recovery → persistence/resume.
-3. Record only reproducible defects from that execution; do not alter thresholds or architecture without evidence.
+1. Confirm green CI for the latest preparation/UI baseline.
+2. Download/use that APK for SR/HF execution and record only reproducible defects.
+3. Consolidate the preparation visual hierarchy against the approved visual reference without changing domain/state rules.
 4. Re-run the physical Android Centenário GPS validation with the current APK.
 5. Move to HF human evaluation after the functional SR path is demonstrably stable.
 
