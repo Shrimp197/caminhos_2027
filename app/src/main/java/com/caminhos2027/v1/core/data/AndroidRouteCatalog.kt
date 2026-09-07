@@ -29,13 +29,13 @@ object AndroidRouteCatalog {
         AndroidRouteOption(
             id = SR_ID,
             title = "Trajeto SR",
-            description = "Percurso exclusivamente de teste para validação da experiência.",
+            description = "Percurso exclusivamente de teste para validação da experiência · QA.",
             testOnly = true
         ),
         AndroidRouteOption(
             id = HF_ID,
             title = "Trajeto HF",
-            description = "Percurso exclusivamente de teste para validação da experiência.",
+            description = "Percurso exclusivamente de teste para validação da experiência · QA.",
             testOnly = true
         )
     )
