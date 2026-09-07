@@ -1,0 +1,1 @@
+Temporary visual reference: generated Porto – Fátima composition. Binary delivery is deferred until the Android asset pipeline is wired cleanly.
