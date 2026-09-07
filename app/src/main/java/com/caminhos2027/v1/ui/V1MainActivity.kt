@@ -17,6 +17,7 @@ import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
+import com.caminhos2027.v1.core.model.WalkingPreparationConfig
 import com.caminhos2027.v1.core.route.RouteLocationEngine
 import com.caminhos2027.v1.core.walking.WalkingState
 import com.caminhos2027.v1.gps.AndroidLocationSource
@@ -59,7 +60,7 @@ class V1MainActivity : ComponentActivity() {
         })
         setContent {
             CaminhosTheme {
-                V1PrimaryExperienceScreen(
+                V1ApplicationScreenV1(
                     state = walkingState,
                     preparedWalk = preparedWalk,
                     startRequested = startRequested,
@@ -71,7 +72,7 @@ class V1MainActivity : ComponentActivity() {
                     surface = surface,
                     onPrepare = ::openPreparation,
                     onSelectRoute = ::selectRoute,
-                    onConfirmPreparation = ::prepareSelectedWalking,
+                    onConfirmPreparation = ::prepareSelectedWalkingWithConfig,
                     onStart = ::requestStartPreparedWalk,
                     onCancelPendingStart = ::cancelPendingStart,
                     onStop = ::stopWalking,
@@ -154,11 +155,16 @@ class V1MainActivity : ComponentActivity() {
         surface = WalkingSurface.PREPARATION
     }
 
-    private fun prepareSelectedWalking(startRouteKm: Double, destinationRouteKm: Double) {
+    private fun prepareSelectedWalkingWithConfig(
+        startRouteKm: Double,
+        destinationRouteKm: Double,
+        preparation: WalkingPreparationConfig
+    ) {
         val prepared = appContainer.preparationController.save(
             walkId = "walk-${System.currentTimeMillis()}",
             startRouteKm = startRouteKm,
-            destinationRouteKm = destinationRouteKm
+            destinationRouteKm = destinationRouteKm,
+            preparation = preparation
         )
         preparedWalk = prepared.walking?.walk
         walkingState = null
