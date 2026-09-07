@@ -51,7 +51,7 @@ class V1MainActivity : ComponentActivity() {
                     startRequested -> cancelPendingStart()
                     surface == WalkingSurface.ACTIVE && walkingState == null && preparedWalk != null -> surface = WalkingSurface.PREPARATION
                     surface == WalkingSurface.ACTIVE -> finish()
-                    surface == WalkingSurface.PREPARATION -> surface = WalkingSurface.ACTIVE
+                    surface == WalkingSurface.PREPARATION -> finish()
                     surface == WalkingSurface.APOI_BROWSER -> returnToWalking()
                     surface == WalkingSurface.APOI_DETAIL -> returnToApoiBrowser()
                     surface == WalkingSurface.DECISION -> returnToWalking()
@@ -136,7 +136,7 @@ class V1MainActivity : ComponentActivity() {
         walkingState = null
         startRequested = false
         pendingStartDistanceMeters = null
-        surface = WalkingSurface.ACTIVE
+        surface = if (preparedWalk == null) WalkingSurface.PREPARATION else WalkingSurface.ACTIVE
     }
 
     private fun openPreparation() {
@@ -331,6 +331,6 @@ class V1MainActivity : ComponentActivity() {
         preparedWalk = null
         startRequested = false
         pendingStartDistanceMeters = null
-        surface = WalkingSurface.ACTIVE
+        surface = WalkingSurface.PREPARATION
     }
 }
