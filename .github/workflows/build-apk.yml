@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, v1-route-import ]
   pull_request:
     branches: [ main, master ]
 
@@ -42,8 +42,21 @@ jobs:
           test -s app/build/outputs/apk/debug/app-debug.apk
           sha256sum app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Upload APK
+      - name: Launch V1 on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+          disable-animations: true
+          script: gradle --no-daemon :app:connectedDebugAndroidTest
+
+      - name: Upload validated APK
         uses: actions/upload-artifact@v4
         with:
-          name: Caminhos-do-Peregrino-v1-route-import-debug
+          name: Caminhos-do-Peregrino-v1-route-import-debug-validated
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
