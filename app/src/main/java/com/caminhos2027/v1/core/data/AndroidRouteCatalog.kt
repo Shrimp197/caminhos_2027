@@ -22,21 +22,21 @@ object AndroidRouteCatalog {
     private val production = AndroidRouteOption(
         id = CENTENARIO_ID,
         title = "Caminho do Centenário",
-        description = "Percurso real de referência; os dados 2026 permanecem históricos enquanto não existirem os de 2027.",
+        description = "Porto – Fátima · 212 km · percurso de produção; informação oficial do caminho.",
         testOnly = false
     )
 
     private val qa = listOf(
         AndroidRouteOption(
             id = SR_ID,
-            title = "SR",
-            description = "Trajeto de teste SR (GPX casa/trabalho). Ambiente de QA; não é percurso de produção.",
+            title = "Trajeto SR",
+            description = "Percurso de teste SR. Ambiente QA; não é percurso de produção.",
             testOnly = true
         ),
         AndroidRouteOption(
             id = HF_ID,
-            title = "HF",
-            description = "Trajeto de teste HF (GPX fornecido). Ambiente de QA; não é percurso de produção.",
+            title = "Trajeto HF",
+            description = "Percurso de teste HF. Ambiente QA; não é percurso de produção.",
             testOnly = true
         )
     )
