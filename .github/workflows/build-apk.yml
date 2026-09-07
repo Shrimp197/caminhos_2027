@@ -6,9 +6,13 @@ on:
   pull_request:
     branches: [ main, master ]
 
+concurrency:
+  group: build-android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-15-intel
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -39,12 +43,86 @@ jobs:
       - name: Verify APK
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
-          sha256sum app/build/outputs/apk/debug/app-debug.apk
+          shasum -a 256 app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Upload build APK
+      - name: Set up Android emulator manually
+        timeout-minutes: 10
+        env:
+          ANDROID_AVD_HOME: ${{ runner.temp }}/avd
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          AVDMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager"
+          EMULATOR="$ANDROID_HOME/emulator/emulator"
+          adb start-server
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "emulator" "platforms;android-34" "system-images;android-34;google_apis;x86_64"
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo "no" | "$AVDMANAGER" create avd --force --name caminhos-api34 --package "system-images;android-34;google_apis;x86_64" --device "pixel_2"
+          nohup "$EMULATOR" -avd caminhos-api34 -no-window -no-audio -no-boot-anim -wipe-data -no-snapshot -no-save -gpu off -accel on >"$RUNNER_TEMP/emulator.log" 2>&1 &
+          echo $! >"$RUNNER_TEMP/emulator.pid"
+          python3 - <<'PY'
+          import subprocess, time, sys
+          deadline = time.time() + 480
+          while time.time() < deadline:
+              devices = subprocess.run(['adb','devices'], text=True, capture_output=True, timeout=10).stdout
+              print(devices, end='')
+              if 'emulator-' in devices and '\tdevice' in devices:
+                  boot = subprocess.run(['adb','shell','getprop','sys.boot_completed'], text=True, capture_output=True, timeout=10).stdout.strip()
+                  if boot == '1':
+                      print('Android emulator boot completed.')
+                      sys.exit(0)
+              time.sleep(5)
+          print('Android emulator failed to reach sys.boot_completed=1 within 480s.', file=sys.stderr)
+          try:
+              print(subprocess.run(['adb','devices','-l'], text=True, capture_output=True, timeout=10).stdout)
+          except Exception:
+              pass
+          sys.exit(1)
+          PY
+
+      - name: Launch app on Android emulator
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          adb wait-for-device
+          adb install -r app/build/outputs/apk/debug/app-debug.apk
+          adb shell am force-stop com.caminhos2027
+          adb logcat -c
+          START_OUTPUT="$(adb shell am start -W -n com.caminhos2027/.v1.ui.V1MainActivity 2>&1)"
+          echo "$START_OUTPUT"
+          echo "$START_OUTPUT" | grep -q 'Status: ok'
+          sleep 5
+          RESUMED="$(adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | head -n 1 || true)"
+          echo "$RESUMED"
+          echo "$RESUMED" | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'
+          adb shell pidof com.caminhos2027
+
+      - name: Dump emulator diagnostics on failure
+        if: failure()
+        run: |
+          set +e
+          echo '=== adb devices ==='
+          adb devices -l
+          echo '=== boot state ==='
+          adb shell getprop sys.boot_completed
+          echo '=== emulator log ==='
+          cat "$RUNNER_TEMP/emulator.log" 2>/dev/null || true
+          echo '=== app logcat ==='
+          adb logcat -d -t 500 2>&1 || true
+
+      - name: Stop Android emulator
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/emulator.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/emulator.pid")" 2>/dev/null || true
+          fi
+          adb kill-server 2>/dev/null || true
+
+      - name: Upload validated debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Caminhos-do-Peregrino-v1-route-import-debug-build
+          name: Caminhos-do-Peregrino-v1-route-import-debug-validated
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
