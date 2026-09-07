@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-15-intel
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -39,7 +39,7 @@ jobs:
       - name: Verify APK
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
-          sha256sum app/build/outputs/apk/debug/app-debug.apk
+          shasum -a 256 app/build/outputs/apk/debug/app-debug.apk
 
       - name: Launch V1 on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
@@ -58,7 +58,7 @@ jobs:
             adb shell am force-stop com.caminhos2027
             adb logcat -c
             set +e
-            START_OUTPUT="$(timeout 60s adb shell am start -W -n com.caminhos2027/.v1.ui.V1MainActivity 2>&1)"
+            START_OUTPUT="$(python3 -c 'import subprocess,sys; p=subprocess.run(sys.argv[1:],capture_output=True,text=True,timeout=60); print(p.stdout,end=""); print(p.stderr,end="",file=sys.stderr); sys.exit(p.returncode)' adb shell am start -W -n com.caminhos2027/.v1.ui.V1MainActivity 2>&1)"
             START_STATUS=$?
             set -e
             echo "$START_OUTPUT"
