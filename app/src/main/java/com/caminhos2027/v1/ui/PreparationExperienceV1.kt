@@ -88,14 +88,14 @@ internal fun PreparationExperienceV1(
             listOf(Stage("${route.id}-test-stage", route.id, 1, route.officialName, 0.0, route.totalDistanceKm, route.totalDistanceKm, "Início", "Fim", "QA synthetic test stage"))
         }
     }
-    var selectedStageIds by remember(selectedRouteId, stages) { mutableStateOf(stages.take(1).map { it.id }) }
+    var selectedStageIds by remember(selectedRouteId, stages) { mutableStateOf(stages.take(1).map(Stage::id)) }
     var startKm by remember(selectedRouteId, stages) { mutableStateOf(stages.first().startRouteKm) }
     var destinationKm by remember(selectedRouteId, stages) { mutableStateOf(stages.first().endRouteKm) }
     val notes = remember(selectedRouteId) { mutableStateListOf<String>() }
 
     when (sub) {
         null -> PreparationHome(route, routeOptions, selectedRouteId, config, stages, startKm, destinationKm, selectedStageIds, onBack, { sub = it }) { onConfirm(startKm, destinationKm, config) }
-        PreparationSubscreen.ROUTE -> RouteSubscreen(routeOptions, selectedRouteId, { sub = null }) { routeId -> onSelectRoute(routeId) }
+        PreparationSubscreen.ROUTE -> RouteSubscreen(routeOptions, selectedRouteId, { sub = null }) { routeId -> onSelectRoute(routeId); sub = null }
         PreparationSubscreen.STAGE -> StageSubscreen(stages, selectedStageIds, { sub = null }) { ids, start, end -> selectedStageIds = ids; startKm = start; destinationKm = end; sub = null }
         PreparationSubscreen.AUDIO -> ChoiceSubscreen("Áudio", Icons.Filled.Headphones, listOf("Normal" to AudioMode.NORMAL, "Imersivo" to AudioMode.IMMERSIVE, "Silenciado" to AudioMode.SILENT), config.audioMode, { sub = null }) { config = config.copy(audioMode = it); sub = null }
         PreparationSubscreen.ORIENTATION -> ChoiceSubscreen("Orientação do mapa", Icons.Filled.Map, listOf("Norte" to MapOrientation.NORTH, "Direção da caminhada" to MapOrientation.WALK_DIRECTION), config.mapOrientation, { sub = null }) { config = config.copy(mapOrientation = it); sub = null }
@@ -157,8 +157,8 @@ private fun RouteHero(route: Route, isTest: Boolean, onBack: () -> Unit) {
 }
 
 @Composable
-private fun PrepCard(icon: ImageVector, title: String, value: String, secondary: String? = null, onOpen: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable { onOpen() }, RoundedCornerShape(22.dp), border = BorderStroke(1.dp, Border), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+private fun PrepCard(icon: ImageVector, title: String, value: String, secondary: String? = null, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Card(modifier.fillMaxWidth().clickable { onClick() }, RoundedCornerShape(22.dp), border = BorderStroke(1.dp, Border), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(icon, null, tint = Blue, Modifier.size(27.dp))
             Column(Modifier.weight(1f)) { Text(title, color = Blue, fontWeight = FontWeight.Bold); Text(value, color = Color(0xFF284A6B)); secondary?.let { Text(it, color = TextMuted) } }
@@ -168,7 +168,9 @@ private fun PrepCard(icon: ImageVector, title: String, value: String, secondary:
 }
 
 @Composable
-private fun ChoiceCard(title: String, icon: ImageVector, value: String, modifier: Modifier = Modifier, onOpen: () -> Unit) = PrepCard(icon, title, value, null, onOpen).let { Unit }
+private fun ChoiceCard(title: String, icon: ImageVector, value: String, modifier: Modifier = Modifier, onOpen: () -> Unit) {
+    PrepCard(icon, title, value, modifier = modifier, onClick = onOpen)
+}
 
 @Composable
 private fun RouteSubscreen(options: List<AndroidRouteOption>, selected: String, onBack: () -> Unit, onApply: (String) -> Unit) = SecondaryScaffold("Percurso", onBack) {
@@ -183,7 +185,7 @@ private fun RouteSubscreen(options: List<AndroidRouteOption>, selected: String, 
 private fun StageSubscreen(stages: List<Stage>, selectedIds: List<String>, onBack: () -> Unit, onApply: (List<String>, Double, Double) -> Unit) {
     var selected by remember(selectedIds) { mutableStateOf(selectedIds.toSet()) }
     SecondaryScaffold("Etapa e início/fim", onBack) {
-        Text("Seleccione uma ou mais etapas. As distâncias aproximadas são apresentadas como referência e não substituem a geometria oficial.", color = TextMuted)
+        Text("Seleccione uma ou mais etapas. As distâncias indicadas são referências aproximadas onde a fonte assim as define.", color = TextMuted)
         stages.forEach { stage ->
             val chosen = stage.id in selected
             Card(Modifier.fillMaxWidth().clickable { selected = if (chosen) selected - stage.id else selected + stage.id }, RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = if (chosen) BlueSoft else Color.White)) {
