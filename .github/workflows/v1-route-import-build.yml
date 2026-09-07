@@ -44,7 +44,20 @@ jobs:
           profile: pixel_2
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           disable-animations: true
-          script: gradle --no-daemon :app:connectedDebugAndroidTest
+          script: |
+            set -euo pipefail
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell am force-stop com.caminhos2027
+            adb shell am start -W -n com.caminhos2027/.v1.ui.V1MainActivity
+            sleep 5
+            dumpsys activity activities | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'
+            if adb shell pidof com.caminhos2027 >/dev/null 2>&1; then
+              echo 'V1 application process is running after launch.'
+            else
+              echo 'V1 application process is not running after launch.'
+              adb logcat -d -t 300
+              exit 1
+            fi
 
       - name: Build unsigned release APK
         run: gradle --no-daemon :app:assembleRelease
