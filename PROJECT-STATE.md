@@ -8,7 +8,7 @@
 
 ## Current functional baseline
 
-- Current branch / functional baseline: `a07b9d1a29bdf27be5fa0122e777429aaec6f359`.
+- Current branch / functional baseline: `2345301dfe84e1be69e570d07467ccf0c7b50927`.
 - The six primary walking surfaces remain the acceptance baseline: preparation, active walking map, contextual bottom sheet, next-APOI horizon, APOI list/cards and walking progress.
 - The preparation surface is now composed as a product flow with secondary subsections for route, stage/start/end, audio, map orientation, breaks, APOIs and notes.
 - Debug-only QA route/catalog access, deterministic raw GPS simulation controls and visible walking QA controls remain enforced.
@@ -19,7 +19,7 @@
 - Source declared by the asset: ACF official GPX.
 - Published route distance remains distinct from technical geometry length.
 - Historical `ACF_2020` KML remains reference-only.
-- The Centenário preparation hero uses the existing bundled resource `caminho_centenario_hero.jpg`; QA routes use an explicit non-production visual treatment.
+- The Centenário preparation hero uses the bundled `caminho_centenario_hero.jpg`; QA routes use an explicit non-production visual treatment.
 
 ## Walking V1
 
@@ -71,11 +71,10 @@ Implemented and covered by JVM validation:
 
 ## Validation
 
-- `Build Android APK` #910 — **success** for `d32c803e408d7478defe92e28d568228b9970d07`.
-- `V1 Route Source Provenance` #1098 — **success** for the same commit.
-- The subsequent UI/documentation baseline commits are queued for new CI validation; they must not be described as green until those runs complete.
-- Previous debug artifact: `Caminhos-do-Peregrino-v1-route-import-debug`, artifact `10010436765`, built from `d32c803e...`.
-- Previous artifact SHA-256 digest reported by GitHub Actions: `sha256:6e62f3f64af019a6282b466d682f440ae7a4c21a86b39fd5724bbdfb748a5e6d`.
+- `Build Android APK` #915 — **success** for `2345301dfe84e1be69e570d07467ccf0c7b50927`.
+- `V1 Route Source Provenance` #1108 — **success** for the same commit.
+- The successful Build run completed JVM tests, debug APK assembly, APK verification and artifact upload.
+- Current debug artifact: `Caminhos-do-Peregrino-v1-route-import-debug` from Build #915.
 - Physical Android GPS and real-user HF validation are not replaceable by CI; they remain device/human validation steps.
 
 ## Acceptance scenario
@@ -84,11 +83,10 @@ The executable SR/HF scenario is documented in `docs/QA-SR-HF-SCENARIO.md` and i
 
 ## Next logical block
 
-1. Confirm green CI for the latest preparation/UI baseline.
-2. Download/use that APK for SR/HF execution and record only reproducible defects.
-3. Consolidate the preparation visual hierarchy against the approved visual reference without changing domain/state rules.
-4. Re-run the physical Android Centenário GPS validation with the current APK.
-5. Move to HF human evaluation after the functional SR path is demonstrably stable.
+1. Use the current debug APK for SR/HF execution and record only reproducible defects.
+2. Consolidate the preparation visual hierarchy against the approved visual reference without changing domain/state rules.
+3. Re-run the physical Android Centenário GPS validation with the current APK.
+4. Move to HF human evaluation after the functional SR path is demonstrably stable.
 
 ## Integrity rule
 
