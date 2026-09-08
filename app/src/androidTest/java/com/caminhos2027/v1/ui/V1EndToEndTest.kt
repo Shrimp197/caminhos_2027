@@ -15,12 +15,11 @@ class V1EndToEndTest {
     private lateinit var device: UiDevice
 
     @Before
-    fun resetToCleanV1() {
+    fun resetToV1() {
         device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        device.executeShellCommand("pm clear com.caminhos2027")
         device.executeShellCommand("am force-stop com.caminhos2027")
         device.executeShellCommand("am start -n com.caminhos2027/.v1.ui.V1MainActivity")
-        assertTrue(device.wait(Until.hasObject(By.text("Prepare a sua caminhada")), 30_000))
+        assertTrue("Preparation screen did not appear", device.wait(Until.hasObject(By.text("Prepare a sua caminhada")), 30_000))
     }
 
     @Test
