@@ -262,7 +262,7 @@ private fun PreparationHome(
                     textAlign = TextAlign.Center
                 )
                 Button(
-                    onClick = onOpen.let { { onStart() } },
+                    onClick = onStart,
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)
