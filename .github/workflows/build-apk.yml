@@ -69,6 +69,8 @@ jobs:
                       print('Android emulator boot completed.')
                       for setting in ('window_animation_scale','transition_animation_scale','animator_duration_scale'):
                           subprocess.run(['adb','shell','settings','put','global',setting,'0'], timeout=10)
+                      subprocess.run(['adb','shell','svc','bluetooth','disable'], timeout=10)
+                      print('Bluetooth disabled for deterministic UI E2E.')
                       sys.exit(0)
               time.sleep(5)
           print('Android emulator failed to reach a completed boot state within 480s.', file=sys.stderr)
@@ -79,6 +81,7 @@ jobs:
         run: |
           set -euo pipefail
           adb wait-for-device
+          adb shell svc bluetooth disable || true
           adb install -r app/build/outputs/apk/debug/app-debug.apk
           adb shell am force-stop com.caminhos2027
           adb logcat -c
