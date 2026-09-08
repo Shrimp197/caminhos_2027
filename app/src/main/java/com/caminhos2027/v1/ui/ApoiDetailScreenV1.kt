@@ -1,5 +1,8 @@
 package com.caminhos2027.v1.ui
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -19,6 +23,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.model.Apoi
@@ -34,6 +39,7 @@ import java.util.Locale
 /** V1 APOI detail presentation. Missing values are omitted instead of being shown as "não informado". */
 @Composable
 fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
+    val context = LocalContext.current
     Surface {
         Column(
             modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
@@ -51,6 +57,33 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
             apoi.description?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
             StatusCard(apoi)
             LocationCard(apoi)
+            if (apoi.location.precision == LocationPrecision.EXACT &&
+                apoi.location.latitude != null &&
+                apoi.location.longitude != null
+            ) {
+                Button(
+                    onClick = {
+                        val lat = apoi.location.latitude
+                        val lon = apoi.location.longitude
+                        val navigationIntent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("google.navigation:q=$lat,$lon&mode=w")
+                        )
+                        try {
+                            context.startActivity(navigationIntent)
+                        } catch (_: ActivityNotFoundException) {
+                            val fallbackIntent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("geo:$lat,$lon?q=$lat,$lon")
+                            )
+                            context.startActivity(fallbackIntent)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Navegar a pé", fontWeight = FontWeight.Bold)
+                }
+            }
             ServicesCard(apoi)
             OperationalCard(apoi)
             ContactCard(apoi)
