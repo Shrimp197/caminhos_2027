@@ -35,28 +35,49 @@ class V1EndToEndTest {
     fun testRouteCanBePreparedStartedAndWalkingSurfacesOpen() {
         clickVisibleText("PREPARAR")
 
-        assertTrue(device.wait(Until.hasObject(By.text("Trajeto SR")), 10_000))
+        assertTrue(
+            "Route selection did not appear",
+            device.wait(Until.hasObject(By.text("Trajeto SR")), 10_000)
+        )
         clickVisibleText("Trajeto SR")
 
-        assertTrue(device.wait(Until.hasObject(By.textContains("INICIAR CAMINHADA")), 10_000))
+        assertTrue(
+            "Start action did not appear",
+            device.wait(Until.hasObject(By.textContains("INICIAR CAMINHADA")), 10_000)
+        )
         clickVisibleTextContaining("INICIAR CAMINHADA")
 
-        assertTrue(device.wait(Until.hasObject(By.text("Plano guardado")), 10_000))
+        assertTrue(
+            "Saved plan did not appear",
+            device.wait(Until.hasObject(By.text("Plano guardado")), 10_000)
+        )
         clickVisibleText("INICIAR CAMINHADA")
 
-        assertTrue(device.wait(Until.hasObject(By.text("Caminhada")), 30_000))
+        assertTrue(
+            "Walking screen did not appear",
+            device.wait(Until.hasObject(By.text("Caminhada")), 30_000)
+        )
         assertTrue(device.hasObject(By.text("VER APOIOS")))
         assertTrue(device.hasObject(By.text("OPÇÕES")))
         assertTrue(device.hasObject(By.text("QA · controlo do percurso")))
 
         clickVisibleText("VER APOIOS")
-        assertTrue(device.wait(Until.hasObject(By.text("Próximos 10 km")), 10_000))
+        assertTrue(
+            "Apoi​os screen did not appear",
+            device.wait(Until.hasObject(By.text("Próximos 10 km")), 10_000)
+        )
         assertTrue(device.hasObject(By.textContains("Apoios")))
         device.pressBack()
 
-        assertTrue(device.wait(Until.hasObject(By.text("Caminhada")), 10_000))
+        assertTrue(
+            "Walking screen did not return",
+            device.wait(Until.hasObject(By.text("Caminhada")), 10_000)
+        )
         clickVisibleText("OPÇÕES")
-        assertTrue(device.wait(Until.hasObject(By.text("Informação para decidir")), 10_000))
+        assertTrue(
+            "Decision information did not appear",
+            device.wait(Until.hasObject(By.text("Informação para decidir")), 10_000)
+        )
         assertTrue(device.hasObject(By.text("Parar agora")))
         assertTrue(device.hasObject(By.text("Continuar")))
     }
