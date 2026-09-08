@@ -31,8 +31,8 @@ class V1EndToEndTest {
         assertTrue(device.wait(Until.hasObject(By.text("Trajeto SR")), 10_000))
         device.findObject(By.text("Trajeto SR")).click()
 
-        assertTrue(device.wait(Until.hasObject(By.text("INICIAR CAMINHADA")), 10_000))
-        device.findObject(By.text("INICIAR CAMINHADA")).click()
+        assertTrue(device.wait(Until.hasObject(By.textContains("INICIAR CAMINHADA")), 10_000))
+        device.findObject(By.textContains("INICIAR CAMINHADA")).click()
 
         assertTrue(device.wait(Until.hasObject(By.text("Plano guardado")), 10_000))
         device.findObject(By.text("INICIAR CAMINHADA")).click()
