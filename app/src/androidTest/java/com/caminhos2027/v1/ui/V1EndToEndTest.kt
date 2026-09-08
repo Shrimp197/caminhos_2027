@@ -40,6 +40,12 @@ class V1EndToEndTest {
         assertTrue(device.hasObject(By.text("VER APOIOS")))
         assertTrue(device.hasObject(By.text("OPÇÕES")))
         assertTrue(device.hasObject(By.text("QA · controlo do percurso")))
+        assertTrue(device.wait(Until.hasObject(By.text("GPS no percurso")), 30_000))
+
+        clickVisibleText("PERDER GPS")
+        assertTrue("GPS loss state did not appear", device.wait(Until.hasObject(By.text("GPS sem sinal")), 30_000))
+        clickVisibleText("RECUPERAR")
+        assertTrue("GPS recovery state did not appear", device.wait(Until.hasObject(By.text("GPS no percurso")), 30_000))
 
         clickVisibleText("VER APOIOS")
         assertTrue(
@@ -49,6 +55,9 @@ class V1EndToEndTest {
         assertTrue(device.hasObject(By.text("Procurar")))
         assertTrue(device.hasObject(By.text("Água")))
         assertTrue(device.hasObject(By.text("Água SR — TESTE")))
+
+        clickVisibleText("Água")
+        assertTrue("Water filter removed the expected result", device.wait(Until.hasObject(By.text("Água SR — TESTE")), 30_000))
 
         clickVisibleText("Água SR — TESTE")
         assertTrue("APOI detail did not appear", device.wait(Until.hasObject(By.text("Localização")), 30_000))
