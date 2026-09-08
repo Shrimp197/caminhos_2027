@@ -43,7 +43,8 @@ class V1EndToEndTest {
         assertTrue(device.hasObject(By.text("QA · controlo do percurso")))
 
         device.findObject(By.text("VER APOIOS")).click()
-        assertTrue(device.wait(Until.hasObject(By.text("Apoios")), 10_000))
+        assertTrue(device.wait(Until.hasObject(By.text("Próximos 10 km")), 10_000))
+        assertTrue(device.hasObject(By.textContains("Apoios")))
         device.pressBack()
 
         assertTrue(device.wait(Until.hasObject(By.text("Caminhada")), 10_000))
