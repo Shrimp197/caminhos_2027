@@ -49,7 +49,7 @@ jobs:
           "$SDKMANAGER" "platform-tools" "emulator" "platforms;android-34" "system-images;android-34;default;x86_64"
           mkdir -p "$ANDROID_AVD_HOME"
           echo "no" | "$AVDMANAGER" create avd --force --name caminhos-aosp34 --package "system-images;android-34;default;x86_64" --device "pixel_2"
-          nohup "$EMULATOR" -avd caminhos-aosp34 -no-window -no-audio -no-boot-anim -wipe-data -no-snapshot -gpu swiftshader_indirect -cores 1 -memory 2048 >"$RUNNER_TEMP/emulator.log" 2>&1 &
+          nohup "$EMULATOR" -avd caminhos-aosp34 -no-window -no-audio -no-boot-anim -wipe-data -no-snapshot -gpu swiftshader_indirect -cores 2 -memory 3072 >"$RUNNER_TEMP/emulator.log" 2>&1 &
           echo $! >"$RUNNER_TEMP/emulator.pid"
           python3 - <<'PY'
           import subprocess, time, sys
@@ -62,8 +62,6 @@ jobs:
                   devboot = subprocess.run(['adb','shell','getprop','dev.bootcomplete'], text=True, capture_output=True, timeout=10).stdout.strip()
                   if boot == '1' and devboot == '1':
                       subprocess.run(['adb','shell','cmd','package','list','packages'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30, check=True)
-                      for setting in ('window_animation_scale','transition_animation_scale','animator_duration_scale'):
-                          subprocess.run(['adb','shell','settings','put','global',setting,'0'], timeout=10, check=True)
                       print('Android emulator boot completed and package manager is responsive.')
                       sys.exit(0)
               time.sleep(5)
@@ -78,8 +76,8 @@ jobs:
         run: |
           set -euo pipefail
           adb wait-for-device
-          adb install -r app/build/outputs/apk/debug/app-debug.apk
-          adb shell pm clear com.caminhos2027
+          adb uninstall com.caminhos2027 >/dev/null 2>&1 || true
+          adb install app/build/outputs/apk/debug/app-debug.apk
           adb shell am force-stop com.caminhos2027
           adb logcat -c
           adb shell am start -n com.caminhos2027/.v1.ui.V1MainActivity
@@ -103,7 +101,7 @@ jobs:
           exit 1
       - name: Run Android V1 end-to-end tests
         timeout-minutes: 12
-        run: gradle --no-daemon :app:connectedDebugAndroidTest
+        run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest
       - name: Dump emulator diagnostics on failure
         if: failure()
         run: |
