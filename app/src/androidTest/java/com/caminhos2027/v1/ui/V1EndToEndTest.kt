@@ -63,7 +63,7 @@ class V1EndToEndTest {
 
         clickVisibleText("VER APOIOS")
         assertTrue(
-            "Apoi​os screen did not appear",
+            "Apoios screen did not appear",
             device.wait(Until.hasObject(By.text("Próximos 10 km")), 10_000)
         )
         assertTrue(device.hasObject(By.textContains("Apoios")))
@@ -83,17 +83,17 @@ class V1EndToEndTest {
     }
 
     private fun clickVisibleText(text: String) {
-        val object = device.wait(Until.findObject(By.text(text)), 10_000)
-        assertTrue("Text not found: $text", object != null)
-        val bounds = object.visibleBounds
+        val node = device.wait(Until.findObject(By.text(text)), 10_000)
+        assertTrue("Text not found: $text", node != null)
+        val bounds = node.visibleBounds
         assertTrue("Text is not visible: $text", !bounds.isEmpty)
         device.click(bounds.centerX(), bounds.centerY())
     }
 
     private fun clickVisibleTextContaining(text: String) {
-        val object = device.wait(Until.findObject(By.textContains(text)), 10_000)
-        assertTrue("Text not found: $text", object != null)
-        val bounds = object.visibleBounds
+        val node = device.wait(Until.findObject(By.textContains(text)), 10_000)
+        assertTrue("Text not found: $text", node != null)
+        val bounds = node.visibleBounds
         assertTrue("Text is not visible: $text", !bounds.isEmpty)
         device.click(bounds.centerX(), bounds.centerY())
     }
