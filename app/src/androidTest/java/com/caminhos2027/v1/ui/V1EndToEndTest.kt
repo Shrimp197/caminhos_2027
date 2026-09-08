@@ -37,7 +37,10 @@ class V1EndToEndTest {
         device.findObject(By.text("PREPARAR")).click()
 
         assertTrue(device.wait(Until.hasObject(By.text("Trajeto SR")), 10_000))
-        device.findObject(By.text("Trajeto SR")).click()
+        val routeOption = device.findObject(By.text("Trajeto SR"))
+        val routeBounds = routeOption.visibleBounds
+        assertTrue("Trajeto SR option is not visible", !routeBounds.isEmpty)
+        device.click(routeBounds.centerX(), routeBounds.centerY())
 
         assertTrue(device.wait(Until.hasObject(By.textContains("INICIAR CAMINHADA")), 10_000))
         device.findObject(By.textContains("INICIAR CAMINHADA")).click()
