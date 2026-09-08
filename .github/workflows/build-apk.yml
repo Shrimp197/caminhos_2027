@@ -31,8 +31,10 @@ jobs:
           python3 scripts/validate_release.py
           node --check /tmp/index-app.js
       - name: Run JVM tests
+        timeout-minutes: 10
         run: gradle --no-daemon :app:testDebugUnitTest
       - name: Build debug APK
+        timeout-minutes: 10
         run: gradle --no-daemon :app:assembleDebug
       - name: Verify APK
         run: |
