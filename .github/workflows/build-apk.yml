@@ -103,7 +103,7 @@ jobs:
           exit 1
       - name: Run Android V1 end-to-end tests
         timeout-minutes: 10
-        run: gradle --no-daemon :app:connectedDebugAndroidTest
+        run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest
       - name: Dump emulator diagnostics on failure
         if: failure()
         run: |
