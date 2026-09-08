@@ -20,7 +20,6 @@ class V1EndToEndTest {
     @Before
     fun resetToV1() {
         device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        device.executeShellCommand("am force-stop com.caminhos2027")
         scenario = ActivityScenario.launch(V1MainActivity::class.java)
         assertTrue(
             "Preparation screen did not appear",
