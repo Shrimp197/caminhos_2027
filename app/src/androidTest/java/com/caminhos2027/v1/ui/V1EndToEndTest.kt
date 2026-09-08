@@ -34,31 +34,9 @@ class V1EndToEndTest {
     }
 
     @Test
-    fun testRouteCanBePreparedStartedAndWalkingSurfacesOpen() {
-        clickVisibleText("PREPARAR")
+    fun testVerticalSliceFromPlanToApoiDetailAndDecision() {
+        prepareAndStartSr()
 
-        assertTrue(
-            "Route selection did not appear",
-            device.wait(Until.hasObject(By.text("Trajeto SR")), 30_000)
-        )
-        clickVisibleText("Trajeto SR")
-
-        assertTrue(
-            "Start action did not appear",
-            device.wait(Until.hasObject(By.textContains("INICIAR CAMINHADA")), 30_000)
-        )
-        clickVisibleTextContaining("INICIAR CAMINHADA")
-
-        assertTrue(
-            "Saved plan did not appear",
-            device.wait(Until.hasObject(By.text("Plano guardado")), 30_000)
-        )
-        clickVisibleText("INICIAR CAMINHADA")
-
-        assertTrue(
-            "Walking screen did not appear",
-            device.wait(Until.hasObject(By.text("Caminhada")), 30_000)
-        )
         assertTrue(device.hasObject(By.text("VER APOIOS")))
         assertTrue(device.hasObject(By.text("OPÇÕES")))
         assertTrue(device.hasObject(By.text("QA · controlo do percurso")))
@@ -68,36 +46,64 @@ class V1EndToEndTest {
             "Apoios screen did not appear",
             device.wait(Until.hasObject(By.text("Próximos 10 km")), 30_000)
         )
-        assertTrue(device.hasObject(By.textContains("Apoios")))
+        assertTrue(device.hasObject(By.text("Procurar")))
+        assertTrue(device.hasObject(By.text("Água")))
+        assertTrue(device.hasObject(By.text("Água SR — TESTE")))
+
+        clickVisibleText("Água SR — TESTE")
+        assertTrue("APOI detail did not appear", device.wait(Until.hasObject(By.text("Localização")), 30_000))
+        assertTrue(device.hasObject(By.text("Serviços")))
+        assertTrue(device.hasObject(By.text("Navegar a pé")) || device.hasObject(By.text("Localização exata")))
+
         device.pressBack()
         device.waitForIdle()
+        assertTrue("APOI browser did not return", device.wait(Until.hasObject(By.text("Procurar")), 30_000))
+        device.pressBack()
+        device.waitForIdle()
+        assertTrue("Walking screen did not return", device.wait(Until.hasObject(By.text("Caminhada")), 30_000))
 
-        assertTrue(
-            "Walking screen did not return",
-            device.wait(Until.hasObject(By.text("Caminhada")), 30_000)
-        )
         clickVisibleText("OPÇÕES")
         assertTrue(
             "Decision information did not appear",
             device.wait(Until.hasObject(By.text("Informação para decidir")), 30_000)
         )
-        assertTrue(device.hasObject(By.text("Parar agora")))
-        assertTrue(device.hasObject(By.text("Continuar")))
+        assertTrue(device.hasObject(By.text("PARAR AGORA")))
+        assertTrue(device.hasObject(By.text("CONTINUAR CAMINHADA")))
+        clickVisibleText("CONTINUAR CAMINHADA")
+        assertTrue("Continue action did not return to walking", device.wait(Until.hasObject(By.text("Caminhada")), 30_000))
+
+        clickVisibleText("OPÇÕES")
+        clickVisibleText("PARAR AGORA")
+        assertTrue("Stop action did not end walking", device.wait(Until.hasObject(By.text("Prepare a sua caminhada")), 30_000))
+    }
+
+    private fun prepareAndStartSr() {
+        clickVisibleText("PREPARAR")
+        assertTrue(
+            "Route selection did not appear",
+            device.wait(Until.hasObject(By.text("Trajeto SR")), 30_000)
+        )
+        clickVisibleText("Trajeto SR")
+        assertTrue(
+            "Plan save action did not appear",
+            device.wait(Until.hasObject(By.text("GUARDAR PLANO")), 30_000)
+        )
+        clickVisibleText("GUARDAR PLANO")
+        assertTrue(
+            "Saved plan did not appear",
+            device.wait(Until.hasObject(By.text("Plano guardado")), 30_000)
+        )
+        assertTrue(device.hasObject(By.text("Guardar o plano não inicia a caminhada.")))
+        clickVisibleText("INICIAR CAMINHADA")
+        assertTrue(
+            "Walking screen did not appear",
+            device.wait(Until.hasObject(By.text("Caminhada")), 30_000)
+        )
     }
 
     private fun clickVisibleText(text: String) {
         device.waitForIdle()
         val node = device.wait(Until.findObject(By.text(text)), 30_000)
-        assertTrue("Text not found: $text", node != null)
-        val bounds = node.visibleBounds
-        assertTrue("Text is not visible: $text", !bounds.isEmpty)
-        device.click(bounds.centerX(), bounds.centerY())
-        device.waitForIdle()
-    }
-
-    private fun clickVisibleTextContaining(text: String) {
-        device.waitForIdle()
-        val node = device.wait(Until.findObject(By.textContains(text)), 30_000)
         assertTrue("Text not found: $text", node != null)
         val bounds = node.visibleBounds
         assertTrue("Text is not visible: $text", !bounds.isEmpty)
