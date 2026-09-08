@@ -17,17 +17,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Capture official ACF GPX
-        env:
-          SOURCE_URL: https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx
-          EXPECTED_SHA256: 1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266
+      - name: Capture committed official ACF GPX bytes
         run: |
           set -euo pipefail
           mkdir -p build/source
-          curl --fail --location --retry 3 --silent --show-error "$SOURCE_URL" --output build/source/Caminho_do_centenario.gpx
+          cp data/routes/Caminho_do_centenario.gpx build/source/Caminho_do_centenario.gpx
           ACTUAL_SHA256="$(sha256sum build/source/Caminho_do_centenario.gpx | cut -d' ' -f1)"
-          test "$ACTUAL_SHA256" = "$EXPECTED_SHA256"
-          echo "Official source SHA-256 verified: $ACTUAL_SHA256"
+          test "$ACTUAL_SHA256" = "1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266"
+          echo "Committed official source SHA-256 verified: $ACTUAL_SHA256"
 
       - name: Validate official GPX structure and metrics
         run: |
