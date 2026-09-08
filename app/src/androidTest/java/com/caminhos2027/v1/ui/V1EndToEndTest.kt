@@ -33,35 +33,47 @@ class V1EndToEndTest {
 
     @Test
     fun testRouteCanBePreparedStartedAndWalkingSurfacesOpen() {
-        assertTrue(device.wait(Until.hasObject(By.text("PREPARAR")), 10_000))
-        device.findObject(By.text("PREPARAR")).click()
+        clickVisibleText("PREPARAR")
 
         assertTrue(device.wait(Until.hasObject(By.text("Trajeto SR")), 10_000))
-        val routeOption = device.findObject(By.text("Trajeto SR"))
-        val routeBounds = routeOption.visibleBounds
-        assertTrue("Trajeto SR option is not visible", !routeBounds.isEmpty)
-        device.click(routeBounds.centerX(), routeBounds.centerY())
+        clickVisibleText("Trajeto SR")
 
         assertTrue(device.wait(Until.hasObject(By.textContains("INICIAR CAMINHADA")), 10_000))
-        device.findObject(By.textContains("INICIAR CAMINHADA")).click()
+        clickVisibleTextContaining("INICIAR CAMINHADA")
 
         assertTrue(device.wait(Until.hasObject(By.text("Plano guardado")), 10_000))
-        device.findObject(By.text("INICIAR CAMINHADA")).click()
+        clickVisibleText("INICIAR CAMINHADA")
 
         assertTrue(device.wait(Until.hasObject(By.text("Caminhada")), 30_000))
         assertTrue(device.hasObject(By.text("VER APOIOS")))
         assertTrue(device.hasObject(By.text("OPÇÕES")))
         assertTrue(device.hasObject(By.text("QA · controlo do percurso")))
 
-        device.findObject(By.text("VER APOIOS")).click()
+        clickVisibleText("VER APOIOS")
         assertTrue(device.wait(Until.hasObject(By.text("Próximos 10 km")), 10_000))
         assertTrue(device.hasObject(By.textContains("Apoios")))
         device.pressBack()
 
         assertTrue(device.wait(Until.hasObject(By.text("Caminhada")), 10_000))
-        device.findObject(By.text("OPÇÕES")).click()
+        clickVisibleText("OPÇÕES")
         assertTrue(device.wait(Until.hasObject(By.text("Informação para decidir")), 10_000))
         assertTrue(device.hasObject(By.text("Parar agora")))
         assertTrue(device.hasObject(By.text("Continuar")))
+    }
+
+    private fun clickVisibleText(text: String) {
+        val object = device.wait(Until.findObject(By.text(text)), 10_000)
+        assertTrue("Text not found: $text", object != null)
+        val bounds = object.visibleBounds
+        assertTrue("Text is not visible: $text", !bounds.isEmpty)
+        device.click(bounds.centerX(), bounds.centerY())
+    }
+
+    private fun clickVisibleTextContaining(text: String) {
+        val object = device.wait(Until.findObject(By.textContains(text)), 10_000)
+        assertTrue("Text not found: $text", object != null)
+        val bounds = object.visibleBounds
+        assertTrue("Text is not visible: $text", !bounds.isEmpty)
+        device.click(bounds.centerX(), bounds.centerY())
     }
 }
