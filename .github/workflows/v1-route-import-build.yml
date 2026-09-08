@@ -46,8 +46,8 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platform-tools" "emulator" "platforms;android-34" "system-images;android-34;default;x86_64"
           mkdir -p "$ANDROID_AVD_HOME"
-          echo "no" | "$AVDMANAGER" create avd --force --name caminhos-api34 --package "system-images;android-34;default;x86_64" --device "pixel_2"
-          nohup "$EMULATOR" -avd caminhos-api34 -no-window -no-audio -no-boot-anim -wipe-data -no-snapshot -gpu swiftshader_indirect -cores 1 -memory 2048 >"$RUNNER_TEMP/emulator.log" 2>&1 &
+          echo "no" | "$AVDMANAGER" create avd --force --name caminhos-aosp34 --package "system-images;android-34;default;x86_64" --device "pixel_2"
+          nohup "$EMULATOR" -avd caminhos-aosp34 -no-window -no-audio -no-boot-anim -wipe-data -no-snapshot -gpu swiftshader_indirect -cores 2 -memory 3072 >"$RUNNER_TEMP/emulator.log" 2>&1 &
           echo $! >"$RUNNER_TEMP/emulator.pid"
           python3 - <<'PY'
           import subprocess, time, sys
@@ -68,7 +68,7 @@ jobs:
           sys.exit(1)
           PY
       - name: Launch V1 on Android emulator
-        timeout-minutes: 4
+        timeout-minutes: 5
         env:
           ANDROID_AVD_HOME: ${{ runner.temp }}/avd
         run: |
@@ -94,7 +94,7 @@ jobs:
           adb logcat -d -t 500 >&2 || true
           exit 1
       - name: Run Android V1 end-to-end tests
-        timeout-minutes: 8
+        timeout-minutes: 10
         run: gradle --no-daemon :app:connectedDebugAndroidTest
       - name: Dump emulator diagnostics on failure
         if: failure()
@@ -105,7 +105,7 @@ jobs:
           adb shell getprop dev.bootcomplete
           adb shell pidof com.caminhos2027
           cat "$RUNNER_TEMP/emulator.log" 2>/dev/null || true
-          adb logcat -d -t 500 2>&1 || true
+          adb logcat -d -t 1000 2>&1 || true
       - name: Stop Android emulator
         if: always()
         run: |
