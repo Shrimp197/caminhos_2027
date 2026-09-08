@@ -1,6 +1,5 @@
 package com.caminhos2027.v1.ui
 
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -15,12 +14,12 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class V1EndToEndTest {
     private lateinit var device: UiDevice
-    private lateinit var scenario: ActivityScenario<V1MainActivity>
 
     @Before
     fun resetToV1() {
         device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        scenario = ActivityScenario.launch(V1MainActivity::class.java)
+        device.pressHome()
+        device.executeShellCommand("am start -n com.caminhos2027/.v1.ui.V1MainActivity")
         assertTrue(
             "Preparation screen did not appear",
             device.wait(Until.hasObject(By.text("Prepare a sua caminhada")), 60_000)
@@ -29,7 +28,7 @@ class V1EndToEndTest {
 
     @After
     fun closeActivity() {
-        scenario.close()
+        device.executeShellCommand("am force-stop com.caminhos2027")
     }
 
     @Test
