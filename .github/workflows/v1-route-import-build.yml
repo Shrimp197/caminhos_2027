@@ -53,7 +53,7 @@ jobs:
           "$SDKMANAGER" "platform-tools" "emulator" "platforms;android-34" "system-images;android-34;google_apis;x86_64"
           mkdir -p "$ANDROID_AVD_HOME"
           echo "no" | "$AVDMANAGER" create avd --force --name caminhos-api34 --package "system-images;android-34;google_apis;x86_64" --device "pixel_2"
-          nohup "$EMULATOR" -avd caminhos-api34 -no-window -no-audio -no-boot-anim -wipe-data -no-snapshot -no-save -gpu off -accel on >"$RUNNER_TEMP/emulator.log" 2>&1 &
+          nohup "$EMULATOR" -avd caminhos-api34 -no-window -no-audio -no-boot-anim -wipe-data -no-snapshot -gpu off -accel on >"$RUNNER_TEMP/emulator.log" 2>&1 &
           echo $! >"$RUNNER_TEMP/emulator.pid"
           python3 - <<'PY'
           import subprocess, time, sys
