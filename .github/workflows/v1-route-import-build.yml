@@ -53,7 +53,7 @@ jobs:
           "$SDKMANAGER" "platform-tools" "emulator" "platforms;android-34" "system-images;android-34;google_apis;x86_64"
           mkdir -p "$ANDROID_AVD_HOME"
           echo "no" | "$AVDMANAGER" create avd --force --name caminhos-api34 --package "system-images;android-34;google_apis;x86_64" --device "pixel_2"
-          nohup "$EMULATOR" -avd caminhos-api34 -no-window -no-audio -no-boot-anim -wipe-data -no-snapshot -gpu off -accel on >"$RUNNER_TEMP/emulator.log" 2>&1 &
+          nohup "$EMULATOR" -avd caminhos-api34 -no-window -no-audio -no-boot-anim -wipe-data -no-snapshot -gpu swiftshader_indirect -cores 2 -memory 2048 >"$RUNNER_TEMP/emulator.log" 2>&1 &
           echo $! >"$RUNNER_TEMP/emulator.pid"
           python3 - <<'PY'
           import subprocess, time, sys
@@ -85,14 +85,25 @@ jobs:
           adb install -r app/build/outputs/apk/debug/app-debug.apk
           adb shell am force-stop com.caminhos2027
           adb logcat -c
-          START_OUTPUT="$(adb shell am start -W -n com.caminhos2027/.v1.ui.V1MainActivity 2>&1)"
-          echo "$START_OUTPUT"
-          echo "$START_OUTPUT" | grep -q 'Status: ok'
-          sleep 5
-          RESUMED="$(adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | head -n 1 || true)"
-          echo "$RESUMED"
-          echo "$RESUMED" | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'
-          adb shell pidof com.caminhos2027
+          adb shell am start -n com.caminhos2027/.v1.ui.V1MainActivity
+          for attempt in $(seq 1 18); do
+            sleep 5
+            RESUMED="$(adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | head -n 1 || true)"
+            echo "Attempt ${attempt}: ${RESUMED}"
+            if echo "$RESUMED" | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'; then
+              echo 'V1MainActivity is resumed.'
+              adb shell pidof com.caminhos2027
+              exit 0
+            fi
+            if ! adb shell pidof com.caminhos2027 >/dev/null 2>&1; then
+              echo 'Application process is not running.' >&2
+              adb logcat -d -t 300 >&2 || true
+              exit 1
+            fi
+          done
+          echo 'V1MainActivity did not reach resumed state within 90 seconds.' >&2
+          adb logcat -d -t 500 >&2 || true
+          exit 1
 
       - name: Dump emulator diagnostics on failure
         if: failure()
