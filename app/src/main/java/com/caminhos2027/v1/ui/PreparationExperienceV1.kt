@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -70,7 +69,6 @@ import com.caminhos2027.v1.core.model.WalkingPreparationConfig
 
 private val BrandBlue = Color(0xFF164B63)
 private val BrandGreen = Color(0xFF1B9B50)
-private val BrandGold = Color(0xFFC68A12)
 private val Surface = Color(0xFFF5F6F4)
 private val CardBorder = Color(0xFFE0E3DF)
 private val Muted = Color(0xFF6C7478)
@@ -108,8 +106,9 @@ internal fun PreparationExperienceV1(
         }
     }
     var selectedStageIds by remember(selectedRouteId, stages) { mutableStateOf(stages.take(1).map(Stage::id)) }
-    var startKm by remember(selectedRouteId, stages) { mutableStateOf(stages.first().startRouteKm) }
-    var destinationKm by remember(selectedRouteId, stages) { mutableStateOf(stages.first().endRouteKm) }
+    var startKm by remember(selectedRouteId) { mutableStateOf(0.0) }
+    var destinationKm by remember(selectedRouteId, route.totalDistanceKm) { mutableStateOf(route.totalDistanceKm) }
+    var rangeError by remember(selectedRouteId, route.totalDistanceKm) { mutableStateOf<String?>(null) }
     val notes = remember(selectedRouteId) { mutableStateListOf<String>() }
 
     when (sub) {
@@ -122,18 +121,24 @@ internal fun PreparationExperienceV1(
             destinationKm = destinationKm,
             selectedStageIds = selectedStageIds,
             config = config,
+            rangeError = rangeError,
+            onStartKmChanged = { startKm = it; rangeError = null },
+            onDestinationKmChanged = { destinationKm = it; rangeError = null },
             onBack = onBack,
             onOpen = { sub = it },
-            onStart = { onConfirm(startKm, destinationKm, config) }
+            onStart = {
+                val valid = startKm.isFinite() && destinationKm.isFinite() &&
+                    startKm >= 0.0 && destinationKm <= route.totalDistanceKm && startKm < destinationKm
+                rangeError = if (valid) null else "Escolha um início e destino válidos dentro do percurso."
+                if (valid) onConfirm(startKm, destinationKm, config)
+            }
         )
         PreparationSubscreen.ROUTE -> RouteSubscreen(routeOptions, selectedRouteId, { sub = null }) { routeId ->
             onSelectRoute(routeId)
             sub = null
         }
-        PreparationSubscreen.STAGE -> StageSubscreen(stages, selectedStageIds, { sub = null }) { ids, start, end ->
+        PreparationSubscreen.STAGE -> StageSubscreen(stages, selectedStageIds, { sub = null }) { ids ->
             selectedStageIds = ids
-            startKm = start
-            destinationKm = end
             sub = null
         }
         PreparationSubscreen.AUDIO -> ChoiceSubscreen(
@@ -168,10 +173,15 @@ private fun PreparationHome(
     destinationKm: Double,
     selectedStageIds: List<String>,
     config: WalkingPreparationConfig,
+    rangeError: String?,
+    onStartKmChanged: (Double) -> Unit,
+    onDestinationKmChanged: (Double) -> Unit,
     onBack: () -> Unit,
     onOpen: (PreparationSubscreen) -> Unit,
     onStart: () -> Unit
 ) {
+    var startText by remember(startKm) { mutableStateOf(fmt(startKm)) }
+    var destinationText by remember(destinationKm) { mutableStateOf(fmt(destinationKm)) }
     Column(
         Modifier
             .fillMaxSize()
@@ -204,10 +214,65 @@ private fun PreparationHome(
             onClick = { onOpen(PreparationSubscreen.ROUTE) }
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            PrepTile(icon = Icons.Filled.LocationOn, label = "Início e fim", value = selectedStageLabel(stages, selectedStageIds), modifier = Modifier.fillMaxWidth()) {
-                onOpen(PreparationSubscreen.STAGE)
+        Card(Modifier.fillMaxWidth(), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, CardBorder)) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.LocationOn, contentDescription = null, tint = BrandBlue)
+                    Column(Modifier.padding(start = 9.dp)) {
+                        Text("Início e fim", color = BrandBlue, fontWeight = FontWeight.Bold)
+                        Text("Defina livremente o intervalo no percurso.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = startText,
+                        onValueChange = {
+                            startText = it
+                            it.replace(',', '.').toDoubleOrNull()?.let(onStartKmChanged)
+                        },
+                        label = { Text("Início (km)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = destinationText,
+                        onValueChange = {
+                            destinationText = it
+                            it.replace(',', '.').toDoubleOrNull()?.let(onDestinationKmChanged)
+                        },
+                        label = { Text("Destino (km)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                }
+                Text("As etapas oficiais são apenas referência e as distâncias publicadas podem ser aproximadas.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                rangeError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold) }
+                Text(
+                    "${fmt(destinationKm - startKm)} km planeados",
+                    color = BrandBlue,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    "Referência: ${selectedStageLabel(stages, selectedStageIds)}",
+                    color = Muted,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                Button(
+                    onClick = onOpen.let { { onStart() } },
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)
+                ) {
+                    Text("GUARDAR PLANO", fontWeight = FontWeight.ExtraBold)
+                }
             }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PrepTile(icon = Icons.Filled.Headphones, label = "Áudio", value = audioLabel(config.audioMode), modifier = Modifier.weight(1f)) { onOpen(PreparationSubscreen.AUDIO) }
                 PrepTile(icon = Icons.Filled.Straighten, label = "Orientação", value = orientationLabel(config.mapOrientation), modifier = Modifier.weight(1f)) { onOpen(PreparationSubscreen.ORIENTATION) }
@@ -216,26 +281,8 @@ private fun PreparationHome(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PrepTile(icon = Icons.Filled.Place, label = "Apoios", value = apoiLabel(config.visibleApoiCategories), modifier = Modifier.weight(1f)) { onOpen(PreparationSubscreen.APOIS) }
                 PrepTile(icon = Icons.Filled.Notes, label = "Notas", value = "Criar ou consultar", modifier = Modifier.weight(1f)) { onOpen(PreparationSubscreen.NOTES) }
+                PrepTile(icon = Icons.Filled.LocationOn, label = "Etapas", value = "Referência", modifier = Modifier.weight(1f)) { onOpen(PreparationSubscreen.STAGE) }
             }
-        }
-
-        if (selectedStageIds.isNotEmpty()) {
-            Text(
-                "${fmt(destinationKm - startKm)} km seleccionados",
-                color = Muted,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
-        }
-
-        Button(
-            onClick = onStart,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)
-        ) {
-            Text("▶  INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold)
         }
 
         if (routeOptions.firstOrNull { it.id == selectedRouteId }?.testOnly == true) {
@@ -317,10 +364,10 @@ private fun RouteSubscreen(options: List<AndroidRouteOption>, selected: String, 
 }
 
 @Composable
-private fun StageSubscreen(stages: List<Stage>, selectedIds: List<String>, onBack: () -> Unit, onApply: (List<String>, Double, Double) -> Unit) {
+private fun StageSubscreen(stages: List<Stage>, selectedIds: List<String>, onBack: () -> Unit, onApply: (List<String>) -> Unit) {
     var selected by remember(selectedIds) { mutableStateOf(selectedIds.toSet()) }
-    SecondaryScaffold("Início e fim", onBack) {
-        Text("Escolha as etapas oficiais que pretende realizar. O início e o fim correspondem ao intervalo das etapas seleccionadas.", color = Muted)
+    SecondaryScaffold("Etapas · referência", onBack) {
+        Text("As etapas oficiais ajudam a compreender o caminho, mas as distâncias publicadas podem ser aproximadas e não definem o início ou o destino do seu plano.", color = Muted)
         stages.forEach { stage ->
             val chosen = stage.id in selected
             Card(
@@ -340,9 +387,8 @@ private fun StageSubscreen(stages: List<Stage>, selectedIds: List<String>, onBac
                 }
             }
         }
-        val chosen = stages.filter { it.id in selected }.sortedBy { it.number }
-        Button(onClick = { if (chosen.isNotEmpty()) onApply(chosen.map(Stage::id), chosen.first().startRouteKm, chosen.last().endRouteKm) }, enabled = chosen.isNotEmpty(), modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) {
-            Text("APLICAR")
+        Button(onClick = { onApply(selected.toList()) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) {
+            Text("GUARDAR REFERÊNCIA")
         }
     }
 }
@@ -421,8 +467,8 @@ private fun SecondaryScaffold(title: String, onBack: () -> Unit, content: @Compo
 }
 
 private fun routeDisplay(route: Route) = if (route.id == "caminho-do-centenario") "212 km · Porto → Fátima" else route.officialName
-private fun selectedStageLabel(stages: List<Stage>, ids: List<String>) = stages.filter { it.id in ids }.sortedBy { it.number }.let { chosen -> when { chosen.isEmpty() -> "Escolha uma etapa"; chosen.size == 1 -> "Etapa ${chosen.first().number} · ${chosen.first().startName} → ${chosen.first().endName}"; else -> "${chosen.size} etapas seleccionadas" } }
-private fun fmt(v: Double) = String.format(java.util.Locale.US, "%.0f", v.coerceAtLeast(0.0))
+private fun selectedStageLabel(stages: List<Stage>, ids: List<String>) = stages.filter { it.id in ids }.sortedBy { it.number }.let { chosen -> when { chosen.isEmpty() -> "Nenhuma etapa seleccionada"; chosen.size == 1 -> "Etapa ${chosen.first().number} · ${chosen.first().startName} → ${chosen.first().endName}"; else -> "${chosen.size} etapas seleccionadas" } }
+private fun fmt(v: Double) = String.format(java.util.Locale.US, "%.2f", v.coerceAtLeast(0.0))
 private fun audioLabel(v: AudioMode) = when (v) { AudioMode.NORMAL -> "Normal"; AudioMode.IMMERSIVE -> "Imersivo"; AudioMode.SILENT -> "Silenciado" }
 private fun orientationLabel(v: MapOrientation) = when (v) { MapOrientation.NORTH -> "Norte"; MapOrientation.WALK_DIRECTION -> "Direção da caminhada" }
 private fun breakLabel(c: WalkingPreparationConfig) = when { c.intelligentBreaksEnabled && (c.customBreakTimeMinutes != null || c.customBreakDistanceKm != null) -> "Inteligentes + Personalizadas"; c.intelligentBreaksEnabled -> "Inteligentes"; c.customBreakTimeMinutes != null || c.customBreakDistanceKm != null -> "Personalizadas"; else -> "Sem pausas" }
