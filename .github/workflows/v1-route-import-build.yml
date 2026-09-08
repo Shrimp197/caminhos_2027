@@ -79,6 +79,7 @@ jobs:
           set -euo pipefail
           adb wait-for-device
           adb install -r app/build/outputs/apk/debug/app-debug.apk
+          adb shell pm clear com.caminhos2027
           adb shell am force-stop com.caminhos2027
           adb logcat -c
           adb shell am start -n com.caminhos2027/.v1.ui.V1MainActivity
