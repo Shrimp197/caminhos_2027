@@ -28,7 +28,7 @@ class V1EndToEndTest {
 
     @After
     fun closeActivity() {
-        device.executeShellCommand("am force-stop com.caminhos2027")
+        device.pressHome()
     }
 
     @Test
