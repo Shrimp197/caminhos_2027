@@ -62,7 +62,6 @@ import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.GeoPoint
-import com.caminhos2027.v1.core.model.PublicationStatus
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.route.GpsState
@@ -124,7 +123,7 @@ internal fun V1PrimaryExperienceScreen(
             WalkingSurface.DECISION -> {
                 val decision = appState.decision
                 if (decision == null) EmptyState("Opções indisponíveis", "Não foi possível calcular as opções para a posição atual.", onBackToWalking)
-                else DecisionScreen(decision, onBackToWalking, onOpenApoi)
+                else DecisionScreen(decision, onBackToWalking, onOpenApoi, onStop)
             }
             WalkingSurface.ACTIVE -> when {
                 state != null -> ActiveWalkingScreen(state, route, routeOptions, onStop, onOpenApoi, onOpenDecision, onQaAdvance, onQaToggleGps, onQaDeviation)
@@ -391,20 +390,22 @@ private fun ApoiCard(item: ApoiAhead, onSelect: (Apoi) -> Unit) {
 }
 
 @Composable
-private fun DecisionScreen(context: WalkingDecisionContext, onBack: () -> Unit, onOpenApoi: () -> Unit) {
+private fun DecisionScreen(context: WalkingDecisionContext, onBack: () -> Unit, onOpenApoi: () -> Unit, onStop: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         TopBar("Opções", onBack)
         Text("Informação para decidir", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("A aplicação mostra consequências; não escolhe por si.", color = Muted)
+        Text("Compare parar agora com continuar no percurso planeado.", color = Muted)
         Card(Modifier.fillMaxWidth(), RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("Parar agora", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text("Sem distância adicional no caminho.", color = Muted)
+                Button(onClick = onStop, Modifier.fillMaxWidth()) { Text("PARAR AGORA") }
                 HorizontalDivider()
                 Text("Continuar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text("${fmtKm(context.remainingToPlannedDestinationKm)} km até ao destino planeado.", color = Muted)
                 if (context.continueWalking.relevantApoi.isNotEmpty()) Text("Existem ${context.continueWalking.relevantApoi.size} APOI elegíveis no restante do percurso planeado.", color = Forest, fontWeight = FontWeight.SemiBold)
-                Button(onOpenApoi, Modifier.fillMaxWidth()) { Text("VER APOIOS") }
+                Button(onClick = onBack, Modifier.fillMaxWidth()) { Text("CONTINUAR CAMINHADA") }
+                Button(onClick = onOpenApoi, Modifier.fillMaxWidth()) { Text("VER APOIOS") }
             }
         }
     }
