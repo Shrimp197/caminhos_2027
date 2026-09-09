@@ -7,7 +7,8 @@ data class WalkingPreparationConfig(
     val intelligentBreaksEnabled: Boolean = true,
     val customBreakTimeMinutes: Int? = null,
     val customBreakDistanceKm: Double? = null,
-    val visibleApoiCategories: Set<ApoiCategory> = emptySet()
+    val visibleApoiCategories: Set<ApoiCategory> = emptySet(),
+    val notes: List<String> = emptyList()
 )
 
 enum class AudioMode { NORMAL, IMMERSIVE, SILENT }
