@@ -41,7 +41,7 @@ jobs:
           test -s app/build/outputs/apk/debug/app-debug.apk
           shasum -a 256 app/build/outputs/apk/debug/app-debug.apk
       - name: Set up Android emulator manually
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           ANDROID_AVD_HOME: ${{ runner.temp }}/avd
         run: |
@@ -58,7 +58,8 @@ jobs:
           echo $! >"$RUNNER_TEMP/emulator.pid"
           python3 - <<'PY'
           import subprocess, time, sys
-          deadline = time.time() + 480
+          deadline = time.time() + 720
+          consecutive_ready = 0
           while time.time() < deadline:
               devices = subprocess.run(['adb','devices'], text=True, capture_output=True, timeout=10).stdout
               print(devices, end='')
@@ -66,42 +67,23 @@ jobs:
                   boot = subprocess.run(['adb','shell','getprop','sys.boot_completed'], text=True, capture_output=True, timeout=10).stdout.strip()
                   devboot = subprocess.run(['adb','shell','getprop','dev.bootcomplete'], text=True, capture_output=True, timeout=10).stdout.strip()
                   if boot == '1' and devboot == '1':
-                      print('Android emulator boot completed.')
-                      sys.exit(0)
+                      package = subprocess.run(['adb','shell','cmd','package','list','packages'], text=True, capture_output=True, timeout=30)
+                      if package.returncode == 0 and 'Can\'t find service: package' not in package.stdout and 'Can\'t find service: package' not in package.stderr:
+                          consecutive_ready += 1
+                          print(f'Android package manager responsive ({consecutive_ready}/3).')
+                          if consecutive_ready >= 3:
+                              print('Android emulator boot and package services are stable.')
+                              sys.exit(0)
+                      else:
+                          consecutive_ready = 0
+                          print('Android package manager not ready yet; waiting for system services.')
               time.sleep(5)
-          print('Android emulator failed to reach a completed boot state within 480s.', file=sys.stderr)
+          print('Android emulator failed to reach stable boot/package-manager state within 720s.', file=sys.stderr)
+          print(subprocess.run(['adb','devices','-l'], text=True, capture_output=True, timeout=10).stdout, file=sys.stderr)
           sys.exit(1)
           PY
-      - name: Launch app on Android emulator
-        timeout-minutes: 5
-        run: |
-          set -euo pipefail
-          adb wait-for-device
-          adb uninstall com.caminhos2027 >/dev/null 2>&1 || true
-          adb install app/build/outputs/apk/debug/app-debug.apk
-          adb shell am force-stop com.caminhos2027
-          adb logcat -c
-          adb shell am start -n com.caminhos2027/.v1.ui.V1MainActivity
-          for attempt in $(seq 1 36); do
-            sleep 5
-            RESUMED="$(adb shell dumpsys activity activities 2>/dev/null || true)"
-            if echo "$RESUMED" | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'; then
-              PID="$(adb shell pidof com.caminhos2027 2>/dev/null || true)"
-              test -n "$PID"
-              echo "V1MainActivity resumed; PID=$PID"
-              exit 0
-            fi
-            PID="$(adb shell pidof com.caminhos2027 2>/dev/null || true)"
-            if [ -z "$PID" ]; then
-              adb logcat -d -t 300 >&2 || true
-              exit 1
-            fi
-          done
-          adb shell dumpsys activity activities >&2 || true
-          adb logcat -d -t 500 >&2 || true
-          exit 1
       - name: Run Android V1 end-to-end tests
-        timeout-minutes: 10
+        timeout-minutes: 12
         run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest
       - name: Dump emulator diagnostics on failure
         if: failure()
@@ -110,9 +92,10 @@ jobs:
           adb devices -l
           adb shell getprop sys.boot_completed
           adb shell getprop dev.bootcomplete
+          adb shell cmd package list packages
           adb shell pidof com.caminhos2027
           cat "$RUNNER_TEMP/emulator.log" 2>/dev/null || true
-          adb logcat -d -t 1000 2>&1 || true
+          adb logcat -d -t 1500 2>&1 || true
       - name: Stop Android emulator
         if: always()
         run: |
