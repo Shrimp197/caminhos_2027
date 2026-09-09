@@ -4,6 +4,7 @@ import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.route.GpsObservation
+import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.route.GpsStateEvaluator
 import com.caminhos2027.v1.core.route.GpsTrackingPolicy
 import com.caminhos2027.v1.core.route.GpsTrackingState
