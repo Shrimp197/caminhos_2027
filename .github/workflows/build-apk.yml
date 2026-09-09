@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, 'candidate/**' ]
   pull_request:
     branches: [ main, master ]
 
@@ -13,43 +13,69 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-
       - name: Prepare candidate assets
         run: python3 scripts/prepare_candidate.py
-
       - name: Apply integrated UI refresh
         run: python3 scripts/apply_ui_refresh.py
-
+      - name: Harden startup UI
+        run: python3 scripts/fix_ui_startup.py
       - name: Harden route selection
         run: python3 scripts/fix_route_selection.py
-
+      - name: Fix generated index runtime
+        run: python3 scripts/fix_index_runtime.py
+      - name: Apply preparation interactions compatibility
+        run: python3 scripts/apply_ui_interactions.py
+      - name: Unify preparation UI architecture
+        run: python3 scripts/apply_final_ui_architecture.py
+      - name: Rebuild approved preparation screen
+        run: python3 scripts/rebuild_preparation_screen_v1.py
+      - name: Normalize rebuilt preparation UI
+        run: python3 scripts/normalize_preparation_ui_v1.py
+      - name: Ensure preparation contract
+        run: python3 scripts/ensure_preparation_contract_v1.py
+      - name: Ensure startup contract
+        run: python3 scripts/ensure_startup_contract_v1.py
+      - name: Ensure release UI text
+        run: python3 scripts/ensure_release_ui_text_v1.py
+      - name: Route selection regression
+        run: python3 scripts/regression_routes.py
+      - name: Startup regression
+        run: python3 scripts/regression_startup.py
+      - name: Preparation behavior regression
+        run: python3 scripts/regression_preparation_behavior.py
+      - name: Support filter regression
+        run: python3 scripts/regression_support_filters.py
+      - name: Route state regression
+        run: python3 scripts/regression_route_state.py
+      - name: No duplicate UI regression
+        run: python3 scripts/regression_no_duplicate_ui.py
+      - name: Full application regression
+        run: python3 scripts/regression_full_app.py
+      - name: UI configuration regression
+        run: python3 scripts/regression_ui_config.py
       - name: Validate application structure
         run: |
           python3 scripts/validate_release.py
           node --check /tmp/index-app.js
-
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
-
-      - name: Verify APK
+      - name: Verify APK integrity
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
+          unzip -t app/build/outputs/apk/debug/app-debug.apk >/dev/null
           sha256sum app/build/outputs/apk/debug/app-debug.apk
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Caminhos-do-Peregrino-v1.1.5-debug
+          name: Caminhos-do-Peregrino-v1.1.6-preparation-v1
           path: app/build/outputs/apk/debug/app-debug.apk
