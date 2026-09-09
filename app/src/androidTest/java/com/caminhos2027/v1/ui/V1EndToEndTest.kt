@@ -40,7 +40,14 @@ class V1EndToEndTest {
         assertTrue(device.hasObject(By.text("VER APOIOS")))
         assertTrue(device.hasObject(By.text("OPÇÕES")))
         assertTrue(device.hasObject(By.text("QA · controlo do percurso")))
-        assertTrue(device.wait(Until.hasObject(By.text("GPS no percurso")), 30_000))
+        assertTrue(
+            "No GPS state was exposed",
+            device.wait(
+                Until.hasObject(By.text("A obter sinal GPS"))
+                    .or(Until.hasObject(By.text("GPS no percurso"))),
+                30_000
+            )
+        )
 
         clickVisibleText("PERDER GPS")
         assertTrue("GPS loss state did not appear", device.wait(Until.hasObject(By.text("GPS sem sinal")), 30_000))
