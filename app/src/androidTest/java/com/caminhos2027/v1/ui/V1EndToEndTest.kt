@@ -43,8 +43,8 @@ class V1EndToEndTest {
         assertTrue(
             "No GPS state was exposed",
             device.wait(
-                Until.hasObject(By.text("A obter sinal GPS"))
-                    .or(Until.hasObject(By.text("GPS no percurso"))),
+                Until.hasObject(By.text("A obter sinal GPS")) ||
+                    Until.hasObject(By.text("GPS no percurso")),
                 30_000
             )
         )
