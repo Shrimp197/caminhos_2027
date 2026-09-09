@@ -60,13 +60,9 @@ class WalkingLocationPipeline(
         return trackingState
     }
 
+    /** Marks an explicit provider availability loss immediately; stale-update timeout remains evaluator-owned. */
     fun markNoSignal(now: Instant): GpsTrackingState {
-        trackingState = GpsStateEvaluator.update(
-            previous = trackingState,
-            observation = null,
-            now = now,
-            policy = policy
-        )
+        trackingState = trackingState.copy(state = GpsState.NO_SIGNAL)
         return trackingState
     }
 }
