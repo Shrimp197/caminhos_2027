@@ -80,6 +80,19 @@ class WalkingLocationPipelineTest {
     }
 
     @Test
+    fun explicitAvailabilityLossBecomesNoSignalImmediately() {
+        val first = Instant.parse("2026-09-01T10:00:00Z")
+        val pipeline = WalkingLocationPipeline(route, clock = { first })
+        pipeline.accept(RawGpsPosition(41.005, -8.0, 5.0, first))
+
+        val state = pipeline.markNoSignal(first)
+
+        assertEquals(GpsState.NO_SIGNAL, state.state)
+        assertEquals(first, state.lastReliableObservation?.capturedAt)
+        assertEquals(first, state.lastObservation?.capturedAt)
+    }
+
+    @Test
     fun prolongedMissingUpdatesBecomeNoSignal() {
         val first = Instant.parse("2026-09-01T10:00:00Z")
         val pipeline = WalkingLocationPipeline(route, clock = { first })
