@@ -42,11 +42,7 @@ class V1EndToEndTest {
         assertTrue(device.hasObject(By.text("QA · controlo do percurso")))
         assertTrue(
             "No GPS state was exposed",
-            device.wait(
-                Until.hasObject(By.text("A obter sinal GPS")) ||
-                    Until.hasObject(By.text("GPS no percurso")),
-                30_000
-            )
+            waitForAnyVisibleText("A obter sinal GPS", "GPS no percurso", timeoutMs = 30_000)
         )
 
         clickVisibleText("PERDER GPS")
@@ -125,5 +121,15 @@ class V1EndToEndTest {
         assertTrue("Text is not visible: $text", !bounds.isEmpty)
         device.click(bounds.centerX(), bounds.centerY())
         device.waitForIdle()
+    }
+
+    private fun waitForAnyVisibleText(vararg texts: String, timeoutMs: Long): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (texts.any { device.hasObject(By.text(it)) }) return true
+            device.waitForIdle()
+            Thread.sleep(250)
+        }
+        return texts.any { device.hasObject(By.text(it)) }
     }
 }
