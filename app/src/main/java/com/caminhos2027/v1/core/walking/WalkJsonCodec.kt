@@ -12,7 +12,7 @@ import java.time.Instant
 
 /** Stable JSON boundary for the persisted V1 walking session plan. */
 object WalkJsonCodec {
-    private const val VERSION = 2
+    private const val VERSION = 3
 
     fun encode(walk: Walk): String = JSONObject().apply {
         put("version", VERSION)
@@ -35,13 +35,16 @@ object WalkJsonCodec {
             put("visibleApoiCategories", JSONArray().apply {
                 walk.preparation.visibleApoiCategories.sortedBy(ApoiCategory::name).forEach { put(it.name) }
             })
+            put("notes", JSONArray().apply {
+                walk.preparation.notes.forEach { put(it) }
+            })
         })
     }.toString()
 
     fun decode(json: String): Walk? = runCatching {
         val root = JSONObject(json)
         val version = root.optInt("version", 1)
-        require(version == 1 || version == VERSION) { "Unsupported walking plan version: $version" }
+        require(version in 1..VERSION) { "Unsupported walking plan version: $version" }
 
         val id = root.getString("id").takeIf { it.isNotBlank() }
             ?: throw IllegalArgumentException("walk id must not be blank")
@@ -86,13 +89,20 @@ object WalkJsonCodec {
                 runCatching { ApoiCategory.valueOf(array.getString(i)) }.getOrNull()?.let(::add)
             }
         }
+        val notes = buildList {
+            val array = json.optJSONArray("notes") ?: return@buildList
+            for (i in 0 until array.length()) {
+                array.optString(i).trim().takeIf(String::isNotEmpty)?.let(::add)
+            }
+        }
         return WalkingPreparationConfig(
             audioMode = runCatching { AudioMode.valueOf(json.optString("audioMode")) }.getOrDefault(AudioMode.NORMAL),
             mapOrientation = runCatching { MapOrientation.valueOf(json.optString("mapOrientation")) }.getOrDefault(MapOrientation.NORTH),
             intelligentBreaksEnabled = json.optBoolean("intelligentBreaksEnabled", true),
             customBreakTimeMinutes = json.optIntOrNull("customBreakTimeMinutes"),
             customBreakDistanceKm = json.optDoubleOrNull("customBreakDistanceKm"),
-            visibleApoiCategories = visible
+            visibleApoiCategories = visible,
+            notes = notes
         )
     }
 
