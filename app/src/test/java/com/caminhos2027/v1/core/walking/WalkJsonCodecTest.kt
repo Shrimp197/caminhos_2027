@@ -2,6 +2,7 @@ package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
+import com.caminhos2027.v1.core.model.WalkingPreparationConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -25,6 +26,14 @@ class WalkJsonCodecTest {
     @Test
     fun encodeDecodePreservesWalk() {
         assertEquals(walk, WalkJsonCodec.decode(WalkJsonCodec.encode(walk)))
+    }
+
+    @Test
+    fun preparationNotesRoundTrip() {
+        val source = walk.copy(
+            preparation = WalkingPreparationConfig(notes = listOf("Comprar água", "Telefonar ao apoio"))
+        )
+        assertEquals(source, WalkJsonCodec.decode(WalkJsonCodec.encode(source)))
     }
 
     @Test
