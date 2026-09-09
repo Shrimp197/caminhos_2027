@@ -130,7 +130,7 @@ internal fun PreparationExperienceV1(
                 val valid = startKm.isFinite() && destinationKm.isFinite() &&
                     startKm >= 0.0 && destinationKm <= route.totalDistanceKm && startKm < destinationKm
                 rangeError = if (valid) null else "Escolha um início e destino válidos dentro do percurso."
-                if (valid) onConfirm(startKm, destinationKm, config)
+                if (valid) onConfirm(startKm, destinationKm, config.copy(notes = notes.toList()))
             }
         )
         PreparationSubscreen.ROUTE -> RouteSubscreen(routeOptions, selectedRouteId, { sub = null }) { routeId ->
@@ -208,11 +208,7 @@ private fun PreparationHome(
             Text("Prepare a sua caminhada", color = BrandBlue, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         }
 
-        RouteSelectionCard(
-            route = route,
-            isTest = routeOptions.firstOrNull { it.id == selectedRouteId }?.testOnly == true,
-            onClick = { onOpen(PreparationSubscreen.ROUTE) }
-        )
+        RouteSelectionCard(route, routeOptions.firstOrNull { it.id == selectedRouteId }?.testOnly == true) { onOpen(PreparationSubscreen.ROUTE) }
 
         Card(Modifier.fillMaxWidth(), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, CardBorder)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -224,120 +220,56 @@ private fun PreparationHome(
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = startText,
-                        onValueChange = {
-                            startText = it
-                            it.replace(',', '.').toDoubleOrNull()?.let(onStartKmChanged)
-                        },
-                        label = { Text("Início (km)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = destinationText,
-                        onValueChange = {
-                            destinationText = it
-                            it.replace(',', '.').toDoubleOrNull()?.let(onDestinationKmChanged)
-                        },
-                        label = { Text("Destino (km)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
+                    OutlinedTextField(value = startText, onValueChange = { startText = it; it.replace(',', '.').toDoubleOrNull()?.let(onStartKmChanged) }, label = { Text("Início (km)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = destinationText, onValueChange = { destinationText = it; it.replace(',', '.').toDoubleOrNull()?.let(onDestinationKmChanged) }, label = { Text("Destino (km)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
                 Text("As etapas oficiais são apenas referência e as distâncias publicadas podem ser aproximadas.", color = Muted, style = MaterialTheme.typography.bodySmall)
                 rangeError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold) }
-                Text(
-                    "${fmt(destinationKm - startKm)} km planeados",
-                    color = BrandBlue,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    "Referência: ${selectedStageLabel(stages, selectedStageIds)}",
-                    color = Muted,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-                Button(
-                    onClick = onStart,
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)
-                ) {
-                    Text("GUARDAR PLANO", fontWeight = FontWeight.ExtraBold)
-                }
+                Text("${fmt(destinationKm - startKm)} km planeados", color = BrandBlue, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                Text("Referência: ${selectedStageLabel(stages, selectedStageIds)}", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                Button(onClick = onStart, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("GUARDAR PLANO", fontWeight = FontWeight.ExtraBold) }
             }
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PrepTile(icon = Icons.Filled.Headphones, label = "Áudio", value = audioLabel(config.audioMode), modifier = Modifier.weight(1f)) { onOpen(PreparationSubscreen.AUDIO) }
-                PrepTile(icon = Icons.Filled.Straighten, label = "Orientação", value = orientationLabel(config.mapOrientation), modifier = Modifier.weight(1f)) { onOpen(PreparationSubscreen.ORIENTATION) }
-                PrepTile(icon = Icons.Filled.PauseCircle, label = "Pausas", value = breakLabel(config), modifier = Modifier.weight(1f)) { onOpen(PreparationSubscreen.BREAKS) }
+                PrepTile(Icons.Filled.Headphones, "Áudio", audioLabel(config.audioMode), Modifier.weight(1f)) { onOpen(PreparationSubscreen.AUDIO) }
+                PrepTile(Icons.Filled.Straighten, "Orientação", orientationLabel(config.mapOrientation), Modifier.weight(1f)) { onOpen(PreparationSubscreen.ORIENTATION) }
+                PrepTile(Icons.Filled.PauseCircle, "Pausas", breakLabel(config), Modifier.weight(1f)) { onOpen(PreparationSubscreen.BREAKS) }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PrepTile(icon = Icons.Filled.Place, label = "Apoios", value = apoiLabel(config.visibleApoiCategories), modifier = Modifier.weight(1f)) { onOpen(PreparationSubscreen.APOIS) }
-                PrepTile(icon = Icons.Filled.Notes, label = "Notas", value = "Criar ou consultar", modifier = Modifier.weight(1f)) { onOpen(PreparationSubscreen.NOTES) }
-                PrepTile(icon = Icons.Filled.LocationOn, label = "Etapas", value = "Referência", modifier = Modifier.weight(1f)) { onOpen(PreparationSubscreen.STAGE) }
+                PrepTile(Icons.Filled.Place, "Apoios", apoiLabel(config.visibleApoiCategories), Modifier.weight(1f)) { onOpen(PreparationSubscreen.APOIS) }
+                PrepTile(Icons.Filled.Notes, "Notas", if (notesCount(config) == 0) "Criar ou consultar" else "${notesCount(config)} nota(s)", Modifier.weight(1f)) { onOpen(PreparationSubscreen.NOTES) }
+                PrepTile(Icons.Filled.LocationOn, "Etapas", "Referência", Modifier.weight(1f)) { onOpen(PreparationSubscreen.STAGE) }
             }
         }
 
-        if (routeOptions.firstOrNull { it.id == selectedRouteId }?.testOnly == true) {
-            Text("TESTE · percurso controlado", color = TestRed, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-        }
+        if (routeOptions.firstOrNull { it.id == selectedRouteId }?.testOnly == true) Text("TESTE · percurso controlado", color = TestRed, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
     }
 }
 
 @Composable
 private fun RouteSelectionCard(route: Route, isTest: Boolean, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, CardBorder),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
+    Card(Modifier.fillMaxWidth().clickable { onClick() }, RoundedCornerShape(18.dp), border = BorderStroke(1.dp, CardBorder), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Box(Modifier.fillMaxWidth().height(210.dp)) {
-            if (!isTest) {
-                Image(
-                    painter = painterResource(R.drawable.caminho_centenario_hero),
-                    contentDescription = "Imagem do Caminho do Centenário",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF7FA6B8), Color(0xFF35634B)))))
-            }
+            if (!isTest) Image(painterResource(R.drawable.caminho_centenario_hero), "Imagem do Caminho do Centenário", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF7FA6B8), Color(0xFF35634B)))))
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xB9000000)))))
             Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
                 Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall)
                 Text(routeDisplay(route), color = Color.White, fontWeight = FontWeight.Bold)
                 Text(if (isTest) "Percurso de teste" else "Percurso em ${route.stages.size} etapas", color = Color.White.copy(alpha = .92f))
             }
-            Button(
-                onClick = onClick,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(14.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)
-            ) { Text("PREPARAR", fontWeight = FontWeight.ExtraBold) }
+            Button(onClick = onClick, modifier = Modifier.align(Alignment.BottomEnd).padding(14.dp), shape = RoundedCornerShape(12.dp), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("PREPARAR", fontWeight = FontWeight.ExtraBold) }
         }
     }
 }
 
 @Composable
 private fun PrepTile(icon: ImageVector, label: String, value: String, modifier: Modifier, onClick: () -> Unit) {
-    Card(
-        modifier = modifier.clickable { onClick() },
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, CardBorder),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
+    Card(modifier.clickable { onClick() }, RoundedCornerShape(14.dp), border = BorderStroke(1.dp, CardBorder), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
         Column(Modifier.padding(horizontal = 10.dp, vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(27.dp), tint = BrandBlue)
+            Icon(icon, null, Modifier.size(27.dp), tint = BrandBlue)
             Spacer(Modifier.height(6.dp))
             Text(label, color = BrandBlue, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
             Text(value, color = Muted, style = MaterialTheme.typography.labelSmall, maxLines = 2, textAlign = TextAlign.Center)
@@ -348,12 +280,7 @@ private fun PrepTile(icon: ImageVector, label: String, value: String, modifier: 
 @Composable
 private fun RouteSubscreen(options: List<AndroidRouteOption>, selected: String, onBack: () -> Unit, onApply: (String) -> Unit) = SecondaryScaffold("Percurso", onBack) {
     options.forEach { option ->
-        Card(
-            Modifier.fillMaxWidth().clickable { onApply(option.id) },
-            RoundedCornerShape(16.dp),
-            border = BorderStroke(1.dp, CardBorder),
-            colors = CardDefaults.cardColors(containerColor = if (option.id == selected) SoftGreen else Color.White)
-        ) {
+        Card(Modifier.fillMaxWidth().clickable { onApply(option.id) }, RoundedCornerShape(16.dp), border = BorderStroke(1.dp, CardBorder), colors = CardDefaults.cardColors(containerColor = if (option.id == selected) SoftGreen else Color.White)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(option.title, color = BrandBlue, fontWeight = FontWeight.ExtraBold)
                 Text(option.description, color = Muted)
@@ -370,26 +297,14 @@ private fun StageSubscreen(stages: List<Stage>, selectedIds: List<String>, onBac
         Text("As etapas oficiais ajudam a compreender o caminho, mas as distâncias publicadas podem ser aproximadas e não definem o início ou o destino do seu plano.", color = Muted)
         stages.forEach { stage ->
             val chosen = stage.id in selected
-            Card(
-                Modifier.fillMaxWidth().clickable { selected = if (chosen) selected - stage.id else selected + stage.id },
-                RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = if (chosen) SoftBlue else Color.White),
-                border = BorderStroke(1.dp, CardBorder)
-            ) {
+            Card(Modifier.fillMaxWidth().clickable { selected = if (chosen) selected - stage.id else selected + stage.id }, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = if (chosen) SoftBlue else Color.White), border = BorderStroke(1.dp, CardBorder)) {
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.size(38.dp).clip(CircleShape).background(if (chosen) BrandBlue else CardBorder), contentAlignment = Alignment.Center) {
-                        Text(stage.number.toString(), color = if (chosen) Color.White else BrandBlue, fontWeight = FontWeight.ExtraBold)
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text(stage.name, color = BrandBlue, fontWeight = FontWeight.Bold)
-                        Text("${fmt(stage.distanceKm)} km · aprox.", color = Muted)
-                    }
+                    Box(Modifier.size(38.dp).clip(CircleShape).background(if (chosen) BrandBlue else CardBorder), contentAlignment = Alignment.Center) { Text(stage.number.toString(), color = if (chosen) Color.White else BrandBlue, fontWeight = FontWeight.ExtraBold) }
+                    Column(Modifier.weight(1f)) { Text(stage.name, color = BrandBlue, fontWeight = FontWeight.Bold); Text("${fmt(stage.distanceKm)} km · aprox.", color = Muted) }
                 }
             }
         }
-        Button(onClick = { onApply(selected.toList()) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) {
-            Text("GUARDAR REFERÊNCIA")
-        }
+        Button(onClick = { onApply(selected.toList()) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("GUARDAR REFERÊNCIA") }
     }
 }
 
@@ -398,10 +313,7 @@ private fun <T> ChoiceSubscreen(title: String, icon: ImageVector, values: List<P
     values.forEach { (label, value) ->
         val chosen = value == selected
         Card(Modifier.fillMaxWidth().clickable { onApply(value) }, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = if (chosen) BrandBlue else Color.White), border = BorderStroke(1.dp, CardBorder)) {
-            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(28.dp), tint = if (chosen) Color.White else BrandBlue)
-                Text(label, color = if (chosen) Color.White else BrandBlue, fontWeight = FontWeight.Bold)
-            }
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) { Icon(icon, null, Modifier.size(28.dp), tint = if (chosen) Color.White else BrandBlue); Text(label, color = if (chosen) Color.White else BrandBlue, fontWeight = FontWeight.Bold) }
         }
     }
 }
@@ -413,16 +325,11 @@ private fun BreaksSubscreen(config: WalkingPreparationConfig, onBack: () -> Unit
     var distance by remember(config) { mutableStateOf(config.customBreakDistanceKm?.toString() ?: "") }
     SecondaryScaffold("Pausas", onBack) {
         Text("As pausas inteligentes consideram dificuldade, distância e APOIs disponíveis. As personalizadas usam o intervalo escolhido por si.", color = Muted)
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Pausas inteligentes", color = BrandBlue, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Switch(checked = intelligent, onCheckedChange = { intelligent = it })
-        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text("Pausas inteligentes", color = BrandBlue, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)); Switch(checked = intelligent, onCheckedChange = { intelligent = it }) }
         HorizontalDivider()
         OutlinedTextField(time, { time = it }, label = { Text("Parar a cada X minutos") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
         OutlinedTextField(distance, { distance = it }, label = { Text("Parar a cada X km") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-        Button(onClick = { onApply(config.copy(intelligentBreaksEnabled = intelligent, customBreakTimeMinutes = time.toIntOrNull()?.takeIf { it > 0 }, customBreakDistanceKm = distance.replace(',', '.').toDoubleOrNull()?.takeIf { it > 0.0 })) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) {
-            Text("APLICAR PAUSAS")
-        }
+        Button(onClick = { onApply(config.copy(intelligentBreaksEnabled = intelligent, customBreakTimeMinutes = time.toIntOrNull()?.takeIf { it > 0 }, customBreakDistanceKm = distance.replace(',', '.').toDoubleOrNull()?.takeIf { it > 0.0 })) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("APLICAR PAUSAS") }
     }
 }
 
@@ -432,11 +339,7 @@ private fun ApoiSubscreen(config: WalkingPreparationConfig, onBack: () -> Unit, 
     val categories = listOf(ApoiCategory.ALIMENTACAO, ApoiCategory.AGUA, ApoiCategory.DESCANSO, ApoiCategory.PERNOITA, ApoiCategory.DUCHES, ApoiCategory.CARREGAMENTO, ApoiCategory.TRANSPORTE, ApoiCategory.EMERGENCIA)
     SecondaryScaffold("Apoios no mapa", onBack) {
         Text("Escolha os tipos de apoio que pretende ver durante a caminhada.", color = Muted)
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            categories.forEach { category ->
-                FilterChip(selected = category in selected, onClick = { selected = if (category in selected) selected - category else selected + category }, label = { Text(categoryLabel(category)) })
-            }
-        }
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { categories.forEach { category -> FilterChip(selected = category in selected, onClick = { selected = if (category in selected) selected - category else selected + category }, label = { Text(categoryLabel(category)) }) } }
         Button(onClick = { onApply(selected) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("APLICAR APOIOS") }
     }
 }
@@ -445,24 +348,18 @@ private fun ApoiSubscreen(config: WalkingPreparationConfig, onBack: () -> Unit, 
 private fun NotesSubscreen(notes: List<String>, onBack: () -> Unit, onCreate: (String) -> Unit) {
     var draft by rememberSaveable { mutableStateOf("") }
     SecondaryScaffold("Notas", onBack) {
-        Text("Crie ou consulte notas da caminhada.", color = Muted)
+        Text("Crie ou consulte notas da caminhada. As notas ficam no plano guardado e acompanham a caminhada.", color = Muted)
         OutlinedTextField(draft, { draft = it }, label = { Text("Nova nota") }, modifier = Modifier.fillMaxWidth(), minLines = 4)
         Button(onClick = { onCreate(draft); draft = "" }, enabled = draft.isNotBlank(), modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("GUARDAR NOTA") }
-        notes.asReversed().forEach { note ->
-            Card(Modifier.fillMaxWidth(), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) { Text(note, Modifier.padding(14.dp), color = BrandBlue) }
-        }
+        notes.asReversed().forEach { note -> Card(Modifier.fillMaxWidth(), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) { Text(note, Modifier.padding(14.dp), color = BrandBlue) } }
     }
 }
 
 @Composable
 private fun SecondaryScaffold(title: String, onBack: () -> Unit, content: @Composable () -> Unit) {
     Column(Modifier.fillMaxSize().background(Surface).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, "Voltar", tint = BrandBlue) }
-            Text(title, color = BrandBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
-        }
-        content()
-        Spacer(Modifier.height(18.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, "Voltar", tint = BrandBlue) }; Text(title, color = BrandBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge) }
+        content(); Spacer(Modifier.height(18.dp))
     }
 }
 
@@ -473,4 +370,5 @@ private fun audioLabel(v: AudioMode) = when (v) { AudioMode.NORMAL -> "Normal"; 
 private fun orientationLabel(v: MapOrientation) = when (v) { MapOrientation.NORTH -> "Norte"; MapOrientation.WALK_DIRECTION -> "Direção da caminhada" }
 private fun breakLabel(c: WalkingPreparationConfig) = when { c.intelligentBreaksEnabled && (c.customBreakTimeMinutes != null || c.customBreakDistanceKm != null) -> "Inteligentes + Personalizadas"; c.intelligentBreaksEnabled -> "Inteligentes"; c.customBreakTimeMinutes != null || c.customBreakDistanceKm != null -> "Personalizadas"; else -> "Sem pausas" }
 private fun apoiLabel(c: Set<ApoiCategory>) = if (c.isEmpty()) "Escolher tipos" else c.sortedBy(ApoiCategory::name).take(2).joinToString(" · ") { categoryLabel(it) } + if (c.size > 2) " +${c.size - 2}" else ""
+private fun notesCount(c: WalkingPreparationConfig) = c.notes.size
 private fun categoryLabel(c: ApoiCategory) = when (c) { ApoiCategory.AGUA -> "Água"; ApoiCategory.ALIMENTACAO -> "Alimentação"; ApoiCategory.PERNOITA -> "Pernoita"; ApoiCategory.DESCANSO -> "Descanso"; ApoiCategory.DUCHES -> "Duches"; ApoiCategory.CARREGAMENTO -> "Carregamento"; ApoiCategory.TRANSPORTE -> "Transporte"; ApoiCategory.EMERGENCIA -> "Emergência" }
