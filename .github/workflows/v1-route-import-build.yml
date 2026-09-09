@@ -69,10 +69,8 @@ jobs:
           print(subprocess.run(['adb','devices','-l'], text=True, capture_output=True, timeout=10).stdout, file=sys.stderr)
           sys.exit(1)
           PY
-      - name: Launch V1 on Android emulator
-        timeout-minutes: 6
-        env:
-          ANDROID_AVD_HOME: ${{ runner.temp }}/avd
+      - name: Install V1 debug APK on Android emulator
+        timeout-minutes: 5
         run: |
           set -euo pipefail
           adb wait-for-device
@@ -80,25 +78,7 @@ jobs:
           adb install app/build/outputs/apk/debug/app-debug.apk
           adb shell am force-stop com.caminhos2027
           adb logcat -c
-          adb shell am start -n com.caminhos2027/.v1.ui.V1MainActivity
-          for attempt in $(seq 1 48); do
-            sleep 5
-            RESUMED="$(adb shell dumpsys activity activities 2>/dev/null || true)"
-            if echo "$RESUMED" | grep -q 'com.caminhos2027/.v1.ui.V1MainActivity'; then
-              PID="$(adb shell pidof com.caminhos2027 2>/dev/null || true)"
-              test -n "$PID"
-              echo "V1MainActivity resumed; PID=$PID"
-              exit 0
-            fi
-            PID="$(adb shell pidof com.caminhos2027 2>/dev/null || true)"
-            if [ -z "$PID" ]; then
-              adb logcat -d -t 500 >&2 || true
-              exit 1
-            fi
-          done
-          adb shell dumpsys activity activities >&2 || true
-          adb logcat -d -t 1000 >&2 || true
-          exit 1
+          echo "V1 debug APK installed; instrumentation test will own activity launch."
       - name: Run Android V1 end-to-end tests
         timeout-minutes: 12
         run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest
