@@ -93,13 +93,23 @@ class V1EndToEndTest {
         clickVisibleText("PREPARAR")
         assertTrue(
             "Route selection did not appear",
-            device.wait(Until.hasObject(By.text("Trajeto SR")), 30_000)
+            device.wait(Until.hasObject(By.text("Selecionar percurso")), 30_000)
         )
+        assertTrue(device.hasObject(By.text("Trajeto SR")))
         clickVisibleText("Trajeto SR")
         assertTrue(
-            "Plan save action did not appear",
-            device.wait(Until.hasObject(By.text("GUARDAR PLANO")), 30_000)
+            "Preparation home did not return after route selection",
+            device.wait(Until.hasObject(By.text("Pausas")), 30_000)
         )
+
+        clickVisibleText("Pausas")
+        assertTrue(device.hasObject(By.text("Pausas inteligentes")))
+        assertTrue(device.hasObject(By.text("Ativadas")))
+        assertTrue(device.hasObject(By.text("Parar a cada X minutos")))
+        assertTrue(device.hasObject(By.text("Parar a cada X km")))
+        clickVisibleText("APLICAR PAUSAS")
+        assertTrue(device.wait(Until.hasObject(By.text("Pausas")), 30_000))
+
         clickVisibleText("GUARDAR PLANO")
         assertTrue(
             "Saved plan did not appear",
