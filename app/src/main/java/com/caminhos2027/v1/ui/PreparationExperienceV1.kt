@@ -121,6 +121,7 @@ internal fun PreparationExperienceV1(
             destinationKm = destinationKm,
             selectedStageIds = selectedStageIds,
             config = config,
+            notesCount = notes.size,
             rangeError = rangeError,
             onStartKmChanged = { startKm = it; rangeError = null },
             onDestinationKmChanged = { destinationKm = it; rangeError = null },
@@ -173,6 +174,7 @@ private fun PreparationHome(
     destinationKm: Double,
     selectedStageIds: List<String>,
     config: WalkingPreparationConfig,
+    notesCount: Int,
     rangeError: String?,
     onStartKmChanged: (Double) -> Unit,
     onDestinationKmChanged: (Double) -> Unit,
@@ -239,8 +241,8 @@ private fun PreparationHome(
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PrepTile(Icons.Filled.Place, "Apoios", apoiLabel(config.visibleApoiCategories), Modifier.weight(1f)) { onOpen(PreparationSubscreen.APOIS) }
-                PrepTile(Icons.Filled.Notes, "Notas", if (notesCount(config) == 0) "Criar ou consultar" else "${notesCount(config)} nota(s)", Modifier.weight(1f)) { onOpen(PreparationSubscreen.NOTES) }
-                PrepTile(Icons.Filled.LocationOn, "Etapas", "Referência", Modifier.weight(1f)) { onOpen(PreparationSubscreen.STAGE) }
+                PrepTile(Icons.Filled.Notes, "Notas", if (notesCount == 0) "Criar ou consultar" else "${notesCount} nota(s)", Modifier.weight(1f)) { onOpen(PreparationSubscreen.NOTES) }
+                PrepTile(Icons.Filled.LocationOn, "Percurso", "Selecionar", Modifier.weight(1f)) { onOpen(PreparationSubscreen.ROUTE) }
             }
         }
 
@@ -260,7 +262,7 @@ private fun RouteSelectionCard(route: Route, isTest: Boolean, onClick: () -> Uni
                 Text(routeDisplay(route), color = Color.White, fontWeight = FontWeight.Bold)
                 Text(if (isTest) "Percurso de teste" else "Percurso em ${route.stages.size} etapas", color = Color.White.copy(alpha = .92f))
             }
-            Button(onClick = onClick, modifier = Modifier.align(Alignment.BottomEnd).padding(14.dp), shape = RoundedCornerShape(12.dp), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("PREPARAR", fontWeight = FontWeight.ExtraBold) }
+            Button(onClick = onClick, modifier = Modifier.align(Alignment.BottomEnd).padding(14.dp), shape = RoundedCornerShape(12.dp), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("SELECIONAR PERCURSO", fontWeight = FontWeight.ExtraBold) }
         }
     }
 }
@@ -278,7 +280,8 @@ private fun PrepTile(icon: ImageVector, label: String, value: String, modifier: 
 }
 
 @Composable
-private fun RouteSubscreen(options: List<AndroidRouteOption>, selected: String, onBack: () -> Unit, onApply: (String) -> Unit) = SecondaryScaffold("Percurso", onBack) {
+private fun RouteSubscreen(options: List<AndroidRouteOption>, selected: String, onBack: () -> Unit, onApply: (String) -> Unit) = SecondaryScaffold("Selecionar percurso", onBack) {
+    Text("Escolha o percurso que pretende preparar. O percurso assinalado é o que ficará ativo para o plano.", color = Muted)
     options.forEach { option ->
         Card(Modifier.fillMaxWidth().clickable { onApply(option.id) }, RoundedCornerShape(16.dp), border = BorderStroke(1.dp, CardBorder), colors = CardDefaults.cardColors(containerColor = if (option.id == selected) SoftGreen else Color.White)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -370,5 +373,4 @@ private fun audioLabel(v: AudioMode) = when (v) { AudioMode.NORMAL -> "Normal"; 
 private fun orientationLabel(v: MapOrientation) = when (v) { MapOrientation.NORTH -> "Norte"; MapOrientation.WALK_DIRECTION -> "Direção da caminhada" }
 private fun breakLabel(c: WalkingPreparationConfig) = when { c.intelligentBreaksEnabled && (c.customBreakTimeMinutes != null || c.customBreakDistanceKm != null) -> "Inteligentes + Personalizadas"; c.intelligentBreaksEnabled -> "Inteligentes"; c.customBreakTimeMinutes != null || c.customBreakDistanceKm != null -> "Personalizadas"; else -> "Sem pausas" }
 private fun apoiLabel(c: Set<ApoiCategory>) = if (c.isEmpty()) "Escolher tipos" else c.sortedBy(ApoiCategory::name).take(2).joinToString(" · ") { categoryLabel(it) } + if (c.size > 2) " +${c.size - 2}" else ""
-private fun notesCount(c: WalkingPreparationConfig) = c.notes.size
 private fun categoryLabel(c: ApoiCategory) = when (c) { ApoiCategory.AGUA -> "Água"; ApoiCategory.ALIMENTACAO -> "Alimentação"; ApoiCategory.PERNOITA -> "Pernoita"; ApoiCategory.DESCANSO -> "Descanso"; ApoiCategory.DUCHES -> "Duches"; ApoiCategory.CARREGAMENTO -> "Carregamento"; ApoiCategory.TRANSPORTE -> "Transporte"; ApoiCategory.EMERGENCIA -> "Emergência" }
