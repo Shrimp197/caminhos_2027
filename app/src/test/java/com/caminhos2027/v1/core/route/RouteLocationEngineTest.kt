@@ -7,6 +7,7 @@ import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.Stage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
@@ -22,6 +23,9 @@ class RouteLocationEngineTest {
         assertTrue(position.routeKm > 0.4)
         assertTrue(position.routeKm < 0.6)
         assertEquals(PositionConfidence.HIGH, position.confidence)
+        assertNotNull(position.projectedPoint)
+        assertEquals(40.0, position.projectedPoint!!.latitude, 0.000001)
+        assertEquals(-7.995, position.projectedPoint!!.longitude, 0.000001)
     }
 
     @Test
