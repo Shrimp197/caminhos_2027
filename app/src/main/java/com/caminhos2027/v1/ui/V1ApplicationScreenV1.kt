@@ -40,7 +40,7 @@ internal fun V1ApplicationScreenV1(
     onBackToApoiBrowser: () -> Unit
 ) {
     if (surface == WalkingSurface.PREPARATION) {
-        PreparationExperienceV2(route, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking)
+        PreparationExperienceV3(route, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking)
     } else if (surface == WalkingSurface.ACTIVE && state != null) {
         V1ActiveExperienceScreenV2(
             state = state,
