@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.background
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -70,10 +71,11 @@ internal fun V1ActiveExperienceScreenV2(
     onQaToggleGps: (Boolean) -> Unit,
     onQaDeviation: () -> Unit
 ) {
-    val currentKm = state.routePosition?.routeKm ?: state.progress?.currentRouteKm ?: 0.0
-    val destinationKm = state.walk.plannedDestinationKm ?: route.totalDistanceKm
-    val remainingKm = state.progress?.remainingKm ?: (destinationKm - currentKm).coerceAtLeast(0.0)
-    val progress = state.progress?.progressRatio?.coerceIn(0.0, 1.0) ?: progressRatio(currentKm, destinationKm)
+    val currentKm = state.routePosition?.routeKm ?: 0.0
+    val remainingKm = state.progress?.remainingKm ?: 0.0
+    val progress = state.progress?.progressRatio?.coerceIn(0.0, 1.0) ?: 0.0
+    val destinationKm = state.walk.plannedDestinationKm ?: 0.0
+    val projectedPoint = state.routePosition?.projectedPoint
     val isTest = routeOptions.firstOrNull { it.id == route.id }?.testOnly == true
 
     Column(Modifier.fillMaxSize().background(V2Sand)) {
@@ -91,7 +93,7 @@ internal fun V1ActiveExperienceScreenV2(
         MapCard(
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 12.dp),
             geometry = route.geometry.points,
-            projectedPoint = state.routePosition?.projectedPoint,
+            projectedPoint = projectedPoint,
             routeKm = currentKm,
             gpsState = state.gpsState
         )
@@ -251,7 +253,6 @@ private fun positionDetail(state: WalkingState): String {
     return "Km no percurso: $routeKm · distância ao traçado: $routeDistance · confiança: $confidence"
 }
 
-private fun progressRatio(current: Double, destination: Double): Double = if (destination <= 0.0) 0.0 else (current / destination).coerceIn(0.0, 1.0)
 private fun fmt(value: Double) = String.format(Locale("pt", "PT"), "%.2f", value)
 private fun fmtDistance(value: Double) = if (value < 1.0) String.format(Locale("pt", "PT"), "%.0f m", value * 1000.0) else String.format(Locale("pt", "PT"), "%.1f km", value)
 private fun fmtMeters(value: Double) = if (value >= 1000.0) String.format(Locale("pt", "PT"), "%.1f km", value / 1000.0) else String.format(Locale("pt", "PT"), "%.0f m", value)
