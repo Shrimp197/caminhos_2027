@@ -48,7 +48,9 @@ data class RoutePosition(
     val routeKm: Double,
     val distanceToRouteMeters: Double,
     val stageId: String? = null,
-    val confidence: PositionConfidence = PositionConfidence.UNKNOWN
+    val confidence: PositionConfidence = PositionConfidence.UNKNOWN,
+    /** Geographic point produced by the same projection that produced routeKm. */
+    val projectedPoint: GeoPoint? = null
 )
 
 enum class PositionConfidence {
