@@ -9,7 +9,7 @@ import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkingPreparationConfig
 import com.caminhos2027.v1.core.walking.WalkingState
 
-/** Preparation owns the refined visual entry point; existing walking/APOI/decision surfaces remain the functional seam. */
+/** Preparation owns the refined entry point; active walking uses the V2 acceptance surface. */
 @androidx.compose.runtime.Composable
 internal fun V1ApplicationScreenV1(
     state: WalkingState?,
@@ -41,6 +41,18 @@ internal fun V1ApplicationScreenV1(
 ) {
     if (surface == WalkingSurface.PREPARATION) {
         PreparationExperienceV1(route, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking)
+    } else if (surface == WalkingSurface.ACTIVE && state != null) {
+        V1ActiveExperienceScreenV2(
+            state = state,
+            route = route,
+            routeOptions = routeOptions,
+            onStop = onStop,
+            onOpenApoi = onOpenApoi,
+            onOpenDecision = onOpenDecision,
+            onQaAdvance = onQaAdvance,
+            onQaToggleGps = onQaToggleGps,
+            onQaDeviation = onQaDeviation
+        )
     } else {
         V1PrimaryExperienceScreen(
             state = state,
