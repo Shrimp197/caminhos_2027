@@ -26,6 +26,7 @@ object RouteLocationEngine {
 
         var bestDistance = Double.POSITIVE_INFINITY
         var bestRouteKm = 0.0
+        var bestPoint: GeoPoint? = null
         var accumulatedKm = 0.0
 
         route.geometry.points.zipWithNext().forEach { (start, end) ->
@@ -34,11 +35,12 @@ object RouteLocationEngine {
             if (projection.distanceMeters < bestDistance) {
                 bestDistance = projection.distanceMeters
                 bestRouteKm = accumulatedKm + segmentLengthKm * projection.fraction
+                bestPoint = projection.nearestPoint
             }
             accumulatedKm += segmentLengthKm
         }
 
-        require(bestDistance.isFinite() && bestRouteKm.isFinite()) {
+        require(bestDistance.isFinite() && bestRouteKm.isFinite() && bestPoint != null) {
             "Route projection produced non-finite metrics"
         }
 
@@ -53,7 +55,8 @@ object RouteLocationEngine {
             routeKm = bestRouteKm,
             distanceToRouteMeters = bestDistance,
             stageId = stageId,
-            confidence = confidence
+            confidence = confidence,
+            projectedPoint = bestPoint
         )
     }
 
@@ -68,7 +71,11 @@ object RouteLocationEngine {
         }
     }
 
-    private data class Projection(val fraction: Double, val distanceMeters: Double)
+    private data class Projection(
+        val fraction: Double,
+        val distanceMeters: Double,
+        val nearestPoint: GeoPoint
+    )
 
     private fun project(
         latitude: Double,
@@ -104,14 +111,18 @@ object RouteLocationEngine {
         val dy = ey - sy
         val lengthSquared = dx * dx + dy * dy
         if (lengthSquared <= 0.0) {
-            return Projection(0.0, hypot(px - sx, py - sy))
+            return Projection(0.0, hypot(px - sx, py - sy), start)
         }
 
         val rawFraction = ((px - sx) * dx + (py - sy) * dy) / lengthSquared
         val fraction = min(1.0, max(0.0, rawFraction))
         val nearestX = sx + fraction * dx
         val nearestY = sy + fraction * dy
-        return Projection(fraction, hypot(px - nearestX, py - nearestY))
+        val nearestPoint = GeoPoint(
+            latitude = start.latitude + (end.latitude - start.latitude) * fraction,
+            longitude = start.longitude + (end.longitude - start.longitude) * fraction
+        )
+        return Projection(fraction, hypot(px - nearestX, py - nearestY), nearestPoint)
     }
 
     private fun distanceKm(a: GeoPoint, b: GeoPoint): Double =
