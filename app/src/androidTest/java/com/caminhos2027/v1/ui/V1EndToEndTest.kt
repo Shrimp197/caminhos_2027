@@ -72,7 +72,7 @@ class V1EndToEndTest {
         assertTrue("APOI browser did not return", device.wait(Until.hasObject(By.text("Procurar")), 30_000))
         device.pressBack()
         device.waitForIdle()
-        assertTrue("Walking screen did not return", device.wait(Until.hasObject(By.text("Caminhada")), 30_000))
+        assertTrue("Walking screen did not return", device.wait(Until.hasObject(By.text("A MINHA POSIÇÃO")), 30_000))
 
         clickVisibleText("OPÇÕES")
         assertTrue(
@@ -82,7 +82,7 @@ class V1EndToEndTest {
         assertTrue(device.hasObject(By.text("PARAR AGORA")))
         assertTrue(device.hasObject(By.text("CONTINUAR CAMINHADA")))
         clickVisibleText("CONTINUAR CAMINHADA")
-        assertTrue("Continue action did not return to walking", device.wait(Until.hasObject(By.text("Caminhada")), 30_000))
+        assertTrue("Continue action did not return to walking", device.wait(Until.hasObject(By.text("A MINHA POSIÇÃO")), 30_000))
 
         clickVisibleText("OPÇÕES")
         clickVisibleText("PARAR AGORA")
@@ -109,7 +109,7 @@ class V1EndToEndTest {
         clickVisibleText("INICIAR CAMINHADA")
         assertTrue(
             "Walking screen did not appear",
-            device.wait(Until.hasObject(By.text("Caminhada")), 30_000)
+            device.wait(Until.hasObject(By.text("A MINHA POSIÇÃO")), 30_000)
         )
     }
 
