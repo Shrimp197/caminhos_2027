@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.background
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -91,6 +92,7 @@ internal fun V1ActiveExperienceScreenV2(
         MapCard(
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 12.dp),
             geometry = route.geometry.points,
+            projectedPoint = state.routePosition?.projectedPoint,
             routeKm = currentKm,
             gpsState = state.gpsState
         )
@@ -163,7 +165,13 @@ internal fun V1ActiveExperienceScreenV2(
 }
 
 @Composable
-private fun MapCard(modifier: Modifier, geometry: List<GeoPoint>, routeKm: Double, gpsState: GpsState) {
+private fun MapCard(
+    modifier: Modifier,
+    geometry: List<GeoPoint>,
+    projectedPoint: GeoPoint?,
+    routeKm: Double,
+    gpsState: GpsState
+) {
     val points = remember(geometry) { geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() } }
     Card(modifier, RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = V2Map), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Box(Modifier.fillMaxSize()) {
@@ -192,10 +200,12 @@ private fun MapCard(modifier: Modifier, geometry: List<GeoPoint>, routeKm: Doubl
                 }
                 drawPath(path, Color.White, style = Stroke(width = 13f, cap = StrokeCap.Round))
                 drawPath(path, V2Forest, style = Stroke(width = 7f, cap = StrokeCap.Round))
-                val marker = markerForKm(points, routeKm, size.width, size.height, pad)
-                drawCircle(V2ForestSoft, 20f, marker)
-                drawCircle(V2Forest, 11f, marker)
-                if (gpsState == GpsState.NO_SIGNAL) drawCircle(V2WarningSoft, 29f, marker)
+                projectedPoint?.let { point ->
+                    val marker = project(point)
+                    drawCircle(V2ForestSoft, 20f, marker)
+                    drawCircle(V2Forest, 11f, marker)
+                    if (gpsState == GpsState.NO_SIGNAL) drawCircle(V2WarningSoft, 29f, marker)
+                }
             }
             Card(Modifier.align(Alignment.TopStart).padding(12.dp), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .95f))) {
                 Column(Modifier.padding(12.dp)) {
@@ -209,34 +219,6 @@ private fun MapCard(modifier: Modifier, geometry: List<GeoPoint>, routeKm: Doubl
             }
         }
     }
-}
-
-private fun markerForKm(points: List<GeoPoint>, targetKm: Double, width: Float, height: Float, pad: Float): Offset {
-    val minLat = points.minOf { it.latitude }
-    val maxLat = points.maxOf { it.latitude }
-    val minLon = points.minOf { it.longitude }
-    val maxLon = points.maxOf { it.longitude }
-    val latSpan = max(maxLat - minLat, 1e-9)
-    val lonSpan = max(maxLon - minLon, 1e-9)
-    val scale = min((width - 2 * pad) / lonSpan.toFloat(), (height - 2 * pad) / latSpan.toFloat())
-    val ox = (width - lonSpan.toFloat() * scale) / 2f
-    val oy = (height - latSpan.toFloat() * scale) / 2f
-    fun p(g: GeoPoint) = Offset(ox + (g.longitude - minLon).toFloat() * scale, oy + (maxLat - g.latitude).toFloat() * scale)
-    var accumulated = 0.0
-    var marker = p(points.first())
-    val clamped = targetKm.coerceAtLeast(0.0)
-    for (i in 1 until points.size) {
-        val segment = geoDistanceKm(points[i - 1], points[i])
-        if (accumulated + segment >= clamped) {
-            val fraction = if (segment <= 0.0) 0.0 else ((clamped - accumulated) / segment).coerceIn(0.0, 1.0)
-            val a = p(points[i - 1]); val b = p(points[i])
-            marker = Offset(a.x + (b.x - a.x) * fraction.toFloat(), a.y + (b.y - a.y) * fraction.toFloat())
-            break
-        }
-        accumulated += segment
-        marker = p(points[i])
-    }
-    return marker
 }
 
 @Composable
@@ -274,15 +256,3 @@ private fun progressRatio(current: Double, destination: Double): Double = if (de
 private fun fmt(value: Double) = String.format(Locale("pt", "PT"), "%.2f", value)
 private fun fmtDistance(value: Double) = if (value < 1.0) String.format(Locale("pt", "PT"), "%.0f m", value * 1000.0) else String.format(Locale("pt", "PT"), "%.1f km", value)
 private fun fmtMeters(value: Double) = if (value >= 1000.0) String.format(Locale("pt", "PT"), "%.1f km", value / 1000.0) else String.format(Locale("pt", "PT"), "%.0f m", value)
-
-private fun geoDistanceKm(a: GeoPoint, b: GeoPoint): Double {
-    val earthRadiusKm = 6371.0088
-    val lat1 = Math.toRadians(a.latitude)
-    val lat2 = Math.toRadians(b.latitude)
-    val dLat = lat2 - lat1
-    val dLon = Math.toRadians(b.longitude - a.longitude)
-    val sinLat = kotlin.math.sin(dLat / 2.0)
-    val sinLon = kotlin.math.sin(dLon / 2.0)
-    val h = sinLat * sinLat + kotlin.math.cos(lat1) * kotlin.math.cos(lat2) * sinLon * sinLon
-    return 2.0 * earthRadiusKm * kotlin.math.asin(kotlin.math.sqrt(h.coerceIn(0.0, 1.0)))
-}
