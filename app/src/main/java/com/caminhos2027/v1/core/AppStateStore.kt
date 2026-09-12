@@ -46,7 +46,7 @@ class AppStateStore(initial: AppState = AppState()) {
     }
 
     fun clearApoiSelection(browser: ApoiBrowser) {
-        val browserState = requireNotNull(state.apoiBrowser) { "APOI browser has not been initialized" }
+        val browserState = state.apoiBrowser ?: return
         state = state.copy(apoiBrowser = browser.clearSelection(browserState))
     }
 
