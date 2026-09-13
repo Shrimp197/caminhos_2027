@@ -125,11 +125,25 @@ class V1EndToEndTest {
 
     private fun clickVisibleText(text: String) {
         device.waitForIdle()
-        val node = device.wait(Until.findObject(By.text(text)), 30_000)
-        assertTrue("Text not found: $text", node != null)
-        val bounds = node.visibleBounds
-        assertTrue("Text is not visible: $text", !bounds.isEmpty)
-        device.click(bounds.centerX(), bounds.centerY())
+        repeat(8) {
+            val node = device.findObject(By.text(text))
+            if (node != null && !node.visibleBounds.isEmpty) {
+                device.click(node.visibleBounds.centerX(), node.visibleBounds.centerY())
+                device.waitForIdle()
+                return
+            }
+            device.swipe(
+                device.displayWidth / 2,
+                (device.displayHeight * 0.82).toInt(),
+                device.displayWidth / 2,
+                (device.displayHeight * 0.28).toInt(),
+                8
+            )
+            device.waitForIdle()
+        }
+        val node = device.wait(Until.findObject(By.text(text)), 5_000)
+        assertTrue("Text not found or not visible: $text", node != null && !node.visibleBounds.isEmpty)
+        device.click(node.visibleBounds.centerX(), node.visibleBounds.centerY())
         device.waitForIdle()
     }
 
