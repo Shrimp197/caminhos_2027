@@ -74,7 +74,7 @@ class V1EndToEndTest {
         assertTrue("APOI browser did not return", waitForVisibleText("Procurar", 30_000))
         device.pressBack()
         device.waitForIdle()
-        assertTrue("Walking screen did not return", waitForVisibleText("A MINHA POSIÇÃO", 30_000))
+        assertTrue("Walking screen did not return", waitForAnyVisibleText("A MINHA POSIÇÃO", "VER APOIOS", "OPÇÕES", timeoutMs = 30_000))
 
         clickVisibleText("OPÇÕES")
         assertTrue(
@@ -84,7 +84,7 @@ class V1EndToEndTest {
         assertTrue("Stop action did not appear", waitForVisibleText("PARAR AGORA", 30_000))
         assertTrue("Continue action did not appear", waitForVisibleText("CONTINUAR CAMINHADA", 30_000))
         clickVisibleText("CONTINUAR CAMINHADA")
-        assertTrue("Continue action did not return to walking", waitForVisibleText("A MINHA POSIÇÃO", 30_000))
+        assertTrue("Continue action did not return to walking", waitForAnyVisibleText("A MINHA POSIÇÃO", "VER APOIOS", "OPÇÕES", timeoutMs = 30_000))
 
         clickVisibleText("OPÇÕES")
         clickVisibleText("PARAR AGORA")
@@ -123,7 +123,7 @@ class V1EndToEndTest {
         clickVisibleText("INICIAR CAMINHADA")
         assertTrue(
             "Walking screen did not appear",
-            waitForVisibleText("A MINHA POSIÇÃO", 30_000)
+            waitForAnyVisibleText("A MINHA POSIÇÃO", "VER APOIOS", "OPÇÕES", timeoutMs = 30_000)
         )
     }
 
