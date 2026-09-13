@@ -2,6 +2,8 @@ package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.apoi.PublishedApoiCatalog
 import com.caminhos2027.v1.core.model.Route
+import com.caminhos2027.v1.core.model.WalkStatus
+import com.caminhos2027.v1.core.model.WalkingPreparationConfig
 
 /**
  * Application service for preparing a walk.
@@ -15,21 +17,31 @@ class WalkingPreparationService(
     fun preview(
         walkId: String,
         startRouteKm: Double,
-        destinationRouteKm: Double
+        destinationRouteKm: Double,
+        preparation: WalkingPreparationConfig = WalkingPreparationConfig()
     ): WalkingPreparation {
-        val walk = WalkingPlanFactory.create(route, walkId, startRouteKm, destinationRouteKm)
+        val walk = WalkingPlanFactory.create(route, walkId, startRouteKm, destinationRouteKm, preparation)
         return WalkingPreparationBuilder.build(route, walk, relevantApoi(walk))
     }
 
     fun save(
         walkId: String,
         startRouteKm: Double,
-        destinationRouteKm: Double
+        destinationRouteKm: Double,
+        preparation: WalkingPreparationConfig = WalkingPreparationConfig()
     ): WalkingPreparation {
-        val preparation = preview(walkId, startRouteKm, destinationRouteKm)
-        walkRepository.save(preparation.walk)
-        return preparation
+        val prepared = preview(walkId, startRouteKm, destinationRouteKm, preparation)
+        walkRepository.save(prepared.walk)
+        return prepared
     }
+
+    fun restorePlanned(): WalkingPreparation? =
+        walkRepository.list()
+            .asReversed()
+            .firstOrNull { it.status == WalkStatus.PLANNED && it.routeId == route.id }
+            ?.let { walk ->
+                WalkingPreparationBuilder.build(route, walk, relevantApoi(walk))
+            }
 
     private fun relevantApoi(walk: com.caminhos2027.v1.core.model.Walk) =
         apoiCatalog.filter(

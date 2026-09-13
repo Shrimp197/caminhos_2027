@@ -2,63 +2,98 @@
 
 ## Estado
 
-**Em revisão — sem dataset de produção do percurso.**
+**Fonte oficial capturada, preservada e validada; geometria de produção V1 criada e verificada por CI.**
 
-Data da auditoria: 2026-09-02  
+Data da auditoria inicial: 2026-09-03  
 Branch: `v1-route-import`
 
-## Fonte oficial pretendida
+## Fonte oficial
 
-A geometria de produção do Caminho do Centenário deve vir dos ficheiros GPX/KML disponibilizados pela ACF — Associação Caminhos de Fátima.
+A geometria de produção do Caminho do Centenário usa o GPX oficial disponibilizado pela ACF — Associação Caminhos de Fátima.
 
-- Página do percurso: https://caminhosdefatima.com/caminho-do-centenario/
-- Arquivo de documentos: https://caminhosdefatima.com/category/documentos/
-- GPX oficial: `Caminho do Centenário – Completo GPX`, publicado em 15/10/2024.
-- KML oficial: `Caminho do Centenário – Completo KML`, publicado em 17/09/2024.
+- GPX oficial: `Caminho_do_centenario.gpx`, publicado no arquivo de documentos da ACF em 15/10/2024.
+- URL GPX oficial: `https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx`
+- Ficheiro preservado: `data/routes/Caminho_do_centenario.gpx`
+- SHA-256: `1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266`
+- Tamanho: `377117` bytes
+- GPX: `1.1`
+- Tracks: `1`
+- Segmentos: `1`
+- Pontos: `5082`
+
+O KML oficial de 2024 permanece identificado como fonte complementar possível. Não é necessário para a navegação runtime enquanto o GPX oficial validado satisfizer os critérios de importação.
 
 ## O que foi encontrado no repositório
 
-Existe um KML legado em `app/src/main/assets/caminho-do-centenario.kml`.
+Existe um KML legado em `app/src/main/assets/caminho-do-centenario.kml` identificado como `ACF_2020`. É mantido como referência histórica e diagnóstico, mas **não** é geometria de produção.
 
-O conteúdo interno identifica-se como uma base anterior (incluindo referências `ACF_2020`). Apesar de ser potencialmente útil como material histórico/referência, **não há evidência suficiente nesta auditoria para o tratar como os bytes dos ficheiros oficiais disponibilizados pela ACF em 2024**.
+Esse material histórico:
 
-Por isso:
+- não é usado para inventar ou reconstruir a rota oficial;
+- não é usado para inferir limites de etapas;
+- não é apresentado como fonte 2027;
+- permanece separado do dataset de produção.
 
-- não é copiado para o dataset de produção;
-- não é usado para inventar ou reconstruir etapas;
-- não é usado para declarar uma geometria V1 como oficial;
-- permanece disponível apenas como referência histórica do primeiro protótipo.
+## Geometria de produção
 
-## Validação já implementada
+O GPX oficial foi normalizado deterministicamente para:
 
-A branch já contém uma camada determinística para medir o comprimento da geometria e validar discrepâncias grosseiras entre a geometria e a distância declarada.
+`app/src/main/assets/data/route.geojson`
 
-- `RouteGeometryMetrics.lengthKm(...)` mede a distância acumulada entre pontos consecutivos usando Haversine.
-- `RouteValidator` rejeita uma discrepância superior a uma tolerância documentada no código.
-- Existem testes com dados `TEST/FICTITIOUS` para a métrica e para a rejeição de uma discrepância grosseira.
-- Foi adicionada uma workflow isolada de CI para executar testes e build da branch sem os scripts de reescrita do protótipo legado.
+A normalização preserva a ordem do track oficial e não reordena segmentos por heurística.
 
-Esta validação é deliberadamente **pré-importação**: ainda não é aplicada a uma geometria oficial real.
+Métricas validadas:
 
-## Regra de importação
+- Distância geométrica Haversine: `214.778165 km`;
+- Duplicados consecutivos: `0`;
+- Maior salto consecutivo: `916.77 m`;
+- Saltos superiores a 1 km: `0`;
+- Primeiro ponto: `41.1390874108962, -8.60912359669724`;
+- Último ponto: `39.6295907550017, -8.67756042435647`.
 
-O dataset V1 só poderá receber a geometria de produção depois de ser possível identificar e preservar os bytes do GPX/KML oficial, juntamente com a sua origem e data de consulta.
+A distância publicada pela ACF, `211.87 km` (cerca de 212 km), é preservada separadamente da extensão técnica acumulada da geometria. A aplicação não substitui silenciosamente um valor pelo outro.
 
-A partir desse ficheiro será feita uma normalização determinística para GeoJSON `LineString`, preservando a ordem do traçado.
+## Validação implementada
 
-A distância oficial publicada pela ACF (cerca de 212 km; 211,87 km na página específica) é uma referência de controlo, não uma licença para fabricar uma geometria ou ajustar artificialmente o traçado.
+A branch contém validação determinística para:
 
-As etapas oficiais só serão incluídas quando a sua definição estiver confirmada por fonte oficial. Uma lista de etapas criada a partir de blogs, Wikiloc, trilhos de terceiros ou divisão matemática da geometria não será apresentada como oficial.
+- estrutura do GPX;
+- geometria vazia ou inválida;
+- coordenadas inválidas;
+- pontos consecutivos duplicados;
+- comprimento geométrico;
+- discrepâncias grosseiras face à distância publicada;
+- origem e destino;
+- inputs de runtime;
+- manifesto e política de distância;
+- integridade dos bytes oficiais por SHA-256.
 
-## Critério de conclusão desta fase
+Os testes `TEST/FICTITIOUS` permanecem separados da fonte de produção.
 
-Esta fase só fica concluída quando existir:
+A workflow de proveniência oficial executa estas verificações automaticamente e, no commit `252384800b99cce89ee8e74c388600ef28a69aa1`, terminou com sucesso.
 
-1. ficheiro oficial preservado ou referência inequívoca aos bytes oficiais;
-2. dataset V1 do percurso com geometria real;
-3. validação estrutural da geometria;
-4. validação da distância contra a referência oficial, com tolerância documentada;
-5. etapas oficiais incluídas apenas se confirmadas;
-6. testes do parser/validador com dados TEST/FICTITIOUS separados da produção.
+## Regras que permanecem
 
-Até lá, **não criar um `caminho-do-centenario-v1.json` fictício nem preencher coordenadas/stages aproximados**.
+- O percurso oficial é referência de navegação e não deve ser alterado pela execução do peregrino.
+- Etapas oficiais são dados de referência e não constituem obrigação de distância diária.
+- Etapas só entram quando existir confirmação oficial específica.
+- Fontes comunitárias permanecem como `community_reference` e não substituem fontes oficiais.
+- A geometria oficial não é fabricada, reparada ou reordenada a partir de material histórico.
+- A distância publicada e a distância técnica da geometria são factos distintos.
+- Nenhum dado histórico é promovido automaticamente a garantia 2027.
+- Não descarregar dados externos durante o build.
+
+## Critério de conclusão da importação
+
+A fase de importação oficial considera-se concluída porque existem simultaneamente:
+
+1. bytes oficiais preservados e identificados por SHA-256;
+2. dataset V1 com geometria real;
+3. validação estrutural e geométrica;
+4. comparação documentada com a distância oficial;
+5. origem e destino validados;
+6. separação explícita entre fonte oficial e material histórico;
+7. testes do parser/validador separados da produção;
+8. validação automática em CI do commit de importação.
+
+A partir daqui, o trabalho do eixo de rota é manutenção de proveniência, eventual atualização quando a ACF publicar uma nova versão oficial e integração da informação de etapas apenas quando comprovada.

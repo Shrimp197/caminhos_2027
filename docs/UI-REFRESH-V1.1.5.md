@@ -1,14 +1,27 @@
-# V1.1.5 — atualização visual e integração
+# UI REFRESH V1 — preparação
 
-Objetivo: aproximar a candidata do ambiente final sem alterar os requisitos funcionais.
+## Estado
 
-- Cabeçalho e identidade visual mais claros.
-- Ecrã de preparação com hierarquia visual reforçada.
-- Percurso selecionado sempre visível e destacado.
-- Percursos de teste claramente identificados.
-- Cartões de configuração agrupados e legíveis.
-- Área de início de caminhada destacada.
-- Estados de notificação e atividade visualmente explícitos.
-- Navegação mantém a mesma linguagem visual.
+A preparação V1 passou para uma composição Android nativa em Compose, mantendo a navegação e o estado de domínio existentes.
 
-A atualização deve ser validada juntamente com a seleção centralizada do percurso e os testes de regressão existentes.
+## Estrutura do produto
+
+A superfície inicial apresenta o percurso escolhido, a etapa e o intervalo de início/fim, além de acessos secundários para áudio, orientação, pausas, APOIs e notas.
+
+Cada acesso secundário regressa à preparação preservando as escolhas em memória. O plano continua a ser persistido pelo fluxo de preparação existente e só transita de `PLANNED` para `ACTIVE` perante início explícito e GPS válido.
+
+## Percursos
+
+- Caminho do Centenário — produção;
+- SR — QA debug;
+- HF — QA debug.
+
+SR/HF permanecem isolados do caminho de produção no catálogo Android.
+
+## Conteúdo visual
+
+O cabeçalho do Centenário usa o recurso Android `caminho_centenario_hero.jpg`. Percursos QA não reutilizam esse conteúdo e recebem tratamento visual explicitamente marcado como teste.
+
+## Regra de engenharia
+
+Este refresh é apresentação/composição. Regras de GPS, progressão, APOI, publicação, decisão e persistência continuam nos respectivos serviços/modelos; não são duplicadas na UI.

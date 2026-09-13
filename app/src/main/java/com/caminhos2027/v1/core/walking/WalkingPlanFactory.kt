@@ -2,6 +2,7 @@ package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.Walk
+import com.caminhos2027.v1.core.model.WalkingPreparationConfig
 
 /** Creates a planned walking session without changing official route or stage data. */
 object WalkingPlanFactory {
@@ -9,7 +10,8 @@ object WalkingPlanFactory {
         route: Route,
         walkId: String,
         startRouteKm: Double,
-        destinationRouteKm: Double
+        destinationRouteKm: Double,
+        preparation: WalkingPreparationConfig = WalkingPreparationConfig()
     ): Walk {
         require(walkId.isNotBlank()) { "Walk id is required" }
         require(startRouteKm in 0.0..route.totalDistanceKm) {
@@ -36,7 +38,8 @@ object WalkingPlanFactory {
             routeId = route.id,
             plannedStartKm = startRouteKm,
             plannedDestinationKm = destinationRouteKm,
-            stageIds = stageIds
+            stageIds = stageIds,
+            preparation = preparation
         )
     }
 }

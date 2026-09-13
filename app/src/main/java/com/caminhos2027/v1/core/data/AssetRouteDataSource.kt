@@ -7,40 +7,38 @@ import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.Stage
 import org.json.JSONObject
 
+/** Metadata that is authoritative outside the normalized GeoJSON geometry itself. */
+data class RouteJsonMetadata(
+    val officialDistanceKm: Double,
+    val officialName: String? = null,
+    val updatedAt: String? = null
+)
+
 /** Loads a published route dataset from the app's local assets. */
 class AssetRouteDataSource(
     private val context: Context,
-    private val assetPath: String
+    private val assetPath: String,
+    private val metadata: RouteJsonMetadata? = null
 ) : RouteDataSource {
     override fun loadRoute(): Route {
         val json = context.assets.open(assetPath).bufferedReader().use { it.readText() }
-        return RouteJsonParser.parse(json)
+        return RouteJsonParser.parse(json, metadata)
     }
 }
 
-/** Small, deterministic parser for the V1 route contract. */
+/** Deterministic parser for the V1 route contract and normalized GeoJSON FeatureCollection assets. */
 object RouteJsonParser {
-    fun parse(json: String): Route {
+    fun parse(json: String, metadata: RouteJsonMetadata? = null): Route {
         val root = JSONObject(json)
-        val geometryJson = root.getJSONObject("geometry")
-        require(geometryJson.getString("type") == "LineString") {
-            "Route geometry must be a GeoJSON LineString"
+        return if (root.optString("type") == "FeatureCollection") {
+            parseFeatureCollection(root, metadata)
+        } else {
+            parseV1Contract(root)
         }
+    }
 
-        val coordinates = geometryJson.getJSONArray("coordinates")
-        val points = buildList(coordinates.length()) {
-            for (i in 0 until coordinates.length()) {
-                val coordinate = coordinates.getJSONArray(i)
-                require(coordinate.length() >= 2) { "Geometry coordinate[$i] must contain longitude and latitude" }
-                add(
-                    GeoPoint(
-                        latitude = coordinate.getDouble(1),
-                        longitude = coordinate.getDouble(0)
-                    )
-                )
-            }
-        }
-
+    private fun parseV1Contract(root: JSONObject): Route {
+        val geometry = parseLineString(root.getJSONObject("geometry"))
         val stagesJson = root.getJSONArray("stages")
         val stages = buildList(stagesJson.length()) {
             for (i in 0 until stagesJson.length()) {
@@ -68,9 +66,71 @@ object RouteJsonParser {
             officialName = root.getString("official_name"),
             totalDistanceKm = root.getDouble("total_distance_km"),
             source = root.getString("source"),
-            updatedAt = root.getString("updated_at"),
-            geometry = RouteGeometry(points),
+            updatedAt = root.optString("updated_at").takeIf { it.isNotBlank() },
+            geometry = geometry,
             stages = stages
         )
+    }
+
+    private fun parseFeatureCollection(root: JSONObject, metadata: RouteJsonMetadata?): Route {
+        val features = root.getJSONArray("features")
+        val lineStringFeatures = buildList {
+            for (i in 0 until features.length()) {
+                val feature = features.getJSONObject(i)
+                val geometry = feature.optJSONObject("geometry") ?: continue
+                if (geometry.optString("type") == "LineString") add(feature)
+            }
+        }
+        require(lineStringFeatures.size == 1) {
+            "Published route GeoJSON must contain exactly one LineString feature"
+        }
+
+        val feature = lineStringFeatures.single()
+        val properties = feature.optJSONObject("properties")
+        val routeId = properties?.optString("route_id").orEmpty().ifBlank {
+            root.optString("id").ifBlank { error("Published route GeoJSON has no route id") }
+        }
+        val source = properties?.optString("source").orEmpty().ifBlank {
+            "LOCAL ROUTE ASSET"
+        }
+        val officialDistanceKm = metadata?.officialDistanceKm
+            ?: root.optDouble("total_distance_km", Double.NaN)
+        require(officialDistanceKm.isFinite() && officialDistanceKm > 0.0) {
+            "Published route GeoJSON requires authoritative official distance metadata"
+        }
+
+        return Route(
+            id = routeId,
+            name = root.optString("name").ifBlank { routeId },
+            officialName = metadata?.officialName ?: root.optString("name").ifBlank { routeId },
+            totalDistanceKm = officialDistanceKm,
+            source = source,
+            updatedAt = metadata?.updatedAt,
+            geometry = parseLineString(feature.getJSONObject("geometry")),
+            stages = emptyList()
+        )
+    }
+
+    private fun parseLineString(geometryJson: JSONObject): RouteGeometry {
+        require(geometryJson.getString("type") == "LineString") {
+            "Route geometry must be a GeoJSON LineString"
+        }
+        val coordinates = geometryJson.getJSONArray("coordinates")
+        val points = buildList(coordinates.length()) {
+            for (i in 0 until coordinates.length()) {
+                val coordinate = coordinates.getJSONArray(i)
+                require(coordinate.length() >= 2) {
+                    "Geometry coordinate[$i] must contain longitude and latitude"
+                }
+                add(
+                    GeoPoint(
+                        latitude = coordinate.getDouble(1),
+                        longitude = coordinate.getDouble(0)
+                    )
+                )
+            }
+        }
+        require(points.size >= 2) { "Route geometry must contain at least two points" }
+        return RouteGeometry(points)
     }
 }

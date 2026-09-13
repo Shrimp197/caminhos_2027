@@ -3,7 +3,7 @@
   "route_id": "caminho-do-centenario",
   "official_name": "Caminho do Centenário",
   "scope": "Caminhos de Fátima",
-  "status": "awaiting_official_geometry_validation",
+  "status": "official_gpx_bytes_ingested_validated",
   "official_reference": {
     "route_name": "Caminho do Centenário",
     "origin": "Gaia",
@@ -28,19 +28,33 @@
       "format": "gpx",
       "publication_context": "ACF documents archive, 2024",
       "source_url": "https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx",
-      "required_action": "obtain_and_validate_current_official_file"
+      "capture_status": "official_bytes_ingested_and_validated",
+      "capture_filename": "Caminho_do_centenario.gpx",
+      "byte_count": 377117,
+      "sha256": "1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266",
+      "track_count": 1,
+      "track_segment_count": 1,
+      "point_count": 5082,
+      "summed_geometry_km": 214.77816498997424,
+      "allowed_for_production": true,
+      "next_action": "implemented_in_route-runtime-policy.json; apply policy to final WebView route presentation",
+      "repository_path": "data/routes/Caminho_do_centenario.gpx",
+      "normalized_geometry_path": "app/src/main/assets/data/route.geojson"
     },
     {
       "format": "kml",
       "publication_context": "ACF documents archive, 2024",
       "source_url": "https://caminhosdefatima.com/wp-content/uploads/2024/09/caminho-do-centenario.kml",
-      "required_action": "obtain_and_validate_current_official_file"
+      "required_action": "optional_cross_check_after_gpx_validation"
     }
   ],
   "production_rules": [
     "Do not use the historical repository KML as production geometry.",
     "Do not invent or infer official stage boundaries from the historical KML.",
     "Do not replace the official published distance with a third-party track distance.",
-    "Production geometry must be imported from a validated official source and checked for ordered continuity, length, origin, destination and stage compatibility before publication."
+    "Production geometry must be imported from a validated official source and checked for ordered continuity, length, origin, destination and stage compatibility before publication.",
+    "The official published distance and the summed source-track geometry are distinct facts and must not be silently substituted for each other.",
+    "The captured GPX is preserved in the repository with its recorded SHA-256 and validated against the official ACF URL.",
+    "Runtime navigation uses the validated official GPX endpoint; editorial route distance remains the ACF published distance."
   ]
 }

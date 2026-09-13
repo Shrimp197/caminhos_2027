@@ -58,7 +58,7 @@ class ApoiJsonParserTest {
         assertEquals(setOf(ApoiCategory.PERNOITA, ApoiCategory.DUCHES), record.services)
         assertEquals(LocationPrecision.EXACT, record.location.precision)
         assertEquals(RouteRelation.ON_ROUTE, record.location.routeRelation)
-        assertEquals(42.25, record.location.routeKm, 0.0001)
+        assertEquals(42.25, record.location.routeKm!!, 0.0001)
         assertEquals(ApoiCostModel.PAID, record.cost.model)
         assertEquals(10.0, record.cost.amount!!, 0.0001)
         assertEquals(ApoiReservationPolicy.REQUIRED, record.reservation.policy)

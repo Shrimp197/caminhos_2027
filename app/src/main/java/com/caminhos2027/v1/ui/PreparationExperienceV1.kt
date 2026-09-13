@@ -1,0 +1,376 @@
+package com.caminhos2027.v1.ui
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.filled.PauseCircle
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.caminhos2027.R
+import com.caminhos2027.v1.core.data.AndroidRouteOption
+import com.caminhos2027.v1.core.model.ApoiCategory
+import com.caminhos2027.v1.core.model.AudioMode
+import com.caminhos2027.v1.core.model.MapOrientation
+import com.caminhos2027.v1.core.model.Route
+import com.caminhos2027.v1.core.model.Stage
+import com.caminhos2027.v1.core.model.WalkingPreparationConfig
+
+private val BrandBlue = Color(0xFF164B63)
+private val BrandGreen = Color(0xFF1B9B50)
+private val Surface = Color(0xFFF5F6F4)
+private val CardBorder = Color(0xFFE0E3DF)
+private val Muted = Color(0xFF6C7478)
+private val SoftGreen = Color(0xFFE9F6EE)
+private val SoftBlue = Color(0xFFEAF2F7)
+private val TestRed = Color(0xFFC63B3B)
+
+@Composable
+internal fun PreparationExperienceV1(
+    route: Route,
+    routeOptions: List<AndroidRouteOption>,
+    selectedRouteId: String,
+    onSelectRoute: (String) -> Unit,
+    onConfirm: (Double, Double, WalkingPreparationConfig) -> Unit,
+    onBack: () -> Unit
+) {
+    var sub by rememberSaveable(selectedRouteId) { mutableStateOf<PreparationSubscreen?>(null) }
+    var config by remember(selectedRouteId) { mutableStateOf(WalkingPreparationConfig()) }
+    val stages = remember(route.id, route.totalDistanceKm, route.stages) {
+        route.stages.ifEmpty {
+            listOf(
+                Stage(
+                    id = "${route.id}-test-stage",
+                    routeId = route.id,
+                    number = 1,
+                    name = route.officialName,
+                    startRouteKm = 0.0,
+                    endRouteKm = route.totalDistanceKm,
+                    distanceKm = route.totalDistanceKm,
+                    startName = "Início",
+                    endName = "Fim",
+                    source = "QA synthetic test stage"
+                )
+            )
+        }
+    }
+    var selectedStageIds by remember(selectedRouteId, stages) { mutableStateOf(stages.take(1).map(Stage::id)) }
+    var startKm by remember(selectedRouteId) { mutableStateOf(0.0) }
+    var destinationKm by remember(selectedRouteId, route.totalDistanceKm) { mutableStateOf(route.totalDistanceKm) }
+    var rangeError by remember(selectedRouteId, route.totalDistanceKm) { mutableStateOf<String?>(null) }
+    val notes = remember(selectedRouteId) { mutableStateListOf<String>() }
+
+    when (sub) {
+        null -> PreparationHome(
+            route = route,
+            routeOptions = routeOptions,
+            selectedRouteId = selectedRouteId,
+            stages = stages,
+            startKm = startKm,
+            destinationKm = destinationKm,
+            selectedStageIds = selectedStageIds,
+            config = config,
+            notesCount = notes.size,
+            rangeError = rangeError,
+            onStartKmChanged = { startKm = it; rangeError = null },
+            onDestinationKmChanged = { destinationKm = it; rangeError = null },
+            onBack = onBack,
+            onOpen = { sub = it },
+            onStart = {
+                val valid = startKm.isFinite() && destinationKm.isFinite() &&
+                    startKm >= 0.0 && destinationKm <= route.totalDistanceKm && startKm < destinationKm
+                rangeError = if (valid) null else "Escolha um início e destino válidos dentro do percurso."
+                if (valid) onConfirm(startKm, destinationKm, config.copy(notes = notes.toList()))
+            }
+        )
+        PreparationSubscreen.ROUTE -> RouteSubscreen(routeOptions, selectedRouteId, { sub = null }) { routeId ->
+            onSelectRoute(routeId)
+            sub = null
+        }
+        PreparationSubscreen.STAGE -> StageSubscreen(stages, selectedStageIds, { sub = null }) { ids ->
+            selectedStageIds = ids
+            sub = null
+        }
+        PreparationSubscreen.AUDIO -> ChoiceSubscreen(
+            title = "Áudio",
+            icon = Icons.Filled.Headphones,
+            values = listOf("Normal" to AudioMode.NORMAL, "Imersivo" to AudioMode.IMMERSIVE, "Silenciado" to AudioMode.SILENT),
+            selected = config.audioMode,
+            onBack = { sub = null }
+        ) { config = config.copy(audioMode = it); sub = null }
+        PreparationSubscreen.ORIENTATION -> ChoiceSubscreen(
+            title = "Orientação do mapa",
+            icon = Icons.Filled.Map,
+            values = listOf("Norte" to MapOrientation.NORTH, "Direção da caminhada" to MapOrientation.WALK_DIRECTION),
+            selected = config.mapOrientation,
+            onBack = { sub = null }
+        ) { config = config.copy(mapOrientation = it); sub = null }
+        PreparationSubscreen.BREAKS -> BreaksSubscreen(config, { sub = null }) { config = it; sub = null }
+        PreparationSubscreen.APOIS -> ApoiSubscreen(config, { sub = null }) { config = config.copy(visibleApoiCategories = it); sub = null }
+        PreparationSubscreen.NOTES -> NotesSubscreen(notes, { sub = null }) { note -> if (note.isNotBlank()) notes += note.trim() }
+    }
+}
+
+private enum class PreparationSubscreen { ROUTE, STAGE, AUDIO, ORIENTATION, BREAKS, APOIS, NOTES }
+
+@Composable
+private fun PreparationHome(
+    route: Route,
+    routeOptions: List<AndroidRouteOption>,
+    selectedRouteId: String,
+    stages: List<Stage>,
+    startKm: Double,
+    destinationKm: Double,
+    selectedStageIds: List<String>,
+    config: WalkingPreparationConfig,
+    notesCount: Int,
+    rangeError: String?,
+    onStartKmChanged: (Double) -> Unit,
+    onDestinationKmChanged: (Double) -> Unit,
+    onBack: () -> Unit,
+    onOpen: (PreparationSubscreen) -> Unit,
+    onStart: () -> Unit
+) {
+    var startText by remember(startKm) { mutableStateOf(fmt(startKm)) }
+    var destinationText by remember(destinationKm) { mutableStateOf(fmt(destinationKm)) }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Surface)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = BrandBlue) }
+            Image(
+                painter = painterResource(R.drawable.ic_launcher_source),
+                contentDescription = "Caminhos do Peregrino",
+                modifier = Modifier.size(34.dp).clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+            Column(Modifier.padding(start = 9.dp)) {
+                Text("CAMINHOS", color = BrandBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
+                Text("DO PEREGRINO", color = BrandBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
+            }
+        }
+
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Text("Prepare a sua caminhada", color = BrandBlue, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        }
+
+        RouteSelectionCard(route, routeOptions.firstOrNull { it.id == selectedRouteId }?.testOnly == true) { onOpen(PreparationSubscreen.ROUTE) }
+
+        Card(Modifier.fillMaxWidth(), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, CardBorder)) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.LocationOn, contentDescription = null, tint = BrandBlue)
+                    Column(Modifier.padding(start = 9.dp)) {
+                        Text("Início e fim", color = BrandBlue, fontWeight = FontWeight.Bold)
+                        Text("Defina livremente o intervalo no percurso.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(value = startText, onValueChange = { startText = it; it.replace(',', '.').toDoubleOrNull()?.let(onStartKmChanged) }, label = { Text("Início (km)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = destinationText, onValueChange = { destinationText = it; it.replace(',', '.').toDoubleOrNull()?.let(onDestinationKmChanged) }, label = { Text("Destino (km)") }, modifier = Modifier.weight(1f), singleLine = true)
+                }
+                Text("As etapas oficiais são apenas referência e as distâncias publicadas podem ser aproximadas.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                rangeError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold) }
+                Text("${fmt(destinationKm - startKm)} km planeados", color = BrandBlue, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                Text("Referência: ${selectedStageLabel(stages, selectedStageIds)}", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                Button(onClick = onStart, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("GUARDAR PLANO", fontWeight = FontWeight.ExtraBold) }
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                PrepTile(Icons.Filled.Headphones, "Áudio", audioLabel(config.audioMode), Modifier.weight(1f)) { onOpen(PreparationSubscreen.AUDIO) }
+                PrepTile(Icons.Filled.Straighten, "Orientação", orientationLabel(config.mapOrientation), Modifier.weight(1f)) { onOpen(PreparationSubscreen.ORIENTATION) }
+                PrepTile(Icons.Filled.PauseCircle, "Pausas", breakLabel(config), Modifier.weight(1f)) { onOpen(PreparationSubscreen.BREAKS) }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                PrepTile(Icons.Filled.Place, "Apoios", apoiLabel(config.visibleApoiCategories), Modifier.weight(1f)) { onOpen(PreparationSubscreen.APOIS) }
+                PrepTile(Icons.Filled.Notes, "Notas", if (notesCount == 0) "Criar ou consultar" else "${notesCount} nota(s)", Modifier.weight(1f)) { onOpen(PreparationSubscreen.NOTES) }
+                PrepTile(Icons.Filled.LocationOn, "Percurso", "Selecionar", Modifier.weight(1f)) { onOpen(PreparationSubscreen.ROUTE) }
+            }
+        }
+
+        if (routeOptions.firstOrNull { it.id == selectedRouteId }?.testOnly == true) Text("TESTE · percurso controlado", color = TestRed, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+    }
+}
+
+@Composable
+private fun RouteSelectionCard(route: Route, isTest: Boolean, onClick: () -> Unit) {
+    Card(Modifier.fillMaxWidth().clickable { onClick() }, RoundedCornerShape(18.dp), border = BorderStroke(1.dp, CardBorder), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+        Box(Modifier.fillMaxWidth().height(210.dp)) {
+            if (!isTest) Image(painterResource(R.drawable.caminho_centenario_hero), "Imagem do Caminho do Centenário", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF7FA6B8), Color(0xFF35634B)))))
+            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xB9000000)))))
+            Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
+                Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall)
+                Text(routeDisplay(route), color = Color.White, fontWeight = FontWeight.Bold)
+                Text(if (isTest) "Percurso de teste" else "Percurso em ${route.stages.size} etapas", color = Color.White.copy(alpha = .92f))
+            }
+            Button(onClick = onClick, modifier = Modifier.align(Alignment.BottomEnd).padding(14.dp), shape = RoundedCornerShape(12.dp), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("SELECIONAR PERCURSO", fontWeight = FontWeight.ExtraBold) }
+        }
+    }
+}
+
+@Composable
+private fun PrepTile(icon: ImageVector, label: String, value: String, modifier: Modifier, onClick: () -> Unit) {
+    Card(modifier.clickable { onClick() }, RoundedCornerShape(14.dp), border = BorderStroke(1.dp, CardBorder), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, null, Modifier.size(27.dp), tint = BrandBlue)
+            Spacer(Modifier.height(6.dp))
+            Text(label, color = BrandBlue, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+            Text(value, color = Muted, style = MaterialTheme.typography.labelSmall, maxLines = 2, textAlign = TextAlign.Center)
+        }
+    }
+}
+
+@Composable
+private fun RouteSubscreen(options: List<AndroidRouteOption>, selected: String, onBack: () -> Unit, onApply: (String) -> Unit) = SecondaryScaffold("Selecionar percurso", onBack) {
+    Text("Escolha o percurso que pretende preparar. O percurso assinalado é o que ficará ativo para o plano.", color = Muted)
+    options.forEach { option ->
+        Card(Modifier.fillMaxWidth().clickable { onApply(option.id) }, RoundedCornerShape(16.dp), border = BorderStroke(1.dp, CardBorder), colors = CardDefaults.cardColors(containerColor = if (option.id == selected) SoftGreen else Color.White)) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(option.title, color = BrandBlue, fontWeight = FontWeight.ExtraBold)
+                Text(option.description, color = Muted)
+                if (option.testOnly) Text("TESTE", color = TestRed, fontWeight = FontWeight.ExtraBold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StageSubscreen(stages: List<Stage>, selectedIds: List<String>, onBack: () -> Unit, onApply: (List<String>) -> Unit) {
+    var selected by remember(selectedIds) { mutableStateOf(selectedIds.toSet()) }
+    SecondaryScaffold("Etapas · referência", onBack) {
+        Text("As etapas oficiais ajudam a compreender o caminho, mas as distâncias publicadas podem ser aproximadas e não definem o início ou o destino do seu plano.", color = Muted)
+        stages.forEach { stage ->
+            val chosen = stage.id in selected
+            Card(Modifier.fillMaxWidth().clickable { selected = if (chosen) selected - stage.id else selected + stage.id }, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = if (chosen) SoftBlue else Color.White), border = BorderStroke(1.dp, CardBorder)) {
+                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.size(38.dp).clip(CircleShape).background(if (chosen) BrandBlue else CardBorder), contentAlignment = Alignment.Center) { Text(stage.number.toString(), color = if (chosen) Color.White else BrandBlue, fontWeight = FontWeight.ExtraBold) }
+                    Column(Modifier.weight(1f)) { Text(stage.name, color = BrandBlue, fontWeight = FontWeight.Bold); Text("${fmt(stage.distanceKm)} km · aprox.", color = Muted) }
+                }
+            }
+        }
+        Button(onClick = { onApply(selected.toList()) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("GUARDAR REFERÊNCIA") }
+    }
+}
+
+@Composable
+private fun <T> ChoiceSubscreen(title: String, icon: ImageVector, values: List<Pair<String, T>>, selected: T, onBack: () -> Unit, onApply: (T) -> Unit) = SecondaryScaffold(title, onBack) {
+    values.forEach { (label, value) ->
+        val chosen = value == selected
+        Card(Modifier.fillMaxWidth().clickable { onApply(value) }, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = if (chosen) BrandBlue else Color.White), border = BorderStroke(1.dp, CardBorder)) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) { Icon(icon, null, Modifier.size(28.dp), tint = if (chosen) Color.White else BrandBlue); Text(label, color = if (chosen) Color.White else BrandBlue, fontWeight = FontWeight.Bold) }
+        }
+    }
+}
+
+@Composable
+private fun BreaksSubscreen(config: WalkingPreparationConfig, onBack: () -> Unit, onApply: (WalkingPreparationConfig) -> Unit) {
+    var intelligent by remember(config) { mutableStateOf(config.intelligentBreaksEnabled) }
+    var time by remember(config) { mutableStateOf(config.customBreakTimeMinutes?.toString() ?: "") }
+    var distance by remember(config) { mutableStateOf(config.customBreakDistanceKm?.toString() ?: "") }
+    SecondaryScaffold("Pausas", onBack) {
+        Text("As pausas inteligentes consideram dificuldade, distância e APOIs disponíveis. As personalizadas usam o intervalo escolhido por si.", color = Muted)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text("Pausas inteligentes", color = BrandBlue, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)); Switch(checked = intelligent, onCheckedChange = { intelligent = it }) }
+        HorizontalDivider()
+        OutlinedTextField(time, { time = it }, label = { Text("Parar a cada X minutos") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        OutlinedTextField(distance, { distance = it }, label = { Text("Parar a cada X km") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        Button(onClick = { onApply(config.copy(intelligentBreaksEnabled = intelligent, customBreakTimeMinutes = time.toIntOrNull()?.takeIf { it > 0 }, customBreakDistanceKm = distance.replace(',', '.').toDoubleOrNull()?.takeIf { it > 0.0 })) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("APLICAR PAUSAS") }
+    }
+}
+
+@Composable
+private fun ApoiSubscreen(config: WalkingPreparationConfig, onBack: () -> Unit, onApply: (Set<ApoiCategory>) -> Unit) {
+    var selected by remember(config) { mutableStateOf(config.visibleApoiCategories) }
+    val categories = listOf(ApoiCategory.ALIMENTACAO, ApoiCategory.AGUA, ApoiCategory.DESCANSO, ApoiCategory.PERNOITA, ApoiCategory.DUCHES, ApoiCategory.CARREGAMENTO, ApoiCategory.TRANSPORTE, ApoiCategory.EMERGENCIA)
+    SecondaryScaffold("Apoios no mapa", onBack) {
+        Text("Escolha os tipos de apoio que pretende ver durante a caminhada.", color = Muted)
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { categories.forEach { category -> FilterChip(selected = category in selected, onClick = { selected = if (category in selected) selected - category else selected + category }, label = { Text(categoryLabel(category)) }) } }
+        Button(onClick = { onApply(selected) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("APLICAR APOIOS") }
+    }
+}
+
+@Composable
+private fun NotesSubscreen(notes: List<String>, onBack: () -> Unit, onCreate: (String) -> Unit) {
+    var draft by rememberSaveable { mutableStateOf("") }
+    SecondaryScaffold("Notas", onBack) {
+        Text("Crie ou consulte notas da caminhada. As notas ficam no plano guardado e acompanham a caminhada.", color = Muted)
+        OutlinedTextField(draft, { draft = it }, label = { Text("Nova nota") }, modifier = Modifier.fillMaxWidth(), minLines = 4)
+        Button(onClick = { onCreate(draft); draft = "" }, enabled = draft.isNotBlank(), modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = BrandGreen)) { Text("GUARDAR NOTA") }
+        notes.asReversed().forEach { note -> Card(Modifier.fillMaxWidth(), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) { Text(note, Modifier.padding(14.dp), color = BrandBlue) } }
+    }
+}
+
+@Composable
+private fun SecondaryScaffold(title: String, onBack: () -> Unit, content: @Composable () -> Unit) {
+    Column(Modifier.fillMaxSize().background(Surface).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, "Voltar", tint = BrandBlue) }; Text(title, color = BrandBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge) }
+        content(); Spacer(Modifier.height(18.dp))
+    }
+}
+
+private fun routeDisplay(route: Route) = if (route.id == "caminho-do-centenario") "212 km · Porto → Fátima" else route.officialName
+private fun selectedStageLabel(stages: List<Stage>, ids: List<String>) = stages.filter { it.id in ids }.sortedBy { it.number }.let { chosen -> when { chosen.isEmpty() -> "Nenhuma etapa seleccionada"; chosen.size == 1 -> "Etapa ${chosen.first().number} · ${chosen.first().startName} → ${chosen.first().endName}"; else -> "${chosen.size} etapas seleccionadas" } }
+private fun fmt(v: Double) = String.format(java.util.Locale.US, "%.2f", v.coerceAtLeast(0.0))
+private fun audioLabel(v: AudioMode) = when (v) { AudioMode.NORMAL -> "Normal"; AudioMode.IMMERSIVE -> "Imersivo"; AudioMode.SILENT -> "Silenciado" }
+private fun orientationLabel(v: MapOrientation) = when (v) { MapOrientation.NORTH -> "Norte"; MapOrientation.WALK_DIRECTION -> "Direção da caminhada" }
+private fun breakLabel(c: WalkingPreparationConfig) = when { c.intelligentBreaksEnabled && (c.customBreakTimeMinutes != null || c.customBreakDistanceKm != null) -> "Inteligentes + Personalizadas"; c.intelligentBreaksEnabled -> "Inteligentes"; c.customBreakTimeMinutes != null || c.customBreakDistanceKm != null -> "Personalizadas"; else -> "Sem pausas" }
+private fun apoiLabel(c: Set<ApoiCategory>) = if (c.isEmpty()) "Escolher tipos" else c.sortedBy(ApoiCategory::name).take(2).joinToString(" · ") { categoryLabel(it) } + if (c.size > 2) " +${c.size - 2}" else ""
+private fun categoryLabel(c: ApoiCategory) = when (c) { ApoiCategory.AGUA -> "Água"; ApoiCategory.ALIMENTACAO -> "Alimentação"; ApoiCategory.PERNOITA -> "Pernoita"; ApoiCategory.DESCANSO -> "Descanso"; ApoiCategory.DUCHES -> "Duches"; ApoiCategory.CARREGAMENTO -> "Carregamento"; ApoiCategory.TRANSPORTE -> "Transporte"; ApoiCategory.EMERGENCIA -> "Emergência" }

@@ -18,8 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.apoi.ApoiAhead
-import com.caminhos2027.v1.core.model.ApoiCategory
-import java.util.Locale
+import com.caminhos2027.v1.core.model.PublicationStatus
 
 /** Compact list of publishable APOI ahead of the current route position. */
 @Composable
@@ -47,6 +46,7 @@ fun NextApoiScreenV1(
 
 @Composable
 private fun ApoiAheadCard(item: ApoiAhead, onApoiSelected: (ApoiAhead) -> Unit) {
+    val presentation = ApoiAheadPresentationMapper.map(item.apoi, item.distanceKm)
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = { onApoiSelected(item) },
@@ -55,9 +55,16 @@ private fun ApoiAheadCard(item: ApoiAhead, onApoiSelected: (ApoiAhead) -> Unit) 
         Row(modifier = Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(Icons.Default.LocationOn, contentDescription = null)
             Column(modifier = Modifier.weight(1f)) {
-                Text(item.apoi.name, fontWeight = FontWeight.Bold)
-                Text(categoryLabel(item.apoi.mainCategory), style = MaterialTheme.typography.bodySmall)
-                Text("${formatKm(item.distanceKm)} km pelo caminho", style = MaterialTheme.typography.bodyMedium)
+                Text(presentation.name, fontWeight = FontWeight.Bold)
+                Text(presentation.categoryLabel, style = MaterialTheme.typography.bodySmall)
+                Text(presentation.distanceLabel + " pelo caminho", style = MaterialTheme.typography.bodyMedium)
+                Text(presentation.availabilityLabel, style = MaterialTheme.typography.bodySmall)
+                Text(presentation.confidenceLabel, style = MaterialTheme.typography.bodySmall)
+                if (item.apoi.publication.status == PublicationStatus.PUBLISHED_WITH_WARNING) {
+                    presentation.warningLabel?.let {
+                        Text("⚠ $it", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
                 item.apoi.description?.takeIf { it.isNotBlank() }?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall)
                 }
@@ -65,16 +72,3 @@ private fun ApoiAheadCard(item: ApoiAhead, onApoiSelected: (ApoiAhead) -> Unit) 
         }
     }
 }
-
-private fun categoryLabel(category: ApoiCategory): String = when (category) {
-    ApoiCategory.ALIMENTACAO -> "Alimentação"
-    ApoiCategory.AGUA -> "Água"
-    ApoiCategory.DESCANSO -> "Descanso"
-    ApoiCategory.PERNOITA -> "Pernoita"
-    ApoiCategory.DUCHES -> "Duches"
-    ApoiCategory.CARREGAMENTO -> "Carregamento"
-    ApoiCategory.TRANSPORTE -> "Transporte"
-    ApoiCategory.EMERGENCIA -> "Emergência"
-}
-
-private fun formatKm(value: Double): String = String.format(Locale("pt", "PT"), "%.1f", value)

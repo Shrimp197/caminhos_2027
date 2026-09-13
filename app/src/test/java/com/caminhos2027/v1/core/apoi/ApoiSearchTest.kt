@@ -12,7 +12,7 @@ import org.junit.Test
 
 class ApoiSearchTest {
     @Test fun searchMatchesNameWithoutAccentSensitivity() {
-        val result = ApoiSearch.apply(listOf(apoi("1", "Albergue São João"), apoi("2", "Fonte Norte")), "sao joao")
+        val result = ApoiSearch.apply(listOf(apoi("1", "Albergue São João"), apoi("2", "Fonte Norte", services = setOf(ApoiCategory.DESCANSO))), "sao joao")
         assertEquals(listOf("1"), result.map { it.id })
     }
 
@@ -25,7 +25,7 @@ class ApoiSearchTest {
             reference = "junto à igreja",
             services = setOf(ApoiCategory.AGUA, ApoiCategory.DESCANSO)
         )
-        val records = listOf(record, apoi("2", "Outro ponto"))
+        val records = listOf(record, apoi("2", "Outro ponto", services = setOf(ApoiCategory.DESCANSO)))
 
         assertEquals(listOf("1"), ApoiSearch.apply(records, "potavel").map { it.id })
         assertEquals(listOf("1"), ApoiSearch.apply(records, "ribeiro").map { it.id })

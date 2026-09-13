@@ -43,22 +43,35 @@ class SrWalkingIntegrationTest {
     }
 
     @Test
-    fun `offline and GPS loss preserve the last reliable position`() {
+    fun `offline and GPS loss preserve the last reliable position and recovery refreshes derived state`() {
         val route = SrFixture.route()
         val walk = Walk("sr-walk-2", route.id, actualStartKm = 0.0)
         val coordinator = WalkingStateCoordinator(route, walk, SrFixture.publishedApoi())
 
         val online = coordinator.accept(SrFixture.gps(40.00225, "2026-09-01T09:00:00Z"))
         val routeKm = online.routePosition!!.routeKm
+        val walkedKm = online.progress!!.walkedKm
+        val nextApoiDistanceKm = online.nextApoiDistanceKm!!
 
         val offline = coordinator.setOffline(true)
         assertTrue(offline.isOffline)
         assertEquals(routeKm, offline.routePosition!!.routeKm, 0.0001)
+        assertEquals(walkedKm, offline.progress!!.walkedKm, 0.0001)
+        assertEquals(nextApoiDistanceKm, offline.nextApoiDistanceKm!!, 0.0001)
 
         val noSignal = coordinator.markNoSignal(Instant.parse("2026-09-01T09:31:00Z"))
         assertEquals(GpsState.NO_SIGNAL, noSignal.gpsState)
         assertEquals(routeKm, noSignal.routePosition!!.routeKm, 0.0001)
+        assertEquals(walkedKm, noSignal.progress!!.walkedKm, 0.0001)
         assertNotNull(noSignal.nextApoi)
+
+        val recovered = coordinator.accept(SrFixture.gps(40.00630, "2026-09-01T09:35:00Z"))
+        assertEquals(GpsState.ON_ROUTE, recovered.gpsState)
+        assertTrue(recovered.routePosition!!.routeKm > routeKm)
+        assertEquals("stage-2", recovered.routePosition.stageId)
+        assertTrue(recovered.progress!!.walkedKm > walkedKm)
+        assertEquals("sr-water-1", recovered.nextApoi?.id)
+        assertTrue(recovered.nextApoiDistanceKm!! < nextApoiDistanceKm)
     }
 }
 
@@ -87,7 +100,7 @@ private object SrFixture {
         description = "APOI fictício de teste.",
         mainCategory = ApoiCategory.AGUA,
         services = setOf(ApoiCategory.AGUA),
-        location = ApoiLocation(40.00630, -8.00000, LocationPrecision.EXACT, "SR", "SR", "Fixture", "sr-route-001", 0.70, 0.0, 0.0, RouteRelation.ON_ROUTE),
+        location = ApoiLocation(40.00630, -8.00000, LocationPrecision.EXACT, "SR", "SR", "Fixture", "sr-route-001", 0.82, 0.0, 0.0, RouteRelation.ON_ROUTE),
         publication = ApoiPublication(PublicationStatus.PUBLISHED, "SR test data")
     ))
 

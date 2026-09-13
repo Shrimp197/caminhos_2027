@@ -1,8 +1,6 @@
 package com.caminhos2027.v1.core.apoi
 
 import com.caminhos2027.v1.core.model.Apoi
-import com.caminhos2027.v1.core.model.PublicationStatus
-import com.caminhos2027.v1.core.model.RouteRelation
 
 /** Read model for the support points immediately ahead of the pilgrim. */
 data class ApoiAhead(
@@ -16,15 +14,22 @@ object NextApoiList {
         routeId: String,
         currentRouteKm: Double,
         limit: Int = 8
-    ): List<ApoiAhead> = records
-        .asSequence()
-        .filter { it.location.routeId == routeId }
-        .filter { it.location.routeKm != null && it.location.routeKm!! >= currentRouteKm }
-        .filter { it.publication.status == PublicationStatus.PUBLISHED || it.publication.status == PublicationStatus.PUBLISHED_WITH_WARNING }
-        .filter { it.location.routeRelation != RouteRelation.DISTANT_POTENTIAL_SUPPORT && it.location.routeRelation != RouteRelation.OUTSIDE_ROUTE }
-        .map { it to (it.location.routeKm!! - currentRouteKm).coerceAtLeast(0.0) }
-        .sortedBy { it.second }
-        .take(limit.coerceAtLeast(0))
-        .map { ApoiAhead(it.first, it.second) }
-        .toList()
+    ): List<ApoiAhead> {
+        require(currentRouteKm.isFinite() && currentRouteKm >= 0.0) {
+            "currentRouteKm must be finite and >= 0"
+        }
+        return records
+            .asSequence()
+            .filter { it.location.routeId == routeId }
+            .filter {
+                val routeKm = it.location.routeKm
+                routeKm != null && routeKm.isFinite() && routeKm >= currentRouteKm
+            }
+            .filter { ApoiEligibility.isEligibleForWalking(it) }
+            .map { it to (it.location.routeKm!! - currentRouteKm) }
+            .sortedBy { it.second }
+            .take(limit.coerceAtLeast(0))
+            .map { ApoiAhead(it.first, it.second) }
+            .toList()
+    }
 }
