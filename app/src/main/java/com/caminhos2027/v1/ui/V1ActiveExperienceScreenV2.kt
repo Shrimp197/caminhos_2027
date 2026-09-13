@@ -1,6 +1,8 @@
 package com.caminhos2027.v1.ui
 
-import androidx.compose.foundation.Canvas
+import android.annotation.SuppressLint
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,27 +34,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.walking.WalkingState
 import java.util.Locale
-import kotlin.math.max
-import kotlin.math.min
 
 private val V2Forest = Color(0xFF0E6546)
 private val V2ForestSoft = Color(0xFFE6F2EB)
 private val V2Sand = Color(0xFFF6F3EC)
-private val V2Map = Color(0xFFE7F0E5)
-private val V2Grid = Color(0xFFC9D8C7)
 private val V2Muted = Color(0xFF68736D)
 private val V2Warning = Color(0xFF9A5A00)
 private val V2WarningSoft = Color(0xFFFFF1D9)
@@ -83,13 +76,13 @@ internal fun V1ActiveExperienceScreenV2(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
-                Text(route.officialName, color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                Text(gpsLabel(state.gpsState), color = gpsColor(state.gpsState), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
+                Text(route.officialName, color = V2Forest, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
+                Text(gpsLabel(state.gpsState), color = gpsColor(state.gpsState), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
             }
             OutlinedButton(onClick = onStop) { Text("PARAR") }
         }
 
-        MapCard(
+        RealMapCard(
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 12.dp),
             geometry = route.geometry.points,
             projectedPoint = projectedPoint,
@@ -110,7 +103,7 @@ internal fun V1ActiveExperienceScreenV2(
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Progresso", color = V2Muted, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
-                    Text("${(progress * 100).toInt()}%", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                    Text("${(progress * 100).toInt()}%", color = V2Forest, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
                 }
                 LinearProgressIndicator(
                     progress = progress.toFloat(),
@@ -124,7 +117,7 @@ internal fun V1ActiveExperienceScreenV2(
                     Icon(Icons.Filled.LocationOn, contentDescription = null, tint = V2Forest)
                     Spacer(Modifier.width(8.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("A minha posição", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                        Text("A minha posição", color = V2Forest, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
                         Text(positionDetail(state), color = V2Muted, style = MaterialTheme.typography.bodySmall)
                     }
                 }
@@ -134,9 +127,9 @@ internal fun V1ActiveExperienceScreenV2(
                         Spacer(Modifier.width(8.dp))
                         Column(Modifier.weight(1f)) {
                             Text("Próximo APOI", color = V2Muted, style = MaterialTheme.typography.labelLarge)
-                            Text(apoi.name, fontWeight = FontWeight.ExtraBold)
+                            Text(apoi.name, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
                         }
-                        Text(state.nextApoiDistanceKm?.let(::fmtDistance) ?: "—", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                        Text(state.nextApoiDistanceKm?.let(::fmtDistance) ?: "—", color = V2Forest, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -146,7 +139,7 @@ internal fun V1ActiveExperienceScreenV2(
                 if (isTest) {
                     HorizontalDivider()
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("QA · controlo do percurso", color = V2Warning, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+                        Text("QA · controlo do percurso", color = V2Warning, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, modifier = Modifier.weight(1f))
                         if (state.gpsState != GpsState.ON_ROUTE) Icon(Icons.Filled.WarningAmber, contentDescription = null, tint = V2Warning)
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -164,8 +157,9 @@ internal fun V1ActiveExperienceScreenV2(
     }
 }
 
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun MapCard(
+private fun RealMapCard(
     modifier: Modifier,
     geometry: List<GeoPoint>,
     projectedPoint: GeoPoint?,
@@ -173,59 +167,108 @@ private fun MapCard(
     gpsState: GpsState
 ) {
     val points = remember(geometry) { geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() } }
-    Card(modifier, RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = V2Map), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+    val routeJs = remember(points) { points.toJsPoints() }
+    val startJs = remember(points) { points.firstOrNull()?.toJsPoint() ?: "null" }
+    val projectedJs = projectedPoint?.takeIf { it.latitude.isFinite() && it.longitude.isFinite() }?.toJsPoint() ?: "null"
+    val html = remember { realMapHtml() }
+
+    Card(
+        modifier,
+        RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
         Box(Modifier.fillMaxSize()) {
-            Canvas(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp))) {
-                repeat(7) { i ->
-                    drawLine(V2Grid, Offset(0f, size.height * (i + 1) / 8f), Offset(size.width, size.height * (i + 1) / 8f), 1f)
+            AndroidView(
+                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp)),
+                factory = { context ->
+                    WebView(context).apply {
+                        setBackgroundColor(android.graphics.Color.WHITE)
+                        settings.javaScriptEnabled = true
+                        settings.domStorageEnabled = true
+                        settings.allowFileAccess = false
+                        settings.allowContentAccess = false
+                        settings.userAgentString = "Caminhos2027/1.0 (Android; OpenStreetMap)"
+                        webViewClient = WebViewClient()
+                        loadDataWithBaseURL("https://appassets.androidplatform.net/", html, "text/html", "UTF-8", null)
+                    }
+                },
+                update = { webView ->
+                    if (webView.url != null) {
+                        webView.evaluateJavascript("setMapData($routeJs,$startJs,$projectedJs,${routeKm},'${gpsState.name}');", null)
+                    }
                 }
-                repeat(5) { i ->
-                    drawLine(V2Grid, Offset(size.width * (i + 1) / 6f, 0f), Offset(size.width * (i + 1) / 6f, size.height), 1f)
-                }
-                if (points.size < 2) return@Canvas
-                val minLat = points.minOf { it.latitude }
-                val maxLat = points.maxOf { it.latitude }
-                val minLon = points.minOf { it.longitude }
-                val maxLon = points.maxOf { it.longitude }
-                val latSpan = max(maxLat - minLat, 1e-9)
-                val lonSpan = max(maxLon - minLon, 1e-9)
-                val pad = 34f
-                val scale = min((size.width - 2 * pad) / lonSpan.toFloat(), (size.height - 2 * pad) / latSpan.toFloat())
-                val ox = (size.width - lonSpan.toFloat() * scale) / 2f
-                val oy = (size.height - latSpan.toFloat() * scale) / 2f
-                fun project(g: GeoPoint) = Offset(ox + (g.longitude - minLon).toFloat() * scale, oy + (maxLat - g.latitude).toFloat() * scale)
-                val path = Path().apply {
-                    moveTo(project(points.first()).x, project(points.first()).y)
-                    points.drop(1).forEach { p -> project(p).also { lineTo(it.x, it.y) } }
-                }
-                drawPath(path, Color.White, style = Stroke(width = 13f, cap = StrokeCap.Round))
-                drawPath(path, V2Forest, style = Stroke(width = 7f, cap = StrokeCap.Round))
-                projectedPoint?.let { point ->
-                    val marker = project(point)
-                    drawCircle(V2ForestSoft, 20f, marker)
-                    drawCircle(V2Forest, 11f, marker)
-                    if (gpsState == GpsState.NO_SIGNAL) drawCircle(V2WarningSoft, 29f, marker)
-                }
-            }
-            Card(Modifier.align(Alignment.TopStart).padding(12.dp), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .95f))) {
+            )
+            Card(
+                Modifier.align(Alignment.TopStart).padding(12.dp),
+                RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .95f))
+            ) {
                 Column(Modifier.padding(12.dp)) {
-                    Text("A MINHA POSIÇÃO", color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
-                    Text("${fmt(routeKm)} km", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
-                    Text(gpsLabel(gpsState), color = gpsColor(gpsState), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
+                    Text("A MINHA POSIÇÃO", color = V2Forest, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
+                    Text("${fmt(routeKm)} km", style = MaterialTheme.typography.titleLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
+                    Text(gpsLabel(gpsState), color = gpsColor(gpsState), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
                 }
             }
-            Card(Modifier.align(Alignment.BottomStart).padding(12.dp).border(1.dp, V2ForestSoft, RoundedCornerShape(14.dp)), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .95f))) {
-                Text("Percurso oficial", Modifier.padding(horizontal = 12.dp, vertical = 8.dp), color = V2Forest, fontWeight = FontWeight.SemiBold)
+            Card(
+                Modifier.align(Alignment.BottomStart).padding(12.dp).border(1.dp, V2ForestSoft, RoundedCornerShape(14.dp)),
+                RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .95f))
+            ) {
+                Text("Percurso oficial · OpenStreetMap", Modifier.padding(horizontal = 12.dp, vertical = 8.dp), color = V2Forest, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             }
         }
     }
 }
 
+private fun List<GeoPoint>.toJsPoints(): String = joinToString(prefix = "[", postfix = "]") { it.toJsPoint() }
+
+private fun GeoPoint.toJsPoint(): String = "{lat:${latitude},lon:${longitude}}"
+
+private fun realMapHtml(): String = """
+<!doctype html>
+<html lang="pt">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<style>
+html,body,#map{margin:0;width:100%;height:100%;overflow:hidden;background:#f7f5ef;font-family:Arial,sans-serif}
+#tiles{position:absolute;inset:0;overflow:hidden;background:#e6e2d8}
+.tile{position:absolute;width:256px;height:256px;image-rendering:auto}
+#route{position:absolute;inset:0;pointer-events:none}
+.road{fill:none;stroke:white;stroke-width:12;stroke-linecap:round;stroke-linejoin:round}
+.route{fill:none;stroke:#0e6546;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}
+.halo{fill:#e6f2eb;stroke:white;stroke-width:5}
+.marker{fill:#0e6546;stroke:white;stroke-width:4}
+#credit{position:absolute;right:6px;bottom:5px;padding:2px 5px;background:rgba(255,255,255,.82);font-size:10px;color:#45534c;border-radius:4px}
+#status{position:absolute;right:10px;top:10px;padding:6px 8px;background:rgba(255,255,255,.9);font-size:11px;color:#4f5b55;border-radius:8px;display:none}
+</style>
+</head>
+<body>
+<div id="map"><div id="tiles"></div><svg id="route" preserveAspectRatio="none"></svg><div id="status"></div><div id="credit">© OpenStreetMap contributors</div></div>
+<script>
+let points=[], start=null, user=null, km=0, gps='ACQUIRING';
+let center={lat:39.65,lon:-8.0}, zoom=10;
+const tileSize=256;
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function world(p,z){const s=tileSize*Math.pow(2,z),x=(p.lon+180)/360*s,lat=Math.max(-85.05112878,Math.min(85.05112878,p.lat));const r=lat*Math.PI/180;const y=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*s;return{x,y};}
+function screen(p){const w=world(p,zoom),c=world(center,zoom);return{x:w.x-c.x+window.innerWidth/2,y:w.y-c.y+window.innerHeight/2};}
+function fit(p){if(!p.length)return;let minLat=1e9,maxLat=-1e9,minLon=1e9,maxLon=-1e9;p.forEach(q=>{minLat=Math.min(minLat,q.lat);maxLat=Math.max(maxLat,q.lat);minLon=Math.min(minLon,q.lon);maxLon=Math.max(maxLon,q.lon)});center={lat:(minLat+maxLat)/2,lon:(minLon+maxLon)/2};const spans=Math.max(maxLat-minLat,maxLon-minLon,0.02);zoom=clamp(Math.floor(Math.log2(50/spans)),7,15);}
+function renderTiles(){const box=$('tiles');box.innerHTML='';const c=world(center,zoom),cols=Math.ceil(window.innerWidth/tileSize)+2,rows=Math.ceil(window.innerHeight/tileSize)+2;const tx0=Math.floor((c.x-window.innerWidth/2)/tileSize)-1,ty0=Math.floor((c.y-window.innerHeight/2)/tileSize)-1;const n=Math.pow(2,zoom);for(let ty=0;ty<rows;ty++)for(let tx=0;tx<cols;tx++){let x=tx0+tx,y=ty0+ty;while(x<0)x+=n;while(x>=n)x-=n;if(y<0||y>=n)continue;const img=document.createElement('img');img.className='tile';img.src=`https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;img.alt='';img.style.left=(x*tileSize-c.x+window.innerWidth/2)+'px';img.style.top=(y*tileSize-c.y+window.innerHeight/2)+'px';box.appendChild(img)}}
+function renderRoute(){const svg=$('route');svg.setAttribute('viewBox',`0 0 ${window.innerWidth} ${window.innerHeight}`);svg.innerHTML='';if(!points.length)return;const path=points.map((p,i)=>{const s=screen(p);return(i?'L':'M')+s.x.toFixed(1)+' '+s.y.toFixed(1)}).join(' ');const a=document.createElementNS('http://www.w3.org/2000/svg','path');a.setAttribute('class','road');a.setAttribute('d',path);svg.appendChild(a);const b=document.createElementNS('http://www.w3.org/2000/svg','path');b.setAttribute('class','route');b.setAttribute('d',path);svg.appendChild(b);if(user){const s=screen(user);const h=document.createElementNS('http://www.w3.org/2000/svg','circle');h.setAttribute('class','halo');h.setAttribute('cx',s.x);h.setAttribute('cy',s.y);h.setAttribute('r','19');svg.appendChild(h);const m=document.createElementNS('http://www.w3.org/2000/svg','circle');m.setAttribute('class','marker');m.setAttribute('cx',s.x);m.setAttribute('cy',s.y);m.setAttribute('r','10');svg.appendChild(m)}}
+function render(){renderTiles();renderRoute();const st=$('status');st.textContent=gps==='NO_SIGNAL'?'GPS sem sinal':gps==='ON_ROUTE'?'GPS no percurso':gps==='POSSIBLE_DEVIATION'?'Possível desvio':gps==='PROBABLE_DEVIATION'?'Provável desvio':'A obter sinal GPS';st.style.display='block';}
+function setMapData(route,startPoint,userPoint,currentKm,gpsState){points=route||[];start=startPoint;user=userPoint;km=currentKm;gps=gpsState||'ACQUIRING';if(points.length)fit(points);render();}
+window.addEventListener('resize',render);window.setMapData=setMapData;
+</script>
+</body>
+</html>
+""".trimIndent()
+
 @Composable
 private fun MetricCard(value: String, label: String, modifier: Modifier) {
     Card(modifier, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = V2ForestSoft)) {
         Column(Modifier.padding(12.dp)) {
-            Text(value, color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
+            Text(value, color = V2Forest, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
             Text(label, color = V2Muted, style = MaterialTheme.typography.bodySmall)
         }
     }
