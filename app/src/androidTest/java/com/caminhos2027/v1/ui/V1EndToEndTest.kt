@@ -111,7 +111,7 @@ class V1EndToEndTest {
         clickVisibleText("APLICAR PAUSAS")
         assertTrue(waitForVisibleText("Pausas", 30_000))
 
-        clickVisibleText("GUARDAR PLANO")
+        clickVisibleText("INICIAR CAMINHADA")
         assertTrue(
             "Saved plan did not appear",
             waitForVisibleText("Plano guardado", 30_000)
