@@ -170,6 +170,9 @@ private fun RealMapCard(
     val routeJs = remember(points) { points.toJsPoints() }
     val startJs = remember(points) { points.firstOrNull()?.toJsPoint() ?: "null" }
     val projectedJs = projectedPoint?.takeIf { it.latitude.isFinite() && it.longitude.isFinite() }?.toJsPoint() ?: "null"
+    val mapDataJs = remember(routeJs, startJs, projectedJs, routeKm, gpsState) {
+        "setMapData($routeJs,$startJs,$projectedJs,${routeKm},'${gpsState.name}');"
+    }
     val html = remember { realMapHtml() }
 
     Card(
@@ -188,15 +191,18 @@ private fun RealMapCard(
                         settings.domStorageEnabled = true
                         settings.allowFileAccess = false
                         settings.allowContentAccess = false
+                        settings.loadsImagesAutomatically = true
                         settings.userAgentString = "Caminhos2027/1.0 (Android; OpenStreetMap)"
-                        webViewClient = WebViewClient()
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView, url: String?) {
+                                view.evaluateJavascript(mapDataJs, null)
+                            }
+                        }
                         loadDataWithBaseURL("https://appassets.androidplatform.net/", html, "text/html", "UTF-8", null)
                     }
                 },
                 update = { webView ->
-                    if (webView.url != null) {
-                        webView.evaluateJavascript("setMapData($routeJs,$startJs,$projectedJs,${routeKm},'${gpsState.name}');", null)
-                    }
+                    webView.evaluateJavascript(mapDataJs, null)
                 }
             )
             Card(
