@@ -124,15 +124,35 @@ private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, no
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Tile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f), onRange)
             Tile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f), {})
-            Tile(Icons.Filled.Map, "Orientação", Modifier.weight(1f), {})
+            Tile(Icons.Filled.Map, "Orientação / Pausas", Modifier.weight(1f), onBreaks)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Tile(Icons.Filled.PauseCircle, "Pausas", Modifier.weight(1f), onBreaks)
             Tile(Icons.Filled.Place, "Apoios", Modifier.weight(1f), {})
             Tile(Icons.Filled.Notes, "Notas", Modifier.weight(1f), {})
+            Spacer(Modifier.weight(1f).height(126.dp))
         }
         Button(onClick = onConfirm, Modifier.fillMaxWidth().height(58.dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium) }
+        Card(Modifier.fillMaxWidth(), RoundedCornerShape(20.dp), border = BorderStroke(1.dp, PBorder), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("PROGRESSO DA CAMINHADA", color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
+                Text("A sua caminhada começa aqui.", color = PMuted)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ProgressMetric("0 km", "Percorrido", Modifier.weight(1f))
+                    ProgressMetric(fmt(route.totalDistanceKm) + " km", "Percurso", Modifier.weight(1f))
+                }
+            }
+        }
         if (notesCount > 0) Text("$notesCount nota(s) guardada(s)", color = PMuted, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+@Composable
+private fun ProgressMetric(value: String, label: String, modifier: Modifier) {
+    Card(modifier, RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F6F3))) {
+        Column(Modifier.padding(12.dp)) {
+            Text(value, color = PBlue, fontWeight = FontWeight.ExtraBold)
+            Text(label, color = PMuted, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 
