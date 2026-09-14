@@ -1,7 +1,6 @@
 package com.caminhos2027.v1.ui
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -16,11 +15,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
@@ -28,12 +27,10 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,8 +50,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -68,13 +63,11 @@ import com.caminhos2027.v1.core.model.WalkingPreparationConfig
 import java.util.Locale
 
 private val PBlue = Color(0xFF164B63)
-private val PGreen = Color(0xFF1B9B50)
-private val PSurface = Color(0xFFF5F6F4)
-private val PBorder = Color(0xFFE0E3DF)
-private val PMuted = Color(0xFF6C7478)
-private val PSoftGreen = Color(0xFFE9F6EE)
+private val PGreen = Color(0xFF159447)
+private val PSurface = Color(0xFFF7F8F6)
+private val PBorder = Color(0xFFE0E4E1)
+private val PMuted = Color(0xFF687278)
 private val PSoftBlue = Color(0xFFEAF2F7)
-private val PRed = Color(0xFFC63B3B)
 
 private enum class Sub { ROUTES, RANGE, AUDIO, ORIENTATION, BREAKS, APOIS, NOTES }
 
@@ -95,23 +88,39 @@ internal fun PreparationExperienceV3(
 
     when (sub) {
         null -> PreparationHomeV3(
-            route, routeOptions, selectedRouteId, startKm, destinationKm, config, notes.size,
-            onRoutes = { sub = Sub.ROUTES }, onRange = { sub = Sub.RANGE }, onAudio = { sub = Sub.AUDIO },
-            onOrientation = { sub = Sub.ORIENTATION }, onBreaks = { sub = Sub.BREAKS }, onApois = { sub = Sub.APOIS },
-            onNotes = { sub = Sub.NOTES }, onSave = {
+            route = route,
+            options = routeOptions,
+            selectedRouteId = selectedRouteId,
+            startKm = startKm,
+            destinationKm = destinationKm,
+            config = config,
+            notesCount = notes.size,
+            onRoutes = { sub = Sub.ROUTES },
+            onRange = { sub = Sub.RANGE },
+            onAudio = { sub = Sub.AUDIO },
+            onOrientation = { sub = Sub.ORIENTATION },
+            onBreaks = { sub = Sub.BREAKS },
+            onApois = { sub = Sub.APOIS },
+            onNotes = { sub = Sub.NOTES },
+            onSave = {
                 if (startKm >= 0.0 && destinationKm <= route.totalDistanceKm && startKm < destinationKm) {
                     onConfirm(startKm, destinationKm, config.copy(notes = notes.toList()))
                 }
-            }, onBack = onBack
+            },
+            onBack = onBack
         )
         Sub.ROUTES -> PrepScaffold("Selecionar percurso", "Escolha o percurso que pretende preparar.", onBack) {
             routeOptions.forEach { option ->
                 val chosen = option.id == selectedRouteId
-                Card(Modifier.fillMaxWidth().clickable { onSelectRoute(option.id); sub = null }, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = if (chosen) PSoftGreen else Color.White), border = BorderStroke(1.dp, PBorder)) {
+                Card(
+                    Modifier.fillMaxWidth().clickable { onSelectRoute(option.id); sub = null },
+                    RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (chosen) Color(0xFFE9F6EE) else Color.White),
+                    border = BorderStroke(1.dp, PBorder)
+                ) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text(option.title, color = PBlue, fontWeight = FontWeight.ExtraBold)
                         Text(option.description, color = PMuted)
-                        if (option.testOnly) Text("AMBIENTE DE TESTE", color = PRed, fontWeight = FontWeight.ExtraBold)
                         if (chosen) Text("Selecionado", color = PGreen, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -145,57 +154,71 @@ private fun PreparationHomeV3(
     onSave: () -> Unit,
     onBack: () -> Unit
 ) {
-    Column(Modifier.fillMaxSize().background(PSurface).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Column(
+        Modifier.fillMaxSize().background(PSurface).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Filled.Menu, "Menu", tint = PBlue) }
-            Image(painterResource(R.drawable.ic_launcher_source), "Caminhos do Peregrino", Modifier.size(40.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+            Icon(Icons.Filled.DirectionsWalk, null, Modifier.size(38.dp), tint = Color(0xFFC28A16))
             Column(Modifier.padding(start = 9.dp)) {
                 Text("CAMINHOS", color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
                 Text("DO PEREGRINO", color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
             }
         }
         Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = PBlue, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleLarge)
-        Card(Modifier.fillMaxWidth(), RoundedCornerShape(20.dp), border = BorderStroke(1.dp, PBorder), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)) {
+
+        Card(Modifier.fillMaxWidth(), RoundedCornerShape(20.dp), border = BorderStroke(1.dp, PBorder), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(3.dp)) {
             Box(Modifier.fillMaxWidth().height(250.dp).clickable { onRoutes() }) {
-                if (route.id == "caminho-do-centenario") Image(painterResource(R.drawable.caminho_centenario_hero), "Imagem do Caminho do Centenário", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF6E9BAD), Color(0xFF245B45)))))
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xD0000000)))))
+                if (route.id == "caminho-do-centenario") {
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(R.drawable.caminho_centenario_hero),
+                        contentDescription = "Imagem do Caminho do Centenário",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF6F9DB0), Color(0xFF1E6247)))))
+                    Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Filled.DirectionsWalk, null, Modifier.size(64.dp), tint = Color.White.copy(alpha = .9f))
+                        Text("PERCURSO DE TESTE", color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xD9000000)))))
                 Column(Modifier.align(Alignment.BottomStart).padding(18.dp)) {
                     Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall)
-                    Text(if (route.id == "caminho-do-centenario") "212 km · Porto → Fátima" else "${fmt(route.totalDistanceKm)} km", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(if (route.id == "caminho-do-centenario") "212 km · Porto → Fátima" else "${fmt(route.totalDistanceKm)} km · Percurso selecionado", color = Color.White, fontWeight = FontWeight.Bold)
                 }
-                Button(onClick = onRoutes, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).height(48.dp), shape = RoundedCornerShape(14.dp), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("PREPARAR", fontWeight = FontWeight.ExtraBold) }
+                Button(onClick = onRoutes, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).height(48.dp), shape = RoundedCornerShape(14.dp), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PGreen)) {
+                    Text("PREPARAR", fontWeight = FontWeight.ExtraBold)
+                }
             }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Tile(Icons.Filled.LocationOn, "Início e fim", "${fmt(startKm)} → ${fmt(destinationKm)} km", Modifier.weight(1f), onRange)
-                Tile(Icons.Filled.Headphones, "Áudio", audioLabel(config.audioMode), Modifier.weight(1f), onAudio)
-                Tile(Icons.Filled.Map, "Orientação", orientationLabel(config.mapOrientation), Modifier.weight(1f), onOrientation)
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Tile(Icons.Filled.PauseCircle, "Pausas", breakLabel(config), Modifier.weight(1f), onBreaks)
-                Tile(Icons.Filled.Place, "Apoios", apoiLabel(config.visibleApoiCategories), Modifier.weight(1f), onApois)
-                Tile(Icons.Filled.Notes, "Notas", if (notesCount == 0) "Adicionar" else "$notesCount nota(s)", Modifier.weight(1f), onNotes)
-            }
+
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Tile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f), onRange)
+            Tile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f), onAudio)
+            Tile(Icons.Filled.Map, "Orientação", Modifier.weight(1f), onOrientation)
         }
-        if (options.firstOrNull { it.id == selectedRouteId }?.testOnly == true) Text("TESTE · percurso controlado", color = PRed, fontWeight = FontWeight.Bold)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Tile(Icons.Filled.PauseCircle, "Pausas", Modifier.weight(1f), onBreaks)
+            Tile(Icons.Filled.Place, "Apoios", Modifier.weight(1f), onApois)
+            Tile(Icons.Filled.Notes, "Notas", Modifier.weight(1f), onNotes)
+        }
         Button(onClick = onSave, modifier = Modifier.fillMaxWidth().height(58.dp), shape = RoundedCornerShape(16.dp), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PGreen)) {
             Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
         }
+        Spacer(Modifier.height(4.dp))
     }
 }
 
-@Composable private fun InfoBox(title: String, value: String, modifier: Modifier, onClick: () -> Unit) {
-    Card(modifier.clickable { onClick() }, RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = PSoftBlue), border = BorderStroke(1.dp, PBorder)) {
-        Column(Modifier.padding(12.dp)) { Text(title, color = PMuted, style = MaterialTheme.typography.labelSmall); Text(value, color = PBlue, fontWeight = FontWeight.ExtraBold) }
-    }
-}
-
-@Composable private fun Tile(icon: ImageVector, title: String, value: String, modifier: Modifier, onClick: () -> Unit) {
-    Card(modifier.clickable { onClick() }, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, PBorder), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 7.dp, vertical = 13.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, null, Modifier.size(30.dp), tint = PBlue); Spacer(Modifier.height(7.dp)); Text(title, color = PBlue, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center); Text(value, color = PMuted, style = MaterialTheme.typography.labelSmall, maxLines = 2, textAlign = TextAlign.Center)
+@Composable
+private fun Tile(icon: ImageVector, title: String, modifier: Modifier, onClick: () -> Unit) {
+    Card(modifier.clickable { onClick() }, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, PBorder), elevation = CardDefaults.cardElevation(1.dp)) {
+        Column(Modifier.fillMaxWidth().height(126.dp).padding(horizontal = 6.dp, vertical = 14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Icon(icon, null, Modifier.size(31.dp), tint = PBlue)
+            Spacer(Modifier.height(8.dp))
+            Text(title, color = PBlue, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         }
     }
 }
@@ -203,44 +226,99 @@ private fun PreparationHomeV3(
 @Composable private fun PrepScaffold(title: String, description: String, onBack: () -> Unit, content: @Composable () -> Unit) {
     Column(Modifier.fillMaxSize().background(PSurface).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, "Voltar", tint = PBlue) }; Text(title, color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge) }
-        Text(description, color = PMuted); content(); Spacer(Modifier.height(16.dp))
+        Text(description, color = PMuted)
+        content()
+        Spacer(Modifier.height(16.dp))
     }
 }
 
 @Composable private fun RangeSub(total: Double, start: Double, destination: Double, onBack: () -> Unit, onApply: (Double, Double) -> Unit) {
-    var s by rememberSaveable { mutableStateOf(fmt(start)) }; var d by rememberSaveable { mutableStateOf(fmt(destination)) }; var error by rememberSaveable { mutableStateOf<String?>(null) }
+    var s by rememberSaveable { mutableStateOf(fmt(start)) }
+    var d by rememberSaveable { mutableStateOf(fmt(destination)) }
+    var error by rememberSaveable { mutableStateOf<String?>(null) }
     PrepScaffold("Início e fim", "Defina livremente o início e destino no traçado do percurso.", onBack) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) { OutlinedTextField(s, { s = it }, modifier = Modifier.weight(1f), label = { Text("Início (km)") }, singleLine = true); OutlinedTextField(d, { d = it }, modifier = Modifier.weight(1f), label = { Text("Destino (km)") }, singleLine = true) }
-        Text("Percurso: 0,00 → ${fmt(total)} km", color = PMuted); error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Button(onClick = { val sv = s.replace(',', '.').toDoubleOrNull(); val dv = d.replace(',', '.').toDoubleOrNull(); error = when { sv == null || dv == null -> "Indique números válidos."; sv < 0 || dv > total -> "Os valores têm de ficar dentro do percurso."; sv >= dv -> "O destino tem de ficar depois do início."; else -> null }; if (error == null) onApply(requireNotNull(sv), requireNotNull(dv)) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("APLICAR") }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedTextField(s, { s = it }, Modifier.weight(1f), label = { Text("Início (km)") }, singleLine = true)
+            OutlinedTextField(d, { d = it }, Modifier.weight(1f), label = { Text("Destino (km)") }, singleLine = true)
+        }
+        Text("Percurso: 0,00 → ${fmt(total)} km", color = PMuted)
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        Button(onClick = {
+            val sv = s.replace(',', '.').toDoubleOrNull(); val dv = d.replace(',', '.').toDoubleOrNull()
+            error = when { sv == null || dv == null -> "Indique números válidos."; sv < 0 || dv > total -> "Os valores têm de ficar dentro do percurso."; sv >= dv -> "O destino tem de ficar depois do início."; else -> null }
+            if (error == null) onApply(requireNotNull(sv), requireNotNull(dv))
+        }, Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("APLICAR") }
     }
 }
 
 @Composable private fun <T> ChoiceSub(title: String, description: String, icon: ImageVector, values: List<Pair<String, T>>, selected: T, onBack: () -> Unit, onApply: (T) -> Unit) {
-    PrepScaffold(title, description, onBack) { values.forEach { pair -> val chosen = pair.second == selected; Card(Modifier.fillMaxWidth().clickable { onApply(pair.second) }, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = if (chosen) PBlue else Color.White), border = BorderStroke(1.dp, PBorder)) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) { Icon(icon, null, tint = if (chosen) Color.White else PBlue); Text(pair.first, color = if (chosen) Color.White else PBlue, fontWeight = FontWeight.Bold) } } } }
+    PrepScaffold(title, description, onBack) {
+        values.forEach { pair ->
+            val chosen = pair.second == selected
+            Card(Modifier.fillMaxWidth().clickable { onApply(pair.second) }, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = if (chosen) PBlue else Color.White), border = BorderStroke(1.dp, PBorder)) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(icon, null, tint = if (chosen) Color.White else PBlue)
+                    Text(pair.first, color = if (chosen) Color.White else PBlue, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
 }
 
 @Composable private fun BreaksSub(config: WalkingPreparationConfig, onBack: () -> Unit, onApply: (WalkingPreparationConfig) -> Unit) {
-    var intelligent by remember(config) { mutableStateOf(config.intelligentBreaksEnabled) }; var time by remember(config) { mutableStateOf(config.customBreakTimeMinutes?.toString() ?: "") }; var distance by remember(config) { mutableStateOf(config.customBreakDistanceKm?.toString() ?: "") }; var error by remember(config) { mutableStateOf<String?>(null) }
+    var intelligent by remember(config) { mutableStateOf(config.intelligentBreaksEnabled) }
+    var time by remember(config) { mutableStateOf(config.customBreakTimeMinutes?.toString() ?: "") }
+    var distance by remember(config) { mutableStateOf(config.customBreakDistanceKm?.toString() ?: "") }
+    var error by remember(config) { mutableStateOf<String?>(null) }
     PrepScaffold("Pausas", "Escolha pausas inteligentes e/ou intervalos personalizados.", onBack) {
-        Card(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = PSoftGreen)) { Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) { Text("Pausas inteligentes", color = PBlue, fontWeight = FontWeight.ExtraBold); Text("Consideram dificuldade, distância e APOIs disponíveis.", color = PMuted, style = MaterialTheme.typography.bodySmall); Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text(if (intelligent) "Ativadas" else "Desativadas", modifier = Modifier.weight(1f), color = PBlue, fontWeight = FontWeight.Bold); Switch(checked = intelligent, onCheckedChange = { intelligent = it }) } } }
-        HorizontalDivider(); Text("Pausas personalizadas", color = PBlue, fontWeight = FontWeight.ExtraBold); OutlinedTextField(time, { time = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Parar a cada X minutos") }, singleLine = true); OutlinedTextField(distance, { distance = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Parar a cada X km") }, singleLine = true); error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Button(onClick = { val tv = time.toIntOrNull(); val dv = distance.replace(',', '.').toDoubleOrNull(); error = when { time.isNotBlank() && (tv == null || tv <= 0) -> "Os minutos têm de ser positivos."; distance.isNotBlank() && (dv == null || dv <= 0.0) -> "Os km têm de ser positivos."; else -> null }; if (error == null) onApply(config.copy(intelligentBreaksEnabled = intelligent, customBreakTimeMinutes = tv?.takeIf { it > 0 }, customBreakDistanceKm = dv?.takeIf { it > 0 })) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("APLICAR PAUSAS") }
+        Card(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFE9F6EE))) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("Pausas inteligentes", color = PBlue, fontWeight = FontWeight.ExtraBold)
+                Text("Consideram dificuldade, distância e APOIs disponíveis.", color = PMuted, style = MaterialTheme.typography.bodySmall)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (intelligent) "Ativadas" else "Desativadas", Modifier.weight(1f), color = PBlue, fontWeight = FontWeight.Bold)
+                    Switch(checked = intelligent, onCheckedChange = { intelligent = it })
+                }
+            }
+        }
+        Text("Pausas personalizadas", color = PBlue, fontWeight = FontWeight.ExtraBold)
+        OutlinedTextField(time, { time = it }, Modifier.fillMaxWidth(), label = { Text("Parar a cada X minutos") }, singleLine = true)
+        OutlinedTextField(distance, { distance = it }, Modifier.fillMaxWidth(), label = { Text("Parar a cada X km") }, singleLine = true)
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        Button(onClick = {
+            val tv = time.toIntOrNull(); val dv = distance.replace(',', '.').toDoubleOrNull()
+            error = when { time.isNotBlank() && (tv == null || tv <= 0) -> "Os minutos têm de ser positivos."; distance.isNotBlank() && (dv == null || dv <= 0.0) -> "Os km têm de ser positivos."; else -> null }
+            if (error == null) onApply(config.copy(intelligentBreaksEnabled = intelligent, customBreakTimeMinutes = tv?.takeIf { it > 0 }, customBreakDistanceKm = dv?.takeIf { it > 0 }))
+        }, Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("APLICAR PAUSAS") }
     }
 }
 
 @Composable private fun ApoisSub(initial: Set<ApoiCategory>, onBack: () -> Unit, onApply: (Set<ApoiCategory>) -> Unit) {
-    var selected by remember(initial) { mutableStateOf(initial) }; val cats = listOf(ApoiCategory.ALIMENTACAO, ApoiCategory.AGUA, ApoiCategory.DESCANSO, ApoiCategory.PERNOITA, ApoiCategory.DUCHES, ApoiCategory.CARREGAMENTO, ApoiCategory.TRANSPORTE, ApoiCategory.EMERGENCIA)
-    PrepScaffold("Apoios", "Escolha os tipos de apoio que pretende ver no mapa.", onBack) { Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { cats.forEach { cat -> FilterChip(selected = cat in selected, onClick = { selected = if (cat in selected) selected - cat else selected + cat }, label = { Text(categoryLabel(cat)) }) } }; Button(onClick = { onApply(selected) }, modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("APLICAR APOIOS") } }
+    var selected by remember(initial) { mutableStateOf(initial) }
+    val cats = listOf(ApoiCategory.ALIMENTACAO, ApoiCategory.AGUA, ApoiCategory.DESCANSO, ApoiCategory.PERNOITA, ApoiCategory.DUCHES, ApoiCategory.CARREGAMENTO, ApoiCategory.TRANSPORTE, ApoiCategory.EMERGENCIA)
+    PrepScaffold("Apoios", "Escolha os tipos de apoio que pretende ver no mapa.", onBack) {
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { cats.forEach { cat -> FilterChip(selected = cat in selected, onClick = { selected = if (cat in selected) selected - cat else selected + cat }, label = { Text(categoryLabel(cat)) }) } }
+        Button(onClick = { onApply(selected) }, Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("APLICAR APOIOS") }
+    }
 }
 
 @Composable private fun NotesSub(notes: List<String>, onBack: () -> Unit, onAdd: (String) -> Unit) {
-    var draft by rememberSaveable { mutableStateOf("") }; PrepScaffold("Notas", "As notas ficam associadas ao plano guardado.", onBack) { OutlinedTextField(draft, { draft = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Nova nota") }, minLines = 4); Button(onClick = { onAdd(draft); draft = "" }, enabled = draft.isNotBlank(), modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("GUARDAR NOTA") }; notes.asReversed().forEach { note -> Card(Modifier.fillMaxWidth(), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) { Text(note, Modifier.padding(14.dp), color = PBlue) } } }
+    var draft by rememberSaveable { mutableStateOf("") }
+    PrepScaffold("Notas", "As notas ficam associadas ao plano guardado.", onBack) {
+        OutlinedTextField(draft, { draft = it }, Modifier.fillMaxWidth(), label = { Text("Nova nota") }, minLines = 4)
+        Button(onClick = { onAdd(draft); draft = "" }, enabled = draft.isNotBlank(), Modifier.fillMaxWidth(), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("GUARDAR NOTA") }
+        notes.asReversed().forEach { note -> Card(Modifier.fillMaxWidth(), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) { Text(note, Modifier.padding(14.dp), color = PBlue) } }
+    }
 }
 
 private fun fmt(v: Double) = String.format(Locale("pt", "PT"), "%.2f", v.coerceAtLeast(0.0))
-private fun audioLabel(v: AudioMode) = when (v) { AudioMode.NORMAL -> "Normal"; AudioMode.IMMERSIVE -> "Imersivo"; AudioMode.SILENT -> "Silenciado" }
-private fun orientationLabel(v: MapOrientation) = when (v) { MapOrientation.NORTH -> "Norte"; MapOrientation.WALK_DIRECTION -> "Direção da caminhada" }
-private fun breakLabel(c: WalkingPreparationConfig) = when { c.intelligentBreaksEnabled && (c.customBreakTimeMinutes != null || c.customBreakDistanceKm != null) -> "Inteligentes + personalizadas"; c.intelligentBreaksEnabled -> "Inteligentes"; c.customBreakTimeMinutes != null || c.customBreakDistanceKm != null -> "Personalizadas"; else -> "Sem pausas" }
-private fun apoiLabel(c: Set<ApoiCategory>) = if (c.isEmpty()) "Escolher tipos" else c.take(2).joinToString(" · ") { categoryLabel(it) } + if (c.size > 2) " +${c.size - 2}" else ""
-private fun categoryLabel(c: ApoiCategory) = when (c) { ApoiCategory.AGUA -> "Água"; ApoiCategory.ALIMENTACAO -> "Alimentação"; ApoiCategory.PERNOITA -> "Pernoita"; ApoiCategory.DESCANSO -> "Descanso"; ApoiCategory.DUCHES -> "Duches"; ApoiCategory.CARREGAMENTO -> "Carregamento"; ApoiCategory.TRANSPORTE -> "Transporte"; ApoiCategory.EMERGENCIA -> "Emergência" }
+private fun categoryLabel(c: ApoiCategory) = when (c) {
+    ApoiCategory.AGUA -> "Água"
+    ApoiCategory.ALIMENTACAO -> "Alimentação"
+    ApoiCategory.PERNOITA -> "Pernoita"
+    ApoiCategory.DESCANSO -> "Descanso"
+    ApoiCategory.DUCHES -> "Duches"
+    ApoiCategory.CARREGAMENTO -> "Carregamento"
+    ApoiCategory.TRANSPORTE -> "Transporte"
+    ApoiCategory.EMERGENCIA -> "Emergência"
+}
