@@ -32,7 +32,7 @@ class V1EndToEndTest {
     fun testVerticalSliceFromPlanToApoiDetailAndDecision() {
         prepareAndStartSr()
         assertTrue("Walking actions did not appear", waitForAnyVisibleText("VER APOIOS", "OPÇÕES", timeoutMs = 30_000))
-        assertTrue("Cartographic map surface did not appear", device.wait(Until.hasObject(By.clazz("android.webkit.WebView")), 30_000))
+        assertTrue("Offline cartographic map did not appear", waitForVisibleText("MAPA OFFLINE · PERCURSO OFICIAL", 30_000))
         assertTrue("QA route controls did not appear", waitForVisibleText("QA · controlo do percurso", 30_000))
         assertTrue("No GPS state was exposed", waitForAnyVisibleText("A obter sinal GPS", "GPS no percurso", timeoutMs = 30_000))
 
