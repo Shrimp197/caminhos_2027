@@ -23,6 +23,7 @@ class V1EndToEndTest {
         device.pressHome()
         scenario = ActivityScenario.launch(V1MainActivity::class.java)
         assertTrue("Preparation screen did not appear", device.wait(Until.hasObject(By.text("Prepare a sua caminhada")), 120_000))
+        capture("/sdcard/caminhos-preparacao.png")
     }
 
     @After
@@ -33,6 +34,7 @@ class V1EndToEndTest {
         prepareAndStartSr()
         assertTrue("Walking actions did not appear", waitForAnyVisibleText("VER APOIOS", "OPÇÕES", timeoutMs = 30_000))
         assertTrue("Walking map host surface did not appear", waitForAnyVisibleText("A MINHA POSIÇÃO", "VER APOIOS", "OPÇÕES", timeoutMs = 30_000))
+        capture("/sdcard/caminhos-navegacao.png")
         assertTrue("QA route controls did not appear", waitForVisibleText("QA · controlo do percurso", 30_000))
         assertTrue("No GPS state was exposed", waitForAnyVisibleText("A obter sinal GPS", "GPS no percurso", timeoutMs = 30_000))
 
@@ -85,6 +87,10 @@ class V1EndToEndTest {
         assertTrue("Saved-plan explanation did not appear", waitForVisibleText("Guardar o plano não inicia a caminhada.", 30_000))
         clickVisibleText("INICIAR CAMINHADA")
         assertTrue("Walking screen did not appear", waitForAnyVisibleText("A MINHA POSIÇÃO", "VER APOIOS", "OPÇÕES", timeoutMs = 30_000))
+    }
+
+    private fun capture(path: String) {
+        device.executeShellCommand("screencap -p $path")
     }
 
     private fun clickVisibleText(text: String) {
