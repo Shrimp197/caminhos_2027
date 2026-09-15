@@ -1,8 +1,6 @@
 package com.caminhos2027.v1.ui
 
-import android.annotation.SuppressLint
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,21 +29,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.walking.WalkingState
 import java.util.Locale
+import kotlin.math.cos
 import kotlin.math.max
 
 private val V2Forest = Color(0xFF0E6546)
 private val V2ForestSoft = Color(0xFFE6F2EB)
-private val V2Sand = Color(0xFFF6F3EC)
+private val V2Map = Color(0xFFF0F0E9)
+private val V2Water = Color(0xFFD9EAF0)
+private val V2Road = Color(0xFFC9C7BF)
+private val V2MajorRoad = Color(0xFFB1AEA4)
 private val V2Muted = Color(0xFF68736D)
 private val V2Warning = Color(0xFF9A5A00)
 
@@ -68,7 +75,7 @@ internal fun V1ActiveExperienceScreenV2(
     val projectedPoint = state.routePosition?.projectedPoint
     val isTest = routeOptions.firstOrNull { it.id == route.id }?.testOnly == true
 
-    Column(Modifier.fillMaxSize().background(V2Sand)) {
+    Column(Modifier.fillMaxSize().background(Color(0xFFF7F5EF))) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(route.officialName, color = V2Forest, fontWeight = FontWeight.ExtraBold)
@@ -77,7 +84,7 @@ internal fun V1ActiveExperienceScreenV2(
             OutlinedButton(onClick = onStop) { Text("PARAR") }
         }
 
-        CartographicRouteMap(
+        OfflineCartographicRouteMap(
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 12.dp),
             geometry = route.geometry.points,
             projectedPoint = projectedPoint,
@@ -138,27 +145,19 @@ internal fun V1ActiveExperienceScreenV2(
     }
 }
 
-@SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun CartographicRouteMap(modifier: Modifier, geometry: List<GeoPoint>, projectedPoint: GeoPoint?, gpsState: GpsState) {
+private fun OfflineCartographicRouteMap(
+    modifier: Modifier,
+    geometry: List<GeoPoint>,
+    projectedPoint: GeoPoint?,
+    gpsState: GpsState
+) {
     val points = geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() }
-    val html = cartographicMapHtml(points, projectedPoint)
-    Card(modifier, RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
+    Card(modifier, RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = V2Map), elevation = CardDefaults.cardElevation(2.dp)) {
         Box(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp))) {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    WebView(context).apply {
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
-                        settings.allowFileAccess = false
-                        settings.allowContentAccess = false
-                        webViewClient = WebViewClient()
-                        loadDataWithBaseURL("https://www.openstreetmap.org/", html, "text/html", "UTF-8", null)
-                    }
-                },
-                update = { view -> view.loadDataWithBaseURL("https://www.openstreetmap.org/", html, "text/html", "UTF-8", null) }
-            )
+            Canvas(Modifier.fillMaxSize()) {
+                if (points.size >= 2) drawOfflineCartography(points, projectedPoint)
+            }
             Card(Modifier.align(Alignment.TopStart).padding(12.dp), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))) {
                 Column(Modifier.padding(12.dp)) {
                     Text("A MINHA POSIÇÃO", color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
@@ -166,34 +165,59 @@ private fun CartographicRouteMap(modifier: Modifier, geometry: List<GeoPoint>, p
                 }
             }
             Card(Modifier.align(Alignment.BottomStart).padding(12.dp), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))) {
-                Text("MAPA CARTOGRÁFICO · OPENSTREETMAP", Modifier.padding(horizontal = 12.dp, vertical = 8.dp), color = V2Forest, fontWeight = FontWeight.SemiBold)
+                Text("MAPA OFFLINE · PERCURSO OFICIAL", Modifier.padding(horizontal = 12.dp, vertical = 8.dp), color = V2Forest, fontWeight = FontWeight.SemiBold)
             }
         }
     }
 }
 
-private fun cartographicMapHtml(points: List<GeoPoint>, projected: GeoPoint?): String {
-    if (points.isEmpty()) return "<html><body style='margin:0;background:#eee'><div style='padding:24px;font:16px sans-serif'>Percurso sem geometria cartográfica.</div></body></html>"
-    val coords = points.joinToString(",") { "[${it.latitude},${it.longitude}]" }
-    val marker = projected?.takeIf { it.latitude.isFinite() && it.longitude.isFinite() }?.let { "[${it.latitude},${it.longitude}]" } ?: "null"
-    return """
-<!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1,user-scalable=no'><style>html,body,#m{margin:0;width:100%;height:100%;overflow:hidden;background:#e8e5dc}canvas{display:block;width:100%;height:100%}.a{position:absolute;right:8px;bottom:5px;background:rgba(255,255,255,.9);padding:3px 6px;border-radius:4px;font:10px sans-serif;color:#444}</style></head>
-<body><canvas id='m'></canvas><div class='a'>© OpenStreetMap contributors</div><script>
-const route=[$coords]; const me=$marker; const c=document.getElementById('m'),x=c.getContext('2d');
-const tile=256, R=6378137;
-function world(lat,lon,z){let s=tile*Math.pow(2,z);let X=(lon+180)/360*s;let y=(1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*s;return [X,y]}
-function zoomFit(){let minLat=90,maxLat=-90,minLon=180,maxLon=-180;route.forEach(p=>{minLat=Math.min(minLat,p[0]);maxLat=Math.max(maxLat,p[0]);minLon=Math.min(minLon,p[1]);maxLon=Math.max(maxLon,p[1])});let span=Math.max(maxLat-minLat,(maxLon-minLon)*Math.max(.25,Math.cos(((minLat+maxLat)/2)*Math.PI/180)));let z=span<.35?12:span<.8?11:span<1.6?10:span<3.2?9:8;return {z,lat:(minLat+maxLat)/2,lon:(minLon+maxLon)/2}}
-function draw(){let d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*d;c.height=h*d;x.setTransform(d,0,0,d,0,0);x.fillStyle='#dfe7d5';x.fillRect(0,0,w,h);let f=zoomFit(),z=f.z,center=world(f.lat,f.lon,z),imgs=[];let cols=Math.ceil(w/tile)+2,rows=Math.ceil(h/tile)+2;let ox=w/2-center[0],oy=h/2-center[1];for(let tx=Math.floor((center[0]-w/2)/tile);tx<Math.floor((center[0]+w/2)/tile)+1;tx++)for(let ty=Math.floor((center[1]-h/2)/tile);ty<Math.floor((center[1]+h/2)/tile)+1;ty++){let n=1<<z,wx=((tx%n)+n)%n,wy=ty;if(wy<0||wy>=n)continue;let im=new Image();im.crossOrigin='anonymous';im.onload=()=>{x.drawImage(im,tx*tile+ox,ty*tile+oy,tile,tile);drawRoute(ox,oy,z);};im.src='https://tile.openstreetmap.org/'+z+'/'+wx+'/'+wy+'.png';imgs.push(im)}drawRoute(ox,oy,z)}
-function drawRoute(ox,oy,z){x.save();x.lineJoin='round';x.lineCap='round';x.beginPath();route.forEach((p,i)=>{let q=world(p[0],p[1],z);let X=q[0]+ox,Y=q[1]+oy;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.strokeStyle='white';x.lineWidth=10;x.stroke();x.strokeStyle='#0e6546';x.lineWidth=5;x.stroke();let a=world(route[0][0],route[0][1],z),b=world(route[route.length-1][0],route[route.length-1][1],z);dot(a[0]+ox,a[1]+oy,'#0e6546');dot(b[0]+ox,b[1]+oy,'#c28a16');if(me){let q=world(me[0],me[1],z);dot(q[0]+ox,q[1]+oy,'#0e6546',10,true)}x.restore()}
-function dot(X,Y,col,r=7,ring=false){x.beginPath();x.arc(X,Y,r+(ring?7:0),0,Math.PI*2);x.fillStyle='white';x.fill();x.beginPath();x.arc(X,Y,r,0,Math.PI*2);x.fillStyle=col;x.fill()}
-window.addEventListener('resize',draw);draw();
-</script></body></html>
-""".trimIndent()
+private fun DrawScope.drawOfflineCartography(route: List<GeoPoint>, projected: GeoPoint?) {
+    val minLat = route.minOf { it.latitude }; val maxLat = route.maxOf { it.latitude }
+    val minLon = route.minOf { it.longitude }; val maxLon = route.maxOf { it.longitude }
+    val latSpan = max(0.01, maxLat - minLat); val lonSpan = max(0.01, maxLon - minLon)
+    val midLat = (minLat + maxLat) / 2.0
+    val lonScale = cos(midLat * Math.PI / 180.0)
+    val projectedLonSpan = lonSpan * lonScale
+    val scale = minOf((size.width * .86f) / projectedLonSpan.toFloat(), (size.height * .84f) / latSpan.toFloat())
+    val cx = size.width / 2f; val cy = size.height / 2f
+    fun p(g: GeoPoint): Offset {
+        val x = cx + (((g.longitude - (minLon + maxLon) / 2.0) * lonScale).toFloat() * scale)
+        val y = cy - ((g.latitude - midLat).toFloat() * scale)
+        return Offset(x, y)
+    }
+
+    drawRect(V2Map)
+    for (i in 1..8) {
+        val x = size.width * i / 9f; drawLine(V2Road.copy(alpha = .20f), Offset(x, 0f), Offset(x, size.height), 1f)
+        val y = size.height * i / 9f; drawLine(V2Road.copy(alpha = .20f), Offset(0f, y), Offset(size.width, y), 1f)
+    }
+
+    fun corridor(coords: List<GeoPoint>, major: Boolean = false) {
+        val path = Path().apply { coords.forEachIndexed { i, g -> val q = p(g); if (i == 0) moveTo(q.x, q.y) else lineTo(q.x, q.y) } }
+        drawPath(path, if (major) V2MajorRoad else V2Road, style = Stroke(width = if (major) 5f else 3f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    }
+    corridor(listOf(GeoPoint(41.16,-8.63), GeoPoint(40.95,-8.63), GeoPoint(40.64,-8.65), GeoPoint(40.38,-8.73), GeoPoint(39.74,-8.81)), true)
+    corridor(listOf(GeoPoint(41.15,-8.61), GeoPoint(41.00,-8.55), GeoPoint(40.75,-8.55), GeoPoint(40.55,-8.45), GeoPoint(40.20,-8.40)))
+    corridor(listOf(GeoPoint(40.65,-8.65), GeoPoint(40.45,-8.62), GeoPoint(40.20,-8.61), GeoPoint(39.92,-8.80)))
+
+    val routePath = Path().apply { route.forEachIndexed { i, g -> val q = p(g); if (i == 0) moveTo(q.x, q.y) else lineTo(q.x, q.y) } }
+    drawPath(routePath, Color.White, style = Stroke(width = 13f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    drawPath(routePath, V2Forest, style = Stroke(width = 7f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+    fun marker(g: GeoPoint, color: Color, radius: Float = 8f) { val q = p(g); drawCircle(Color.White, radius + 4f, q); drawCircle(color, radius, q) }
+    marker(route.first(), V2Forest); marker(route.last(), Color(0xFFC28A16))
+    projected?.takeIf { it.latitude.isFinite() && it.longitude.isFinite() }?.let { marker(it, V2Forest, 10f) }
+
+    val cities = listOf(
+        GeoPoint(41.1496,-8.6109), GeoPoint(40.6405,-8.6538), GeoPoint(40.2033,-8.4103),
+        GeoPoint(39.7436,-8.8071), GeoPoint(39.6297,-8.6736)
+    )
+    cities.forEach { g -> drawCircle(Color(0xFF4D5A55), 4f, p(g)) }
 }
 
 @Composable private fun MetricCard(value: String, label: String, modifier: Modifier) {
     Card(modifier, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = V2ForestSoft)) {
-        Column(Modifier.padding(12.dp)) { androidx.compose.material3.Text(value, color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge); androidx.compose.material3.Text(label, color = V2Muted, style = MaterialTheme.typography.bodySmall) }
+        Column(Modifier.padding(12.dp)) { Text(value, color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge); Text(label, color = V2Muted, style = MaterialTheme.typography.bodySmall) }
     }
 }
 
