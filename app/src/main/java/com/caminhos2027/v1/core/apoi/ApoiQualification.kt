@@ -24,6 +24,8 @@ object ApoiQualification {
         evidence: ApoiQualificationEvidence,
         targetYear: Int
     ): ApoiPublicationDecision {
+        if (targetYear < 1) return decision(PublicationStatus.REVIEW, "Ano-alvo inválido")
+
         if (apoi.location.routeRelation == RouteRelation.OUTSIDE_ROUTE ||
             apoi.location.routeRelation == RouteRelation.DISTANT_POTENTIAL_SUPPORT
         ) return decision(PublicationStatus.EXCLUDED, "Fora da área normal de apoio do caminho")
@@ -55,6 +57,9 @@ object ApoiQualification {
         }
         if (evidence.pilgrimSupportConfirmed == null) {
             return decision(PublicationStatus.REVIEW, "Apoio ao peregrino ainda não confirmado")
+        }
+        if (apoi.availability.status == ApoiAvailabilityStatus.FUTURE_CONFIRMED && evidence.confirmedForYear != targetYear) {
+            return decision(PublicationStatus.REVIEW, "Disponibilidade futura sem confirmação para o ano-alvo")
         }
         if (apoi.availability.status == ApoiAvailabilityStatus.AWAITING_CONFIRMATION) {
             return decision(PublicationStatus.PUBLISHED_WITH_WARNING, "Apoio útil, mas confirmação atual pendente")

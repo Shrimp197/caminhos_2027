@@ -1,5 +1,8 @@
 package com.caminhos2027.v1.ui
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,43 +11,73 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.ApoiAvailabilityStatus
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.ApoiCostModel
 import com.caminhos2027.v1.core.model.ApoiReservationPolicy
 import com.caminhos2027.v1.core.model.LocationPrecision
+import com.caminhos2027.v1.core.model.PositionConfidence
+import com.caminhos2027.v1.core.model.PublicationStatus
+import com.caminhos2027.v1.core.model.RouteRelation
 import java.util.Locale
 
 /** V1 APOI detail presentation. Missing values are omitted instead of being shown as "não informado". */
 @Composable
 fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
+    val context = LocalContext.current
     Surface {
         Column(
             modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text(apoi.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar") }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Text(apoi.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                }
+            }
             apoi.description?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
             StatusCard(apoi)
             LocationCard(apoi)
+            if (apoi.location.latitude != null && apoi.location.longitude != null) {
+                Button(
+                    onClick = {
+                        val lat = apoi.location.latitude
+                        val lon = apoi.location.longitude
+                        val navigationIntent = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=$lat,$lon&mode=w"))
+                        try {
+                            context.startActivity(navigationIntent)
+                        } catch (_: ActivityNotFoundException) {
+                            val fallbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:$lat,$lon?q=$lat,$lon"))
+                            context.startActivity(fallbackIntent)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Navegar a pé", fontWeight = FontWeight.Bold) }
+            }
             ServicesCard(apoi)
             OperationalCard(apoi)
             ContactCard(apoi)
             ConfidenceCard(apoi)
             Text(
-                "Os dados apresentados dependem da informação disponível e da sua data de confirmação.",
+                "Os dados apresentados dependem da informação disponível e da sua data de confirmação. Uma informação publicada não é, por si só, uma garantia de funcionamento em 2027.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -56,7 +89,13 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(publicationLabel(apoi.publication.status), fontWeight = FontWeight.Bold)
+            Text("Estado de disponibilidade: ${availabilityLabel(apoi.availability.status)}")
+            availabilityCaveat(apoi.availability.status)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             apoi.publication.reason?.takeIf { it.isNotBlank() }?.let { Text(it) }
+            apoi.availability.validFrom?.takeIf { it.isNotBlank() }?.let { Text("Válido desde: $it") }
+            apoi.availability.validUntil?.takeIf { it.isNotBlank() }?.let { Text("Válido até: $it") }
+            apoi.availability.recurrence?.takeIf { it.isNotBlank() }?.let { Text("Recorrência: $it") }
+            apoi.availability.season?.takeIf { it.isNotBlank() }?.let { Text("Época: $it") }
             apoi.availability.openingHours?.takeIf { it.isNotBlank() }?.let { Text("Horário: $it") }
             apoi.availability.notes?.takeIf { it.isNotBlank() }?.let { Text(it) }
         }
@@ -66,14 +105,11 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
 @Composable private fun LocationCard(apoi: Apoi) {
     Card {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.Default.LocationOn, contentDescription = null)
-                Text("Localização", fontWeight = FontWeight.Bold)
-            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Icon(Icons.Default.LocationOn, contentDescription = null); Text("Localização", fontWeight = FontWeight.Bold) }
             apoi.location.routeKm?.let { Text("${formatKm(it)} km no caminho") }
             apoi.location.accessDistanceM?.let { Text("Acesso: ${formatMeters(it)}") }
-            listOfNotNull(apoi.location.locality, apoi.location.municipality, apoi.location.reference)
-                .joinToString(" · ").takeIf { it.isNotBlank() }?.let { Text(it) }
+            routeRelationLabel(apoi.location.routeRelation)?.let { Text(it, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary) }
+            listOfNotNull(apoi.location.locality, apoi.location.municipality, apoi.location.reference).joinToString(" · ").takeIf { it.isNotBlank() }?.let { Text(it) }
             Text(locationPrecisionLabel(apoi.location.precision), style = MaterialTheme.typography.bodySmall)
         }
     }
@@ -81,12 +117,7 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
 
 @Composable private fun ServicesCard(apoi: Apoi) {
     if (apoi.services.isEmpty()) return
-    Card {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text("Serviços", fontWeight = FontWeight.Bold)
-            Text(apoi.services.sortedBy { it.ordinal }.joinToString(" · ") { categoryLabel(it) })
-        }
-    }
+    Card { Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) { Text("Serviços", fontWeight = FontWeight.Bold); Text(apoi.services.sortedBy { it.ordinal }.joinToString(" · ") { categoryLabel(it) }) } }
 }
 
 @Composable private fun OperationalCard(apoi: Apoi) {
@@ -115,17 +146,7 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
         apoi.reservation.notes?.takeIf { it.isNotBlank() }?.let { add("Nota de reserva" to it) }
     }
     if (rows.isEmpty()) return
-    Card {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text("Informação útil", fontWeight = FontWeight.Bold)
-            rows.forEach { (label, value) ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(label, modifier = Modifier.weight(0.38f), fontWeight = FontWeight.SemiBold)
-                    Text(value, modifier = Modifier.weight(0.62f))
-                }
-            }
-        }
-    }
+    Card { Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) { Text("Informação útil", fontWeight = FontWeight.Bold); rows.forEach { (label, value) -> Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) { Text(label, modifier = Modifier.weight(0.38f), fontWeight = FontWeight.SemiBold); Text(value, modifier = Modifier.weight(0.62f)) } } } }
 }
 
 @Composable private fun ContactCard(apoi: Apoi) {
@@ -138,54 +159,21 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
         apoi.contact.social?.takeIf { it.isNotBlank() }?.let { add("Rede social" to it) }
     }
     if (contact.isEmpty()) return
-    Card {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Contacto", fontWeight = FontWeight.Bold)
-            contact.forEach { (label, value) -> Text("$label: $value") }
-        }
-    }
+    Card { Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { Text("Contacto", fontWeight = FontWeight.Bold); contact.forEach { (label, value) -> Text("$label: $value") } } }
 }
 
 @Composable private fun ConfidenceCard(apoi: Apoi) {
-    Card {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text("Confiança da informação", fontWeight = FontWeight.Bold)
-            confidenceLine("Localização", apoi.confidence.location.name)
-            confidenceLine("Apoio", apoi.confidence.support.name)
-            confidenceLine("Disponibilidade", apoi.confidence.availability.name)
-            confidenceLine("Informação crítica", apoi.confidence.criticalInformation.name)
-        }
-    }
+    Card { Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) { Text("Confiança da informação", fontWeight = FontWeight.Bold); confidenceLine("Global", apoi.confidence.overall); confidenceLine("Localização", apoi.confidence.location); confidenceLine("Apoio", apoi.confidence.support); confidenceLine("Disponibilidade", apoi.confidence.availability); confidenceLine("Informação crítica", apoi.confidence.criticalInformation) } }
 }
 
-@Composable private fun confidenceLine(label: String, value: String) = Text("$label: ${value.lowercase(Locale("pt", "PT"))}", style = MaterialTheme.typography.bodySmall)
-
-private fun publicationLabel(status: com.caminhos2027.v1.core.model.PublicationStatus): String = when (status) {
-    com.caminhos2027.v1.core.model.PublicationStatus.PUBLISHED -> "Informação publicada"
-    com.caminhos2027.v1.core.model.PublicationStatus.PUBLISHED_WITH_WARNING -> "Informação publicada com aviso"
-    com.caminhos2027.v1.core.model.PublicationStatus.HISTORICAL -> "Informação histórica"
-    com.caminhos2027.v1.core.model.PublicationStatus.CLOSED -> "APOI encerrado"
-    else -> "Informação em revisão"
-}
-
-private fun locationPrecisionLabel(value: LocationPrecision): String = when (value) {
-    LocationPrecision.EXACT -> "Localização exata"
-    LocationPrecision.APPROXIMATE -> "Localização aproximada"
-    LocationPrecision.LOCALITY_ONLY -> "Localização indicada pela localidade"
-    LocationPrecision.UNKNOWN -> "Localização por confirmar"
-}
-
-private fun categoryLabel(category: ApoiCategory): String = when (category) {
-    ApoiCategory.ALIMENTACAO -> "Alimentação"
-    ApoiCategory.AGUA -> "Água"
-    ApoiCategory.DESCANSO -> "Descanso"
-    ApoiCategory.PERNOITA -> "Pernoita"
-    ApoiCategory.DUCHES -> "Duches"
-    ApoiCategory.CARREGAMENTO -> "Carregamento"
-    ApoiCategory.TRANSPORTE -> "Transporte"
-    ApoiCategory.EMERGENCIA -> "Emergência"
-}
-
+@Composable private fun confidenceLine(label: String, value: PositionConfidence) = Text("$label: ${confidenceLabel(value)}", style = MaterialTheme.typography.bodySmall)
+private fun confidenceLabel(value: PositionConfidence): String = when (value) { PositionConfidence.HIGH -> "alta"; PositionConfidence.MEDIUM -> "média"; PositionConfidence.LOW -> "baixa"; PositionConfidence.UNKNOWN -> "por confirmar" }
+private fun availabilityCaveat(status: ApoiAvailabilityStatus): String? = when (status) { ApoiAvailabilityStatus.CURRENT -> "Informação indicada como válida atualmente; confirme antes de depender deste apoio."; ApoiAvailabilityStatus.FUTURE_CONFIRMED -> "Há confirmação para o período indicado; isso não substitui a confirmação de 2027 quando o período for outro."; ApoiAvailabilityStatus.RECURRING -> "A recorrência é informativa e pode não cobrir a data concreta da caminhada."; ApoiAvailabilityStatus.AWAITING_CONFIRMATION -> "A informação ainda aguarda confirmação."; ApoiAvailabilityStatus.HISTORICAL -> "Informação histórica: não deve ser tratada como disponibilidade atual."; ApoiAvailabilityStatus.EXPIRED -> "Informação expirada: não deve ser tratada como disponibilidade atual."; ApoiAvailabilityStatus.CLOSED -> "Este APOI está indicado como encerrado." }
+private fun publicationLabel(status: PublicationStatus): String = when (status) { PublicationStatus.PUBLISHED -> "Informação publicada"; PublicationStatus.PUBLISHED_WITH_WARNING -> "Informação publicada com aviso"; PublicationStatus.HISTORICAL -> "Informação histórica"; PublicationStatus.CLOSED -> "APOI encerrado"; else -> "Informação em revisão" }
+private fun availabilityLabel(status: ApoiAvailabilityStatus): String = when (status) { ApoiAvailabilityStatus.CURRENT -> "atual"; ApoiAvailabilityStatus.FUTURE_CONFIRMED -> "futura confirmada"; ApoiAvailabilityStatus.RECURRING -> "recorrente"; ApoiAvailabilityStatus.HISTORICAL -> "histórica"; ApoiAvailabilityStatus.EXPIRED -> "expirada"; ApoiAvailabilityStatus.AWAITING_CONFIRMATION -> "aguarda confirmação"; ApoiAvailabilityStatus.CLOSED -> "encerrada" }
+private fun locationPrecisionLabel(value: LocationPrecision): String = when (value) { LocationPrecision.EXACT -> "Localização exata"; LocationPrecision.APPROXIMATE -> "Localização aproximada"; LocationPrecision.LOCALITY_ONLY -> "Localização indicada pela localidade"; LocationPrecision.UNKNOWN -> "Localização por confirmar" }
+private fun routeRelationLabel(value: RouteRelation): String? = when (value) { RouteRelation.ON_ROUTE -> null; RouteRelation.NEAR_ROUTE -> "Fora do traçado · acesso próximo"; RouteRelation.ACCESSIBLE_WITH_DETOUR -> "Fora do traçado · exige desvio"; RouteRelation.LOCATION_UNCERTAIN -> "Relação com o traçado por confirmar"; RouteRelation.DISTANT_POTENTIAL_SUPPORT -> "Fora do contexto imediato do percurso · apoio potencial"; RouteRelation.OUTSIDE_ROUTE -> "Fora do traçado" }
+private fun categoryLabel(category: ApoiCategory): String = when (category) { ApoiCategory.ALIMENTACAO -> "Alimentação"; ApoiCategory.AGUA -> "Água"; ApoiCategory.DESCANSO -> "Descanso"; ApoiCategory.PERNOITA -> "Pernoita"; ApoiCategory.DUCHES -> "Duches"; ApoiCategory.CARREGAMENTO -> "Carregamento"; ApoiCategory.TRANSPORTE -> "Transporte"; ApoiCategory.EMERGENCIA -> "Emergência" }
 private fun formatKm(value: Double): String = String.format(Locale("pt", "PT"), "%.1f", value)
 private fun formatMeters(value: Double): String = if (value >= 1000) "${formatKm(value / 1000)} km" else "${value.toInt()} m"
 private fun formatAmount(value: Double): String = String.format(Locale("pt", "PT"), "%.2f", value)

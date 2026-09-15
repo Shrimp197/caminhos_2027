@@ -2,12 +2,15 @@ package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.route.GpsState
+import java.time.Instant
 
 /** Minimal persistence boundary for the latest device-derived walking checkpoint. */
 data class WalkingCheckpoint(
     val routePosition: RoutePosition?,
     val gpsState: GpsState,
-    val isOffline: Boolean
+    val isOffline: Boolean,
+    /** Capture time of the last accepted GPS observation used as continuity baseline. */
+    val lastObservedAt: Instant? = null
 )
 
 interface WalkingStateRepository {

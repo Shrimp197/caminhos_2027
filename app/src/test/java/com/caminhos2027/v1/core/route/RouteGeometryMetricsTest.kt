@@ -34,4 +34,25 @@ class RouteGeometryMetricsTest {
         val length = RouteGeometryMetrics.lengthKm(geometry)
         assertTrue("Expected roughly 0.85 km, got $length", length in 0.8..0.9)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nonFiniteCoordinateIsRejected() {
+        RouteGeometryMetrics.lengthKm(
+            RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(Double.NaN, -7.99)))
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun outOfBoundsCoordinateIsRejected() {
+        RouteGeometryMetrics.lengthKm(
+            RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(91.0, -7.99)))
+        )
+    }
+
+    @Test
+    fun tinyHaversineRoundingRemainsFinite() {
+        val point = GeoPoint(40.0, -8.0)
+        val nearby = GeoPoint(40.0, -7.999999999)
+        assertTrue(RouteGeometryMetrics.lengthKm(RouteGeometry(listOf(point, nearby))).isFinite())
+    }
 }
