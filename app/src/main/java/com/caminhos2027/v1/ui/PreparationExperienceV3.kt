@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notes
-import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -93,15 +92,20 @@ internal fun PreparationExperienceV3(
         }
         "range" -> RangeSub(route.totalDistanceKm, startKm, destinationKm, { screen = "home" }) { s, d -> startKm = s; destinationKm = d; screen = "home" }
         "breaks" -> BreaksSub(config, { screen = "home" }) { config = it; screen = "home" }
+        "audio" -> AudioSub(config.audioEnabled, { screen = "home" }) { config = config.copy(audioEnabled = it); screen = "home" }
+        "supports" -> SupportsSub({ screen = "home" })
+        "notes" -> NotesSub(notes.toList(), { screen = "home" }) { text -> if (text.isNotBlank()) notes.add(text.trim()); screen = "home" }
         else -> PreparationHomeV3(route, config, notes.size,
-            onRoutes = { screen = "routes" }, onRange = { screen = "range" }, onBreaks = { screen = "breaks" }, onConfirm = {
+            onRoutes = { screen = "routes" }, onRange = { screen = "range" }, onBreaks = { screen = "breaks" },
+            onAudio = { screen = "audio" }, onSupports = { screen = "supports" }, onNotes = { screen = "notes" },
+            onConfirm = {
                 if (startKm >= 0.0 && destinationKm <= route.totalDistanceKm && startKm < destinationKm) onConfirm(startKm, destinationKm, config.copy(notes = notes.toList()))
             }, onBack = onBack)
     }
 }
 
 @Composable
-private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, notesCount: Int, onRoutes: () -> Unit, onRange: () -> Unit, onBreaks: () -> Unit, onConfirm: () -> Unit, onBack: () -> Unit) {
+private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, notesCount: Int, onRoutes: () -> Unit, onRange: () -> Unit, onBreaks: () -> Unit, onAudio: () -> Unit, onSupports: () -> Unit, onNotes: () -> Unit, onConfirm: () -> Unit, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().background(PSurface).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Filled.Menu, "Menu", tint = PBlue) }
@@ -123,12 +127,12 @@ private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, no
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Tile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f), onRange)
-            Tile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f), {})
+            Tile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f), onAudio)
             Tile(Icons.Filled.Map, "Orientação / Pausas", Modifier.weight(1f), onBreaks)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Tile(Icons.Filled.Place, "Apoios", Modifier.weight(1f), {})
-            Tile(Icons.Filled.Notes, "Notas", Modifier.weight(1f), {})
+            Tile(Icons.Filled.Place, "Apoios", Modifier.weight(1f), onSupports)
+            Tile(Icons.Filled.Notes, "Notas", Modifier.weight(1f), onNotes)
             Spacer(Modifier.weight(1f).height(126.dp))
         }
         Button(onClick = onConfirm, Modifier.fillMaxWidth().height(58.dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium) }
@@ -140,6 +144,7 @@ private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, no
                     ProgressMetric("0 km", "Percorrido", Modifier.weight(1f))
                     ProgressMetric(fmt(route.totalDistanceKm) + " km", "Percurso", Modifier.weight(1f))
                 }
+                if (config.audioEnabled) Text("Áudio de orientação ativo", color = PGreen, fontWeight = FontWeight.Bold)
             }
         }
         if (notesCount > 0) Text("$notesCount nota(s) guardada(s)", color = PMuted, style = MaterialTheme.typography.bodySmall)
@@ -149,10 +154,7 @@ private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, no
 @Composable
 private fun ProgressMetric(value: String, label: String, modifier: Modifier) {
     Card(modifier, RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F6F3))) {
-        Column(Modifier.padding(12.dp)) {
-            Text(value, color = PBlue, fontWeight = FontWeight.ExtraBold)
-            Text(label, color = PMuted, style = MaterialTheme.typography.bodySmall)
-        }
+        Column(Modifier.padding(12.dp)) { Text(value, color = PBlue, fontWeight = FontWeight.ExtraBold); Text(label, color = PMuted, style = MaterialTheme.typography.bodySmall) }
     }
 }
 
@@ -160,6 +162,34 @@ private fun ProgressMetric(value: String, label: String, modifier: Modifier) {
 private fun Tile(icon: ImageVector, title: String, modifier: Modifier, onClick: () -> Unit) {
     Card(modifier.clickable(onClick = onClick), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, PBorder), elevation = CardDefaults.cardElevation(1.dp)) {
         Column(Modifier.fillMaxWidth().height(126.dp).padding(horizontal = 6.dp, vertical = 14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(icon, null, Modifier.size(31.dp), tint = PBlue); Spacer(Modifier.height(8.dp)); Text(title, color = PBlue, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) }
+    }
+}
+
+@Composable
+private fun AudioSub(enabled: Boolean, onBack: () -> Unit, onApply: (Boolean) -> Unit) {
+    var active by rememberSaveable { mutableStateOf(enabled) }
+    PrepScaffold("Áudio", "Defina se pretende receber orientação áudio durante a caminhada.", onBack) {
+        Button(onClick = { active = !active }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = if (active) PGreen else PBlue)) { Text(if (active) "ÁUDIO ATIVO" else "ÁUDIO DESATIVADO") }
+        Text("A preferência fica guardada no plano de caminhada.", color = PMuted)
+        Button(onClick = { onApply(active) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("APLICAR") }
+    }
+}
+
+@Composable
+private fun SupportsSub(onBack: () -> Unit) {
+    PrepScaffold("Apoios", "Consulte os tipos de apoio disponíveis ao longo do percurso.", onBack) {
+        listOf("Água", "Alimentação", "WC", "Alojamento").forEach { label -> Card(Modifier.fillMaxWidth(), RoundedCornerShape(14.dp), border = BorderStroke(1.dp, PBorder), colors = CardDefaults.cardColors(containerColor = Color.White)) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Filled.Place, null, tint = PBlue); Text(label, Modifier.padding(start = 12.dp), color = PBlue, fontWeight = FontWeight.Bold) } } }
+        Text("A localização detalhada dos apoios é apresentada durante a caminhada.", color = PMuted)
+    }
+}
+
+@Composable
+private fun NotesSub(existing: List<String>, onBack: () -> Unit, onApply: (String) -> Unit) {
+    var text by rememberSaveable { mutableStateOf("") }
+    PrepScaffold("Notas", "Guarde uma nota pessoal associada ao seu plano.", onBack) {
+        existing.forEach { note -> Card(Modifier.fillMaxWidth(), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, PBorder)) { Text(note, Modifier.padding(16.dp), color = PBlue) } }
+        OutlinedTextField(text, { text = it }, Modifier.fillMaxWidth(), label = { Text("Nova nota") }, minLines = 3)
+        Button(onClick = { onApply(text) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("GUARDAR NOTA") }
     }
 }
 
