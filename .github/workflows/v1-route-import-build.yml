@@ -96,6 +96,22 @@ jobs:
       - name: Run Android V1 end-to-end tests
         timeout-minutes: 12
         run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest
+      - name: Collect visual validation screenshots
+        if: always()
+        run: |
+          set +e
+          mkdir -p build/visual-validation
+          adb pull /sdcard/caminhos-preparacao.png build/visual-validation/preparacao.png
+          adb pull /sdcard/caminhos-navegacao.png build/visual-validation/navegacao.png
+          file build/visual-validation/*.png 2>/dev/null || true
+      - name: Upload visual validation screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caminhos-v1-route-import-visual-validation
+          path: build/visual-validation/*.png
+          if-no-files-found: warn
+          retention-days: 7
       - name: Dump emulator diagnostics on failure
         if: failure()
         run: |
