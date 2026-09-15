@@ -11,6 +11,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class V1EndToEndTest {
@@ -90,10 +91,10 @@ class V1EndToEndTest {
     }
 
     private fun capture(path: String) {
-        device.executeShellCommand("rm -f $path")
-        device.executeShellCommand("screencap -p $path")
-        val result = device.executeShellCommand("test -s $path && echo OK")
-        assertTrue("Screenshot was not created: $path", result.trim() == "OK")
+        val file = File(path)
+        file.delete()
+        assertTrue("Screenshot could not be captured: $path", device.takeScreenshot(file))
+        assertTrue("Screenshot was not created: $path", file.isFile && file.length() > 0)
     }
 
     private fun clickVisibleText(text: String) {
