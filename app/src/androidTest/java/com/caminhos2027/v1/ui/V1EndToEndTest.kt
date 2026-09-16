@@ -24,7 +24,7 @@ class V1EndToEndTest {
         device.pressHome()
         scenario = ActivityScenario.launch(V1MainActivity::class.java)
         assertTrue("Preparation screen did not appear", device.wait(Until.hasObject(By.text("Prepare a sua caminhada")), 120_000))
-        capture("caminhos-preparacao.png")
+        capture("/sdcard/caminhos-preparacao.png")
     }
 
     @After
@@ -58,7 +58,7 @@ class V1EndToEndTest {
         assertTrue("Position label did not appear", waitForVisibleText("A MINHA POSIÇÃO", 30_000))
         assertTrue("Route progress did not appear", waitForVisibleText("PROGRESSO", 30_000))
         assertTrue("QA controls leaked into walking UI", !device.hasObject(By.text("QA · controlo do percurso")))
-        capture("caminhos-navegacao.png")
+        capture("/sdcard/caminhos-navegacao.png")
 
         clickVisibleText("VER APOIOS")
         assertTrue("Apoios screen did not appear", waitForVisibleText("Próximos 10 km", 30_000))
@@ -102,14 +102,11 @@ class V1EndToEndTest {
         assertTrue("Walking screen did not appear", waitForVisibleText("A MINHA POSIÇÃO", 30_000))
     }
 
-    private fun capture(name: String) {
-        val file = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, name)
-        file.parentFile?.mkdirs()
+    private fun capture(path: String) {
+        val file = File(path)
         file.delete()
-        assertTrue("Screenshot could not be captured: $name", device.takeScreenshot(file))
-        assertTrue("Screenshot was not created: $name", file.isFile && file.length() > 0)
-        val dest = File(InstrumentationRegistry.getInstrumentation().targetContext.filesDir, name)
-        file.copyTo(dest, overwrite = true)
+        assertTrue("Screenshot could not be captured: $path", device.takeScreenshot(file))
+        assertTrue("Screenshot was not created: $path", file.isFile && file.length() > 0)
     }
 
     private fun clickVisibleText(text: String) {
