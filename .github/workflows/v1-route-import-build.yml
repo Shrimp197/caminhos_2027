@@ -101,8 +101,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/visual-validation
-          adb pull /sdcard/caminhos-preparacao.png build/visual-validation/preparacao.png
-          adb pull /sdcard/caminhos-navegacao.png build/visual-validation/navegacao.png
+          adb exec-out run-as com.caminhos2027 cat files/caminhos-preparacao.png > build/visual-validation/preparacao.png
+          adb exec-out run-as com.caminhos2027 cat files/caminhos-navegacao.png > build/visual-validation/navegacao.png
           test -s build/visual-validation/preparacao.png
           test -s build/visual-validation/navegacao.png
           file build/visual-validation/preparacao.png build/visual-validation/navegacao.png
