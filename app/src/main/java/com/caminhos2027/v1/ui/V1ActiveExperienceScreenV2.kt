@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -28,7 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -50,11 +49,9 @@ import kotlin.math.max
 private val V2Forest = Color(0xFF0E6546)
 private val V2ForestSoft = Color(0xFFE6F2EB)
 private val V2Map = Color(0xFFF0F0E9)
-private val V2Water = Color(0xFFD9EAF0)
 private val V2Road = Color(0xFFC9C7BF)
 private val V2MajorRoad = Color(0xFFB1AEA4)
 private val V2Muted = Color(0xFF68736D)
-private val V2Warning = Color(0xFF9A5A00)
 
 @Composable
 internal fun V1ActiveExperienceScreenV2(
@@ -73,7 +70,6 @@ internal fun V1ActiveExperienceScreenV2(
     val progress = state.progress?.progressRatio?.coerceIn(0.0, 1.0) ?: 0.0
     val destinationKm = state.walk.plannedDestinationKm ?: 0.0
     val projectedPoint = state.routePosition?.projectedPoint
-    val isTest = routeOptions.firstOrNull { it.id == route.id }?.testOnly == true
 
     Column(Modifier.fillMaxSize().background(Color(0xFFF7F5EF))) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -101,7 +97,7 @@ internal fun V1ActiveExperienceScreenV2(
                     Text("Progresso", color = V2Muted, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
                     Text("${(progress * 100).toInt()}%", color = V2Forest, fontWeight = FontWeight.ExtraBold)
                 }
-                LinearProgressIndicator(progress = progress.toFloat(), modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(10.dp)), color = V2Forest, trackColor = V2ForestSoft)
+                LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(10.dp)), color = V2Forest, trackColor = V2ForestSoft)
                 Text("Destino planeado · ${fmt(destinationKm)} km", color = V2Muted, style = MaterialTheme.typography.bodySmall)
                 HorizontalDivider()
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -126,19 +122,6 @@ internal fun V1ActiveExperienceScreenV2(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = onOpenApoi, Modifier.weight(1f)) { Text("VER APOIOS") }
                     OutlinedButton(onClick = onOpenDecision, Modifier.weight(1f)) { Text("OPÇÕES") }
-                }
-                if (isTest) {
-                    HorizontalDivider()
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("QA · controlo do percurso", color = V2Warning, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
-                        if (state.gpsState != GpsState.ON_ROUTE) androidx.compose.material3.Icon(Icons.Filled.WarningAmber, null, tint = V2Warning)
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        OutlinedButton(onQaAdvance, Modifier.weight(1f)) { Text("AVANÇAR") }
-                        OutlinedButton({ onQaToggleGps(false) }, Modifier.weight(1f)) { Text("PERDER GPS") }
-                        OutlinedButton({ onQaToggleGps(true) }, Modifier.weight(1f)) { Text("RECUPERAR") }
-                    }
-                    OutlinedButton(onQaDeviation, Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
                 }
             }
         }
@@ -231,7 +214,7 @@ private fun gpsLabel(state: GpsState) = when (state) {
 
 private fun gpsColor(state: GpsState) = when (state) {
     GpsState.ON_ROUTE -> V2Forest
-    GpsState.NO_SIGNAL, GpsState.POSSIBLE_DEVIATION, GpsState.PROBABLE_DEVIATION -> V2Warning
+    GpsState.NO_SIGNAL, GpsState.POSSIBLE_DEVIATION, GpsState.PROBABLE_DEVIATION -> Color(0xFF9A5A00)
     GpsState.ACQUIRING -> V2Muted
 }
 
