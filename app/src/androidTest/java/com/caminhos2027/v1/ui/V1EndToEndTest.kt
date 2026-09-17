@@ -43,13 +43,13 @@ class V1EndToEndTest {
         clickVisibleText("Apoios")
         assertTrue("Supports configuration did not appear", waitForVisibleText("Apoios", 30_000))
         assertTrue("Water support did not appear", waitForVisibleText("Água", 30_000))
-        device.pressBack(); device.waitForIdle()
+        clickVisibleText("Voltar")
         assertTrue("Supports configuration did not close", waitForVisibleText("Prepare a sua caminhada", 30_000))
 
         clickVisibleText("Notas")
         assertTrue("Notes screen did not appear", waitForVisibleText("Notas", 30_000))
         assertTrue("Note input did not appear", waitForVisibleText("Nova nota", 30_000))
-        device.pressBack(); device.waitForIdle()
+        clickVisibleText("Voltar")
         assertTrue("Notes screen did not close", waitForVisibleText("Prepare a sua caminhada", 30_000))
 
         prepareAndStartSr()
