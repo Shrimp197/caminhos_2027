@@ -114,11 +114,15 @@ class V1EndToEndTest {
     private fun clickVisibleText(text: String) {
         device.waitForIdle()
         repeat(12) {
-            val node = device.findObject(By.textContains(text))
-            if (node != null && !node.visibleBounds.isEmpty) {
-                node.click()
-                device.waitForIdle()
-                return
+            val node = findVisibleTextOrDescription(text)
+            if (node != null) {
+                try {
+                    node.click()
+                    device.waitForIdle()
+                    return
+                } catch (_: StaleObjectException) {
+                    // Re-query on the next iteration; Compose may replace the node between lookup and click.
+                }
             }
             device.swipe(
                 device.displayWidth / 2,
@@ -130,20 +134,36 @@ class V1EndToEndTest {
             device.waitForIdle()
         }
         val node = device.wait(Until.findObject(By.textContains(text)), 5_000)
+            ?: device.wait(Until.findObject(By.descContains(text)), 5_000)
         val visible = try {
             node != null && !node.visibleBounds.isEmpty
         } catch (_: StaleObjectException) {
             false
         }
-        assertTrue("Text not found or not visible: $text", visible)
+        assertTrue("Text or content description not found or not visible: $text", visible)
         try {
             node!!.click()
         } catch (_: StaleObjectException) {
-            val retry = device.findObject(By.textContains(text))
-            assertTrue("Text became stale before click: $text", retry != null && !retry.visibleBounds.isEmpty)
-            retry.click()
+            val retry = findVisibleTextOrDescription(text)
+            assertTrue("Text or content description became stale before click: $text", retry != null)
+            retry!!.click()
         }
         device.waitForIdle()
+    }
+
+    private fun findVisibleTextOrDescription(text: String): androidx.test.uiautomator.UiObject2? {
+        val textNode = device.findObject(By.textContains(text))
+        try {
+            if (textNode != null && !textNode.visibleBounds.isEmpty) return textNode
+        } catch (_: StaleObjectException) {
+            // Fall through to content-description lookup.
+        }
+        val descriptionNode = device.findObject(By.descContains(text))
+        return try {
+            descriptionNode?.takeIf { !it.visibleBounds.isEmpty }
+        } catch (_: StaleObjectException) {
+            null
+        }
     }
 
     private fun waitForVisibleText(text: String, timeoutMs: Long): Boolean {
