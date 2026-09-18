@@ -111,6 +111,80 @@ private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, no
 @Composable private fun Tile(icon: ImageVector, title: String, modifier: Modifier, onClick: () -> Unit) { Card(modifier.clickable(onClick = onClick), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, PBorder), elevation = CardDefaults.cardElevation(1.dp)) { Column(Modifier.fillMaxWidth().height(126.dp).padding(horizontal = 6.dp, vertical = 14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(icon, null, Modifier.size(31.dp), tint = PBlue); Spacer(Modifier.height(8.dp)); Text(title, color = PBlue, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) } } }
 
 @Composable private fun AudioSub(mode: AudioMode, onBack: () -> Unit, onApply: (AudioMode) -> Unit) { var selected by rememberSaveable { mutableStateOf(mode) }; PrepScaffold("Áudio", "Defina a orientação áudio do plano.", onBack) { listOf(AudioMode.NORMAL to "ÁUDIO NORMAL", AudioMode.IMMERSIVE to "ÁUDIO IMERSIVO", AudioMode.SILENT to "SEM ÁUDIO").forEach { (value, label) -> Button(onClick = { selected = value }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = if (selected == value) PGreen else PBlue)) { Text(label) } }; Button(onClick = { onApply(selected) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("APLICAR") } } }
+@Composable private fun OrientationSub(orientation: MapOrientation, onBack: () -> Unit, onApply: (MapOrientation) -> Unit) {
+    var selected by rememberSaveable { mutableStateOf(orientation) }
+    PrepScaffold("Orientação", "Escolha como pretende orientar o mapa durante a caminhada.", onBack) {
+        listOf(
+            MapOrientation.NORTH to "NORTE",
+            MapOrientation.WALK_DIRECTION to "DIREÇÃO DA CAMINHADA"
+        ).forEach { (value, label) ->
+            Button(
+                onClick = { selected = value },
+                Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = if (selected == value) PGreen else PBlue)
+            ) { Text(label) }
+        }
+        Button(
+            onClick = { onApply(selected) },
+            Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = PGreen)
+        ) { Text("APLICAR") }
+    }
+}
+
+@Composable private fun ApoiCategoriesSub(
+    selectedCategories: Set<ApoiCategory>,
+    onBack: () -> Unit,
+    onApply: (Set<ApoiCategory>) -> Unit
+) {
+    var selected by remember { mutableStateOf(selectedCategories) }
+    val categories = listOf(
+        ApoiCategory.ALIMENTACAO,
+        ApoiCategory.AGUA,
+        ApoiCategory.DESCANSO,
+        ApoiCategory.PERNOITA,
+        ApoiCategory.DUCHES,
+        ApoiCategory.CARREGAMENTO,
+        ApoiCategory.TRANSPORTE,
+        ApoiCategory.EMERGENCIA
+    )
+    PrepScaffold("Apoios", "Escolha os tipos de apoio que pretende acompanhar durante a caminhada.", onBack) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            categories.forEach { category ->
+                FilterChip(
+                    selected = category in selected,
+                    onClick = { selected = if (category in selected) selected - category else selected + category },
+                    label = { Text(categoryLabel(category)) }
+                )
+            }
+        }
+        Text(
+            if (selected.isEmpty()) "Nenhum tipo selecionado: pode consultar todos os APOI a partir da caminhada."
+            else "${selected.size} tipo(s) de apoio selecionado(s).",
+            color = PMuted,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Button(
+            onClick = { onApply(selected) },
+            Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = PGreen)
+        ) { Text("APLICAR APOIOS") }
+    }
+}
+
+private fun categoryLabel(category: ApoiCategory): String = when (category) {
+    ApoiCategory.ALIMENTACAO -> "Alimentação"
+    ApoiCategory.AGUA -> "Água"
+    ApoiCategory.DESCANSO -> "Descanso"
+    ApoiCategory.PERNOITA -> "Pernoita"
+    ApoiCategory.DUCHES -> "Duches"
+    ApoiCategory.CARREGAMENTO -> "Carregamento"
+    ApoiCategory.TRANSPORTE -> "Transporte"
+    ApoiCategory.EMERGENCIA -> "Emergência"
+}
 @Composable private fun NotesSub(existing: List<String>, onBack: () -> Unit, onApply: (String) -> Unit) { var text by rememberSaveable { mutableStateOf("") }; PrepScaffold("Notas", "Guarde uma nota pessoal associada ao seu plano.", onBack) { existing.forEach { note -> Card(Modifier.fillMaxWidth(), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, PBorder)) { Text(note, Modifier.padding(16.dp), color = PBlue) } }; OutlinedTextField(text, { text = it }, Modifier.fillMaxWidth(), label = { Text("Nova nota") }, minLines = 3); Button(onClick = { onApply(text) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("GUARDAR NOTA") } } }
 @Composable private fun BreaksSub(config: WalkingPreparationConfig, onBack: () -> Unit, onApply: (WalkingPreparationConfig) -> Unit) { var minutes by rememberSaveable { mutableStateOf(config.customBreakTimeMinutes?.toString() ?: "") }; var distance by rememberSaveable { mutableStateOf(config.customBreakDistanceKm?.let { fmt(it) } ?: "") }; var intelligent by rememberSaveable { mutableStateOf(config.intelligentBreaksEnabled) }; PrepScaffold("Pausas inteligentes", "Defina quando pretende parar durante a caminhada.", onBack) { Text("Pausas automáticas", color = PBlue, fontWeight = FontWeight.Bold); Button(onClick = { intelligent = !intelligent }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = if (intelligent) PGreen else PBlue)) { Text(if (intelligent) "PAUSAS INTELIGENTES ATIVAS" else "PAUSAS INTELIGENTES DESATIVADAS") }; OutlinedTextField(minutes, { minutes = it }, Modifier.fillMaxWidth(), label = { Text("Parar a cada X minutos") }, singleLine = true); OutlinedTextField(distance, { distance = it }, Modifier.fillMaxWidth(), label = { Text("Parar a cada X km") }, singleLine = true); Button(onClick = { onApply(config.copy(intelligentBreaksEnabled = intelligent, customBreakTimeMinutes = minutes.toIntOrNull(), customBreakDistanceKm = distance.replace(',', '.').toDoubleOrNull())) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("APLICAR PAUSAS", fontWeight = FontWeight.ExtraBold) } } }
 @Composable private fun PrepScaffold(title: String, description: String, onBack: () -> Unit, content: @Composable () -> Unit) { Column(Modifier.fillMaxSize().background(PSurface).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
