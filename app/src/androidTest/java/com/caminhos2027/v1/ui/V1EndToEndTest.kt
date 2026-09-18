@@ -4,6 +4,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import org.junit.After
@@ -129,8 +130,19 @@ class V1EndToEndTest {
             device.waitForIdle()
         }
         val node = device.wait(Until.findObject(By.textContains(text)), 5_000)
-        assertTrue("Text not found or not visible: $text", node != null && !node.visibleBounds.isEmpty)
-        node.click()
+        val visible = try {
+            node != null && !node.visibleBounds.isEmpty
+        } catch (_: StaleObjectException) {
+            false
+        }
+        assertTrue("Text not found or not visible: $text", visible)
+        try {
+            node!!.click()
+        } catch (_: StaleObjectException) {
+            val retry = device.findObject(By.textContains(text))
+            assertTrue("Text became stale before click: $text", retry != null && !retry.visibleBounds.isEmpty)
+            retry.click()
+        }
         device.waitForIdle()
     }
 
@@ -138,7 +150,11 @@ class V1EndToEndTest {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             val node = device.findObject(By.textContains(text))
-            if (node != null && !node.visibleBounds.isEmpty) return true
+            try {
+                if (node != null && !node.visibleBounds.isEmpty) return true
+            } catch (_: StaleObjectException) {
+                continue
+            }
             device.swipe(
                 device.displayWidth / 2,
                 (device.displayHeight * 0.82).toInt(),
