@@ -58,7 +58,18 @@ class V1EndToEndTest {
         assertTrue("Offline map label did not appear", waitForVisibleText("MAPA OFFLINE · PERCURSO OFICIAL", 30_000))
         assertTrue("Position label did not appear", waitForVisibleText("A MINHA POSIÇÃO", 30_000))
         assertTrue("Route progress did not appear", waitForVisibleText("PROGRESSO", 30_000))
-        assertTrue("QA controls leaked into walking UI", !device.hasObject(By.text("QA · controlo do percurso")))
+        assertTrue("QA controls did not appear for the test route", waitForVisibleText("QA · percurso de teste", 30_000))
+        clickVisibleText("AVANÇAR GPS")
+        assertTrue("Simulated GPS advance did not update the route position", waitForVisibleText("Km no percurso:", 30_000))
+        clickVisibleText("PERDER GPS")
+        assertTrue("GPS loss state did not appear", waitForVisibleText("GPS sem sinal", 30_000))
+        clickVisibleText("RECUPERAR GPS")
+        assertTrue("GPS recovery state did not appear", waitForVisibleText("GPS no percurso", 30_000))
+        clickVisibleText("SIMULAR DESVIO")
+        assertTrue(
+            "Deviation state did not appear",
+            waitForAnyVisibleText("Possível desvio", "Provável desvio", timeoutMs = 30_000)
+        )
         capture("caminhos-navegacao.png")
 
         clickVisibleText("VER APOIOS")
