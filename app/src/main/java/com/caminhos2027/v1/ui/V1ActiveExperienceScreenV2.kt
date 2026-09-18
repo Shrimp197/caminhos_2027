@@ -123,6 +123,21 @@ internal fun V1ActiveExperienceScreenV2(
                     Button(onClick = onOpenApoi, Modifier.weight(1f)) { Text("VER APOIOS") }
                     OutlinedButton(onClick = onOpenDecision, Modifier.weight(1f)) { Text("OPÇÕES") }
                 }
+                if (routeOptions.firstOrNull { it.id == route.id }?.testOnly == true) {
+                    HorizontalDivider()
+                    Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold)
+                    Text(
+                        "Controlos apenas para validar GPS simulado. Não aparecem no percurso de produção.",
+                        color = V2Muted,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        OutlinedButton(onClick = onQaAdvance, Modifier.weight(1f)) { Text("AVANÇAR GPS") }
+                        OutlinedButton(onClick = { onQaToggleGps(false) }, Modifier.weight(1f)) { Text("PERDER GPS") }
+                        OutlinedButton(onClick = { onQaToggleGps(true) }, Modifier.weight(1f)) { Text("RECUPERAR GPS") }
+                    }
+                    OutlinedButton(onClick = onQaDeviation, Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
+                }
             }
         }
     }
