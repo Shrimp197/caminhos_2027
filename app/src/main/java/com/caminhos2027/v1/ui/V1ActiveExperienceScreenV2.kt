@@ -40,10 +40,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.GeoPoint
+import com.caminhos2027.v1.core.model.MapOrientation
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.walking.WalkingState
@@ -99,7 +101,8 @@ internal fun V1ActiveExperienceScreenV2(
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 12.dp),
             geometry = route.geometry.points,
             projectedPoint = projectedPoint,
-            gpsState = state.gpsState
+            gpsState = state.gpsState,
+            mapOrientation = state.walk.preparation.mapOrientation
         )
 
         Card(Modifier.fillMaxWidth().padding(12.dp), RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(4.dp)) {
@@ -164,13 +167,14 @@ private fun OfflineCartographicRouteMap(
     modifier: Modifier,
     geometry: List<GeoPoint>,
     projectedPoint: GeoPoint?,
-    gpsState: GpsState
+    gpsState: GpsState,
+    mapOrientation: MapOrientation
 ) {
     val points = geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() }
     Card(modifier, RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = V2Map), elevation = CardDefaults.cardElevation(2.dp)) {
         Box(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp))) {
             Canvas(Modifier.fillMaxSize()) {
-                if (points.size >= 2) drawOfflineCartography(points, projectedPoint)
+                if (points.size >= 2) drawOfflineCartography(points, projectedPoint, mapOrientation)
             }
             Card(Modifier.align(Alignment.TopStart).padding(12.dp), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))) {
                 Column(Modifier.padding(12.dp)) {
@@ -185,7 +189,11 @@ private fun OfflineCartographicRouteMap(
     }
 }
 
-private fun DrawScope.drawOfflineCartography(route: List<GeoPoint>, projected: GeoPoint?) {
+private fun DrawScope.drawOfflineCartography(
+    route: List<GeoPoint>,
+    projected: GeoPoint?,
+    mapOrientation: MapOrientation
+) {
     val minLat = route.minOf { it.latitude }; val maxLat = route.maxOf { it.latitude }
     val minLon = route.minOf { it.longitude }; val maxLon = route.maxOf { it.longitude }
     val latSpan = max(0.01, maxLat - minLat); val lonSpan = max(0.01, maxLon - minLon)
@@ -200,7 +208,14 @@ private fun DrawScope.drawOfflineCartography(route: List<GeoPoint>, projected: G
         return Offset(x, y)
     }
 
-    drawRect(V2Map)
+    val rotationDegrees = if (mapOrientation == MapOrientation.WALK_DIRECTION) {
+        -routeBearingDegrees(route, projected)
+    } else 0f
+
+    withTransform({
+        rotate(rotationDegrees, pivot = Offset(cx, cy))
+    }) {
+        drawRect(V2Map)
     for (i in 1..8) {
         val x = size.width * i / 9f; drawLine(V2Road.copy(alpha = .20f), Offset(x, 0f), Offset(x, size.height), 1f)
         val y = size.height * i / 9f; drawLine(V2Road.copy(alpha = .20f), Offset(0f, y), Offset(size.width, y), 1f)
@@ -227,6 +242,24 @@ private fun DrawScope.drawOfflineCartography(route: List<GeoPoint>, projected: G
         GeoPoint(39.7436,-8.8071), GeoPoint(39.6297,-8.6736)
     )
     cities.forEach { g -> drawCircle(Color(0xFF4D5A55), 4f, p(g)) }
+    }
+}
+
+private fun routeBearingDegrees(route: List<GeoPoint>, projected: GeoPoint?): Float {
+    if (route.size < 2 || projected == null) return 0f
+    val index = route.indices.minByOrNull { index ->
+        val point = route[index]
+        val dLat = point.latitude - projected.latitude
+        val dLon = point.longitude - projected.longitude
+        dLat * dLat + dLon * dLon
+    } ?: return 0f
+    val from = if (index < route.lastIndex) route[index] else route[index - 1]
+    val to = if (index < route.lastIndex) route[index + 1] else route[index]
+    val meanLat = (from.latitude + to.latitude) / 2.0
+    val east = (to.longitude - from.longitude) * cos(meanLat * Math.PI / 180.0)
+    val north = to.latitude - from.latitude
+    if (east == 0.0 && north == 0.0) return 0f
+    return Math.toDegrees(kotlin.math.atan2(east, north)).toFloat()
 }
 
 @Composable private fun MetricCard(value: String, label: String, modifier: Modifier) {
