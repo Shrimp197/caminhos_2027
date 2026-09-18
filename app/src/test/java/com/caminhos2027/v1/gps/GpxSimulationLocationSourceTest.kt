@@ -78,6 +78,48 @@ class GpxSimulationLocationSourceTest {
     }
 
     @Test
+    fun availabilityLossAndRecoveryAreObservableWithoutChangingThePositionContract() {
+        val points = listOf(
+            GeoPoint(41.1000, -8.5800),
+            GeoPoint(41.1010, -8.5800)
+        )
+        val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
+        val availability = mutableListOf<Boolean>()
+        val source = GpxSimulationLocationSource(
+            points = points,
+            onPosition = emitted::add,
+            onAvailabilityChanged = availability::add
+        )
+
+        source.start()
+        source.setAvailable(false)
+        source.advance()
+        source.setAvailable(true)
+
+        assertEquals(listOf(true, false, true), availability)
+        assertEquals(2, emitted.size)
+        assertEquals(points.first().latitude, emitted.last().latitude)
+        assertEquals(points.first().longitude, emitted.last().longitude)
+    }
+
+    @Test
+    fun deliberateDeviationEmitsRawOffRoutePosition() {
+        val point = GeoPoint(41.1000, -8.5800)
+        val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
+        val source = GpxSimulationLocationSource(
+            points = listOf(point),
+            onPosition = emitted::add
+        )
+
+        source.start()
+        source.simulateDeviation(offsetDegrees = 0.01)
+
+        assertEquals(2, emitted.size)
+        assertEquals(point.latitude + 0.01, emitted.last().latitude, 0.000001)
+        assertEquals(point.longitude + 0.01, emitted.last().longitude, 0.000001)
+    }
+
+    @Test
     fun stopPreventsFurtherSimulation() {
         val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
         val source = GpxSimulationLocationSource(
