@@ -25,6 +25,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.clip
@@ -42,6 +47,8 @@ import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.walking.WalkingState
+import java.time.Duration
+import java.time.Instant
 import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.max
@@ -67,6 +74,14 @@ internal fun V1ActiveExperienceScreenV2(
 ) {
     val currentKm = state.routePosition?.routeKm ?: 0.0
     val remainingKm = state.progress?.remainingKm ?: 0.0
+    var nowMillis by remember(state.walk.startedAt) { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(state.walk.startedAt) {
+        while (true) {
+            nowMillis = System.currentTimeMillis()
+            kotlinx.coroutines.delay(1_000)
+        }
+    }
+    val elapsed = elapsedWalkingTime(state.walk.startedAt, nowMillis)
     val progress = state.progress?.progressRatio?.coerceIn(0.0, 1.0) ?: 0.0
     val destinationKm = state.walk.plannedDestinationKm ?: 0.0
     val projectedPoint = state.routePosition?.projectedPoint
@@ -89,9 +104,10 @@ internal fun V1ActiveExperienceScreenV2(
 
         Card(Modifier.fillMaxWidth().padding(12.dp), RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(4.dp)) {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MetricCard("${fmt(currentKm)} km", "Percorridos", Modifier.weight(1f))
                     MetricCard("${fmt(remainingKm)} km", "Para o fim", Modifier.weight(1f))
+                    MetricCard(elapsed, "Tempo", Modifier.weight(1f))
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Progresso", color = V2Muted, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
@@ -238,6 +254,15 @@ private fun positionDetail(state: WalkingState): String {
     val routeDistance = state.routePosition?.distanceToRouteMeters?.let(::fmtMeters) ?: "—"
     val confidence = state.routePosition?.confidence?.name?.lowercase(Locale("pt", "PT")) ?: "desconhecida"
     return "Km no percurso: $routeKm · distância ao traçado: $routeDistance · confiança: $confidence"
+}
+
+private fun elapsedWalkingTime(startedAt: Instant?, nowMillis: Long): String {
+    if (startedAt == null) return "—"
+    val seconds = Duration.between(startedAt, Instant.ofEpochMilli(nowMillis)).seconds.coerceAtLeast(0L)
+    val hours = seconds / 3600
+    val minutes = (seconds % 3600) / 60
+    return if (hours > 0) String.format(Locale("pt", "PT"), "%dh %02dm", hours, minutes)
+    else String.format(Locale("pt", "PT"), "%02dm", minutes)
 }
 
 private fun fmt(value: Double) = String.format(Locale("pt", "PT"), "%.2f", value)
