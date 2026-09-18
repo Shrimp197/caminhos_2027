@@ -134,7 +134,23 @@ class V1EndToEndTest {
         device.waitForIdle()
     }
 
-    private fun waitForVisibleText(text: String, timeoutMs: Long): Boolean = device.wait(Until.hasObject(By.text(text)), timeoutMs)
+    private fun waitForVisibleText(text: String, timeoutMs: Long): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val node = device.findObject(By.textContains(text))
+            if (node != null && !node.visibleBounds.isEmpty) return true
+            device.swipe(
+                device.displayWidth / 2,
+                (device.displayHeight * 0.82).toInt(),
+                device.displayWidth / 2,
+                (device.displayHeight * 0.28).toInt(),
+                8
+            )
+            device.waitForIdle()
+            Thread.sleep(150)
+        }
+        return false
+    }
 
     private fun waitForAnyVisibleText(vararg texts: String, timeoutMs: Long): Boolean {
         val deadline = System.currentTimeMillis() + timeoutMs
