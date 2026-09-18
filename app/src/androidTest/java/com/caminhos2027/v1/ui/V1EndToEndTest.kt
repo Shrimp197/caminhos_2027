@@ -66,6 +66,7 @@ class V1EndToEndTest {
         clickVisibleText("RECUPERAR GPS")
         assertTrue("GPS recovery state did not appear", waitForVisibleText("GPS no percurso", 30_000))
         clickVisibleText("SIMULAR DESVIO")
+        clickVisibleText("SIMULAR DESVIO")
         assertTrue(
             "Deviation state did not appear",
             waitForAnyVisibleText("Possível desvio", "Provável desvio", timeoutMs = 30_000)
