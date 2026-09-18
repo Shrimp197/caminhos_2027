@@ -51,7 +51,13 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar") }
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.semantics {
+                        contentDescription = "Voltar"
+                        role = Role.Button
+                    }
+                ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
                 Column(modifier = Modifier.weight(1f)) {
                     Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                     Text(apoi.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
