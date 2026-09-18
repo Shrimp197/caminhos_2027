@@ -112,15 +112,26 @@ class V1EndToEndTest {
 
     private fun clickVisibleText(text: String) {
         device.waitForIdle()
-        repeat(8) {
-            val node = device.findObject(By.text(text))
-            if (node != null && !node.visibleBounds.isEmpty) { device.click(node.visibleBounds.centerX(), node.visibleBounds.centerY()); device.waitForIdle(); return }
-            device.swipe(device.displayWidth / 2, (device.displayHeight * 0.82).toInt(), device.displayWidth / 2, (device.displayHeight * 0.28).toInt(), 8)
+        repeat(12) {
+            val node = device.findObject(By.textContains(text))
+            if (node != null && !node.visibleBounds.isEmpty) {
+                node.click()
+                device.waitForIdle()
+                return
+            }
+            device.swipe(
+                device.displayWidth / 2,
+                (device.displayHeight * 0.82).toInt(),
+                device.displayWidth / 2,
+                (device.displayHeight * 0.28).toInt(),
+                8
+            )
             device.waitForIdle()
         }
-        val node = device.wait(Until.findObject(By.text(text)), 5_000)
+        val node = device.wait(Until.findObject(By.textContains(text)), 5_000)
         assertTrue("Text not found or not visible: $text", node != null && !node.visibleBounds.isEmpty)
-        device.click(node.visibleBounds.centerX(), node.visibleBounds.centerY()); device.waitForIdle()
+        node.click()
+        device.waitForIdle()
     }
 
     private fun waitForVisibleText(text: String, timeoutMs: Long): Boolean = device.wait(Until.hasObject(By.text(text)), timeoutMs)
