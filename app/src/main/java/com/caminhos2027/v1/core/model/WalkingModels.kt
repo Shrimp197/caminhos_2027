@@ -13,7 +13,8 @@ data class Walk(
     val startedAt: Instant? = null,
     val endedAt: Instant? = null,
     val status: WalkStatus = WalkStatus.PLANNED,
-    val stageIds: List<String> = emptyList()
+    val stageIds: List<String> = emptyList(),
+    val preparation: WalkingPreparationConfig = WalkingPreparationConfig()
 )
 
 enum class WalkStatus {
@@ -47,7 +48,9 @@ data class RoutePosition(
     val routeKm: Double,
     val distanceToRouteMeters: Double,
     val stageId: String? = null,
-    val confidence: PositionConfidence = PositionConfidence.UNKNOWN
+    val confidence: PositionConfidence = PositionConfidence.UNKNOWN,
+    /** Geographic point produced by the same projection that produced routeKm. */
+    val projectedPoint: GeoPoint? = null
 )
 
 enum class PositionConfidence {

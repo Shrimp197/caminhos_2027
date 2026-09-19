@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.core.data
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class RouteJsonParserTest {
@@ -42,5 +43,38 @@ class RouteJsonParserTest {
         assertEquals(-8.0, route.geometry.points.first().longitude, 0.0)
         assertEquals(1, route.stages.size)
         assertEquals(10.0, route.stages.first().distanceKm, 0.0)
+        assertEquals("2026-09-02", route.updatedAt)
+    }
+
+    @Test
+    fun parsesNormalizedGeoJsonFeatureCollectionWithExternalOfficialMetadata() {
+        val route = RouteJsonParser.parse(
+            """
+            {
+              "type":"FeatureCollection",
+              "name":"Caminho do Centenário",
+              "features":[{
+                "type":"Feature",
+                "properties":{
+                  "route_id":"caminho-do-centenario",
+                  "source":"ACF official GPX"
+                },
+                "geometry":{
+                  "type":"LineString",
+                  "coordinates":[[-8.0,40.0],[-8.1,40.1],[-8.2,40.2]]
+                }
+              }]
+            }
+            """.trimIndent(),
+            RouteJsonMetadata(officialDistanceKm = 211.87, officialName = "Caminho do Centenário")
+        )
+
+        assertEquals("caminho-do-centenario", route.id)
+        assertEquals("Caminho do Centenário", route.officialName)
+        assertEquals(211.87, route.totalDistanceKm, 0.0)
+        assertEquals("ACF official GPX", route.source)
+        assertNull(route.updatedAt)
+        assertEquals(3, route.geometry.points.size)
+        assertEquals(0, route.stages.size)
     }
 }

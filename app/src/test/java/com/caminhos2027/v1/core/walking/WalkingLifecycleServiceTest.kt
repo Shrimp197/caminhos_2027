@@ -1,6 +1,5 @@
 package com.caminhos2027.v1.core.walking
 
-import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
@@ -42,9 +41,25 @@ class WalkingLifecycleServiceTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
+    fun cannotPrepareSameWalkTwice() {
+        service.prepare(plannedWalk())
+        service.prepare(plannedWalk())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
     fun cannotStartWithDifferentRoute() {
         service.prepare(plannedWalk())
         service.start("walk-1", routePosition.copy(routeId = "other-route"), Instant.parse("2026-09-01T08:00:00Z"))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotStartUnknownWalk() {
+        service.start("missing", routePosition, Instant.parse("2026-09-01T08:00:00Z"))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotStopUnknownWalk() {
+        service.stop("missing", routePosition, Instant.parse("2026-09-01T12:00:00Z"))
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -53,5 +68,10 @@ class WalkingLifecycleServiceTest {
         service.start("walk-1", routePosition, Instant.parse("2026-09-01T08:00:00Z"))
         service.stop("walk-1", laterPosition, Instant.parse("2026-09-01T12:00:00Z"))
         service.resume("walk-1")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun cannotResumeUnknownWalk() {
+        service.resume("missing")
     }
 }

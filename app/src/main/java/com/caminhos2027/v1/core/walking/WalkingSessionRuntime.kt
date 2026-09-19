@@ -20,18 +20,27 @@ class WalkingSessionRuntime(
     fun prepare(walk: Walk): Walk = sessionService.prepare(walk)
 
     fun start(walkId: String, position: RoutePosition, now: Instant = Instant.now()): WalkingState {
+        validateRoutePosition(position)
         val started = sessionService.start(walkId, position, now)
         val nextCoordinator = WalkingStateCoordinator(route, started, publishedApoi, policy)
+        val state = nextCoordinator.seedStartPosition(position, now)
+        sessionService.updatePosition(
+            walkId,
+            state,
+            observedAt = nextCoordinator.lastReliableObservedAt()
+        )
         coordinator = nextCoordinator
-        val state = nextCoordinator.seedStartPosition(position)
-        sessionService.updatePosition(walkId, state)
         return state
     }
 
     fun accept(position: RawGpsPosition): WalkingState {
         val active = requireNotNull(coordinator) { "Walking session has not been started" }
         val state = active.accept(position)
-        sessionService.updatePosition(state.walk.id, state)
+        sessionService.updatePosition(
+            state.walk.id,
+            state,
+            observedAt = active.lastReliableObservedAt()
+        )
         return state
     }
 
@@ -51,17 +60,46 @@ class WalkingSessionRuntime(
 
     fun stop(position: RoutePosition, now: Instant = Instant.now()): Walk {
         val active = requireNotNull(coordinator) { "Walking session has not been started" }
+        validateRoutePosition(position)
         val stopped = sessionService.stop(active.state.walk.id, position, now)
         coordinator = null
         return stopped
     }
 
-    /** Rebuilds derived progress/APOI information from the persisted walk and checkpoint. */
-    fun resume(): WalkingState? {
-        val walk = sessionService.resume() ?: return null
+    /** Returns the persisted active walk without creating or replacing an in-memory coordinator. */
+    fun activeWalk(): Walk? = sessionService.resume()
+
+    /**
+     * Rebuilds derived progress/APOI information from the persisted walk and checkpoint.
+     * A missing persisted active session invalidates any stale in-memory coordinator.
+     */
+    fun resume(now: Instant = Instant.now()): WalkingState? {
+        val walk = sessionService.resume()
+        if (walk == null) {
+            coordinator = null
+            return null
+        }
+        require(walk.routeId == route.id) {
+            "Active walking session route must match the published V1 route"
+        }
+
         val nextCoordinator = WalkingStateCoordinator(route, walk, publishedApoi, policy)
+        val checkpoint = sessionService.resumeCheckpoint(walk.id)
+        val state = checkpoint?.let { nextCoordinator.restoreCheckpoint(it, now) } ?: nextCoordinator.state
         coordinator = nextCoordinator
-        val checkpoint = sessionService.resumeCheckpoint(walk.id) ?: return nextCoordinator.state
-        return nextCoordinator.restoreCheckpoint(checkpoint)
+        return state
+    }
+
+    private fun validateRoutePosition(position: RoutePosition) {
+        require(position.routeId == route.id) { "Position route must match the published V1 route" }
+        require(position.routeKm.isFinite() && position.routeKm >= 0.0) {
+            "Position routeKm must be finite and >= 0"
+        }
+        require(position.routeKm <= route.totalDistanceKm) {
+            "Position routeKm must not exceed the published route length"
+        }
+        require(position.distanceToRouteMeters.isFinite() && position.distanceToRouteMeters >= 0.0) {
+            "Position distanceToRouteMeters must be finite and >= 0"
+        }
     }
 }

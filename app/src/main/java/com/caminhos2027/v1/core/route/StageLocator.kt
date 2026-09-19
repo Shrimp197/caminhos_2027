@@ -6,7 +6,12 @@ import com.caminhos2027.v1.core.model.Stage
 /** Resolves an official stage from route position without changing stage data. */
 object StageLocator {
     fun currentStage(route: Route, routeKm: Double): Stage? {
-        require(routeKm >= 0.0) { "routeKm must be >= 0" }
+        require(route.totalDistanceKm.isFinite() && route.totalDistanceKm >= 0.0) {
+            "route.totalDistanceKm must be finite and >= 0"
+        }
+        require(routeKm.isFinite() && routeKm >= 0.0) {
+            "routeKm must be finite and >= 0"
+        }
         val clamped = routeKm.coerceAtMost(route.totalDistanceKm)
 
         // At a shared boundary, the later official stage owns the boundary.
