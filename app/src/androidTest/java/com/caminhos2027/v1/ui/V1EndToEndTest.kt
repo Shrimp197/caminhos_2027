@@ -163,11 +163,19 @@ class V1EndToEndTest {
         }
         assertTrue("Text or content description not found or not visible: $text", visible)
         try {
-            node!!.click()
+            if (node!!.isClickable) {
+                node.click()
+            } else {
+                val bounds = node.visibleBounds
+                assertTrue("Visible node has no usable bounds: $text", !bounds.isEmpty)
+                device.click(bounds.centerX(), bounds.centerY())
+            }
         } catch (_: StaleObjectException) {
             val retry = findVisibleTextOrDescription(text)
             assertTrue("Text or content description became stale before click: $text", retry != null)
-            retry!!.click()
+            val bounds = retry!!.visibleBounds
+            assertTrue("Retry node has no usable bounds: $text", !bounds.isEmpty)
+            device.click(bounds.centerX(), bounds.centerY())
         }
         device.waitForIdle()
     }
