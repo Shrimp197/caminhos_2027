@@ -183,6 +183,7 @@ private fun RealOpenStreetMap(
                     settings.domStorageEnabled = true
                     settings.cacheMode = WebSettings.LOAD_DEFAULT
                     settings.loadsImagesAutomatically = true
+                    settings.userAgentString = "${settings.userAgentString} CaminhosDoPeregrino/1.0"
                     tag = html
                     loadDataWithBaseURL("https://www.openstreetmap.org/", html, "text/html", "UTF-8", null)
                 }},
