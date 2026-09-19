@@ -181,15 +181,15 @@ class V1EndToEndTest {
     }
 
     private fun findVisibleTextOrDescription(text: String): androidx.test.uiautomator.UiObject2? {
-        val textNode = device.findObject(By.textContains(text))
-        try {
-            if (textNode != null && !textNode.visibleBounds.isEmpty) return textNode
-        } catch (_: StaleObjectException) {
-            // Fall through to content-description lookup.
-        }
         val descriptionNode = device.findObject(By.descContains(text))
+        try {
+            if (descriptionNode != null && !descriptionNode.visibleBounds.isEmpty) return descriptionNode
+        } catch (_: StaleObjectException) {
+            // Fall through to text lookup.
+        }
+        val textNode = device.findObject(By.textContains(text))
         return try {
-            descriptionNode?.takeIf { !it.visibleBounds.isEmpty }
+            textNode?.takeIf { !it.visibleBounds.isEmpty }
         } catch (_: StaleObjectException) {
             null
         }
