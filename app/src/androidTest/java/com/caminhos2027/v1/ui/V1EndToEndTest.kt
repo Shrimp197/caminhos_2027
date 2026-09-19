@@ -120,6 +120,11 @@ class V1EndToEndTest {
         clickVisibleText("INICIAR CAMINHADA")
         assertTrue("Saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
         assertTrue("Saved-plan explanation did not appear", waitForVisibleText("Guardar o plano não inicia a caminhada.", 30_000))
+        assertTrue("Saved plan did not expose an explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
+        scenario.close()
+        scenario = ActivityScenario.launch(V1MainActivity::class.java)
+        assertTrue("Saved plan did not persist after activity recreation", waitForVisibleText("Plano guardado", 30_000))
+        assertTrue("Persisted plan did not keep explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
         clickVisibleText("INICIAR CAMINHADA")
         assertTrue("Walking screen did not appear", waitForVisibleText("A MINHA POSIÇÃO", 30_000))
     }
