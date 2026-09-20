@@ -132,7 +132,12 @@ class V1MainActivity : ComponentActivity() {
             return
         }
         preparedWalk = appContainer.restorePreparedWalk()?.walk
-        preparedWalk?.let { selectedRouteId = it.routeId }
+        preparedWalk?.let { saved ->
+            if (saved.routeId != appContainer.publishedRoute().id) {
+                appContainer = AndroidV1AppContainer(this, saved.routeId)
+            }
+            selectedRouteId = saved.routeId
+        }
         walkingState = null
         startRequested = false
         pendingStartDistanceMeters = null
