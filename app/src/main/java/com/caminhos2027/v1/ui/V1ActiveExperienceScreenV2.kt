@@ -48,6 +48,7 @@ import com.caminhos2027.v1.core.walking.WalkingState
 import java.time.Duration
 import java.time.Instant
 import java.util.Locale
+import kotlin.math.cos
 
 private val V2Forest = Color(0xFF0E6546)
 private val V2ForestSoft = Color(0xFFE6F2EB)
