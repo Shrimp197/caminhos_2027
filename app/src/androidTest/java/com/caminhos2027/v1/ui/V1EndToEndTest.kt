@@ -63,8 +63,8 @@ class V1EndToEndTest {
 
         prepareAndStartSr()
         assertTrue("Walking actions did not appear", waitForAnyVisibleText("VER APOIOS", "OPÇÕES", timeoutMs = 30_000))
-        assertTrue("Offline map label did not appear", waitForVisibleText("MAPA OFFLINE · PERCURSO OFICIAL", 30_000))
-        assertTrue("Position label did not appear", waitForVisibleText("A MINHA POSIÇÃO", 30_000))
+        assertTrue("Real map label did not appear", waitForVisibleText("MAPA REAL · OPENSTREETMAP", 30_000))
+        assertTrue("Position label did not appear", waitForVisibleText("A minha posição", 30_000))
         assertTrue("Route progress did not appear", waitForVisibleText("PROGRESSO", 30_000))
         assertTrue("Elapsed walking time did not appear", waitForVisibleText("Tempo", 30_000))
         assertTrue("QA controls did not appear for the test route", waitForVisibleText("QA · percurso de teste", 30_000))
@@ -93,14 +93,14 @@ class V1EndToEndTest {
         device.pressBack(); device.waitForIdle()
         assertTrue("APOI browser did not return", waitForVisibleText("Procurar", 30_000))
         device.pressBack(); device.waitForIdle()
-        assertTrue("Walking screen did not return", waitForVisibleText("A MINHA POSIÇÃO", 30_000))
+        assertTrue("Walking screen did not return", waitForVisibleText("A minha posição", 30_000))
 
         clickVisibleText("OPÇÕES")
         assertTrue("Decision information did not appear", waitForVisibleText("Informação para decidir", 30_000))
         assertTrue("Stop action did not appear", waitForVisibleText("PARAR AGORA", 30_000))
         assertTrue("Continue action did not appear", waitForVisibleText("CONTINUAR CAMINHADA", 30_000))
         clickVisibleText("CONTINUAR CAMINHADA")
-        assertTrue("Continue action did not return to walking", waitForVisibleText("A MINHA POSIÇÃO", 30_000))
+        assertTrue("Continue action did not return to walking", waitForVisibleText("A minha posição", 30_000))
         clickVisibleText("OPÇÕES"); clickVisibleText("PARAR AGORA")
         assertTrue("Stop action did not end walking", waitForVisibleText("Prepare a sua caminhada", 30_000))
     }
@@ -126,7 +126,7 @@ class V1EndToEndTest {
         assertTrue("Saved plan did not persist after activity recreation", waitForVisibleText("Plano guardado", 30_000))
         assertTrue("Persisted plan did not keep explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
         clickVisibleText("INICIAR CAMINHADA")
-        assertTrue("Walking screen did not appear", waitForVisibleText("A MINHA POSIÇÃO", 30_000))
+        assertTrue("Walking screen did not appear", waitForVisibleText("A minha posição", 30_000))
     }
 
     private fun capture(name: String) {
