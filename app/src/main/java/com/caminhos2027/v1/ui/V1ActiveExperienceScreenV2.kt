@@ -96,7 +96,8 @@ internal fun V1ActiveExperienceScreenV2(
             geometry = route.geometry.points,
             projectedPoint = projectedPoint,
             gpsState = state.gpsState,
-            mapOrientation = state.walk.preparation.mapOrientation
+            mapOrientation = state.walk.preparation.mapOrientation,
+            nextApoi = state.nextApoi
         )
 
         Card(Modifier.fillMaxWidth().padding(12.dp), RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(4.dp)) {
@@ -158,13 +159,23 @@ internal fun V1ActiveExperienceScreenV2(
 
 @Composable
 private fun RealOpenStreetMap(
-    modifier: Modifier, geometry: List<GeoPoint>, projectedPoint: GeoPoint?, gpsState: GpsState, mapOrientation: MapOrientation
+    modifier: Modifier,
+    geometry: List<GeoPoint>,
+    projectedPoint: GeoPoint?,
+    gpsState: GpsState,
+    mapOrientation: MapOrientation,
+    nextApoi: com.caminhos2027.v1.core.model.Apoi?
 ) {
     val points = geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() }
     val routeJs = remember(points) { points.joinToString(prefix = "[", postfix = "]") { point -> "[" + point.latitude + "," + point.longitude + "]" } }
     val projectedJs = projectedPoint?.takeIf { it.latitude.isFinite() && it.longitude.isFinite() }?.let { "[" + it.latitude + "," + it.longitude + "]" } ?: "null"
+    val nextApoiJs = nextApoi?.location?.let { location ->
+        if (location.latitude?.isFinite() == true && location.longitude?.isFinite() == true) {
+            "[" + location.latitude + "," + location.longitude + "]"
+        } else null
+    } ?: "null"
     val rotation = if (mapOrientation == MapOrientation.WALK_DIRECTION) routeBearingDegrees(points, projectedPoint) else 0f
-    val html = remember(routeJs, projectedJs, rotation) { openStreetMapHtml(routeJs, projectedJs, rotation) }
+    val html = remember(routeJs, projectedJs, nextApoiJs, rotation) { openStreetMapHtml(routeJs, projectedJs, nextApoiJs, rotation) }
     Card(modifier, RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = V2Map), elevation = CardDefaults.cardElevation(2.dp)) {
         Box(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp))) {
             AndroidView(
@@ -201,14 +212,14 @@ private fun RealOpenStreetMap(
     }
 }
 
-private fun openStreetMapHtml(routeJs: String, projectedJs: String, rotation: Float): String = """
+private fun openStreetMapHtml(routeJs: String, projectedJs: String, nextApoiJs: String, rotation: Float): String = """
 <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>
 html,body,#map{margin:0;width:100%;height:100%;overflow:hidden;background:#eef0eb}#tiles{position:absolute;inset:0;transform-origin:50% 50%}.tile{position:absolute;width:256px;height:256px}svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.route{fill:none;stroke:white;stroke-width:12;stroke-linecap:round;stroke-linejoin:round}.route2{fill:none;stroke:#0e6546;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}.marker{stroke:white;stroke-width:5}
 </style></head><body><div id="map"><div id="tiles"></div><svg id="overlay"></svg></div><script>
-const route=$routeJs,current=$projectedJs,rotation=$rotation,size=256;const map=document.getElementById('map'),tiles=document.getElementById('tiles'),svg=document.getElementById('overlay');
+const route=$routeJs,current=$projectedJs,nextApoi=$nextApoiJs,rotation=$rotation,size=256;const map=document.getElementById('map'),tiles=document.getElementById('tiles'),svg=document.getElementById('overlay');
 function mercator(lat,lon,z){const n=Math.pow(2,z),x=(lon+180)/360*n,r=lat*Math.PI/180,y=(1-Math.asinh(Math.tan(r))/Math.PI)/2*n;return[x,y]}
 function chooseZoom(){if(!route.length)return 12;let minLat=route[0][0],maxLat=route[0][0],minLon=route[0][1],maxLon=route[0][1];for(const q of route){minLat=Math.min(minLat,q[0]);maxLat=Math.max(maxLat,q[0]);minLon=Math.min(minLon,q[1]);maxLon=Math.max(maxLon,q[1])}const s=Math.max(maxLat-minLat,maxLon-minLon);return s>8?7:s>4?8:s>2?9:s>1?10:s>.5?11:12}
-function render(){const z=chooseZoom(),world=Math.pow(2,z),lat=route.reduce((a,p)=>a+p[0],0)/route.length,lon=route.reduce((a,p)=>a+p[1],0)/route.length,c=mercator(lat,lon,z),w=map.clientWidth,h=map.clientHeight;tiles.innerHTML='';const bx=Math.floor(c[0]),by=Math.floor(c[1]),left=w/2-(c[0]-bx)*size,top=h/2-(c[1]-by)*size;for(let dx=-5;dx<=5;dx++)for(let dy=-4;dy<=4;dy++){let tx=((bx+dx)%world+world)%world,ty=by+dy;if(ty<0||ty>=world)continue;let img=document.createElement('img');img.className='tile';img.src='https://tile.openstreetmap.org/'+z+'/'+tx+'/'+ty+'.png';img.style.left=(left+dx*size)+'px';img.style.top=(top+dy*size)+'px';tiles.appendChild(img)}svg.setAttribute('viewBox','0 0 '+w+' '+h);function p(q){let m=mercator(q[0],q[1],z);return[w/2+(m[0]-c[0])*size,h/2+(m[1]-c[1])*size]}let d=route.map((q,i)=>{let p0=p(q);return(i?'L':'M')+p0[0].toFixed(1)+' '+p0[1].toFixed(1)}).join(' '),s=p(route[0]),e=p(route[route.length-1]);svg.innerHTML='<path class="route" d="'+d+'"/><path class="route2" d="'+d+'"/><circle class="marker" fill="#0e6546" r="9" cx="'+s[0]+'" cy="'+s[1]+'"/><circle class="marker" fill="#c28a16" r="9" cx="'+e[0]+'" cy="'+e[1]+'"/>';if(current){let q=p(current);svg.innerHTML+='<circle class="marker" fill="#1464c8" r="11" cx="'+q[0]+'" cy="'+q[1]+'"/>'}tiles.style.transform='rotate('+(-rotation)+'deg')}window.addEventListener('resize',render);setTimeout(render,40);
+function render(){const z=chooseZoom(),world=Math.pow(2,z),lat=route.reduce((a,p)=>a+p[0],0)/route.length,lon=route.reduce((a,p)=>a+p[1],0)/route.length,c=mercator(lat,lon,z),w=map.clientWidth,h=map.clientHeight;tiles.innerHTML='';const bx=Math.floor(c[0]),by=Math.floor(c[1]),left=w/2-(c[0]-bx)*size,top=h/2-(c[1]-by)*size;for(let dx=-5;dx<=5;dx++)for(let dy=-4;dy<=4;dy++){let tx=((bx+dx)%world+world)%world,ty=by+dy;if(ty<0||ty>=world)continue;let img=document.createElement('img');img.className='tile';img.src='https://tile.openstreetmap.org/'+z+'/'+tx+'/'+ty+'.png';img.style.left=(left+dx*size)+'px';img.style.top=(top+dy*size)+'px';tiles.appendChild(img)}svg.setAttribute('viewBox','0 0 '+w+' '+h);function p(q){let m=mercator(q[0],q[1],z);return[w/2+(m[0]-c[0])*size,h/2+(m[1]-c[1])*size]}let d=route.map((q,i)=>{let p0=p(q);return(i?'L':'M')+p0[0].toFixed(1)+' '+p0[1].toFixed(1)}).join(' '),s=p(route[0]),e=p(route[route.length-1]);svg.innerHTML='<path class="route" d="'+d+'"/><path class="route2" d="'+d+'"/><circle class="marker" fill="#0e6546" r="9" cx="'+s[0]+'" cy="'+s[1]+'"/><circle class="marker" fill="#c28a16" r="9" cx="'+e[0]+'" cy="'+e[1]+'"/>';if(current){let q=p(current);svg.innerHTML+='<circle class="marker" fill="#1464c8" r="11" cx="'+q[0]+'" cy="'+q[1]+'"/>'}if(nextApoi){let q=p(nextApoi);svg.innerHTML+='<circle class="marker" fill="#8b5cf6" r="10" cx="'+q[0]+'" cy="'+q[1]+'"/><circle fill="white" r="4" cx="'+q[0]+'" cy="'+q[1]+'"/>'}tiles.style.transform='rotate('+(-rotation)+'deg')}window.addEventListener('resize',render);setTimeout(render,40);
 </script></body></html>
 """.trimIndent()
 
