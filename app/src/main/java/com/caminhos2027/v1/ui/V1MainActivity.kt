@@ -131,7 +131,14 @@ class V1MainActivity : ComponentActivity() {
             surface = WalkingSurface.ACTIVE
             return
         }
-        preparedWalk = appContainer.restorePreparedWalk()?.walk
+        val restoredPrepared = appContainer.restorePreparedWalk()?.walk
+            ?: AndroidRouteCatalog.options
+                .asSequence()
+                .mapNotNull { option ->
+                    AndroidV1AppContainer(this, option.id).restorePreparedWalk()?.walk
+                }
+                .firstOrNull()
+        preparedWalk = restoredPrepared
         preparedWalk?.let { saved ->
             if (saved.routeId != appContainer.publishedRoute().id) {
                 appContainer = AndroidV1AppContainer(this, saved.routeId)
