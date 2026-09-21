@@ -15,6 +15,7 @@ object WalkingCheckpointJsonCodec {
         put("routePosition", checkpoint.routePosition?.toJson())
         put("gpsState", checkpoint.gpsState.name)
         put("isOffline", checkpoint.isOffline)
+        put("isPaused", checkpoint.isPaused)
         putNullable("lastObservedAt", checkpoint.lastObservedAt?.toString())
     }.toString()
 
@@ -35,7 +36,8 @@ object WalkingCheckpointJsonCodec {
             routePosition = position,
             gpsState = gpsState,
             isOffline = root.optBoolean("isOffline", false),
-            lastObservedAt = lastObservedAt
+            lastObservedAt = lastObservedAt,
+            isPaused = root.optBoolean("isPaused", false)
         )
     }.getOrNull()
 
