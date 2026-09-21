@@ -117,7 +117,7 @@ class V1EndToEndTest {
         assertTrue("Distance break option did not appear", waitForVisibleText("Parar a cada X km", 30_000))
         clickVisibleText("APLICAR PAUSAS")
         assertTrue("Preparation screen did not return after breaks", waitForAnyVisibleText("Orientação / Pausas", "Pausas", timeoutMs = 30_000))
-        clickVisibleText("INICIAR CAMINHADA")
+        clickVisibleText("GUARDAR PLANO")
         assertTrue("Saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
         assertTrue("Saved-plan explanation did not appear", waitForVisibleText("Guardar o plano não inicia a caminhada.", 30_000))
         assertTrue("Saved plan did not expose an explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
