@@ -44,6 +44,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import android.webkit.WebView
 import android.webkit.WebSettings
+import android.graphics.Color as AndroidColor
+import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
+import android.widget.TextView
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.AudioMode
 import com.caminhos2027.v1.core.model.GeoPoint
@@ -296,19 +300,26 @@ private fun RealOpenStreetMap(
                     Text(gpsLabel(gpsState), color = gpsColor(gpsState), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
                 }
             }
-            Card(
-                Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(12.dp)
-                    .semantics { contentDescription = "MAPA REAL · OPENSTREETMAP" },
-                RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))
-            ) {
-                Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                    Text("MAPA REAL · OPENSTREETMAP", color = V2Forest, fontWeight = FontWeight.SemiBold)
-                    Text("© OpenStreetMap contributors", color = V2Muted, style = MaterialTheme.typography.labelSmall)
+            AndroidView(
+                modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
+                factory = { context ->
+                    TextView(context).apply {
+                        text = "MAPA REAL · OPENSTREETMAP\n© OpenStreetMap contributors"
+                        contentDescription = "MAPA REAL · OPENSTREETMAP"
+                        gravity = Gravity.START
+                        setTextColor(AndroidColor.rgb(14, 101, 70))
+                        setTextSize(12f)
+                        setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        setPadding(24, 16, 24, 16)
+                        background = GradientDrawable().apply {
+                            setColor(AndroidColor.argb(245, 255, 255, 255))
+                            cornerRadius = 28f
+                        }
+                        isFocusable = false
+                        importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_YES
+                    }
                 }
-            }
+            )
         }
     }
 }
