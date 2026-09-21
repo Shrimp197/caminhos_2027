@@ -39,7 +39,7 @@ object WalkingStateBuilder {
             progress = progress,
             nextApoi = nextApoi,
             nextApoiDistanceKm = nextApoiDistanceKm,
-            pauseRecommendation = pauseRecommendation,
+            pauseRecommendation = if (paused) null else pauseRecommendation,
             movementCue = movementCue,
             isOffline = offline,
             isPaused = paused
