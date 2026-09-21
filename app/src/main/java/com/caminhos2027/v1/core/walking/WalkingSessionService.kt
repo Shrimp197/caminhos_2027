@@ -49,7 +49,8 @@ class WalkingSessionService(
                 state.routePosition,
                 state.gpsState,
                 state.isOffline,
-                lastObservedAt = observedAt ?: previousObservedAt
+                lastObservedAt = observedAt ?: previousObservedAt,
+                isPaused = state.isPaused
             )
         )
         return state
