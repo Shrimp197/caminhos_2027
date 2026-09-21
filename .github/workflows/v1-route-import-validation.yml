@@ -34,7 +34,16 @@ jobs:
         run: python3 tools/validate_qa_apoi.py
 
       - name: Run route import JVM tests
-        run: gradle --no-daemon :app:testDebugUnitTest
+        timeout-minutes: 10
+        run: gradle --no-daemon :app:testDebugUnitTest --stacktrace
+      - name: Upload JVM test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caminhos-v1-route-import-jvm-test-reports
+          path: app/build/test-results/testDebugUnitTest/**
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Build V1 without legacy rewrite scripts
         run: gradle --no-daemon :app:assembleDebug
