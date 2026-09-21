@@ -16,6 +16,8 @@ object WalkingCheckpointJsonCodec {
         put("gpsState", checkpoint.gpsState.name)
         put("isOffline", checkpoint.isOffline)
         put("isPaused", checkpoint.isPaused)
+        putNullable("pausedAt", checkpoint.pausedAt?.toString())
+        put("pausedDurationSeconds", checkpoint.pausedDurationSeconds.coerceAtLeast(0L))
         putNullable("lastObservedAt", checkpoint.lastObservedAt?.toString())
     }.toString()
 
@@ -32,12 +34,16 @@ object WalkingCheckpointJsonCodec {
         val position = root.optJSONObject("routePosition")?.let(::routePositionFromJson)
         val gpsState = GpsState.valueOf(root.getString("gpsState"))
         val lastObservedAt = root.optStringOrNull("lastObservedAt")?.let(Instant::parse)
+        val pausedAt = root.optStringOrNull("pausedAt")?.let(Instant::parse)
+        val pausedDurationSeconds = root.optLong("pausedDurationSeconds", 0L).coerceAtLeast(0L)
         WalkingCheckpoint(
             routePosition = position,
             gpsState = gpsState,
             isOffline = root.optBoolean("isOffline", false),
             lastObservedAt = lastObservedAt,
-            isPaused = root.optBoolean("isPaused", false)
+            isPaused = root.optBoolean("isPaused", false),
+            pausedAt = pausedAt,
+            pausedDurationSeconds = pausedDurationSeconds
         )
     }.getOrNull()
 
