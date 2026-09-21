@@ -185,7 +185,7 @@ class WalkingStateCoordinator(
             pausedAt = null,
             pausedDurationSeconds = state.pausedDurationSeconds + extraPauseSeconds
         )
-    )
+    }
 
     private fun rebuild(
         gpsState: GpsState,
