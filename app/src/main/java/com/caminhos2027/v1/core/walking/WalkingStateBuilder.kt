@@ -19,7 +19,9 @@ object WalkingStateBuilder {
         publishedApoi: List<Apoi>,
         movementCue: WalkingMovementCue? = null,
         offline: Boolean = false,
-        paused: Boolean = false
+        paused: Boolean = false,
+        pausedAt: java.time.Instant? = null,
+        pausedDurationSeconds: Long = 0L
     ): WalkingState {
         val progress = routePosition?.let {
             WalkingProgressCalculator.calculate(route, walk, it.routeKm)
@@ -42,7 +44,9 @@ object WalkingStateBuilder {
             pauseRecommendation = if (paused) null else pauseRecommendation,
             movementCue = movementCue,
             isOffline = offline,
-            isPaused = paused
+            isPaused = paused,
+            pausedAt = pausedAt,
+            pausedDurationSeconds = pausedDurationSeconds.coerceAtLeast(0L)
         )
     }
     private fun pauseRecommendation(walk: Walk, currentRouteKm: Double): String? {
