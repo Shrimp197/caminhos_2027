@@ -56,16 +56,25 @@ class GpxSimulationLocationSource(
     }
 
     /** Emits one deliberate off-route raw position for deterministic deviation QA. */
-    fun simulateDeviation(offsetDegrees: Double = 0.01) {
-        require(offsetDegrees.isFinite() && offsetDegrees > 0.0) {
+    fun simulateDeviation(offsetMeters: Double = 55.0) {
+        require(offsetMeters.isFinite() && offsetMeters > 0.0) {
             "Deviation offset must be finite and > 0"
         }
         if (!started || !available || points.isEmpty()) return
         val point = points[index]
+        val before = points.getOrNull((index - 1).coerceAtLeast(0)) ?: point
+        val after = points.getOrNull((index + 1).coerceAtMost(points.lastIndex)) ?: point
+        val latitudeMeters = 111_320.0
+        val longitudeMeters = latitudeMeters * kotlin.math.cos(Math.toRadians(point.latitude)).coerceAtLeast(0.1)
+        val north = (after.latitude - before.latitude) * latitudeMeters
+        val east = (after.longitude - before.longitude) * longitudeMeters
+        val length = kotlin.math.hypot(north, east).takeIf { it.isFinite() && it > 0.0 } ?: 1.0
+        val offsetNorth = -east / length * offsetMeters
+        val offsetEast = north / length * offsetMeters
         onPosition(
             RawGpsPosition(
-                latitude = point.latitude + offsetDegrees,
-                longitude = point.longitude + offsetDegrees,
+                latitude = point.latitude + offsetNorth / latitudeMeters,
+                longitude = point.longitude + offsetEast / longitudeMeters,
                 accuracyMeters = 1.0,
                 capturedAt = clock()
             )
