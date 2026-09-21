@@ -113,6 +113,12 @@ internal fun V1ActiveExperienceScreenV2(
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodySmall
                 )
+                Text(
+                    "MAPA REAL · OPENSTREETMAP",
+                    color = V2Muted,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.labelSmall
+                )
             }
             OutlinedButton(onClick = onStop) { Text("PARAR") }
         }
@@ -159,17 +165,6 @@ internal fun V1ActiveExperienceScreenV2(
                 }
                 LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(10.dp)), color = V2Forest, trackColor = V2ForestSoft)
                 Text("Destino planeado · ${fmt(destinationKm)} km", color = V2Muted, style = MaterialTheme.typography.bodySmall)
-                Text(
-                    "MAPA REAL · OPENSTREETMAP",
-                    color = V2Forest,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.labelSmall
-                )
-                Text(
-                    "© OpenStreetMap contributors",
-                    color = V2Muted,
-                    style = MaterialTheme.typography.labelSmall
-                )
                 pauseRecommendationText(state)?.let { recommendation ->
                     Card(
                         Modifier.fillMaxWidth(),
