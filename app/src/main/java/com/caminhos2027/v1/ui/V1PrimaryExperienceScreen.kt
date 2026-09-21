@@ -221,6 +221,21 @@ private fun PreparedWalkScreen(walk: Walk, route: Route, startRequested: Boolean
                 Text(route.officialName, color = Forest, fontWeight = FontWeight.Bold)
                 Text("${fmtKm(walk.plannedStartKm ?: 0.0)} → ${fmtKm(walk.plannedDestinationKm ?: 0.0)} km", style = MaterialTheme.typography.titleLarge)
                 Text("Guardar o plano não inicia a caminhada.", color = Muted)
+                val preparation = walk.preparation
+                Text("Áudio · ${audioLabel(preparation.audioMode)}", color = Forest, style = MaterialTheme.typography.bodySmall)
+                Text("Orientação · ${orientationLabel(preparation.mapOrientation)}", color = Forest, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "Pausas · " + if (preparation.intelligentBreaksEnabled) {
+                        val distance = preparation.customBreakDistanceKm?.let { "${fmtKm(it)} km" }
+                        val minutes = preparation.customBreakTimeMinutes?.let { "$it min" }
+                        listOfNotNull(distance, minutes).joinToString(" · ").ifBlank { "inteligentes ativas" }
+                    } else "desativadas",
+                    color = Forest,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text("Apoios · ${preparation.visibleApoiCategories.size} tipo(s) selecionado(s)", color = Forest, style = MaterialTheme.typography.bodySmall)
+                Text("Notas · ${preparation.notes.size} guardada(s)", color = Forest, style = MaterialTheme.typography.bodySmall)
+                HorizontalDivider()
                 if (startRequested) {
                     HorizontalDivider()
                     Text(if (test) "A iniciar pelo percurso de teste…" else if ((pendingDistance ?: 0.0) > 0.0) "Está fora do percurso" else "A procurar GPS…", fontWeight = FontWeight.Bold, color = if ((pendingDistance ?: 0.0) > 0.0) Warning else Forest)
@@ -371,6 +386,15 @@ private fun geoDistanceKm(a: GeoPoint, b: GeoPoint): Double {
 
 private fun gpsTitle(state: GpsState) = when (state) { GpsState.NO_SIGNAL -> "GPS sem sinal"; GpsState.ACQUIRING -> "A obter sinal GPS"; GpsState.ON_ROUTE -> "GPS no percurso"; GpsState.POSSIBLE_DEVIATION -> "Possível desvio"; GpsState.PROBABLE_DEVIATION -> "Provável desvio" }
 private fun catLabel(category: ApoiCategory) = when (category) { ApoiCategory.AGUA -> "Água"; ApoiCategory.ALIMENTACAO -> "Alimentação"; ApoiCategory.PERNOITA -> "Pernoita"; ApoiCategory.DESCANSO -> "Descanso"; ApoiCategory.DUCHES -> "Duches"; ApoiCategory.CARREGAMENTO -> "Carregamento"; ApoiCategory.TRANSPORTE -> "Transporte"; ApoiCategory.EMERGENCIA -> "Emergência" }
+private fun audioLabel(mode: com.caminhos2027.v1.core.model.AudioMode) = when (mode) {
+    com.caminhos2027.v1.core.model.AudioMode.NORMAL -> "normal"
+    com.caminhos2027.v1.core.model.AudioMode.IMMERSIVE -> "imersivo"
+    com.caminhos2027.v1.core.model.AudioMode.SILENT -> "sem áudio"
+}
+private fun orientationLabel(value: com.caminhos2027.v1.core.model.MapOrientation) = when (value) {
+    com.caminhos2027.v1.core.model.MapOrientation.NORTH -> "norte"
+    com.caminhos2027.v1.core.model.MapOrientation.WALK_DIRECTION -> "direção da caminhada"
+}
 private fun fmtKm(value: Double) = String.format(Locale("pt", "PT"), "%.2f", value)
 private fun fmtDistance(value: Double) = if (value < 1.0) String.format(Locale("pt", "PT"), "%.0f m", value * 1000.0) else String.format(Locale("pt", "PT"), "%.1f km", value)
 private fun fmtMeters(value: Double) = if (value >= 1000.0) String.format(Locale("pt", "PT"), "%.1f km", value / 1000.0) else String.format(Locale("pt", "PT"), "%.0f m", value)
