@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [ v1-route-import ]
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
 
 concurrency:
   group: v1-route-import-android-smoke
