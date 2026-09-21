@@ -25,8 +25,8 @@ class V1EndToEndTest {
         device.pressHome()
         scenario = ActivityScenario.launch(V1MainActivity::class.java)
         assertTrue(
-            "Preparation screen did not appear",
-            waitForAnyVisibleText("Prepare a sua caminhada", "Plano guardado", timeoutMs = 120_000)
+            "Route-selection preparation screen did not appear",
+            waitForVisibleText("Selecionar percurso", 120_000)
         )
         capture("caminhos-preparacao.png")
     }
