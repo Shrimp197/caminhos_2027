@@ -74,6 +74,12 @@ class WalkingSessionRuntime(
         return state
     }
 
+    /** Returns the last persisted route position, including when the latest GPS state has no projection. */
+    fun lastKnownPosition(): RoutePosition? {
+        val active = coordinator ?: return null
+        return sessionService.resumeCheckpoint(active.state.walk.id)?.routePosition
+    }
+
     fun stop(position: RoutePosition, now: Instant = Instant.now()): Walk {
         val active = requireNotNull(coordinator) { "Walking session has not been started" }
         validateRoutePosition(position)
