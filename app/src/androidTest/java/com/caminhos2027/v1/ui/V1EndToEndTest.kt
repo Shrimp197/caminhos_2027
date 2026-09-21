@@ -137,14 +137,14 @@ class V1EndToEndTest {
         assertTrue("Immersive audio option did not appear", waitForVisibleText("ÁUDIO IMERSIVO", 30_000))
         clickVisibleText("ÁUDIO IMERSIVO")
         clickVisibleText("APLICAR")
-        assertTrue("Audio configuration did not close", waitForVisibleText("Prepare a sua caminhada", 30_000))
+        assertTrue("Audio configuration did not close", waitForVisibleText("Pausas", 30_000))
 
         clickVisibleText("Orientação")
         assertTrue("Orientation configuration did not appear", waitForVisibleText("Orientação", 30_000))
         assertTrue("Walking-direction orientation option did not appear", waitForVisibleText("DIREÇÃO DA CAMINHADA", 30_000))
         clickVisibleText("DIREÇÃO DA CAMINHADA")
         clickVisibleText("APLICAR")
-        assertTrue("Orientation configuration did not close", waitForVisibleText("Prepare a sua caminhada", 30_000))
+        assertTrue("Orientation configuration did not close", waitForVisibleText("Pausas", 30_000))
 
         clickVisibleText("Apoios")
         assertTrue("Apoios configuration did not appear", waitForVisibleText("Apoios", 30_000))
