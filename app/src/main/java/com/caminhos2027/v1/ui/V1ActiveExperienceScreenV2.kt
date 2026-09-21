@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -38,10 +39,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import android.webkit.WebView
 import android.webkit.WebSettings
 import com.caminhos2027.v1.core.data.AndroidRouteOption
+import com.caminhos2027.v1.core.model.AudioMode
 import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.MapOrientation
 import com.caminhos2027.v1.core.model.Route
@@ -90,6 +93,8 @@ internal fun V1ActiveExperienceScreenV2(
     val progress = state.progress?.progressRatio?.coerceIn(0.0, 1.0) ?: 0.0
     val destinationKm = state.walk.plannedDestinationKm ?: 0.0
     val projectedPoint = state.routePosition?.projectedPoint
+
+    ActiveWalkingAudioFeedback(state)
 
     Column(Modifier.fillMaxSize().background(Color(0xFFF7F5EF))) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -198,6 +203,50 @@ internal fun V1ActiveExperienceScreenV2(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ActiveWalkingAudioFeedback(state: WalkingState) {
+    val mode = state.walk.preparation.audioMode
+    if (mode == AudioMode.SILENT) return
+
+    val context = LocalContext.current
+    val feedback = remember(context) { AndroidWalkingAudioFeedback(context) }
+    var previousGps by remember(state.walk.id) { mutableStateOf<GpsState?>(null) }
+    var previousPaused by remember(state.walk.id) { mutableStateOf(state.isPaused) }
+    var previousApoiId by remember(state.walk.id) { mutableStateOf(state.nextApoi?.id) }
+    var previousPauseRecommended by remember(state.walk.id) { mutableStateOf(false) }
+
+    DisposableEffect(feedback) {
+        onDispose { feedback.release() }
+    }
+
+    val pauseRecommended = pauseRecommendationText(state) != null
+    LaunchedEffect(state.walk.id, state.gpsState, state.isPaused, state.nextApoi?.id, pauseRecommended) {
+        val message = when {
+            !previousPaused && state.isPaused -> "Caminhada pausada."
+            previousPaused && !state.isPaused -> "Caminhada retomada."
+            previousGps == GpsState.ON_ROUTE && state.gpsState == GpsState.NO_SIGNAL ->
+                "Sinal GPS perdido. A última posição foi mantida."
+            previousGps == GpsState.NO_SIGNAL && state.gpsState == GpsState.ON_ROUTE ->
+                "Sinal GPS recuperado. Está no percurso."
+            state.gpsState == GpsState.POSSIBLE_DEVIATION && previousGps != GpsState.POSSIBLE_DEVIATION ->
+                "Possível desvio do percurso."
+            state.gpsState == GpsState.PROBABLE_DEVIATION && previousGps != GpsState.PROBABLE_DEVIATION ->
+                "Provável desvio do percurso."
+            !previousPauseRecommended && pauseRecommended ->
+                "Pausa recomendada. Pode parar agora e retomar quando quiser."
+            mode == AudioMode.IMMERSIVE && previousApoiId != null && previousApoiId != state.nextApoi?.id && state.nextApoi != null ->
+                "Próximo APOI: " + state.nextApoi.name + ". " +
+                    (state.nextApoiDistanceKm?.let(::fmtDistance) ?: "distância não disponível") + "."
+            else -> null
+        }
+        message?.let { feedback.speak(it, mode) }
+        previousGps = state.gpsState
+        previousPaused = state.isPaused
+        previousApoiId = state.nextApoi?.id
+        previousPauseRecommended = pauseRecommended
     }
 }
 
