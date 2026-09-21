@@ -20,7 +20,9 @@ class GpxSimulationStartIndexTest {
         val route = route()
 
         assertEquals(1, GpxSimulationStartIndex.nextPointIndexAfterKm(route, 0.1))
-        assertEquals(2, GpxSimulationStartIndex.nextPointIndexAfterKm(route, 1.0))
+        // The synthetic latitude spacing places point 1 just beyond 1.0 km
+        // on the route geometry, so it is the first point strictly after 1.0 km.
+        assertEquals(1, GpxSimulationStartIndex.nextPointIndexAfterKm(route, 1.0))
     }
 
     @Test
