@@ -201,7 +201,13 @@ class V1MainActivity : ComponentActivity() {
         if (walkingState == null && (!startRequested || preparedWalk == null)) return
 
         val route = appContainer.publishedRoute()
-        val startingKm = walkingState?.routePosition?.routeKm ?: preparedWalk?.plannedStartKm ?: 0.0
+        val resumedKm = walkingState?.routePosition?.routeKm
+        val startingIndex = resumedKm?.let {
+            GpxSimulationStartIndex.nextPointIndexAfterKm(route, it)
+        } ?: GpxSimulationStartIndex.nearestPointIndex(
+            route,
+            preparedWalk?.plannedStartKm ?: 0.0
+        )
         val source = GpxSimulationLocationSource(
             points = route.geometry.points,
             onPosition = { position ->
@@ -216,7 +222,7 @@ class V1MainActivity : ComponentActivity() {
                     walkingState = appContainer.activeController().markNoSignal(Instant.now()).walking
                 }
             },
-            initialIndex = GpxSimulationStartIndex.nearestPointIndex(route, startingKm)
+            initialIndex = startingIndex
         )
         testLocationSource = source
         locationSource = source
