@@ -106,7 +106,7 @@ class V1EndToEndTest {
         clickVisibleText("Água SR — TESTE")
         assertTrue("APOI detail did not appear", waitForVisibleText("Localização", 30_000))
         assertTrue("APOI services did not appear", waitForVisibleText("Serviços", 30_000))
-        device.pressBack(); device.waitForIdle()
+        clickVisibleTextOrDescription("Voltar")
         assertTrue("APOI browser did not return", waitForVisibleText("Procurar", 30_000))
         device.pressBack(); device.waitForIdle()
         assertTrue("Walking screen did not return", waitForVisibleText("A minha posição", 30_000))
@@ -209,6 +209,27 @@ class V1EndToEndTest {
         } catch (_: StaleObjectException) {
             null
         }
+    }
+
+    private fun clickVisibleTextOrDescription(text: String) {
+        val node = device.wait(Until.findObject(By.descContains(text)), 5_000)
+            ?: device.wait(Until.findObject(By.textContains(text)), 5_000)
+        assertTrue("Text or content description not found: $text", node != null)
+        try {
+            if (node!!.isClickable) node.click()
+            else {
+                val bounds = node.visibleBounds
+                assertTrue("Back control has no usable bounds: $text", !bounds.isEmpty)
+                device.click(bounds.centerX(), bounds.centerY())
+            }
+        } catch (_: StaleObjectException) {
+            val retry = findVisibleTextOrDescription(text)
+            assertTrue("Back control became stale before click: $text", retry != null)
+            val bounds = retry!!.visibleBounds
+            assertTrue("Retry back control has no usable bounds: $text", !bounds.isEmpty)
+            device.click(bounds.centerX(), bounds.centerY())
+        }
+        device.waitForIdle()
     }
 
     private fun clickVisibleText(text: String) {
