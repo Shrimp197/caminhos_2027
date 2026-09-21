@@ -11,6 +11,7 @@ import com.caminhos2027.v1.core.model.RouteGeometry
 import com.caminhos2027.v1.core.model.RouteRelation
 import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.Walk
+import com.caminhos2027.v1.core.model.WalkingPreparationConfig
 import com.caminhos2027.v1.core.route.GpsState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -59,6 +60,46 @@ class WalkingStateBuilderTest {
         assertTrue(state.isOffline)
         assertEquals(0.5, state.progress?.currentRouteKm ?: -1.0, 0.001)
         assertEquals("water-1", state.nextApoi?.id)
+    }
+
+    @Test
+    fun recommendsDistancePauseWhenConfiguredThresholdIsReached() {
+        val route = fixture()
+        val walk = Walk(
+            "walk-pause",
+            route.id,
+            plannedStartKm = 0.0,
+            plannedDestinationKm = 2.0,
+            preparation = WalkingPreparationConfig(
+                intelligentBreaksEnabled = true,
+                customBreakDistanceKm = 0.5
+            )
+        )
+        val position = com.caminhos2027.v1.core.model.RoutePosition(route.id, 0.5, 5.0, "stage-1")
+
+        val state = WalkingStateBuilder.build(route, walk, GpsState.ON_ROUTE, position, emptyList())
+
+        assertEquals("Pausa recomendada · já percorreu 0,5 km", state.pauseRecommendation)
+    }
+
+    @Test
+    fun doesNotRecommendPauseWhenIntelligentPausesAreDisabled() {
+        val route = fixture()
+        val walk = Walk(
+            "walk-pause-off",
+            route.id,
+            plannedStartKm = 0.0,
+            plannedDestinationKm = 2.0,
+            preparation = WalkingPreparationConfig(
+                intelligentBreaksEnabled = false,
+                customBreakDistanceKm = 0.5
+            )
+        )
+        val position = com.caminhos2027.v1.core.model.RoutePosition(route.id, 0.5, 5.0, "stage-1")
+
+        val state = WalkingStateBuilder.build(route, walk, GpsState.ON_ROUTE, position, emptyList())
+
+        assertNull(state.pauseRecommendation)
     }
 
     private fun apoi() = Apoi(
