@@ -29,6 +29,7 @@ class AndroidWalkingStateRepository(context: Context) : WalkingStateRepository {
     private fun encode(checkpoint: WalkingCheckpoint): JSONObject = JSONObject().apply {
         put("gpsState", checkpoint.gpsState.name)
         put("offline", checkpoint.isOffline)
+        put("paused", checkpoint.isPaused)
         put("lastObservedAt", checkpoint.lastObservedAt?.toString() ?: JSONObject.NULL)
         val position = checkpoint.routePosition
         if (position == null) {
@@ -60,7 +61,8 @@ class AndroidWalkingStateRepository(context: Context) : WalkingStateRepository {
             routePosition = position,
             gpsState = GpsState.valueOf(json.getString("gpsState")),
             isOffline = json.optBoolean("offline", false),
-            lastObservedAt = lastObservedAt
+            lastObservedAt = lastObservedAt,
+            isPaused = json.optBoolean("paused", false)
         )
     }
 
