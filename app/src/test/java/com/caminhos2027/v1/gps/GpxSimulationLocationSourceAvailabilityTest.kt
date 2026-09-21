@@ -46,7 +46,7 @@ class GpxSimulationLocationSourceAvailabilityTest {
     }
 
     @Test
-    fun deviationEmitsRawPositionWithoutChangingTheSelectedRoutePoint() {
+    fun deviationEmitsRawPositionPerpendicularToTheSelectedRoutePoint() {
         val points = listOf(
             GeoPoint(41.1000, -8.5800),
             GeoPoint(41.1010, -8.5800)
@@ -58,13 +58,12 @@ class GpxSimulationLocationSourceAvailabilityTest {
         )
 
         source.start()
-        source.simulateDeviation(offsetDegrees = 0.01)
+        source.simulateDeviation(offsetMeters = 55.0)
 
         assertEquals(2, emitted.size)
-        assertTrue(emitted[1].latitude > emitted[0].latitude)
-        assertTrue(emitted[1].longitude > emitted[0].longitude)
-        assertEquals(points[0].latitude + 0.01, emitted[1].latitude)
-        assertEquals(points[0].longitude + 0.01, emitted[1].longitude)
+        assertEquals(points[0].latitude, emitted[1].latitude, 0.00005)
+        assertTrue(kotlin.math.abs(emitted[1].longitude - emitted[0].longitude) > 0.0003)
+        assertTrue(kotlin.math.abs(emitted[1].longitude - emitted[0].longitude) < 0.001)
     }
 
     @Test
