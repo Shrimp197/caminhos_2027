@@ -20,7 +20,8 @@ class WalkingCheckpointJsonCodecTest {
         ),
         gpsState = GpsState.ON_ROUTE,
         isOffline = true,
-        lastObservedAt = Instant.parse("2026-09-04T10:20:30.123Z")
+        lastObservedAt = Instant.parse("2026-09-04T10:20:30.123Z"),
+        isPaused = true
     )
 
     @Test
@@ -76,6 +77,7 @@ class WalkingCheckpointJsonCodecTest {
 
         assertNotNull(decoded)
         assertEquals(12.0, decoded!!.routePosition!!.routeKm, 0.001)
+        assertEquals(false, decoded.isPaused)
     }
 
     @Test
