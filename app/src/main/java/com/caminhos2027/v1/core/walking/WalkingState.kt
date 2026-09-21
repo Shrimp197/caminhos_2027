@@ -4,6 +4,7 @@ import com.caminhos2027.v1.core.apoi.NextApoiFinder
 import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
+import java.time.Instant
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.route.WalkingMovementCue
 import com.caminhos2027.v1.core.route.WalkingProgress
@@ -22,5 +23,9 @@ data class WalkingState(
     val movementCue: WalkingMovementCue? = null,
     val isOffline: Boolean = false,
     /** True while the pilgrim has deliberately paused the active walking session. */
-    val isPaused: Boolean = false
+    val isPaused: Boolean = false,
+    /** Start of the current pause, when the session is paused. */
+    val pausedAt: Instant? = null,
+    /** Total completed pause duration in seconds. */
+    val pausedDurationSeconds: Long = 0L
 )
