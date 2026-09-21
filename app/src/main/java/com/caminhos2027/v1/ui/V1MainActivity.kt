@@ -271,7 +271,7 @@ class V1MainActivity : ComponentActivity() {
     private fun togglePause() {
         val state = walkingState ?: return
         if (state.isPaused) {
-            val resumed = appContainer.runtime.resumePaused()
+            val resumed = appContainer.runtime.resumePaused(Instant.now())
             appContainer.store.setWalking(resumed)
             walkingState = resumed
             if (locationSource != null) {
@@ -282,7 +282,7 @@ class V1MainActivity : ComponentActivity() {
                 startWalkingLocationSource()
             }
         } else {
-            val paused = appContainer.runtime.pause()
+            val paused = appContainer.runtime.pause(Instant.now())
             appContainer.store.setWalking(paused)
             walkingState = paused
             locationSource?.stop()
