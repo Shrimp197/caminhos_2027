@@ -12,7 +12,11 @@ data class WalkingCheckpoint(
     /** Capture time of the last accepted GPS observation used as continuity baseline. */
     val lastObservedAt: Instant? = null,
     /** Whether the pilgrim deliberately paused the active walking session. */
-    val isPaused: Boolean = false
+    val isPaused: Boolean = false,
+    /** Start of the current pause, when the session is paused. */
+    val pausedAt: Instant? = null,
+    /** Total completed pause duration in seconds. */
+    val pausedDurationSeconds: Long = 0L
 )
 
 interface WalkingStateRepository {
