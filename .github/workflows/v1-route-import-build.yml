@@ -2,8 +2,6 @@ name: V1 Route Import Build
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ v1-route-import ]
   pull_request:
     branches: [ main ]
     types: [ opened, synchronize, reopened ]
