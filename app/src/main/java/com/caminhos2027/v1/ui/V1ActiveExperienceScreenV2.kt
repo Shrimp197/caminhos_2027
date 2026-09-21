@@ -81,7 +81,12 @@ internal fun V1ActiveExperienceScreenV2(
             kotlinx.coroutines.delay(1_000)
         }
     }
-    val elapsed = elapsedWalkingTime(state.walk.startedAt, nowMillis)
+    val elapsed = elapsedWalkingTime(
+        startedAt = state.walk.startedAt,
+        nowMillis = nowMillis,
+        pausedAt = state.pausedAt,
+        pausedDurationSeconds = state.pausedDurationSeconds
+    )
     val progress = state.progress?.progressRatio?.coerceIn(0.0, 1.0) ?: 0.0
     val destinationKm = state.walk.plannedDestinationKm ?: 0.0
     val projectedPoint = state.routePosition?.projectedPoint
@@ -322,9 +327,20 @@ private fun pauseRecommendationText(state: WalkingState): String? {
         "Já passaram $minutes min desde o início."
     } else null
 }
-private fun elapsedWalkingTime(startedAt: Instant?, nowMillis: Long): String {
+private fun elapsedWalkingTime(
+    startedAt: Instant?,
+    nowMillis: Long,
+    pausedAt: Instant?,
+    pausedDurationSeconds: Long
+): String {
     if (startedAt == null) return "—"
-    val seconds = Duration.between(startedAt, Instant.ofEpochMilli(nowMillis)).seconds.coerceAtLeast(0L)
+    val now = Instant.ofEpochMilli(nowMillis)
+    val currentPauseSeconds = pausedAt?.let { Duration.between(it, now).seconds.coerceAtLeast(0L) } ?: 0L
+    val seconds = (
+        Duration.between(startedAt, now).seconds -
+            pausedDurationSeconds.coerceAtLeast(0L) -
+            currentPauseSeconds
+        ).coerceAtLeast(0L)
     val hours = seconds / 3600
     val minutes = (seconds % 3600) / 60
     return if (hours > 0) String.format(Locale("pt", "PT"), "%dh %02dm", hours, minutes)
