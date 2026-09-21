@@ -106,7 +106,7 @@ class V1EndToEndTest {
         clickVisibleText("Água SR — TESTE")
         assertTrue("APOI detail did not appear", waitForVisibleText("Localização", 30_000))
         assertTrue("APOI services did not appear", waitForVisibleText("Serviços", 30_000))
-        clickVisibleTextOrDescription("Voltar")
+        clickVisibleText("VOLTAR AOS APOIOS")
         assertTrue("APOI browser did not return", waitForAnyVisibleText("Próximos 10 km", "Procurar", timeoutMs = 30_000))
         device.pressBack(); device.waitForIdle()
         assertTrue("Walking screen did not return", waitForVisibleText("A minha posição", 30_000))
