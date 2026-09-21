@@ -30,6 +30,8 @@ class AndroidWalkingStateRepository(context: Context) : WalkingStateRepository {
         put("gpsState", checkpoint.gpsState.name)
         put("offline", checkpoint.isOffline)
         put("paused", checkpoint.isPaused)
+        put("pausedAt", checkpoint.pausedAt?.toString() ?: JSONObject.NULL)
+        put("pausedDurationSeconds", checkpoint.pausedDurationSeconds.coerceAtLeast(0L))
         put("lastObservedAt", checkpoint.lastObservedAt?.toString() ?: JSONObject.NULL)
         val position = checkpoint.routePosition
         if (position == null) {
@@ -57,12 +59,16 @@ class AndroidWalkingStateRepository(context: Context) : WalkingStateRepository {
             )
         }
         val lastObservedAt = json.optString("lastObservedAt", null)?.let(Instant::parse)
+        val pausedAt = json.optString("pausedAt", null)?.let(Instant::parse)
+        val pausedDurationSeconds = json.optLong("pausedDurationSeconds", 0L).coerceAtLeast(0L)
         return WalkingCheckpoint(
             routePosition = position,
             gpsState = GpsState.valueOf(json.getString("gpsState")),
             isOffline = json.optBoolean("offline", false),
             lastObservedAt = lastObservedAt,
-            isPaused = json.optBoolean("paused", false)
+            isPaused = json.optBoolean("paused", false),
+            pausedAt = pausedAt,
+            pausedDurationSeconds = pausedDurationSeconds
         )
     }
 
