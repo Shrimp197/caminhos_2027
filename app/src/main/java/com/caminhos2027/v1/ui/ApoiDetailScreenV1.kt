@@ -21,7 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -52,15 +51,15 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(
+                Button(
                     onClick = onBack,
                     modifier = Modifier.semantics {
-                        contentDescription = "Voltar"
+                        contentDescription = "VOLTAR AOS APOIOS"
                         role = Role.Button
                     }
                 ) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    Text("Voltar")
+                    Text("VOLTAR AOS APOIOS")
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
