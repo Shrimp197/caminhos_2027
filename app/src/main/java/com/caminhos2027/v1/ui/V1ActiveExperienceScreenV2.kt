@@ -319,6 +319,7 @@ private fun positionDetail(state: WalkingState): String {
 }
 
 private fun pauseRecommendationText(state: WalkingState): String? {
+    if (state.isPaused) return null
     state.pauseRecommendation?.let { return it }
     val startedAt = state.walk.startedAt ?: return null
     val minutes = Duration.between(startedAt, Instant.now()).toMinutes().coerceAtLeast(0L)
