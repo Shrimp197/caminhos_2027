@@ -2,7 +2,7 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master, v1-route-import ]
+    branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
 
@@ -95,6 +95,7 @@ jobs:
         run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest
       - name: Dump emulator diagnostics on failure
         if: failure()
+        timeout-minutes: 2
         run: |
           set +e
           adb devices -l
