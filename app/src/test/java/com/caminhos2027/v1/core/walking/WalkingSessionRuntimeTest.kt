@@ -108,6 +108,37 @@ class WalkingSessionRuntimeTest {
         assertEquals(GpsState.ACQUIRING, afterJump.gpsState)
     }
 
+    @Test fun pausePersistsAcrossRuntimeRecreationAndBlocksGpsUntilResume() {
+        val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
+        val runtime = WalkingSessionRuntime(route, service, emptyList())
+        runtime.prepare(WalkingPlanFactory.create(route, "walk-pause", 0.4, 1.8))
+        runtime.start("walk-pause", start, Instant.parse("2026-09-01T08:00:00Z"))
+        val moved = runtime.accept(RawGpsPosition(40.0045, -8.0, 5.0, Instant.parse("2026-09-01T08:02:00Z")))
+        val paused = runtime.pause()
+
+        assertTrue(paused.isPaused)
+        assertEquals(moved.routePosition!!.routeKm, paused.routePosition!!.routeKm, 0.001)
+        assertTrue(service.resumeCheckpoint("walk-pause")!!.isPaused)
+
+        val restored = WalkingSessionRuntime(route, service, emptyList()).resume(Instant.parse("2026-09-01T08:03:00Z"))!!
+        assertTrue(restored.isPaused)
+        val beforeGps = restored.routePosition!!.routeKm
+        val stillPaused = WalkingSessionRuntime(route, service, emptyList()).run {
+            resume(Instant.parse("2026-09-01T08:03:01Z"))
+            accept(RawGpsPosition(40.0100, -8.0, 5.0, Instant.parse("2026-09-01T08:03:02Z")))
+        }
+        assertTrue(stillPaused.isPaused)
+        assertEquals(beforeGps, stillPaused.routePosition!!.routeKm, 0.001)
+
+        val resumed = WalkingSessionRuntime(route, service, emptyList()).run {
+            resume(Instant.parse("2026-09-01T08:03:03Z"))
+            resumePaused()
+            accept(RawGpsPosition(40.0100, -8.0, 5.0, Instant.parse("2026-09-01T08:03:04Z")))
+        }
+        assertTrue(!resumed.isPaused)
+        assertTrue(resumed.routePosition!!.routeKm > beforeGps)
+    }
+
     @Test fun resumeReturnsTheLastCheckpointedState() {
         val walks = InMemoryWalkRepository(); val states = InMemoryWalkingStateRepository(); val service = WalkingSessionService(walks, states)
         val runtime = WalkingSessionRuntime(route, service, emptyList()); runtime.prepare(WalkingPlanFactory.create(route, "walk-2", 0.4, 1.8)); runtime.start("walk-2", start, Instant.parse("2026-09-01T08:00:00Z"))
