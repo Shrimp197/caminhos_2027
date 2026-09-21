@@ -2,10 +2,9 @@ name: V1 Route Source Provenance
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ v1-route-import ]
   pull_request:
     branches: [ main ]
+    types: [ opened, synchronize, reopened ]
 
 permissions:
   contents: read
