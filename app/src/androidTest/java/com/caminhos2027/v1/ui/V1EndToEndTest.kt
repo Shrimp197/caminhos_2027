@@ -63,7 +63,7 @@ class V1EndToEndTest {
 
         prepareAndStartSr()
         assertTrue("Walking actions did not appear", waitForAnyVisibleText("VER APOIOS", "OPÇÕES", timeoutMs = 30_000))
-        assertTrue("Real map label did not appear", waitForVisibleText("MAPA REAL · OPENSTREETMAP", 30_000))
+        assertTrue("Real map label did not appear", waitForVisibleTextOrDescription("MAPA REAL · OPENSTREETMAP", 30_000))
         assertTrue("Position label did not appear", waitForVisibleText("A minha posição", 30_000))
         assertTrue("Route progress did not appear", waitForVisibleText("PROGRESSO", 30_000))
         assertTrue("Elapsed walking time did not appear", waitForVisibleText("Tempo", 30_000))
@@ -198,6 +198,17 @@ class V1EndToEndTest {
         } catch (_: StaleObjectException) {
             null
         }
+    }
+
+    private fun waitForVisibleTextOrDescription(text: String, timeoutMs: Long): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val node = findVisibleTextOrDescription(text)
+            if (node != null) return true
+            device.waitForIdle()
+            Thread.sleep(150)
+        }
+        return findVisibleTextOrDescription(text) != null
     }
 
     private fun waitForVisibleText(text: String, timeoutMs: Long): Boolean {
