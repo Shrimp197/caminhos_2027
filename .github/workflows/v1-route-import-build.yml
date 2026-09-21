@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   validate-and-build:
+    timeout-minutes: 45
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
