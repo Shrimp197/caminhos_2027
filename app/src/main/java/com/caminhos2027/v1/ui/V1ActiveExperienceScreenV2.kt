@@ -216,7 +216,7 @@ private fun RealOpenStreetMap(
                     Text(gpsLabel(gpsState), color = gpsColor(gpsState), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
                 }
             }
-            Card(Modifier.align(Alignment.BottomStart).padding(12.dp), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))) {
+            Card(\n                Modifier.align(Alignment.BottomStart).padding(12.dp),\n                RoundedCornerShape(14.dp),\n                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f)),\n                modifier = Modifier.semantics { contentDescription = "MAPA REAL · OPENSTREETMAP" }\n            ) {
                 Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                     Text("MAPA REAL · OPENSTREETMAP", color = V2Forest, fontWeight = FontWeight.SemiBold)
                     Text("© OpenStreetMap contributors", color = V2Muted, style = MaterialTheme.typography.labelSmall)
