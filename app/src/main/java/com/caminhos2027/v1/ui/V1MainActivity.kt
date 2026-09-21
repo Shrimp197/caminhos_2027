@@ -43,7 +43,8 @@ class V1MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        appContainer = AndroidV1AppContainer(this)
+        val persistedRouteId = AndroidRouteCatalog.preferredPersistedRouteId(this)
+        appContainer = AndroidV1AppContainer(this, persistedRouteId ?: AndroidRouteCatalog.CENTENARIO_ID)
         selectedRouteId = appContainer.publishedRoute().id
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -131,18 +132,8 @@ class V1MainActivity : ComponentActivity() {
             surface = WalkingSurface.ACTIVE
             return
         }
-        val restoredPrepared = appContainer.restorePreparedWalk()?.walk
-            ?: AndroidRouteCatalog.options
-                .asSequence()
-                .mapNotNull { option ->
-                    AndroidV1AppContainer(this, option.id).restorePreparedWalk()?.walk
-                }
-                .firstOrNull()
-        preparedWalk = restoredPrepared
+        preparedWalk = appContainer.restorePreparedWalk()?.walk
         preparedWalk?.let { saved ->
-            if (saved.routeId != appContainer.publishedRoute().id) {
-                appContainer = AndroidV1AppContainer(this, saved.routeId)
-            }
             selectedRouteId = saved.routeId
         }
         walkingState = null
