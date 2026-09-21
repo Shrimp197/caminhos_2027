@@ -58,8 +58,9 @@ class V1EndToEndTest {
         clickVisibleText("Notas")
         assertTrue("Notes screen did not appear", waitForVisibleText("Notas", 30_000))
         assertTrue("Note input did not appear", waitForVisibleText("Nova nota", 30_000))
-        clickVisibleText("Voltar")
-        assertTrue("Notes screen did not close", waitForVisibleText("Prepare a sua caminhada", 30_000))
+        setVisibleTextField("Nota E2E persistida")
+        clickVisibleText("GUARDAR NOTA")
+        assertTrue("Saved note did not return to preparation", waitForVisibleText("Prepare a sua caminhada", 30_000))
 
         prepareAndStartSr()
         assertTrue("Walking actions did not appear", waitForAnyVisibleText("VER APOIOS", "OPÇÕES", timeoutMs = 30_000))
@@ -160,6 +161,7 @@ class V1EndToEndTest {
         assertTrue("Saved plan did not show persisted audio choice", waitForVisibleText("Áudio · imersivo", 30_000))
         assertTrue("Saved plan did not show persisted orientation choice", waitForVisibleText("Orientação · direção da caminhada", 30_000))
         assertTrue("Saved plan did not show persisted APOI choice", waitForVisibleText("Apoios · 1 tipo(s) selecionado(s)", 30_000))
+        assertTrue("Saved plan did not show persisted note count", waitForVisibleText("Notas · 1 guardada(s)", 30_000))
         assertTrue("Saved plan did not show persisted pause configuration", waitForVisibleText("Pausas · inteligentes ativas", 30_000))
         assertTrue("Saved plan did not expose an explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
         scenario.close()
@@ -168,6 +170,7 @@ class V1EndToEndTest {
         assertTrue("Persisted plan lost the audio choice", waitForVisibleText("Áudio · imersivo", 30_000))
         assertTrue("Persisted plan lost the orientation choice", waitForVisibleText("Orientação · direção da caminhada", 30_000))
         assertTrue("Persisted plan lost the APOI choice", waitForVisibleText("Apoios · 1 tipo(s) selecionado(s)", 30_000))
+        assertTrue("Persisted plan lost the note count", waitForVisibleText("Notas · 1 guardada(s)", 30_000))
         assertTrue("Persisted plan did not keep explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
         clickVisibleText("INICIAR CAMINHADA")
         assertTrue("Walking screen did not appear", waitForVisibleText("A minha posição", 30_000))
@@ -179,6 +182,14 @@ class V1EndToEndTest {
         file.delete()
         assertTrue("Screenshot could not be captured: $name", device.takeScreenshot(file))
         assertTrue("Screenshot was not created: $name", file.isFile && file.length() > 0)
+    }
+
+    private fun setVisibleTextField(value: String) {
+        val field = device.wait(Until.findObject(By.clazz("android.widget.EditText")), 5_000)
+        assertTrue("Editable note field was not found", field != null)
+        field!!.click()
+        field.setText(value)
+        device.waitForIdle()
     }
 
     private fun visibleTextValue(prefix: String): String? {
