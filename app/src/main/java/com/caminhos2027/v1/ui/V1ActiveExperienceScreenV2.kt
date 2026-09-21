@@ -90,7 +90,12 @@ internal fun V1ActiveExperienceScreenV2(
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(route.officialName, color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                Text(gpsLabel(state.gpsState), color = gpsColor(state.gpsState), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    if (state.isPaused) "GPS em pausa" else gpsLabel(state.gpsState),
+                    color = if (state.isPaused) Color(0xFF7A4A00) else gpsColor(state.gpsState),
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
             OutlinedButton(onClick = onStop) { Text("PARAR") }
         }
