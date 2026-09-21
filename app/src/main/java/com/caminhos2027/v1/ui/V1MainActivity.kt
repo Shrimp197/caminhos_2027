@@ -77,6 +77,7 @@ class V1MainActivity : ComponentActivity() {
                     onStart = ::requestStartPreparedWalk,
                     onCancelPendingStart = ::cancelPendingStart,
                     onStop = ::stopWalking,
+                    onTogglePause = ::togglePause,
                     onOpenApoi = ::openApoiBrowser,
                     onOpenDecision = ::openDecision,
                     onApoiSelected = ::selectApoi,
@@ -96,7 +97,7 @@ class V1MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (walkingState != null || startRequested) {
+        if (startRequested || (walkingState != null && !walkingState!!.isPaused)) {
             if (isTestRoute()) startTestRouteIfNeeded()
             else if (hasLocationPermission()) startWalkingLocationSource() else requestLocationPermission()
         }
@@ -265,6 +266,23 @@ class V1MainActivity : ComponentActivity() {
         )
         locationSource = source
         source.start()
+    }
+
+    private fun togglePause() {
+        val state = walkingState ?: return
+        if (state.isPaused) {
+            walkingState = appContainer.runtime.resumePaused()
+            if (locationSource != null) {
+                locationSource?.start()
+            } else if (isTestRoute()) {
+                startTestRouteIfNeeded()
+            } else {
+                startWalkingLocationSource()
+            }
+        } else {
+            walkingState = appContainer.runtime.pause()
+            locationSource?.stop()
+        }
     }
 
     private fun qaAdvance() { testLocationSource?.advance() }
