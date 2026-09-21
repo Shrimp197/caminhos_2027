@@ -22,7 +22,9 @@ class WalkingCheckpointJsonCodecTest {
         gpsState = GpsState.ON_ROUTE,
         isOffline = true,
         lastObservedAt = Instant.parse("2026-09-04T10:20:30.123Z"),
-        isPaused = true
+        isPaused = true,
+        pausedAt = Instant.parse("2026-09-04T10:10:00Z"),
+        pausedDurationSeconds = 630L
     )
 
     @Test
