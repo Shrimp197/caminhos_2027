@@ -58,6 +58,22 @@ class WalkingSessionRuntime(
         return state
     }
 
+    fun pause(): WalkingState {
+        val active = requireNotNull(coordinator) { "Walking session has not been started" }
+        require(!active.state.isPaused) { "Walking session is already paused" }
+        val state = active.pause()
+        sessionService.updatePosition(state.walk.id, state)
+        return state
+    }
+
+    fun resumePaused(): WalkingState {
+        val active = requireNotNull(coordinator) { "Walking session has not been started" }
+        require(active.state.isPaused) { "Walking session is not paused" }
+        val state = active.resumePaused()
+        sessionService.updatePosition(state.walk.id, state)
+        return state
+    }
+
     fun stop(position: RoutePosition, now: Instant = Instant.now()): Walk {
         val active = requireNotNull(coordinator) { "Walking session has not been started" }
         validateRoutePosition(position)
