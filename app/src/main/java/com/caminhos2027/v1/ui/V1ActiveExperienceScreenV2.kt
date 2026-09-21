@@ -221,7 +221,7 @@ private fun RealOpenStreetMap(
                     settings.loadsImagesAutomatically = true
                     settings.userAgentString = "${settings.userAgentString} CaminhosDoPeregrino/1.0"
                     tag = html
-                    loadDataWithBaseURL("https://www.openstreetmap.org/", html, "text/html", "UTF-8", null)
+                    loadDataWithBaseURL("https://tile.openstreetmap.org/", html, "text/html", "UTF-8", null)
                 }},
                 update = { webView ->
                     if (webView.tag != html) {
