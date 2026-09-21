@@ -217,7 +217,15 @@ class V1EndToEndTest {
             val node = findVisibleTextOrDescription(text)
             if (node != null) {
                 try {
-                    node.click()
+                    val bounds = node.visibleBounds
+                    if (bounds.isEmpty) {
+                        throw IllegalStateException("Visible node has no usable bounds: $text")
+                    }
+                    if (node.isClickable) {
+                        node.click()
+                    } else {
+                        device.click(bounds.centerX(), bounds.centerY())
+                    }
                     device.waitForIdle()
                     return
                 } catch (_: StaleObjectException) {
