@@ -28,6 +28,9 @@ class WalkingCheckpointJsonCodecTest {
     fun encodeDecodePreservesAllCheckpointFields() {
         val decoded = WalkingCheckpointJsonCodec.decode(WalkingCheckpointJsonCodec.encode(checkpoint))
         assertEquals(checkpoint, decoded)
+        assertTrue(decoded!!.isPaused)
+        assertEquals(checkpoint.pausedAt, decoded.pausedAt)
+        assertEquals(630L, decoded.pausedDurationSeconds)
     }
 
     @Test
