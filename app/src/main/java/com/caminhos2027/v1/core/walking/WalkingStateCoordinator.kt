@@ -62,7 +62,8 @@ class WalkingStateCoordinator(
             routePosition = position,
             publishedApoi = publishedApoi,
             movementCue = null,
-            offline = state.isOffline
+            offline = state.isOffline,
+            paused = false
         )
         return state
     }
@@ -100,12 +101,14 @@ class WalkingStateCoordinator(
             routePosition = validPosition,
             publishedApoi = publishedApoi,
             movementCue = null,
-            offline = checkpoint.isOffline
+            offline = checkpoint.isOffline,
+            paused = checkpoint.isPaused
         )
         return state
     }
 
     fun accept(position: com.caminhos2027.v1.core.model.RawGpsPosition): WalkingState {
+        if (state.isPaused) return state
         val previousReliableRouteKm = lastReliableRouteKm
         val previousFreshObservedAt = lastFreshReliableObservedAt
         val tracking = locationPipeline.accept(position)
@@ -136,6 +139,7 @@ class WalkingStateCoordinator(
     }
 
     fun markNoSignal(now: Instant): WalkingState {
+        if (state.isPaused) return state
         val tracking = locationPipeline.markNoSignal(now)
         return rebuild(
             gpsState = tracking.state,
@@ -152,11 +156,28 @@ class WalkingStateCoordinator(
         offline = offline
     )
 
+    fun pause(): WalkingState = rebuild(
+        gpsState = state.gpsState,
+        routePosition = state.routePosition,
+        movementCue = state.movementCue,
+        offline = state.isOffline,
+        paused = true
+    )
+
+    fun resumePaused(): WalkingState = rebuild(
+        gpsState = state.gpsState,
+        routePosition = state.routePosition,
+        movementCue = state.movementCue,
+        offline = state.isOffline,
+        paused = false
+    )
+
     private fun rebuild(
         gpsState: GpsState,
         routePosition: RoutePosition?,
         movementCue: com.caminhos2027.v1.core.route.WalkingMovementCue?,
-        offline: Boolean
+        offline: Boolean,
+        paused: Boolean = state.isPaused
     ): WalkingState {
         state = WalkingStateBuilder.build(
             route = route,
@@ -165,7 +186,8 @@ class WalkingStateCoordinator(
             routePosition = routePosition,
             publishedApoi = publishedApoi,
             movementCue = movementCue,
-            offline = offline
+            offline = offline,
+            paused = paused
         )
         return state
     }
