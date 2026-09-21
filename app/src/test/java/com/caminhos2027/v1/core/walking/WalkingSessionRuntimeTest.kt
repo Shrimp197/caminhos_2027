@@ -135,7 +135,7 @@ class WalkingSessionRuntimeTest {
         val resumed = WalkingSessionRuntime(route, service, emptyList()).run {
             resume(Instant.parse("2026-09-01T08:03:03Z"))
             resumePaused(Instant.parse("2026-09-01T08:04:00Z"))
-            accept(RawGpsPosition(40.0100, -8.0, 5.0, Instant.parse("2026-09-01T08:04:04Z")))
+            accept(RawGpsPosition(40.0058, -8.0, 5.0, Instant.parse("2026-09-01T08:04:04Z")))
         }
         assertTrue(!resumed.isPaused)
         assertEquals(60L, resumed.pausedDurationSeconds)
