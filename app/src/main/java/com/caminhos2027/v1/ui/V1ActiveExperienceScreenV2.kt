@@ -372,10 +372,17 @@ private fun pauseRecommendationText(state: WalkingState): String? {
     if (state.isPaused) return null
     state.pauseRecommendation?.let { return it }
     val startedAt = state.walk.startedAt ?: return null
-    val minutes = Duration.between(startedAt, Instant.now()).toMinutes().coerceAtLeast(0L)
+    val now = Instant.now()
+    val currentPauseSeconds = state.pausedAt?.let { Duration.between(it, now).seconds.coerceAtLeast(0L) } ?: 0L
+    val activeSeconds = (
+        Duration.between(startedAt, now).seconds -
+            state.pausedDurationSeconds.coerceAtLeast(0L) -
+            currentPauseSeconds
+        ).coerceAtLeast(0L)
+    val minutes = activeSeconds / 60L
     val threshold = state.walk.preparation.customBreakTimeMinutes?.takeIf { it > 0 } ?: 60
     return if (state.walk.preparation.intelligentBreaksEnabled && minutes >= threshold) {
-        "Já passaram $minutes min desde o início."
+        "Já passaram $minutes min de caminhada."
     } else null
 }
 private fun elapsedWalkingTime(
