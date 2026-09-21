@@ -80,6 +80,35 @@ class V1EndToEndTest {
             "Deviation state did not appear",
             waitForAnyVisibleText("Possível desvio", "Provável desvio", timeoutMs = 30_000)
         )
+
+        val positionBeforePause = visibleTextValue("Km no percurso:")
+        clickVisibleText("PAUSAR CAMINHADA")
+        assertTrue("Pause state did not appear", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
+        assertTrue("Resume action did not appear", waitForVisibleText("RETOMAR CAMINHADA", 30_000))
+        val positionWhilePaused = visibleTextValue("Km no percurso:")
+        assertTrue(
+            "Paused walk changed route position before recreation",
+            positionBeforePause != null && positionBeforePause == positionWhilePaused
+        )
+
+        scenario.close()
+        scenario = ActivityScenario.launch(V1MainActivity::class.java)
+        assertTrue("Paused walking session did not persist", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
+        assertTrue("Persisted pause did not expose resume action", waitForVisibleText("RETOMAR CAMINHADA", 30_000))
+        val persistedPausedPosition = visibleTextValue("Km no percurso:")
+        assertTrue(
+            "Persisted paused position was lost",
+            positionWhilePaused != null && positionWhilePaused == persistedPausedPosition
+        )
+
+        clickVisibleText("RETOMAR CAMINHADA")
+        assertTrue("Walking session did not resume", waitForVisibleText("PAUSAR CAMINHADA", 30_000))
+        clickVisibleText("AVANÇAR GPS")
+        val positionAfterResume = visibleTextValue("Km no percurso:")
+        assertTrue(
+            "GPS did not advance after pause/resume",
+            persistedPausedPosition != null && persistedPausedPosition != positionAfterResume
+        )
         capture("caminhos-navegacao.png")
 
         clickVisibleText("PAUSAR CAMINHADA")
@@ -143,6 +172,15 @@ class V1EndToEndTest {
         file.delete()
         assertTrue("Screenshot could not be captured: $name", device.takeScreenshot(file))
         assertTrue("Screenshot was not created: $name", file.isFile && file.length() > 0)
+    }
+
+    private fun visibleTextValue(prefix: String): String? {
+        val node = findVisibleTextOrDescription(prefix) ?: return null
+        return try {
+            node.text
+        } catch (_: StaleObjectException) {
+            null
+        }
     }
 
     private fun clickVisibleText(text: String) {
