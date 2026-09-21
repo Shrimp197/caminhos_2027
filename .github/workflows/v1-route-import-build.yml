@@ -36,6 +36,7 @@ jobs:
           test -s app/build/outputs/apk/debug/app-debug.apk
           shasum -a 256 app/build/outputs/apk/debug/app-debug.apk
       - name: Set up deterministic AOSP Android emulator
+        id: emulator_setup
         timeout-minutes: 12
         env:
           ANDROID_AVD_HOME: ${{ runner.temp }}/avd
@@ -97,7 +98,9 @@ jobs:
         timeout-minutes: 12
         run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest
       - name: Collect visual validation screenshots
-        if: always()
+        id: visual_screenshots
+        if: steps.emulator_setup.outcome == 'success'
+        timeout-minutes: 2
         run: |
           set -euo pipefail
           mkdir -p build/visual-validation
@@ -107,7 +110,7 @@ jobs:
           test -s build/visual-validation/navegacao.png
           file build/visual-validation/preparacao.png build/visual-validation/navegacao.png
       - name: Upload visual validation screenshots
-        if: always()
+        if: steps.visual_screenshots.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: caminhos-v1-route-import-visual-validation
@@ -116,6 +119,7 @@ jobs:
           retention-days: 7
       - name: Dump emulator diagnostics on failure
         if: failure()
+        timeout-minutes: 2
         run: |
           set +e
           adb devices -l
