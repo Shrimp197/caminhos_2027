@@ -45,7 +45,18 @@ class WalkingPreparationAppStateController(
         position: RoutePosition,
         now: Instant = Instant.now()
     ): AppState {
-        val walking = requireNotNull(store.state.walking) { "No prepared walk in AppState" }
+        val walking = store.state.walking ?: preparationService.restorePlanned()
+            ?.let { prepared ->
+                WalkingStateBuilder.build(
+                    route = route,
+                    walk = prepared.walk,
+                    gpsState = com.caminhos2027.v1.core.route.GpsState.NO_SIGNAL,
+                    routePosition = null,
+                    publishedApoi = prepared.relevantApoi
+                )
+            }
+            ?.also { store.setWalking(it) }
+        requireNotNull(walking) { "No prepared walk is available to start" }
         require(position.routeId == route.id) { "Start position route must match the published V1 route" }
         require(position.routeKm.isFinite() && position.routeKm in 0.0..route.totalDistanceKm) {
             "Start position routeKm must be finite and within the published route"
