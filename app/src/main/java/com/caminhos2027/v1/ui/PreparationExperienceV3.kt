@@ -126,7 +126,12 @@ private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, no
         }
         Button(
             onClick = { onApply(selected) },
-            Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription = "APLICAR ORIENTAÇÃO"
+                    role = Role.Button
+                },
             colors = ButtonDefaults.buttonColors(containerColor = PGreen)
         ) { Text("APLICAR") }
     }
