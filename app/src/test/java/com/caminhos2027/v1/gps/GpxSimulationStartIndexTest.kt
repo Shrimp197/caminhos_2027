@@ -16,6 +16,22 @@ class GpxSimulationStartIndexTest {
     }
 
     @Test
+    fun resumesOnTheFirstPointStrictlyAfterThePersistedRouteKilometre() {
+        val route = route()
+
+        assertEquals(1, GpxSimulationStartIndex.nextPointIndexAfterKm(route, 0.1))
+        assertEquals(2, GpxSimulationStartIndex.nextPointIndexAfterKm(route, 1.0))
+    }
+
+    @Test
+    fun resumeAtRouteEndFallsBackToTheLastPoint() {
+        val route = route()
+
+        assertEquals(3, GpxSimulationStartIndex.nextPointIndexAfterKm(route, 3.0))
+        assertEquals(3, GpxSimulationStartIndex.nextPointIndexAfterKm(route, 99.0))
+    }
+
+    @Test
     fun clampsPlannedStartOutsideTheRouteRange() {
         val route = route()
 
