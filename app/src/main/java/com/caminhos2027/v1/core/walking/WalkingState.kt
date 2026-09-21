@@ -20,5 +20,7 @@ data class WalkingState(
     /** Non-blocking recommendation produced when the configured distance pause threshold is reached. */
     val pauseRecommendation: String? = null,
     val movementCue: WalkingMovementCue? = null,
-    val isOffline: Boolean = false
+    val isOffline: Boolean = false,
+    /** True while the pilgrim has deliberately paused the active walking session. */
+    val isPaused: Boolean = false
 )
