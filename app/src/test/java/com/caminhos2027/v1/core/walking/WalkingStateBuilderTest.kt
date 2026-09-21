@@ -83,6 +83,34 @@ class WalkingStateBuilderTest {
     }
 
     @Test
+    fun doesNotRecommendPauseWhileAlreadyPaused() {
+        val route = fixture()
+        val walk = Walk(
+            "walk-paused",
+            route.id,
+            plannedStartKm = 0.0,
+            plannedDestinationKm = 2.0,
+            preparation = WalkingPreparationConfig(
+                intelligentBreaksEnabled = true,
+                customBreakDistanceKm = 0.5
+            )
+        )
+        val position = com.caminhos2027.v1.core.model.RoutePosition(route.id, 0.5, 5.0, "stage-1")
+
+        val state = WalkingStateBuilder.build(
+            route,
+            walk,
+            GpsState.ON_ROUTE,
+            position,
+            emptyList(),
+            paused = true
+        )
+
+        assertNull(state.pauseRecommendation)
+        assertTrue(state.isPaused)
+    }
+
+    @Test
     fun doesNotRecommendPauseWhenIntelligentPausesAreDisabled() {
         val route = fixture()
         val walk = Walk(
