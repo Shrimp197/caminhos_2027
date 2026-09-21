@@ -114,6 +114,19 @@ internal fun V1ActiveExperienceScreenV2(
                 }
                 LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(10.dp)), color = V2Forest, trackColor = V2ForestSoft)
                 Text("Destino planeado · ${fmt(destinationKm)} km", color = V2Muted, style = MaterialTheme.typography.bodySmall)
+                pauseRecommendationText(state)?.let { recommendation ->
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = V2ForestSoft)
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text("PAUSA INTELIGENTE", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                            Text(recommendation, color = V2Forest, fontWeight = FontWeight.SemiBold)
+                            Text("Pode parar agora e retomar quando quiser.", color = V2Muted, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
                 HorizontalDivider()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     androidx.compose.material3.Icon(Icons.Filled.LocationOn, null, tint = V2Forest)
@@ -268,6 +281,15 @@ private fun positionDetail(state: WalkingState): String {
     return "Km no percurso: $routeKm · distância ao traçado: $routeDistance · confiança: $confidence"
 }
 
+private fun pauseRecommendationText(state: WalkingState): String? {
+    state.pauseRecommendation?.let { return it }
+    val startedAt = state.walk.startedAt ?: return null
+    val minutes = Duration.between(startedAt, Instant.now()).toMinutes().coerceAtLeast(0L)
+    val threshold = state.walk.preparation.customBreakTimeMinutes?.takeIf { it > 0 } ?: 60
+    return if (state.walk.preparation.intelligentBreaksEnabled && minutes >= threshold) {
+        "Já passaram $minutes min desde o início."
+    } else null
+}
 private fun elapsedWalkingTime(startedAt: Instant?, nowMillis: Long): String {
     if (startedAt == null) return "—"
     val seconds = Duration.between(startedAt, Instant.ofEpochMilli(nowMillis)).seconds.coerceAtLeast(0L)
