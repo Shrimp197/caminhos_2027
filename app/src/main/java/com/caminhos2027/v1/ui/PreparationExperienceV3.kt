@@ -76,7 +76,7 @@ private val PMuted = Color(0xFF687278)
 
 @Composable
 internal fun PreparationExperienceV3(route: Route, routeOptions: List<AndroidRouteOption>, selectedRouteId: String, onSelectRoute: (String) -> Unit, onConfirm: (Double, Double, WalkingPreparationConfig) -> Unit, onBack: () -> Unit) {
-    var screen by rememberSaveable(selectedRouteId) { mutableStateOf("home") }
+    var screen by rememberSaveable(selectedRouteId) { mutableStateOf("routes") }
     var startKm by rememberSaveable(selectedRouteId) { mutableStateOf(0.0) }
     var destinationKm by rememberSaveable(selectedRouteId, route.totalDistanceKm) { mutableStateOf(route.totalDistanceKm) }
     var config by remember(selectedRouteId) { mutableStateOf(WalkingPreparationConfig()) }
