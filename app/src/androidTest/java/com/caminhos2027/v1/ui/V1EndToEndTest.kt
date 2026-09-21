@@ -82,6 +82,11 @@ class V1EndToEndTest {
         )
         capture("caminhos-navegacao.png")
 
+        clickVisibleText("PAUSAR CAMINHADA")
+        assertTrue("Pause state did not appear", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
+        clickVisibleText("RETOMAR CAMINHADA")
+        assertTrue("Walking session did not resume", waitForVisibleText("A minha posição", 30_000))
+
         clickVisibleText("VER APOIOS")
         assertTrue("Apoios screen did not appear", waitForVisibleText("Próximos 10 km", 30_000))
         assertTrue("Apoios search did not appear", waitForVisibleText("Procurar", 30_000))
