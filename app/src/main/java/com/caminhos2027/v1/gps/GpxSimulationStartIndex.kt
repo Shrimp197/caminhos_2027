@@ -11,6 +11,32 @@ import kotlin.math.abs
  * where the prepared walk says it starts. This is test infrastructure only.
  */
 object GpxSimulationStartIndex {
+    /**
+     * Returns the first GPX point strictly after the persisted route kilometre, falling back
+     * to the final point when the checkpoint is already at the end of the track.
+     */
+    fun nextPointIndexAfterKm(route: Route, currentRouteKm: Double): Int {
+        require(route.geometry.points.size >= 2) { "Route geometry must contain at least two points" }
+        require(currentRouteKm.isFinite()) { "Current route kilometre must be finite" }
+
+        val target = currentRouteKm.coerceIn(0.0, route.totalDistanceKm)
+        val capturedAt = Instant.EPOCH
+        val index = route.geometry.points.indices.firstOrNull { index ->
+            val point = route.geometry.points[index]
+            val projection = RouteLocationEngine.locate(
+                route,
+                RawGpsPosition(
+                    latitude = point.latitude,
+                    longitude = point.longitude,
+                    accuracyMeters = 1.0,
+                    capturedAt = capturedAt
+                )
+            )
+            projection.routeKm > target + 1e-9
+        }
+        return index ?: route.geometry.points.lastIndex
+    }
+
     fun nearestPointIndex(route: Route, plannedStartKm: Double): Int {
         require(route.geometry.points.size >= 2) { "Route geometry must contain at least two points" }
         require(plannedStartKm.isFinite()) { "Planned start kilometre must be finite" }
