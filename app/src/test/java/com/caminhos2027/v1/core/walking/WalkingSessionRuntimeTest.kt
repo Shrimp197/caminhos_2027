@@ -114,9 +114,11 @@ class WalkingSessionRuntimeTest {
         runtime.prepare(WalkingPlanFactory.create(route, "walk-pause", 0.4, 1.8))
         runtime.start("walk-pause", start, Instant.parse("2026-09-01T08:00:00Z"))
         val moved = runtime.accept(RawGpsPosition(40.0045, -8.0, 5.0, Instant.parse("2026-09-01T08:02:00Z")))
-        val paused = runtime.pause()
+        val paused = runtime.pause(Instant.parse("2026-09-01T08:03:00Z"))
 
         assertTrue(paused.isPaused)
+        assertEquals(Instant.parse("2026-09-01T08:03:00Z"), paused.pausedAt)
+        assertEquals(0L, paused.pausedDurationSeconds)
         assertEquals(moved.routePosition!!.routeKm, paused.routePosition!!.routeKm, 0.001)
         assertTrue(service.resumeCheckpoint("walk-pause")!!.isPaused)
 
