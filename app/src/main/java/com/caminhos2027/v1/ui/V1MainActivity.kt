@@ -352,7 +352,9 @@ class V1MainActivity : ComponentActivity() {
     }
 
     private fun stopWalking() {
-        val position = walkingState?.routePosition ?: return
+        val position = walkingState?.routePosition
+            ?: appContainer.runtime.lastKnownPosition()
+            ?: return
         appContainer.runtime.stop(position, Instant.now())
         appContainer.clearSession()
         locationSource?.stop()
