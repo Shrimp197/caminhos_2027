@@ -286,7 +286,7 @@ private fun RealOpenStreetMap(
                 update = { webView ->
                     if (webView.tag != html) {
                         webView.tag = html
-                        webView.loadDataWithBaseURL("https://www.openstreetmap.org/", html, "text/html", "UTF-8", null)
+                        webView.loadDataWithBaseURL("https://tile.openstreetmap.org/", html, "text/html", "UTF-8", null)
                     }
                 }
             )
