@@ -17,6 +17,8 @@ data class WalkingState(
     val nextApoi: Apoi?,
     /** Route distance from the current position to the next APOI, not absolute route km. */
     val nextApoiDistanceKm: Double?,
+    /** Non-blocking recommendation produced when the configured distance pause threshold is reached. */
+    val pauseRecommendation: String? = null,
     val movementCue: WalkingMovementCue? = null,
     val isOffline: Boolean = false
 )
