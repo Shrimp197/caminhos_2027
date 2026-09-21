@@ -65,6 +65,7 @@ internal fun V1ActiveExperienceScreenV2(
     route: Route,
     routeOptions: List<AndroidRouteOption>,
     onStop: () -> Unit,
+    onTogglePause: () -> Unit,
     onOpenApoi: () -> Unit,
     onOpenDecision: () -> Unit,
     onQaAdvance: () -> Unit,
@@ -149,10 +150,27 @@ internal fun V1ActiveExperienceScreenV2(
                         Text(state.nextApoiDistanceKm?.let(::fmtDistance) ?: "—", color = V2Forest, fontWeight = FontWeight.ExtraBold)
                     }
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onOpenApoi, Modifier.weight(1f)) { Text("VER APOIOS") }
-                    OutlinedButton(onClick = onOpenDecision, Modifier.weight(1f)) { Text("OPÇÕES") }
+                if (state.isPaused) {
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1D9))
+                    ) {
+                        Text(
+                            "CAMINHADA PAUSADA · a posição ficou guardada e o GPS não está a ser aceite.",
+                            Modifier.padding(12.dp),
+                            color = Color(0xFF7A4A00),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onTogglePause, Modifier.weight(1f)) {
+                        Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA")
+                    }
+                    OutlinedButton(onClick = onOpenApoi, Modifier.weight(1f)) { Text("VER APOIOS") }
+                }
+                OutlinedButton(onClick = onOpenDecision, Modifier.fillMaxWidth()) { Text("OPÇÕES") }
                 if (routeOptions.firstOrNull { it.id == route.id }?.testOnly == true) {
                     HorizontalDivider()
                     Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold)
