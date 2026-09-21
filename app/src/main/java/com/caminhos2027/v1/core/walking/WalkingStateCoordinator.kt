@@ -63,7 +63,9 @@ class WalkingStateCoordinator(
             publishedApoi = publishedApoi,
             movementCue = null,
             offline = state.isOffline,
-            paused = false
+            paused = false,
+            pausedAt = null,
+            pausedDurationSeconds = 0L
         )
         return state
     }
@@ -102,7 +104,9 @@ class WalkingStateCoordinator(
             publishedApoi = publishedApoi,
             movementCue = null,
             offline = checkpoint.isOffline,
-            paused = checkpoint.isPaused
+            paused = checkpoint.isPaused,
+            pausedAt = checkpoint.pausedAt?.takeIf { !it.isAfter(now) },
+            pausedDurationSeconds = checkpoint.pausedDurationSeconds
         )
         return state
     }
@@ -156,20 +160,31 @@ class WalkingStateCoordinator(
         offline = offline
     )
 
-    fun pause(): WalkingState = rebuild(
-        gpsState = state.gpsState,
-        routePosition = state.routePosition,
-        movementCue = state.movementCue,
-        offline = state.isOffline,
-        paused = true
-    )
+    fun pause(now: Instant = Instant.now()): WalkingState {
+        require(!state.isPaused) { "Walking session is already paused" }
+        return rebuild(
+            gpsState = state.gpsState,
+            routePosition = state.routePosition,
+            movementCue = state.movementCue,
+            offline = state.isOffline,
+            paused = true,
+            pausedAt = now,
+            pausedDurationSeconds = state.pausedDurationSeconds
+        )
+    }
 
-    fun resumePaused(): WalkingState = rebuild(
-        gpsState = state.gpsState,
-        routePosition = state.routePosition,
-        movementCue = state.movementCue,
-        offline = state.isOffline,
-        paused = false
+    fun resumePaused(now: Instant = Instant.now()): WalkingState {
+        require(state.isPaused) { "Walking session is not paused" }
+        val extraPauseSeconds = state.pausedAt?.let { Duration.between(it, now).seconds.coerceAtLeast(0L) } ?: 0L
+        return rebuild(
+            gpsState = state.gpsState,
+            routePosition = state.routePosition,
+            movementCue = state.movementCue,
+            offline = state.isOffline,
+            paused = false,
+            pausedAt = null,
+            pausedDurationSeconds = state.pausedDurationSeconds + extraPauseSeconds
+        )
     )
 
     private fun rebuild(
@@ -177,7 +192,9 @@ class WalkingStateCoordinator(
         routePosition: RoutePosition?,
         movementCue: com.caminhos2027.v1.core.route.WalkingMovementCue?,
         offline: Boolean,
-        paused: Boolean = state.isPaused
+        paused: Boolean = state.isPaused,
+        pausedAt: Instant? = state.pausedAt,
+        pausedDurationSeconds: Long = state.pausedDurationSeconds
     ): WalkingState {
         state = WalkingStateBuilder.build(
             route = route,
@@ -187,7 +204,9 @@ class WalkingStateCoordinator(
             publishedApoi = publishedApoi,
             movementCue = movementCue,
             offline = offline,
-            paused = paused
+            paused = paused,
+            pausedAt = pausedAt,
+            pausedDurationSeconds = pausedDurationSeconds
         )
         return state
     }
