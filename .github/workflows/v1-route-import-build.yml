@@ -43,6 +43,24 @@ jobs:
           echo "$ANDROID_HOME/emulator" >> "$GITHUB_PATH"
           echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
 
+      - name: Enable KVM access for Android emulator
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          if [ ! -e /dev/kvm ]; then
+            echo "/dev/kvm is unavailable on this runner." >&2
+            exit 1
+          fi
+          sudo chmod 666 /dev/kvm
+          ls -l /dev/kvm
+          python3 - <<'PY'
+          import os
+          path = "/dev/kvm"
+          if not os.access(path, os.R_OK | os.W_OK):
+              raise SystemExit("/dev/kvm is still not readable/writable by the runner user")
+          print("/dev/kvm is readable and writable by the runner user.")
+          PY
+
       - name: Set up deterministic AOSP Android emulator
         id: emulator_setup
         timeout-minutes: 12
