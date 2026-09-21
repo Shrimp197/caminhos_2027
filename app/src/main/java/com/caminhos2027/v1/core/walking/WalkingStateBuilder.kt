@@ -29,7 +29,7 @@ object WalkingStateBuilder {
         val nextApoiDistanceKm = nextApoi?.location?.routeKm?.let {
             (it - routePosition.routeKm).coerceAtLeast(0.0)
         }
-        val pauseRecommendation = pauseRecommendation(walk, routePosition.routeKm)
+        val pauseRecommendation = routePosition?.let { pauseRecommendation(walk, it.routeKm) }
 
         return WalkingState(
             walk = walk,
