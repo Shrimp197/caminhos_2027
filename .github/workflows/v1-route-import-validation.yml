@@ -5,6 +5,10 @@ on:
   push:
     branches: [ v1-route-import ]
 
+concurrency:
+  group: v1-route-import-validation
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
