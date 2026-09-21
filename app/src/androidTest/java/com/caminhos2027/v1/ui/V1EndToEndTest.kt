@@ -141,6 +141,11 @@ class V1EndToEndTest {
         assertTrue("Continue action did not return to walking", waitForVisibleText("A minha posição", 30_000))
         clickVisibleText("OPÇÕES"); clickVisibleText("PARAR AGORA")
         assertTrue("Stop action did not end walking", waitForVisibleText("Prepare a sua caminhada", 30_000))
+
+        prepareAndStartSr()
+        assertTrue("Second walking cycle did not start", waitForVisibleText("A minha posição", 30_000))
+        clickVisibleText("OPÇÕES"); clickVisibleText("PARAR AGORA")
+        assertTrue("Second walking cycle did not stop cleanly", waitForVisibleText("Prepare a sua caminhada", 30_000))
     }
 
     private fun prepareAndStartSr() {
