@@ -37,6 +37,20 @@ class WalkJsonCodecTest {
     }
 
     @Test
+    fun preparationAudioModeAndOrientationRoundTrip() {
+        val source = walk.copy(
+            preparation = WalkingPreparationConfig(
+                audioMode = com.caminhos2027.v1.core.model.AudioMode.IMMERSIVE,
+                mapOrientation = com.caminhos2027.v1.core.model.MapOrientation.WALK_DIRECTION,
+                intelligentBreaksEnabled = true,
+                customBreakTimeMinutes = 45,
+                customBreakDistanceKm = 4.5
+            )
+        )
+        assertEquals(source, WalkJsonCodec.decode(WalkJsonCodec.encode(source)))
+    }
+
+    @Test
     fun emptyOptionalsRoundTrip() {
         val source = Walk("walk-2", "route-1")
         assertEquals(source, WalkJsonCodec.decode(WalkJsonCodec.encode(source)))
