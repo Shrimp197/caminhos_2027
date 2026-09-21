@@ -78,6 +78,7 @@ class WalkingSessionRuntime(
     fun lastKnownPosition(): RoutePosition? {
         val active = coordinator ?: return null
         return sessionService.resumeCheckpoint(active.state.walk.id)?.routePosition
+            ?: active.state.routePosition
     }
 
     fun stop(position: RoutePosition, now: Instant = Instant.now()): Walk {
