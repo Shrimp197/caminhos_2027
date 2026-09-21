@@ -29,6 +29,7 @@ object WalkingStateBuilder {
         val nextApoiDistanceKm = nextApoi?.location?.routeKm?.let {
             (it - routePosition.routeKm).coerceAtLeast(0.0)
         }
+        val pauseRecommendation = pauseRecommendation(walk, routePosition.routeKm)
 
         return WalkingState(
             walk = walk,
@@ -37,8 +38,18 @@ object WalkingStateBuilder {
             progress = progress,
             nextApoi = nextApoi,
             nextApoiDistanceKm = nextApoiDistanceKm,
+            pauseRecommendation = pauseRecommendation,
             movementCue = movementCue,
             isOffline = offline
         )
+    }
+    private fun pauseRecommendation(walk: Walk, currentRouteKm: Double): String? {
+        val preparation = walk.preparation
+        if (!preparation.intelligentBreaksEnabled) return null
+        val threshold = preparation.customBreakDistanceKm?.takeIf { it.isFinite() && it > 0.0 } ?: 5.0
+        val startKm = walk.actualStartKm ?: walk.plannedStartKm ?: currentRouteKm
+        val distanceSinceStart = (currentRouteKm - startKm).coerceAtLeast(0.0)
+        if (distanceSinceStart + 1e-9 < threshold) return null
+        return "Pausa recomendada · já percorreu " + String.format(java.util.Locale("pt", "PT"), "%.1f", distanceSinceStart) + " km"
     }
 }
