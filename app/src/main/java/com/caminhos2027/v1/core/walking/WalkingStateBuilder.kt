@@ -18,7 +18,8 @@ object WalkingStateBuilder {
         routePosition: RoutePosition?,
         publishedApoi: List<Apoi>,
         movementCue: WalkingMovementCue? = null,
-        offline: Boolean = false
+        offline: Boolean = false,
+        paused: Boolean = false
     ): WalkingState {
         val progress = routePosition?.let {
             WalkingProgressCalculator.calculate(route, walk, it.routeKm)
@@ -40,7 +41,8 @@ object WalkingStateBuilder {
             nextApoiDistanceKm = nextApoiDistanceKm,
             pauseRecommendation = pauseRecommendation,
             movementCue = movementCue,
-            isOffline = offline
+            isOffline = offline,
+            isPaused = paused
         )
     }
     private fun pauseRecommendation(walk: Walk, currentRouteKm: Double): String? {
