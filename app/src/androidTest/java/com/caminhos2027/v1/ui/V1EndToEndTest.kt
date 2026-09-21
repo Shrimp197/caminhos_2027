@@ -36,7 +36,9 @@ class V1EndToEndTest {
 
     @Test
     fun testVerticalSliceFromPlanToApoiDetailAndDecision() {
-        assertTrue("Centenário title missing", waitForVisibleText("Caminho do Centenário", 30_000))
+        assertTrue("Centenário route option missing", waitForVisibleText("Caminho do Centenário", 30_000))
+        clickVisibleText("Caminho do Centenário")
+        assertTrue("Preparation home did not appear after route selection", waitForVisibleText("Prepare a sua caminhada", 30_000))
         clickVisibleText("Áudio")
         assertTrue("Audio configuration did not appear", waitForVisibleText("Áudio", 30_000))
         assertTrue("Immersive audio option did not appear", waitForVisibleText("ÁUDIO IMERSIVO", 30_000))
