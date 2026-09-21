@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   build:
+    timeout-minutes: 45
     runs-on: macos-15-intel
     steps:
       - name: Checkout
