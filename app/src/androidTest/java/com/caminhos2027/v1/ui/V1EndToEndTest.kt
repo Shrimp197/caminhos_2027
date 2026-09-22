@@ -188,15 +188,16 @@ class V1EndToEndTest {
     }
 
     private fun capture(name: String) {
-        val remotePath = "/data/local/tmp/$name"
-        device.executeShellCommand("rm -f $remotePath")
-        device.executeShellCommand("screencap -p $remotePath")
-        val sizeBytes = device.executeShellCommand("wc -c < $remotePath")
-            .trim()
-            .toLongOrNull()
+        val remoteDir = "/sdcard/Android/data/com.caminhos2027.test/files"
+        device.executeShellCommand("mkdir -p $remoteDir")
+        val remotePath = "$remoteDir/$name"
+        val file = File(remotePath)
+        file.delete()
+        val captured = device.takeScreenshot(file)
+        assertTrue("Screenshot capture failed: $name", captured)
         assertTrue(
             "Screenshot was not created or is empty: $name",
-            sizeBytes != null && sizeBytes > 0
+            file.isFile && file.length() > 0
         )
     }
 
