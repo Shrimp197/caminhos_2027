@@ -38,7 +38,7 @@ class AndroidWalkingTrackingService : Service() {
         when (action) {
             ACTION_START -> {
                 pendingStart = true
-                val routeId = intent.getStringExtra(EXTRA_ROUTE_ID)
+                val routeId = intent?.getStringExtra(EXTRA_ROUTE_ID)
                     ?: AndroidRouteCatalog.preferredPersistedRouteId(this)
                     ?: AndroidRouteCatalog.CENTENARIO_ID
                 ensureContainer(routeId)
@@ -203,7 +203,7 @@ class AndroidWalkingTrackingService : Service() {
             }
         }
         pendingStart = false
-        sendBroadcast(ACTION_STATE_CHANGED)
+        sendBroadcast(Intent(ACTION_STATE_CHANGED).setPackage(packageName))
         stopTrackingAndSelf()
     }
 
