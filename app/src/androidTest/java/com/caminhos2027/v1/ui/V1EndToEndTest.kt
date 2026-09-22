@@ -12,7 +12,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class V1EndToEndTest {
@@ -189,13 +188,16 @@ class V1EndToEndTest {
     }
 
     private fun capture(name: String) {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val directory = context.getExternalFilesDir("v1-visual-validation")
-            ?: throw AssertionError("App-specific external storage is unavailable")
-        val file = File(directory, name)
-        file.delete()
-        assertTrue("Screenshot could not be captured: $name", device.takeScreenshot(file))
-        assertTrue("Screenshot was not created: $name", file.isFile && file.length() > 0)
+        val remotePath = "/data/local/tmp/$name"
+        device.executeShellCommand("rm -f $remotePath")
+        device.executeShellCommand("screencap -p $remotePath")
+        val sizeBytes = device.executeShellCommand("wc -c < $remotePath")
+            .trim()
+            .toLongOrNull()
+        assertTrue(
+            "Screenshot was not created or is empty: $name",
+            sizeBytes != null && sizeBytes > 0
+        )
     }
 
     private fun setVisibleTextField(value: String) {
