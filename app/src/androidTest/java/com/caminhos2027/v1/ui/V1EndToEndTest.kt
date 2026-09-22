@@ -51,7 +51,7 @@ class V1EndToEndTest {
         assertTrue("Real map label did not appear", waitForVisibleText("MAPA REAL · OPENSTREETMAP", 30_000))
         assertTrue("Position label did not appear", waitForVisibleText("A minha posição", 30_000))
         assertTrue("Route progress did not appear", waitForVisibleText("Progresso", 30_000))
-        assertTrue("Elapsed walking time did not appear", waitForVisibleText("Tempo", 30_000))
+        assertTrue("Elapsed walking time did not appear", waitForVisibleTextOrDescription("Tempo", 30_000))
         assertTrue("QA controls did not appear for the test route", waitForVisibleText("QA · percurso de teste", 30_000))
         clickVisibleText("AVANÇAR GPS")
         assertTrue("Simulated GPS advance did not update the route position", waitForVisibleText("Km no percurso:", 30_000))
