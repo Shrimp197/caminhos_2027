@@ -127,6 +127,9 @@ class V1EndToEndTest {
     }
 
     private fun prepareAndStartSr() {
+        if (waitForVisibleTextOrDescription("Prepare a sua caminhada", 1_500)) {
+            clickVisibleText("PREPARAR")
+        }
         assertTrue("Route selection did not appear", waitForVisibleText("Selecionar percurso", 30_000))
         assertTrue("SR test route did not appear", waitForVisibleText("Trajeto SR", 30_000))
         clickVisibleText("Trajeto SR")
