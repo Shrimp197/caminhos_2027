@@ -149,6 +149,16 @@ private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, no
         ApoiCategory.EMERGENCIA
     )
     PrepScaffold("Apoios", "Escolha os tipos de apoio que pretende acompanhar durante a caminhada.", onBack) {
+        Button(
+            onClick = { onApply(selected) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription = "APLICAR APOIOS"
+                    role = Role.Button
+                },
+            colors = ButtonDefaults.buttonColors(containerColor = PGreen)
+        ) { Text("APLICAR APOIOS") }
         Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -167,16 +177,6 @@ private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, no
             color = PMuted,
             style = MaterialTheme.typography.bodySmall
         )
-        Button(
-            onClick = { onApply(selected) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .semantics {
-                    contentDescription = "APLICAR APOIOS"
-                    role = Role.Button
-                },
-            colors = ButtonDefaults.buttonColors(containerColor = PGreen)
-        ) { Text("APLICAR APOIOS") }
     }
 }
 
