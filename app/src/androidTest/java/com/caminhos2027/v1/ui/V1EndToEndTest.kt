@@ -7,6 +7,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import java.io.File
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
