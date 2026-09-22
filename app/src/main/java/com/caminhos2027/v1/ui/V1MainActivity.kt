@@ -29,6 +29,7 @@ class V1MainActivity : ComponentActivity() {
     private lateinit var appContainer: AndroidV1AppContainer
     private var trackingBinder: AndroidWalkingTrackingService.TrackingBinder? = null
     private var trackingBound = false
+    private var trackingBindRequested = false
 
     private val trackingListener = object : AndroidWalkingTrackingService.Listener {
         override fun onTrackingStateChanged(state: WalkingState?, pendingStart: Boolean, pendingDistanceMeters: Double?) {
@@ -36,10 +37,10 @@ class V1MainActivity : ComponentActivity() {
                 walkingState = state
                 startRequested = pendingStart
                 pendingStartDistanceMeters = pendingDistanceMeters
-                if (state != null) {
+                if (state?.walk?.status == WalkStatus.ACTIVE) {
                     preparedWalk = null
                     appContainer.store.setWalking(state)
-                } else {
+                } else if (state == null) {
                     appContainer.store.setWalking(null)
                 }
             }
@@ -52,6 +53,9 @@ class V1MainActivity : ComponentActivity() {
 
     private val trackingConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            if (!trackingBindRequested) {
+                return
+            }
             trackingBinder = service as AndroidWalkingTrackingService.TrackingBinder
             trackingBound = true
             trackingBinder?.register(trackingListener)
@@ -136,13 +140,23 @@ class V1MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
-        if (trackingBound) {
-            trackingBinder?.unregister(trackingListener)
-            unbindService(trackingConnection)
-            trackingBound = false
-            trackingBinder = null
-        }
+        disconnectTrackingService()
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        disconnectTrackingService()
+        super.onDestroy()
+    }
+
+    private fun disconnectTrackingService() {
+        trackingBinder?.unregister(trackingListener)
+        if (trackingBindRequested) {
+            runCatching { unbindService(trackingConnection) }
+        }
+        trackingBindRequested = false
+        trackingBound = false
+        trackingBinder = null
     }
 
     private fun hasLocationPermission(): Boolean =
@@ -238,8 +252,12 @@ class V1MainActivity : ComponentActivity() {
     }
 
     private fun bindTrackingService() {
-        if (trackingBound) return
-        bindService(Intent(this, AndroidWalkingTrackingService::class.java), trackingConnection, 0)
+        if (trackingBindRequested) return
+        trackingBindRequested = bindService(
+            Intent(this, AndroidWalkingTrackingService::class.java),
+            trackingConnection,
+            0
+        )
     }
 
     private fun togglePause() {
