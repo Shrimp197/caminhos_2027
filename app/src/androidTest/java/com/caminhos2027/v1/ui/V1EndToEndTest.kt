@@ -214,6 +214,7 @@ class V1EndToEndTest {
             }
             try {
                 resolver.openOutputStream(uri).use { output ->
+                    requireNotNull(output) { "Could not open screenshot output: $name" }
                     assertTrue("Screenshot could not be encoded: $name", bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
                 }
                 values.clear()
