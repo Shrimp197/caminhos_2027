@@ -104,11 +104,11 @@ class GpxSimulationLocationSource(
         require(minimumAdvanceMillis >= 0L)
         val now = clock()
         val previous = lastCapturedAt
-        val minimumNext = previous?.plusMillis(minimumAdvanceMillis)
-        val next = when {
-            previous == null -> now
-            now.isAfter(minimumNext) -> now
-            else -> minimumNext
+        val next = if (previous == null) {
+            now
+        } else {
+            val minimumNext = previous.plusMillis(minimumAdvanceMillis)
+            if (now.isAfter(minimumNext)) now else minimumNext
         }
         lastCapturedAt = next
         return next
