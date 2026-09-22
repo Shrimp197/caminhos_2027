@@ -191,7 +191,7 @@ class V1EndToEndTest {
 
     private fun capture(name: String) {
         val externalDir = requireNotNull(
-            InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null)
+            InstrumentationRegistry.getInstrumentation().targetContext.filesDir
         )
         val file = File(externalDir, name)
         file.delete()
