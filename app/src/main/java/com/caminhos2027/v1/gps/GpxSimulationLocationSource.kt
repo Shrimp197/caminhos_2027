@@ -23,6 +23,7 @@ class GpxSimulationLocationSource(
     private var index = initialIndex.coerceIn(0, (points.size - 1).coerceAtLeast(0))
     private var started = false
     private var available = false
+    private var lastCapturedAt: Instant? = null
 
     init {
         require(initialIndex >= 0) { "Initial index must be non-negative" }
@@ -76,7 +77,7 @@ class GpxSimulationLocationSource(
                 latitude = point.latitude + offsetNorth / latitudeMeters,
                 longitude = point.longitude + offsetEast / longitudeMeters,
                 accuracyMeters = 1.0,
-                capturedAt = clock()
+                capturedAt = nextCapturedAt()
             )
         )
     }
@@ -88,8 +89,16 @@ class GpxSimulationLocationSource(
                 latitude = point.latitude,
                 longitude = point.longitude,
                 accuracyMeters = 1.0,
-                capturedAt = clock()
+                capturedAt = nextCapturedAt()
             )
         )
+    }
+
+    private fun nextCapturedAt(): Instant {
+        val now = clock()
+        val previous = lastCapturedAt
+        val next = if (previous == null || now.isAfter(previous)) now else previous.plusMillis(1)
+        lastCapturedAt = next
+        return next
     }
 }
