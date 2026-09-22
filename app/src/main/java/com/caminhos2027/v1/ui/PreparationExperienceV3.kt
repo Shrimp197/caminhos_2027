@@ -87,7 +87,14 @@ internal fun PreparationExperienceV3(route: Route, routeOptions: List<AndroidRou
         "breaks" -> BreaksSub(config, { screen = "home" }) { config = it; screen = "home" }
         "orientation" -> OrientationSub(config.mapOrientation, { screen = "home" }) { config = config.copy(mapOrientation = it); screen = "home" }
         "audio" -> AudioSub(config.audioMode, { screen = "home" }) { config = config.copy(audioMode = it); screen = "home" }
-        "supports" -> ApoiCategoriesSub(config.visibleApoiCategories, { screen = "home" }) { config = config.copy(visibleApoiCategories = it); screen = "home" }
+        "supports" -> ApoiCategoriesSub(
+            selectedCategories = config.visibleApoiCategories,
+            onBack = { screen = "home" },
+            onApply = {
+                screen = "home"
+                config = config.copy(visibleApoiCategories = it)
+            }
+        )
         "notes" -> NotesSub(notes.toList(), { screen = "home" }) { text -> if (text.isNotBlank()) notes.add(text.trim()); screen = "home" }
         else -> PreparationHomeV3(route, config, notes.size, onRoutes = { screen = "routes" }, onRange = { screen = "range" }, onBreaks = { screen = "breaks" }, onOrientation = { screen = "orientation" }, onAudio = { screen = "audio" }, onSupports = { screen = "supports" }, onNotes = { screen = "notes" }, onConfirm = { if (startKm >= 0.0 && destinationKm <= route.totalDistanceKm && startKm < destinationKm) onConfirm(startKm, destinationKm, config.copy(notes = notes.toList())) }, onBack = onBack)
     }
