@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.ui
 
 import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.DeviceCapture
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -8,6 +9,7 @@ import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import java.io.File
+import java.io.FileOutputStream
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -189,13 +191,15 @@ class V1EndToEndTest {
     }
 
     private fun capture(name: String) {
-        val remoteDir = "/sdcard/Android/data/com.caminhos2027.test/files"
-        device.executeShellCommand("mkdir -p $remoteDir")
-        val remotePath = "$remoteDir/$name"
-        val file = File(remotePath)
+        val externalDir = requireNotNull(
+            InstrumentationRegistry.getInstrumentation().context.getExternalFilesDir(null)
+        )
+        val file = File(externalDir, name)
         file.delete()
-        val captured = device.takeScreenshot(file)
-        assertTrue("Screenshot capture failed: $name", captured)
+        val bitmap = DeviceCapture.takeScreenshot()
+        FileOutputStream(file).use { output ->
+            assertTrue("Screenshot bitmap could not be encoded: $name", bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
+        }
         assertTrue(
             "Screenshot was not created or is empty: $name",
             file.isFile && file.length() > 0
