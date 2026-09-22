@@ -50,21 +50,21 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
             modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Button(
-                    onClick = onBack,
-                    modifier = Modifier.semantics {
+            Button(
+                onClick = onBack,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
                         contentDescription = "Voltar aos apoios"
                         role = Role.Button
                     }
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    Text("Voltar aos apoios")
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    Text(apoi.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                }
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                Text("Voltar aos apoios")
+            }
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text(apoi.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             }
             apoi.description?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
             StatusCard(apoi)
