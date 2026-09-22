@@ -54,12 +54,12 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
                 Button(
                     onClick = onBack,
                     modifier = Modifier.semantics {
-                        contentDescription = "VOLTAR AOS APOIOS"
+                        contentDescription = "Voltar aos apoios"
                         role = Role.Button
                     }
                 ) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    Text("VOLTAR AOS APOIOS")
+                    Text("Voltar aos apoios")
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
