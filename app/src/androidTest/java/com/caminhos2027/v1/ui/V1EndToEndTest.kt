@@ -190,19 +190,13 @@ class V1EndToEndTest {
     }
 
     private fun capture(name: String) {
-        val externalDir = requireNotNull(
-            InstrumentationRegistry.getInstrumentation().targetContext.filesDir
-        )
+        val externalDir = InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir("v1-visual-validation")
+            ?: throw AssertionError("App-specific external storage is unavailable")
+        require(externalDir.exists() || externalDir.mkdirs()) { "Visual validation directory could not be created" }
         val file = File(externalDir, name)
         file.delete()
-        val bitmap = requireNotNull(device.takeScreenshot()) { "UiDevice screenshot failed: $name" }
-        FileOutputStream(file).use { output ->
-            assertTrue("Screenshot bitmap could not be encoded: $name", bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
-        }
-        assertTrue(
-            "Screenshot was not created or is empty: $name",
-            file.isFile && file.length() > 0
-        )
+        assertTrue("Screenshot could not be captured: $name", device.takeScreenshot(file))
+        assertTrue("Screenshot was not created or is empty: $name", file.isFile && file.length() > 0)
     }
 
     private fun setVisibleTextField(value: String) {
