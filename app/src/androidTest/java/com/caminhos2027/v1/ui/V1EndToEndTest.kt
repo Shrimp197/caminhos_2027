@@ -203,6 +203,10 @@ class V1EndToEndTest {
         file.delete()
         assertTrue("Screenshot could not be captured: $name", device.takeScreenshot(file))
         assertTrue("Screenshot was not created or is empty: $name", file.isFile && file.length() > 0)
+        val shellResult = device.executeShellCommand(
+            "run-as com.caminhos2027 cat files/v1-visual-validation/$name > /data/local/tmp/$name"
+        )
+        assertTrue("Screenshot could not be exported for CI: $name ($shellResult)", device.executeShellCommand("ls -l /data/local/tmp/$name").contains(name))
     }
 
     private fun setVisibleTextField(value: String) {

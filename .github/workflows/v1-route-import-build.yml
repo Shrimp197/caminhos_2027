@@ -130,7 +130,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/visual-validation
-          REMOTE_DIR="/sdcard/Android/data/com.caminhos2027/files/v1-visual-validation"
+          REMOTE_DIR="/data/local/tmp"
           adb shell ls -l "$REMOTE_DIR/caminhos-preparacao.png" "$REMOTE_DIR/caminhos-navegacao.png"
           adb pull "$REMOTE_DIR/caminhos-preparacao.png" build/visual-validation/preparacao.png
           adb pull "$REMOTE_DIR/caminhos-navegacao.png" build/visual-validation/navegacao.png
