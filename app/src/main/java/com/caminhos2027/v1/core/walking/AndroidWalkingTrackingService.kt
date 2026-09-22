@@ -85,6 +85,14 @@ class AndroidWalkingTrackingService : Service() {
             return START_NOT_STICKY
         }
 
+        // A sticky restart has a null intent. An intentionally paused walk must remain paused
+        // after process/service recreation; only an active session is eligible for automatic GPS resume.
+        if (intent == null && walkingState?.isPaused == true) {
+            stopLocationSource()
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         promoteToForeground()
         when (intent?.action) {
             ACTION_PAUSE -> pause()
