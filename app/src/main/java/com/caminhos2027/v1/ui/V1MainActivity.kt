@@ -34,14 +34,24 @@ class V1MainActivity : ComponentActivity() {
     private val trackingListener = object : AndroidWalkingTrackingService.Listener {
         override fun onTrackingStateChanged(state: WalkingState?, pendingStart: Boolean, pendingDistanceMeters: Double?) {
             runOnUiThread {
-                walkingState = state
-                startRequested = pendingStart
-                pendingStartDistanceMeters = pendingDistanceMeters
-                if (state?.walk?.status == WalkStatus.ACTIVE) {
+                val savedPlanId = preparedWalk?.id
+                val activeState = state?.takeIf { it.walk.status == WalkStatus.ACTIVE }
+                val belongsToCurrentPlan = savedPlanId == null ||
+                    (startRequested && activeState?.walk?.id == savedPlanId)
+
+                if (activeState != null && belongsToCurrentPlan) {
+                    walkingState = activeState
                     preparedWalk = null
-                    appContainer.store.setWalking(state)
+                    startRequested = pendingStart
+                    pendingStartDistanceMeters = pendingDistanceMeters
+                    appContainer.store.setWalking(activeState)
                 } else if (state == null) {
-                    appContainer.store.setWalking(null)
+                    walkingState = null
+                    startRequested = pendingStart
+                    pendingStartDistanceMeters = pendingDistanceMeters
+                    if (savedPlanId == null) {
+                        appContainer.store.setWalking(null)
+                    }
                 }
             }
         }
