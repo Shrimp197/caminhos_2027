@@ -130,11 +130,34 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/visual-validation
-          adb exec-out run-as com.caminhos2027 cat files/caminhos-preparacao.png > build/visual-validation/preparacao.png
-          adb exec-out run-as com.caminhos2027 cat files/caminhos-navegacao.png > build/visual-validation/navegacao.png
+          REMOTE_DIR="/sdcard/Android/data/com.caminhos2027/files/v1-visual-validation"
+          adb shell ls -l "$REMOTE_DIR/caminhos-preparacao.png" "$REMOTE_DIR/caminhos-navegacao.png"
+          adb pull "$REMOTE_DIR/caminhos-preparacao.png" build/visual-validation/preparacao.png
+          adb pull "$REMOTE_DIR/caminhos-navegacao.png" build/visual-validation/navegacao.png
           test -s build/visual-validation/preparacao.png
           test -s build/visual-validation/navegacao.png
-          file build/visual-validation/preparacao.png build/visual-validation/navegacao.png
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+
+          signature = b"\\x89PNG\\r\\n\\x1a\\n"
+          expected = {
+              "build/visual-validation/preparacao.png",
+              "build/visual-validation/navegacao.png",
+          }
+
+          for path_text in expected:
+              path = Path(path_text)
+              data = path.read_bytes()
+              if not data.startswith(signature):
+                  raise SystemExit(f"{path} is not a PNG (invalid signature)")
+              if len(data) < 24 or data[12:16] != b"IHDR":
+                  raise SystemExit(f"{path} is not a valid PNG (missing IHDR)")
+              width, height = struct.unpack(">II", data[16:24])
+              if width <= 0 or height <= 0:
+                  raise SystemExit(f"{path} has invalid dimensions: {width}x{height}")
+              print(f"{path}: valid PNG {width}x{height}, {len(data)} bytes")
+          PY
       - name: Upload visual validation screenshots
         if: steps.visual_screenshots.outcome == 'success'
         uses: actions/upload-artifact@v4

@@ -190,7 +190,9 @@ class V1EndToEndTest {
 
     private fun capture(name: String) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val file = File(context.filesDir, name)
+        val directory = context.getExternalFilesDir("v1-visual-validation")
+            ?: throw AssertionError("App-specific external storage is unavailable")
+        val file = File(directory, name)
         file.delete()
         assertTrue("Screenshot could not be captured: $name", device.takeScreenshot(file))
         assertTrue("Screenshot was not created: $name", file.isFile && file.length() > 0)
