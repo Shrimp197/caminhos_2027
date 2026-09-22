@@ -8,6 +8,8 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Binder
+import android.os.Handler
+import android.os.Looper
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -40,12 +42,13 @@ class AndroidWalkingTrackingService : Service() {
         fun resumeWalking() = beginTracking()
         fun stopWalking() = stopWalkingSession()
         fun cancelPendingStart() = cancelPendingStartInternal()
-        fun qaAdvance() { simulationSource?.advance() }
-        fun qaSetGpsAvailability(available: Boolean) { simulationSource?.setAvailable(available) }
-        fun qaSimulateDeviation() { simulationSource?.simulateDeviation() }
+        fun qaAdvance() { mainHandler.post { simulationSource?.advance() } }
+        fun qaSetGpsAvailability(available: Boolean) { mainHandler.post { simulationSource?.setAvailable(available) } }
+        fun qaSimulateDeviation() { mainHandler.post { simulationSource?.simulateDeviation() } }
     }
 
     private val binder = TrackingBinder()
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val listeners = linkedSetOf<Listener>()
     private var container: AndroidV1AppContainer? = null
     private var locationSource: LocationSource? = null
