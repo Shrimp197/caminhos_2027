@@ -47,8 +47,9 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
     val context = LocalContext.current
     Surface {
         Column(
-            modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
             Button(
                 onClick = onBack,
@@ -62,7 +63,14 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                 Text("Voltar aos apoios")
             }
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                 Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 Text(apoi.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             }
@@ -87,13 +95,14 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
             }
             ServicesCard(apoi)
             OperationalCard(apoi)
-            ContactCard(apoi)
-            ConfidenceCard(apoi)
-            Text(
-                "Os dados apresentados dependem da informação disponível e da sua data de confirmação. Uma informação publicada não é, por si só, uma garantia de funcionamento em 2027.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                ContactCard(apoi)
+                ConfidenceCard(apoi)
+                Text(
+                    "Os dados apresentados dependem da informação disponível e da sua data de confirmação. Uma informação publicada não é, por si só, uma garantia de funcionamento em 2027.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
