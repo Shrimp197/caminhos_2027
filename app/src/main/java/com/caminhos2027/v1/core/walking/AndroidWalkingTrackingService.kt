@@ -48,9 +48,9 @@ class AndroidWalkingTrackingService : Service() {
                 val source = simulationSource ?: return@post
                 source.setAvailable(available)
                 // Recovery QA must exercise the same raw-position path as real GPS.
-                // A provider becoming available does not itself constitute a GPS fix.
-                if (available && walkingState?.gpsState == com.caminhos2027.v1.core.route.GpsState.NO_SIGNAL) {
-                    source.advance()
+                // Provider availability alone is not a GPS fix; force one fresh raw fix.
+                if (available) {
+                    source.emitRecoveryFix()
                 }
             }
         }
