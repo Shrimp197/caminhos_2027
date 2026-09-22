@@ -59,7 +59,7 @@ class GpxSimulationLocationSource(
     /** Forces one fresh raw fix after a QA recovery command without bypassing the real pipeline. */
     fun emitRecoveryFix() {
         if (!started || !available || points.isEmpty()) return
-        emitCurrentPoint()
+        emitCurrentPoint(minimumAdvanceMillis = 1_000L)
     }
 
     /** Emits one deliberate off-route raw position for deterministic deviation QA. */
@@ -88,22 +88,28 @@ class GpxSimulationLocationSource(
         )
     }
 
-    private fun emitCurrentPoint() {
+    private fun emitCurrentPoint(minimumAdvanceMillis: Long = 0L) {
         val point = points[index]
         onPosition(
             RawGpsPosition(
                 latitude = point.latitude,
                 longitude = point.longitude,
                 accuracyMeters = 1.0,
-                capturedAt = nextCapturedAt()
+                capturedAt = nextCapturedAt(minimumAdvanceMillis)
             )
         )
     }
 
-    private fun nextCapturedAt(): Instant {
+    private fun nextCapturedAt(minimumAdvanceMillis: Long = 0L): Instant {
+        require(minimumAdvanceMillis >= 0L)
         val now = clock()
         val previous = lastCapturedAt
-        val next = if (previous == null || now.isAfter(previous)) now else previous.plusMillis(1)
+        val minimumNext = previous?.plusMillis(minimumAdvanceMillis)
+        val next = when {
+            previous == null -> now
+            now.isAfter(minimumNext) -> now
+            else -> minimumNext
+        }
         lastCapturedAt = next
         return next
     }
