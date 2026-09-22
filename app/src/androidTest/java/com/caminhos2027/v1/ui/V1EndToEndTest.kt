@@ -155,6 +155,11 @@ class V1EndToEndTest {
         assertTrue("Water APOI category did not appear", waitForVisibleText("Água", 30_000))
         clickVisibleText("Água")
         clickVisibleText("APLICAR APOIOS")
+        if (!waitForVisibleText("Prepare a sua caminhada", 3_000)) {
+            // Compose may replace the button semantics during FilterChip recomposition.
+            // Re-query the visible button without weakening the final assertion.
+            clickVisibleText("APLICAR APOIOS")
+        }
         assertTrue("APOIs configuration did not close", waitForVisibleText("Prepare a sua caminhada", 30_000))
 
         clickVisibleText("Notas")
