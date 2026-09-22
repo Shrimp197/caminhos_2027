@@ -90,10 +90,7 @@ internal fun PreparationExperienceV3(route: Route, routeOptions: List<AndroidRou
         "supports" -> ApoiCategoriesSub(
             selectedCategories = config.visibleApoiCategories,
             onBack = { screen = "home" },
-            onApply = {
-                screen = "home"
-                config = config.copy(visibleApoiCategories = it)
-            }
+            onApply = { config = config.copy(visibleApoiCategories = it) }
         )
         "notes" -> NotesSub(notes.toList(), { screen = "home" }) { text -> if (text.isNotBlank()) notes.add(text.trim()); screen = "home" }
         else -> PreparationHomeV3(route, config, notes.size, onRoutes = { screen = "routes" }, onRange = { screen = "range" }, onBreaks = { screen = "breaks" }, onOrientation = { screen = "orientation" }, onAudio = { screen = "audio" }, onSupports = { screen = "supports" }, onNotes = { screen = "notes" }, onConfirm = { if (startKm >= 0.0 && destinationKm <= route.totalDistanceKm && startKm < destinationKm) onConfirm(startKm, destinationKm, config.copy(notes = notes.toList())) }, onBack = onBack)
@@ -132,7 +129,10 @@ private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, no
             ) { Text(label) }
         }
         Button(
-            onClick = { onApply(selected) },
+            onClick = {
+                onApply(selected)
+                onBack()
+            },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = PGreen)
         ) { Text("APLICAR") }
@@ -144,7 +144,7 @@ private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, no
     onBack: () -> Unit,
     onApply: (Set<ApoiCategory>) -> Unit
 ) {
-    var selected by remember { mutableStateOf(selectedCategories) }
+    var selected by remember(selectedCategories) { mutableStateOf(selectedCategories) }
     val categories = listOf(
         ApoiCategory.ALIMENTACAO,
         ApoiCategory.AGUA,
