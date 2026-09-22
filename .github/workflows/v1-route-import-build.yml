@@ -140,7 +140,7 @@ jobs:
           from pathlib import Path
           import struct
 
-          signature = b"\\x89PNG\\r\\n\\x1a\\n"
+          signature = bytes([137, 80, 78, 71, 13, 10, 26, 10])
           expected = {
               "build/visual-validation/preparacao.png",
               "build/visual-validation/navegacao.png",
