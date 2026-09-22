@@ -1,5 +1,9 @@
 package com.caminhos2027.v1.ui
 
+import android.content.ContentValues
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -196,17 +200,40 @@ class V1EndToEndTest {
     }
 
     private fun capture(name: String) {
-        val externalDir = InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir("v1-visual-validation")
-            ?: throw AssertionError("App-specific external storage is unavailable")
-        require(externalDir.exists() || externalDir.mkdirs()) { "Visual validation directory could not be created" }
-        val file = File(externalDir, name)
-        file.delete()
-        assertTrue("Screenshot could not be captured: $name", device.takeScreenshot(file))
-        assertTrue("Screenshot was not created or is empty: $name", file.isFile && file.length() > 0)
-        val shellResult = device.executeShellCommand(
-            "run-as com.caminhos2027 cat files/v1-visual-validation/$name > /data/local/tmp/$name"
-        )
-        assertTrue("Screenshot could not be exported for CI: $name ($shellResult)", device.executeShellCommand("ls -l /data/local/tmp/$name").contains(name))
+        val bitmap = requireNotNull(device.takeScreenshot()) { "UiDevice screenshot failed: $name" }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
+            val values = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/caminhos-v1/")
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+            val uri = requireNotNull(resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)) {
+                "Could not create shared screenshot: $name"
+            }
+            try {
+                resolver.openOutputStream(uri).use { output ->
+                    assertTrue("Screenshot could not be encoded: $name", bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
+                }
+                values.clear()
+                values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+            } catch (error: Throwable) {
+                resolver.delete(uri, null, null)
+                throw error
+            }
+        } else {
+            val externalDir = requireNotNull(
+                InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir("v1-visual-validation")
+            )
+            require(externalDir.exists() || externalDir.mkdirs()) { "Visual validation directory could not be created" }
+            val file = File(externalDir, name)
+            FileOutputStream(file).use { output ->
+                assertTrue("Screenshot could not be encoded: $name", bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
+            }
+            assertTrue("Screenshot was not created or is empty: $name", file.isFile && file.length() > 0)
+        }
     }
 
     private fun setVisibleTextField(value: String) {
