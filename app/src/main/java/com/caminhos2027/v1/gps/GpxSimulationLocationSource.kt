@@ -56,6 +56,12 @@ class GpxSimulationLocationSource(
         if (value) emitCurrentPoint()
     }
 
+    /** Forces one fresh raw fix after a QA recovery command without bypassing the real pipeline. */
+    fun emitRecoveryFix() {
+        if (!started || !available || points.isEmpty()) return
+        emitCurrentPoint()
+    }
+
     /** Emits one deliberate off-route raw position for deterministic deviation QA. */
     fun simulateDeviation(offsetMeters: Double = 55.0) {
         require(offsetMeters.isFinite() && offsetMeters > 0.0) {
