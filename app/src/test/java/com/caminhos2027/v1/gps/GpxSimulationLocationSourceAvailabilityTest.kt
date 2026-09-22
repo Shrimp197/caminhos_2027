@@ -46,6 +46,26 @@ class GpxSimulationLocationSourceAvailabilityTest {
     }
 
     @Test
+    fun recoveryFixGetsARealTimestampGapForStateMachineRecovery() {
+        val emitted = mutableListOf<RawGpsPosition>()
+        var now = Instant.parse("2026-09-06T08:00:00Z")
+        val source = GpxSimulationLocationSource(
+            points = listOf(GeoPoint(41.1000, -8.5800)),
+            onPosition = emitted::add,
+            clock = { now }
+        )
+
+        source.start()
+        source.setAvailable(false)
+        now = emitted.last().capturedAt
+        source.setAvailable(true)
+        source.emitRecoveryFix()
+
+        assertEquals(3, emitted.size)
+        assertEquals(1_000L, java.time.Duration.between(emitted[1].capturedAt, emitted[2].capturedAt).toMillis())
+    }
+
+    @Test
     fun deviationEmitsRawPositionPerpendicularToTheSelectedRoutePoint() {
         val points = listOf(
             GeoPoint(41.1000, -8.5800),
