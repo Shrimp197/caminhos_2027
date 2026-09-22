@@ -1,9 +1,12 @@
 package com.caminhos2027.v1.ui
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -15,22 +18,50 @@ import com.caminhos2027.v1.core.AndroidV1AppContainer
 import com.caminhos2027.v1.core.apoi.ApoiFilter
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
 import com.caminhos2027.v1.core.model.ApoiCategory
-import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.model.WalkingPreparationConfig
-import com.caminhos2027.v1.core.route.RouteLocationEngine
 import com.caminhos2027.v1.core.walking.WalkingState
-import com.caminhos2027.v1.gps.AndroidLocationSource
-import com.caminhos2027.v1.gps.GpxSimulationLocationSource
-import com.caminhos2027.v1.gps.GpxSimulationStartIndex
-import com.caminhos2027.v1.gps.LocationSource
+import com.caminhos2027.v1.core.walking.AndroidWalkingTrackingService
 import java.time.Instant
 
 class V1MainActivity : ComponentActivity() {
     private lateinit var appContainer: AndroidV1AppContainer
-    private var locationSource: LocationSource? = null
-    private var testLocationSource: GpxSimulationLocationSource? = null
+    private var trackingBinder: AndroidWalkingTrackingService.TrackingBinder? = null
+    private var trackingBound = false
+
+    private val trackingListener = object : AndroidWalkingTrackingService.Listener {
+        override fun onTrackingStateChanged(state: WalkingState?, pendingStart: Boolean, pendingDistanceMeters: Double?) {
+            runOnUiThread {
+                walkingState = state
+                startRequested = pendingStart
+                pendingStartDistanceMeters = pendingDistanceMeters
+                if (state != null) {
+                    preparedWalk = null
+                    appContainer.store.setWalking(state)
+                } else {
+                    appContainer.store.setWalking(null)
+                }
+            }
+        }
+
+        override fun onTrackingError(message: String) {
+            runOnUiThread { pendingStartDistanceMeters = null }
+        }
+    }
+
+    private val trackingConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            trackingBinder = service as AndroidWalkingTrackingService.TrackingBinder
+            trackingBound = true
+            trackingBinder?.register(trackingListener)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            trackingBinder = null
+            trackingBound = false
+        }
+    }
     private var walkingState by mutableStateOf<WalkingState?>(null)
     private var preparedWalk by mutableStateOf<Walk?>(null)
     private var startRequested by mutableStateOf(false)
@@ -39,7 +70,7 @@ class V1MainActivity : ComponentActivity() {
     private var selectedRouteId by mutableStateOf(AndroidRouteCatalog.CENTENARIO_ID)
 
     private val locationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-        if (hasLocationPermissionAfterResult(permissions)) startWalkingLocationSource()
+        if (hasLocationPermissionAfterResult(permissions)) startTrackingService()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,16 +129,19 @@ class V1MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        bindTrackingService()
         if (startRequested || (walkingState != null && !walkingState!!.isPaused)) {
-            if (isTestRoute()) startTestRouteIfNeeded()
-            else if (hasLocationPermission()) startWalkingLocationSource() else requestLocationPermission()
+            if (hasLocationPermission()) startTrackingService() else requestLocationPermission()
         }
     }
 
     override fun onStop() {
-        locationSource?.stop()
-        locationSource = null
-        testLocationSource = null
+        if (trackingBound) {
+            trackingBinder?.unregister(trackingListener)
+            unbindService(trackingConnection)
+            trackingBound = false
+            trackingBinder = null
+        }
         super.onStop()
     }
 
@@ -182,123 +216,44 @@ class V1MainActivity : ComponentActivity() {
         require(preparedWalk?.status == WalkStatus.PLANNED) { "A planned walk is required before starting" }
         startRequested = true
         pendingStartDistanceMeters = null
-        if (isTestRoute()) startTestRouteIfNeeded()
-        else if (hasLocationPermission()) startWalkingLocationSource() else requestLocationPermission()
+        if (hasLocationPermission()) startTrackingService() else requestLocationPermission()
     }
 
     private fun cancelPendingStart() {
         startRequested = false
         pendingStartDistanceMeters = null
-        locationSource?.stop()
-        locationSource = null
-        testLocationSource = null
+        trackingBinder?.cancelPendingStart()
         surface = WalkingSurface.ACTIVE
     }
 
     private fun isTestRoute(): Boolean = AndroidRouteCatalog.isTestRoute(selectedRouteId)
 
-    private fun startTestRouteIfNeeded() {
-        if (testLocationSource != null) return
-        if (walkingState == null && (!startRequested || preparedWalk == null)) return
-
-        val route = appContainer.publishedRoute()
-        val resumedKm = walkingState?.routePosition?.routeKm
-        val startingIndex = resumedKm?.let {
-            GpxSimulationStartIndex.nextPointIndexAfterKm(route, it)
-        } ?: GpxSimulationStartIndex.nearestPointIndex(
-            route,
-            preparedWalk?.plannedStartKm ?: 0.0
-        )
-        val source = GpxSimulationLocationSource(
-            points = route.geometry.points,
-            onPosition = { position ->
-                runOnUiThread {
-                    if (!handleGpsForPreparedWalk(position) && walkingState != null) {
-                        walkingState = appContainer.activeController().acceptGps(position).walking
-                    }
-                }
-            },
-            onAvailabilityChanged = { available ->
-                if (!available && walkingState != null) {
-                    walkingState = appContainer.activeController().markNoSignal(Instant.now()).walking
-                }
-            },
-            initialIndex = startingIndex
-        )
-        testLocationSource = source
-        locationSource = source
-        source.start()
-    }
-
-    private fun handleGpsForPreparedWalk(position: RawGpsPosition): Boolean {
-        if (!startRequested || walkingState != null || preparedWalk == null) return false
-        val routePosition = RouteLocationEngine.locate(appContainer.publishedRoute(), position)
-        pendingStartDistanceMeters = routePosition.distanceToRouteMeters.takeIf { it.isFinite() }
-        val started = try {
-            appContainer.preparationController.startSaved(
-                catalog = appContainer.publishedApoiCatalog(),
-                position = routePosition,
-                now = position.capturedAt
-            )
-        } catch (_: IllegalArgumentException) {
-            return false
+    private fun startTrackingService() {
+        val intent = Intent(this, AndroidWalkingTrackingService::class.java).apply {
+            action = AndroidWalkingTrackingService.ACTION_START
+            putExtra(AndroidWalkingTrackingService.EXTRA_ROUTE_ID, selectedRouteId)
         }
-        val walking = started.walking ?: return false
-        appContainer.attachWalk(walking.walk)
-        appContainer.store.setWalking(walking)
-        walkingState = walking
-        preparedWalk = null
-        startRequested = false
-        pendingStartDistanceMeters = null
-        surface = WalkingSurface.ACTIVE
-        return true
+        androidx.core.content.ContextCompat.startForegroundService(this, intent)
+        bindTrackingService()
     }
 
-    private fun startWalkingLocationSource() {
-        if (locationSource != null || (walkingState == null && !startRequested)) return
-        val source = AndroidLocationSource(
-            context = this,
-            onPosition = { position ->
-                runOnUiThread {
-                    if (!handleGpsForPreparedWalk(position) && walkingState != null) {
-                        walkingState = appContainer.activeController().acceptGps(position).walking
-                    }
-                }
-            },
-            onAvailabilityChanged = { available ->
-                if (!available) runOnUiThread {
-                    if (walkingState != null) walkingState = appContainer.activeController().markNoSignal(Instant.now()).walking
-                }
-            }
-        )
-        locationSource = source
-        source.start()
+    private fun bindTrackingService() {
+        if (trackingBound) return
+        bindService(Intent(this, AndroidWalkingTrackingService::class.java), trackingConnection, BIND_AUTO_CREATE)
     }
 
     private fun togglePause() {
-        val state = walkingState ?: return
-        if (state.isPaused) {
-            val resumed = appContainer.runtime.resumePaused(Instant.now())
-            appContainer.store.setWalking(resumed)
-            walkingState = resumed
-            if (locationSource != null) {
-                locationSource?.start()
-            } else if (isTestRoute()) {
-                startTestRouteIfNeeded()
-            } else {
-                startWalkingLocationSource()
-            }
-        } else {
-            val paused = appContainer.runtime.pause(Instant.now())
-            appContainer.store.setWalking(paused)
-            walkingState = paused
-            locationSource?.stop()
+        val binder = trackingBinder
+        if (walkingState?.isPaused == true) {
+            if (binder != null) binder.resumeWalking() else startTrackingService()
+        } else if (binder != null) {
+            binder.pauseWalking()
         }
     }
 
-    private fun qaAdvance() { testLocationSource?.advance() }
-    private fun qaSetGpsAvailability(available: Boolean) { testLocationSource?.setAvailable(available) }
-    private fun qaSimulateDeviation() { testLocationSource?.simulateDeviation() }
+    private fun qaAdvance() { trackingBinder?.qaAdvance() }
+    private fun qaSetGpsAvailability(available: Boolean) { trackingBinder?.qaSetGpsAvailability(available) }
+    private fun qaSimulateDeviation() { trackingBinder?.qaSimulateDeviation() }
 
     private fun openApoiBrowser() {
         if (walkingState?.routePosition == null) return
@@ -353,14 +308,7 @@ class V1MainActivity : ComponentActivity() {
     }
 
     private fun stopWalking() {
-        val position = walkingState?.routePosition
-            ?: appContainer.runtime.lastKnownPosition()
-            ?: return
-        appContainer.runtime.stop(position, Instant.now())
-        appContainer.clearSession()
-        locationSource?.stop()
-        locationSource = null
-        testLocationSource = null
+        trackingBinder?.stopWalking()
         walkingState = null
         preparedWalk = null
         startRequested = false

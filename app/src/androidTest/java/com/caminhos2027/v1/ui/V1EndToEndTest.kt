@@ -23,6 +23,7 @@ class V1EndToEndTest {
     @Before
     fun resetToV1() {
         device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        device.executeShellCommand("pm grant com.caminhos2027 android.permission.ACCESS_FINE_LOCATION")
         device.pressHome()
         scenario = ActivityScenario.launch(V1MainActivity::class.java)
         assertTrue(

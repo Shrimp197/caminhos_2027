@@ -94,6 +94,9 @@ class AndroidWalkingTrackingService : Service() {
 
     private fun beginTracking() {
         val app = container ?: return
+        if (walkingState?.isPaused == true) {
+            updateWalkingState(app.runtime.resumePaused(Instant.now()))
+        }
         if (walkingState == null) {
             if (app.restorePreparedWalk() == null) {
                 reportError("Não existe um plano de caminhada preparado.")
