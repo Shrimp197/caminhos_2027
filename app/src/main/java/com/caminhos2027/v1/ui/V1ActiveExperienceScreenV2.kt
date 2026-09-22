@@ -382,7 +382,7 @@ private fun routeBearingDegrees(route: List<GeoPoint>, projected: GeoPoint?): Fl
 }
 
 @Composable private fun MetricCard(value: String, label: String, modifier: Modifier) {
-    Card(modifier, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = V2ForestSoft)) {
+    Card(\n        modifier.semantics { contentDescription = label },\n        RoundedCornerShape(16.dp),\n        colors = CardDefaults.cardColors(containerColor = V2ForestSoft)\n    ) {
         Column(Modifier.padding(12.dp)) { Text(value, color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge); Text(label, color = V2Muted, style = MaterialTheme.typography.bodySmall) }
     }
 }
