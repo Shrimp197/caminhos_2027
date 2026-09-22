@@ -239,7 +239,7 @@ class V1MainActivity : ComponentActivity() {
 
     private fun bindTrackingService() {
         if (trackingBound) return
-        bindService(Intent(this, AndroidWalkingTrackingService::class.java), trackingConnection, BIND_AUTO_CREATE)
+        bindService(Intent(this, AndroidWalkingTrackingService::class.java), trackingConnection, 0)
     }
 
     private fun togglePause() {
