@@ -1,7 +1,6 @@
 package com.caminhos2027.v1.ui
 
 import androidx.test.core.app.ActivityScenario
-import androidx.test.core.app.DeviceCapture
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -196,7 +195,7 @@ class V1EndToEndTest {
         )
         val file = File(externalDir, name)
         file.delete()
-        val bitmap = DeviceCapture.takeScreenshot()
+        val bitmap = requireNotNull(device.takeScreenshot()) { "UiDevice screenshot failed: $name" }
         FileOutputStream(file).use { output ->
             assertTrue("Screenshot bitmap could not be encoded: $name", bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
         }
