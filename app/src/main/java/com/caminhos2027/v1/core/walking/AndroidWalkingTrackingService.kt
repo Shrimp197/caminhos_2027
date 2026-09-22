@@ -43,7 +43,17 @@ class AndroidWalkingTrackingService : Service() {
         fun stopWalking() = stopWalkingSession()
         fun cancelPendingStart() = cancelPendingStartInternal()
         fun qaAdvance() { mainHandler.post { simulationSource?.advance() } }
-        fun qaSetGpsAvailability(available: Boolean) { mainHandler.post { simulationSource?.setAvailable(available) } }
+        fun qaSetGpsAvailability(available: Boolean) {
+            mainHandler.post {
+                val source = simulationSource ?: return@post
+                source.setAvailable(available)
+                // Recovery QA must exercise the same raw-position path as real GPS.
+                // A provider becoming available does not itself constitute a GPS fix.
+                if (available && walkingState?.gpsState == com.caminhos2027.v1.core.route.GpsState.NO_SIGNAL) {
+                    source.advance()
+                }
+            }
+        }
         fun qaSimulateDeviation() { mainHandler.post { simulationSource?.simulateDeviation() } }
     }
 
