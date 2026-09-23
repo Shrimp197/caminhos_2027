@@ -47,7 +47,6 @@ class V1EndToEndTest {
         capture("caminhos-preparacao.png")
         prepareSrPlan()
         assertTrue("Saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
-        scheduleExternalProcessDeath()
     }
 
     @Test
@@ -196,12 +195,6 @@ class V1EndToEndTest {
         assertTrue("Saved plan did not show persisted note count", waitForVisibleText("Notas · 1 guardada(s)", 30_000))
         assertTrue("Saved plan did not show persisted pause configuration", waitForVisibleText("Pausas · inteligentes ativas", 30_000))
         assertTrue("Saved plan did not expose an explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
-    }
-
-    private fun scheduleExternalProcessDeath() {
-        device.executeShellCommand(
-            "sh -c '(sleep 1500; am force-stop com.caminhos2027) >/dev/null 2>&1 &'"
-        )
     }
 
     private fun capture(name: String) {
