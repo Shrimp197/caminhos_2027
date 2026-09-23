@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,6 +43,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -490,7 +492,7 @@ private fun pointAtRouteKm(points: List<GeoPoint>, routeKm: Double, totalKm: Dou
     for (index in 1 until points.size) {
         val a = points[index - 1]
         val b = points[index]
-        val segment = geoDistanceKm(a, b)
+        val segment = geoDistanceKmV2(a, b)
         if (accumulated + segment >= target) {
             val fraction = if (segment <= 0.0) 0.0 else ((target - accumulated) / segment).coerceIn(0.0, 1.0)
             return GeoPoint(
@@ -501,6 +503,18 @@ private fun pointAtRouteKm(points: List<GeoPoint>, routeKm: Double, totalKm: Dou
         accumulated += segment
     }
     return points.last()
+}
+
+private fun geoDistanceKmV2(a: GeoPoint, b: GeoPoint): Double {
+    val earthRadiusKm = 6371.0088
+    val lat1 = Math.toRadians(a.latitude)
+    val lat2 = Math.toRadians(b.latitude)
+    val dLat = lat2 - lat1
+    val dLon = Math.toRadians(b.longitude - a.longitude)
+    val sinLat = kotlin.math.sin(dLat / 2.0)
+    val sinLon = kotlin.math.sin(dLon / 2.0)
+    val h = sinLat * sinLat + kotlin.math.cos(lat1) * kotlin.math.cos(lat2) * sinLon * sinLon
+    return 2.0 * earthRadiusKm * kotlin.math.asin(kotlin.math.sqrt(h.coerceIn(0.0, 1.0)))
 }
 
 private fun routeBearingDegrees(route: List<GeoPoint>, projected: GeoPoint?): Float {
