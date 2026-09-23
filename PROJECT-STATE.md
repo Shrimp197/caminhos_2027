@@ -8,7 +8,7 @@
 
 ## Current functional baseline
 
-- Current branch HEAD: `b81fda9d612578bd0a325661b9cb5b5ccd7c87e6`.
+- Current branch HEAD: `5826216af34c9e34ae1b22dbc66816ab4373b101`.
 - The six primary walking surfaces remain the acceptance baseline: preparation, active walking map, contextual bottom sheet, next-APOI horizon, APOI list/cards and walking progress.
 - The preparation surface is integrated into the V1 Activity flow with route selection, stage/start/end, audio, map orientation, breaks, APOIs, notes and explicit save/start semantics.
 
@@ -43,9 +43,22 @@ A green JVM/build pipeline is necessary but not sufficient for human acceptance.
 6. Physical Android validation confirms real location permission timing, GPS acquisition, on-route position and continuity.
 7. Human acceptance confirms the reference visual hierarchy and that every visible control performs its stated action.
 
-## Current blocker
+## Current validation state
 
-The branch has a real Android E2E pipeline. The process-death portion of the E2E uses direct target-process termination so the instrumentation runner remains alive; no completion claim is made until all required checks finish. No completion claim is made from compilation alone.
+The Android E2E uses AndroidX Test Orchestrator and runs three ordered checkpoint tests in isolated test executions. The validated flow covers preparation and saved-plan persistence, external process restart and restoration, explicit start, GPS advance, loss/recovery, deviation, pause/resume, Activity recreation, APOI browsing/detail/back, decision/continue/stop and a second walking cycle.
+
+Walking plan and checkpoint persistence use synchronous SharedPreferences commits for process-death durability. When a walk is stopped, the Activity detaches from the tracking Service so the next explicit start receives a fresh Service/container instance.
+
+HEAD `5826216af34c9e34ae1b22dbc66816ab4373b101` has passed:
+- official GPX provenance validation;
+- route/APOI validation and JVM tests;
+- debug APK build and verification;
+- deterministic AOSP Android 34 installation;
+- complete Android instrumentation/E2E execution;
+- visual screenshot generation and PNG validation;
+- unsigned release APK build and verification.
+
+No completion claim is made for physical GPS validation on a real Android device; that remains the final human/device gate.
 
 ## Completion rule
 
