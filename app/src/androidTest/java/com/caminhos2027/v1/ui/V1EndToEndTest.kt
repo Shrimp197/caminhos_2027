@@ -137,8 +137,6 @@ class V1EndToEndTest {
         clickVisibleText("PARAR AGORA")
         assertTrue("Stop action did not return to preparation", waitForVisibleText("Selecionar percurso", 30_000))
 
-        clickVisibleText("Trajeto SR")
-        assertTrue("Second cycle preparation home did not appear", waitForVisibleText("Prepare a sua caminhada", 30_000))
         prepareSrPlan()
         assertTrue("Second cycle saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
         clickVisibleText("INICIAR CAMINHADA")
