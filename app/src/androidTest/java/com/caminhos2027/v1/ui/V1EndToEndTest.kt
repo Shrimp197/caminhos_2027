@@ -86,7 +86,6 @@ class V1EndToEndTest {
             "Paused walk changed route position before external process death",
             positionBeforePause != null && positionBeforePause == positionWhilePaused
         )
-        scheduleExternalProcessDeath()
     }
 
     @Test
