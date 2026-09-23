@@ -130,6 +130,7 @@ internal fun V1PrimaryExperienceScreen(
                 preparedWalk != null -> PreparedWalkScreen(preparedWalk, route, startRequested, pendingStartDistanceMeters, onStart, onCancelPendingStart)
                 else -> LandingScreen(route, routeOptions, onPrepare)
             }
+            else -> LandingScreen(route, routeOptions, onPrepare)
         }
     }
 }
