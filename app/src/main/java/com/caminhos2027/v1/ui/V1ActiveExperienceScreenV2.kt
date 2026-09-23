@@ -49,6 +49,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import com.caminhos2027.v1.core.data.AndroidRouteCatalog
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.AudioMode
 import com.caminhos2027.v1.core.model.GeoPoint
@@ -229,7 +230,7 @@ internal fun V1ActiveExperienceScreenV2(
                     OutlinedButton(onClick = onOpenDecision, Modifier.weight(1f)) { Text("OPÇÕES") }
                     OutlinedButton(onClick = onOpenPilgrimMode, Modifier.weight(1f)) { Text("MODO PEREGRINO") }
                 }
-                if (routeOptions.firstOrNull { it.id == route.id }?.testOnly == true) {
+                if (AndroidRouteCatalog.isTestRoute(state.walk.routeId)) {
                     HorizontalDivider()
                     Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold)
                     Text(
