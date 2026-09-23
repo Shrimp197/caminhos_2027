@@ -52,6 +52,7 @@ import android.graphics.Color as AndroidColor
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.widget.TextView
+import com.caminhos2027.BuildConfig
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.AudioMode
 import com.caminhos2027.v1.core.model.GeoPoint
