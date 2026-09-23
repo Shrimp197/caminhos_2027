@@ -152,6 +152,7 @@ class V1MainActivity : ComponentActivity() {
                     onOpenSos = ::openSos,
                     onOpenSmartwatch = ::openSmartwatch,
                     onOpenPilgrimMode = ::openPilgrimMode,
+                    onExitPilgrimMode = ::exitPilgrimMode,
                     onNavigate = ::navigate,
                     diaryEntries = diaryEntries,
                     diaryPhotoUri = diaryPhotoUri,
