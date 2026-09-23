@@ -8,7 +8,7 @@
 
 ## Current functional baseline
 
-- Current branch HEAD: `56c2075dc286b9bde1806d6a420957572107ebc3`.
+- Current branch HEAD: `cb552024c1b1076c8efbc46bec38072e2a8075bf`.
 - The six primary walking surfaces remain the acceptance baseline: preparation, active walking map, contextual bottom sheet, next-APOI horizon, APOI list/cards and walking progress.
 - The preparation surface is integrated into the V1 Activity flow with route selection, stage/start/end, audio, map orientation, breaks, APOIs, notes and explicit save/start semantics.
 
@@ -45,7 +45,7 @@ A green JVM/build pipeline is necessary but not sufficient for human acceptance.
 
 ## Current blocker
 
-The branch has a real Android E2E pipeline. The connected GitHub Actions endpoint currently returns no workflow runs for HEAD `56c2075dc286b9bde1806d6a420957572107ebc3`, so CI completion is not being inferred from source state alone. No completion claim is made from compilation alone.
+The branch has a real Android E2E pipeline. For HEAD `cb552024c1b1076c8efbc46bec38072e2a8075bf`, the source-provenance workflow is green and the build/validation workflows are currently in progress; no completion claim is made until all required checks finish. No completion claim is made from compilation alone.
 
 ## Completion rule
 
