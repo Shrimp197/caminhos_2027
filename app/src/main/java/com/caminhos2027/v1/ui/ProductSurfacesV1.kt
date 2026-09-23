@@ -216,7 +216,7 @@ internal fun DiarySurfaceV1(entries: List<DiaryEntry>, activeState: WalkingState
                             Text("ADICIONAR FOTOGRAFIA")
                         }
                     }
-                    Button(onClick = { if (text.isNotBlank()) { onAdd(text.trim()); text = "" } }, enabled = text.isNotBlank(), Modifier.fillMaxWidth()) { Text("GUARDAR NOTA") }
+                    Button(onClick = { if (text.isNotBlank()) { onAdd(text.trim()); text = "" } }, enabled = text.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("GUARDAR NOTA") }
                 }
             }
             if (entries.isEmpty()) EmptyProductCard("Ainda não existem entradas no diário.")
