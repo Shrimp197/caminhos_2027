@@ -8,7 +8,7 @@
 
 ## Current functional baseline
 
-- Current branch HEAD: `9f080ca61e5e2fa42a5ce52938bd27d005c3aceb`.
+- Current branch HEAD: `728966576c77e56a3efb3408c79119d1180ec094`.
 - The six primary walking surfaces remain the acceptance baseline: preparation, active walking map, contextual bottom sheet, next-APOI horizon, APOI list/cards and walking progress.
 - The preparation surface is integrated into the V1 Activity flow with route selection, stage/start/end, audio, map orientation, breaks, APOIs, notes and explicit save/start semantics.
 
@@ -45,7 +45,7 @@ A green JVM/build pipeline is necessary but not sufficient for human acceptance.
 
 ## Current blocker
 
-The branch has a real Android E2E pipeline. The process-death portion of the E2E uses direct target-process termination so the instrumentation runner remains alive; no completion claim is made until all required checks finish. No completion claim is made from compilation alone.
+The branch has a real Android E2E pipeline, but the latest HEAD still requires the current E2E run to complete successfully before the project can be declared human-test ready. No completion claim is made from compilation alone.
 
 ## Completion rule
 

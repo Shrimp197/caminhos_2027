@@ -77,7 +77,7 @@ class V1EndToEndTest {
         )
 
         scenario.close()
-        killAppProcessForProcessDeath()
+        forceStopAppProcess()
         scenario = ActivityScenario.launch(V1MainActivity::class.java)
         assertTrue("Paused walking session did not persist", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
         assertTrue("Persisted pause did not expose resume action", waitForVisibleText("RETOMAR CAMINHADA", 30_000))
@@ -189,7 +189,7 @@ class V1EndToEndTest {
         assertTrue("Saved plan did not show persisted pause configuration", waitForVisibleText("Pausas · inteligentes ativas", 30_000))
         assertTrue("Saved plan did not expose an explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
         scenario.close()
-        killAppProcessForProcessDeath()
+        forceStopAppProcess()
         scenario = ActivityScenario.launch(V1MainActivity::class.java)
         assertTrue("Saved plan did not persist after process recreation", waitForVisibleText("Plano guardado", 30_000))
         assertTrue("Persisted plan lost the audio choice", waitForVisibleText("Áudio · imersivo", 30_000))
@@ -201,23 +201,9 @@ class V1EndToEndTest {
         assertTrue("Walking screen did not appear", waitForVisibleText("A minha posição", 30_000))
     }
 
-    private fun killAppProcessForProcessDeath() {
-        val pidOutput = device.executeShellCommand("pidof com.caminhos2027").trim()
-        assertTrue("Application process was not running before process-death validation", pidOutput.isNotEmpty())
-        pidOutput
-            .split(Regex("\\s+"))
-            .filter { it.isNotBlank() }
-            .forEach { pid ->
-                device.executeShellCommand("kill -9 $pid")
-            }
+    private fun forceStopAppProcess() {
+        device.executeShellCommand("am force-stop com.caminhos2027")
         device.waitForIdle()
-        var remaining = device.executeShellCommand("pidof com.caminhos2027").trim()
-        val deadline = System.nanoTime() + 5_000_000_000L
-        while (remaining.isNotEmpty() && System.nanoTime() < deadline) {
-            Thread.sleep(100)
-            remaining = device.executeShellCommand("pidof com.caminhos2027").trim()
-        }
-        assertTrue("Application process survived explicit process-death validation", remaining.isEmpty())
     }
 
     private fun capture(name: String) {

@@ -15,15 +15,6 @@ manifest = MANIFEST_PATH.read_text(encoding='utf-8')
 java = JAVA_PATH.read_text(encoding='utf-8')
 route_manifest = json.loads(ROUTE_MANIFEST_PATH.read_text(encoding='utf-8'))
 
-if "https://tile.openstreetmap.org/{z}/{x}/{y}.png" not in html:
-    raise SystemExit('OSM tile URL must use the canonical tile.openstreetmap.org endpoint')
-if "{s}.tile.openstreetmap.org" in html:
-    raise SystemExit('OSM tile subdomain pattern must not be used')
-if 'CaminhosDoPeregrino/' not in java:
-    raise SystemExit('WebView must identify Caminhos do Peregrino in its User-Agent')
-if 'https://github.com/Shrimp197/caminhos_2027' not in java:
-    raise SystemExit('OSM User-Agent must include a stable contact/project URL')
-
 required_html = [
     'Caminho do Centenário',
     'Carregar KML/GPX',

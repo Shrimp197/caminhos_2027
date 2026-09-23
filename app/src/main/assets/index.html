@@ -234,7 +234,7 @@ function ensureMap(){
   if(map) return;
   if(!$('map')) throw new Error('Área do mapa não encontrada.');
   map=L.map('map',{zoomControl:false}).setView([40.2,-8.6],9);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
     maxZoom:19,attribution:'© OpenStreetMap contributors'
   }).addTo(map);
   renderRoute();

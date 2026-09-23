@@ -36,6 +36,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -156,16 +157,34 @@ private fun ApoiCategoriesSub(
         ApoiCategory.TRANSPORTE,
         ApoiCategory.EMERGENCIA
     )
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(PSurface)
-            .padding(16.dp)
-    ) {
+
+    Scaffold(
+        containerColor = PSurface,
+        bottomBar = {
+            Button(
+                onClick = {
+                    onApply(selected)
+                    onBack()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .navigationBarsPadding()
+                    .semantics {
+                        contentDescription = "APLICAR APOIOS"
+                        role = Role.Button
+                    },
+                colors = ButtonDefaults.buttonColors(containerColor = PGreen)
+            ) {
+                Text("APLICAR APOIOS", fontWeight = FontWeight.ExtraBold)
+            }
+        }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 76.dp),
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -190,7 +209,9 @@ private fun ApoiCategoriesSub(
                 color = PMuted
             )
             Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 categories.forEach { category ->
@@ -217,25 +238,9 @@ private fun ApoiCategoriesSub(
                 style = MaterialTheme.typography.bodySmall
             )
         }
-
-        Button(
-            onClick = {
-                onApply(selected)
-                onBack()
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .semantics {
-                    contentDescription = "APLICAR APOIOS"
-                    role = Role.Button
-                },
-            colors = ButtonDefaults.buttonColors(containerColor = PGreen)
-        ) {
-            Text("APLICAR APOIOS", fontWeight = FontWeight.ExtraBold)
-        }
     }
 }
+
 private fun categoryLabel(category: ApoiCategory): String = when (category) {
     ApoiCategory.ALIMENTACAO -> "Alimentação"
     ApoiCategory.AGUA -> "Água"

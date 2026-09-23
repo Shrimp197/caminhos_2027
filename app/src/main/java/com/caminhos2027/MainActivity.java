@@ -77,10 +77,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     private void configureWebView() {
         WebSettings settings = webView.getSettings();
-        settings.setUserAgentString(
-                "CaminhosDoPeregrino/" + BuildConfig.VERSION_NAME
-                        + " (+https://github.com/Shrimp197/caminhos_2027)"
-        );
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setGeolocationEnabled(true);
