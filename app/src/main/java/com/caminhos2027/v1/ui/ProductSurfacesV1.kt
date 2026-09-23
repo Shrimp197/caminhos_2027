@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -96,7 +97,7 @@ internal fun BottomNavBarV1(selected: WalkingSurface, onNavigate: (WalkingSurfac
 }
 
 @Composable
-private fun navItem(destination: WalkingSurface, label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: WalkingSurface, onNavigate: (WalkingSurface) -> Unit) {
+private fun RowScope.navItem(destination: WalkingSurface, label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: WalkingSurface, onNavigate: (WalkingSurface) -> Unit) {
     NavigationBarItem(
         selected = selected == destination,
         onClick = { onNavigate(destination) },
