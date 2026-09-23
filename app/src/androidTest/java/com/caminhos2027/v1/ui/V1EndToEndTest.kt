@@ -16,10 +16,13 @@ import java.io.FileOutputStream
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.FixMethodOrder
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.MethodSorters
 
 @RunWith(AndroidJUnit4::class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class V1EndToEndTest {
     private lateinit var device: UiDevice
     private lateinit var scenario: ActivityScenario<V1MainActivity>
@@ -36,7 +39,7 @@ class V1EndToEndTest {
     fun closeActivity() { scenario.close() }
 
     @Test
-    fun testPrepareAndPersistPlanCheckpoint() {
+    fun test1PrepareAndPersistPlanCheckpoint() {
         assertTrue("Route-selection preparation screen did not appear", waitForVisibleText("Selecionar percurso", 120_000))
         assertTrue("Centenário route option missing", waitForVisibleText("Caminho do Centenário", 30_000))
         clickVisibleText("Caminho do Centenário")
@@ -44,10 +47,11 @@ class V1EndToEndTest {
         capture("caminhos-preparacao.png")
         prepareSrPlan()
         assertTrue("Saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
+        scheduleExternalProcessDeath()
     }
 
     @Test
-    fun testRestorePlanStartAndPauseCheckpoint() {
+    fun test2RestorePlanStartAndPauseCheckpoint() {
         assertTrue("Saved plan was not restored after external process death", waitForVisibleText("Plano guardado", 30_000))
         assertTrue("Persisted plan lost the audio choice", waitForVisibleText("Áudio · imersivo", 30_000))
         assertTrue("Persisted plan lost the orientation choice", waitForVisibleText("Orientação · direção da caminhada", 30_000))
@@ -83,10 +87,11 @@ class V1EndToEndTest {
             "Paused walk changed route position before external process death",
             positionBeforePause != null && positionBeforePause == positionWhilePaused
         )
+        scheduleExternalProcessDeath()
     }
 
     @Test
-    fun testRestorePausedWalkResumeApoiDecisionAndStop() {
+    fun test3RestorePausedWalkResumeApoiDecisionAndStop() {
         assertTrue("Paused walking session was not restored after external process death", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
         assertTrue("Persisted pause did not expose resume action", waitForVisibleText("RETOMAR CAMINHADA", 30_000))
         val persistedPausedPosition = visibleTextValue("Km no percurso:")
@@ -193,6 +198,12 @@ class V1EndToEndTest {
         assertTrue("Saved plan did not show persisted note count", waitForVisibleText("Notas · 1 guardada(s)", 30_000))
         assertTrue("Saved plan did not show persisted pause configuration", waitForVisibleText("Pausas · inteligentes ativas", 30_000))
         assertTrue("Saved plan did not expose an explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
+    }
+
+    private fun scheduleExternalProcessDeath() {
+        device.executeShellCommand(
+            "sh -c '(sleep 1500; am force-stop com.caminhos2027) >/dev/null 2>&1 &'"
+        )
     }
 
     private fun capture(name: String) {

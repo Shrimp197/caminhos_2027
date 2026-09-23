@@ -120,47 +120,9 @@ jobs:
           adb shell am force-stop com.caminhos2027
           adb logcat -c
           echo "Instrumentation test will own activity launch."
-      - name: Run Android V1 preparation and saved-plan checkpoint
-        timeout-minutes: 8
-        run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest#testPrepareAndPersistPlanCheckpoint
-      - name: Force-stop app after saved-plan checkpoint
-        timeout-minutes: 2
-        run: |
-          set -euo pipefail
-          adb shell am force-stop com.caminhos2027
-          python3 - <<'PY'
-          import subprocess, time
-          deadline = time.time() + 15
-          while time.time() < deadline:
-              result = subprocess.run(["adb", "shell", "pidof", "com.caminhos2027"], text=True, capture_output=True)
-              if not result.stdout.strip():
-                  print("com.caminhos2027 process is stopped.")
-                  raise SystemExit(0)
-              time.sleep(0.25)
-          raise SystemExit("com.caminhos2027 process survived host-controlled force-stop")
-          PY
-      - name: Run Android V1 restore, start and pause checkpoint
-        timeout-minutes: 8
-        run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest#testRestorePlanStartAndPauseCheckpoint
-      - name: Force-stop app after paused-walk checkpoint
-        timeout-minutes: 2
-        run: |
-          set -euo pipefail
-          adb shell am force-stop com.caminhos2027
-          python3 - <<'PY'
-          import subprocess, time
-          deadline = time.time() + 15
-          while time.time() < deadline:
-              result = subprocess.run(["adb", "shell", "pidof", "com.caminhos2027"], text=True, capture_output=True)
-              if not result.stdout.strip():
-                  print("com.caminhos2027 process is stopped.")
-                  raise SystemExit(0)
-              time.sleep(0.25)
-          raise SystemExit("com.caminhos2027 process survived host-controlled force-stop")
-          PY
-      - name: Run Android V1 restore, resume, APOI and decision validation
-        timeout-minutes: 10
-        run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest#testRestorePausedWalkResumeApoiDecisionAndStop
+      - name: Run Android V1 end-to-end tests with orchestrated process-death checkpoints
+        timeout-minutes: 25
+        run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest
       - name: Collect visual validation screenshots
         id: visual_screenshots
         if: steps.emulator_setup.outcome == 'success'
