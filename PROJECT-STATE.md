@@ -8,7 +8,7 @@
 
 ## Current functional baseline
 
-- Current branch HEAD: `8b32953c0c458ca34d1687f00213fd541b9a782e`.
+- Current branch HEAD: `9f080ca61e5e2fa42a5ce52938bd27d005c3aceb`.
 - The six primary walking surfaces remain the acceptance baseline: preparation, active walking map, contextual bottom sheet, next-APOI horizon, APOI list/cards and walking progress.
 - The preparation surface is integrated into the V1 Activity flow with route selection, stage/start/end, audio, map orientation, breaks, APOIs, notes and explicit save/start semantics.
 
