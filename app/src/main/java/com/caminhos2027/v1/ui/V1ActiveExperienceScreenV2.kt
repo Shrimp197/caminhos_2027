@@ -148,7 +148,7 @@ internal fun V1ActiveExperienceScreenV2(
         Card(
             Modifier
                 .fillMaxWidth()
-                .heightIn(max = 340.dp)
+                .heightIn(max = 620.dp)
                 .padding(12.dp),
             RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
