@@ -185,7 +185,10 @@ private fun ApoiCategoriesSub(
             color = PMuted
         )
         Button(
-            onClick = { onApply(selected) },
+            onClick = {
+                onApply(selected)
+                onBack()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .semantics {
