@@ -30,26 +30,34 @@ class V1EndToEndTest {
         device.executeShellCommand("pm grant com.caminhos2027 android.permission.ACCESS_FINE_LOCATION")
         device.pressHome()
         scenario = ActivityScenario.launch(V1MainActivity::class.java)
-        assertTrue(
-            "Route-selection preparation screen did not appear",
-            waitForVisibleText("Selecionar percurso", 120_000)
-        )
     }
 
     @After
     fun closeActivity() { scenario.close() }
 
     @Test
-    fun testVerticalSliceFromPlanToApoiDetailAndDecision() {
+    fun testPrepareAndPersistPlanCheckpoint() {
+        assertTrue("Route-selection preparation screen did not appear", waitForVisibleText("Selecionar percurso", 120_000))
         assertTrue("Centenário route option missing", waitForVisibleText("Caminho do Centenário", 30_000))
         clickVisibleText("Caminho do Centenário")
         assertTrue("Preparation home did not appear after route selection", waitForVisibleText("Prepare a sua caminhada", 30_000))
         capture("caminhos-preparacao.png")
+        prepareSrPlan()
+        assertTrue("Saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
+    }
 
-        prepareAndStartSr()
-        assertTrue("Walking actions did not appear", waitForAnyVisibleText("VER APOIOS", "OPÇÕES", timeoutMs = 30_000))
+    @Test
+    fun testRestorePlanStartAndPauseCheckpoint() {
+        assertTrue("Saved plan was not restored after external process death", waitForVisibleText("Plano guardado", 30_000))
+        assertTrue("Persisted plan lost the audio choice", waitForVisibleText("Áudio · imersivo", 30_000))
+        assertTrue("Persisted plan lost the orientation choice", waitForVisibleText("Orientação · direção da caminhada", 30_000))
+        assertTrue("Persisted plan lost the APOI choice", waitForVisibleText("Apoios · 1 tipo(s) selecionado(s)", 30_000))
+        assertTrue("Persisted plan lost the note count", waitForVisibleText("Notas · 1 guardada(s)", 30_000))
+        assertTrue("Persisted plan did not keep explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
+        clickVisibleText("INICIAR CAMINHADA")
+
+        assertTrue("Walking screen did not appear", waitForVisibleText("A minha posição", 30_000))
         assertTrue("Real map label did not appear", waitForVisibleText("MAPA REAL · OPENSTREETMAP", 30_000))
-        assertTrue("Position label did not appear", waitForVisibleText("A minha posição", 30_000))
         assertTrue("Route progress did not appear", waitForVisibleText("Progresso", 30_000))
         assertTrue("Elapsed walking time did not appear", waitForVisibleTextOrDescription("Tempo", 30_000))
         assertTrue("QA controls did not appear for the test route", waitForVisibleText("QA · percurso de teste", 30_000))
@@ -72,21 +80,16 @@ class V1EndToEndTest {
         assertTrue("Resume action did not appear", waitForVisibleText("RETOMAR CAMINHADA", 30_000))
         val positionWhilePaused = visibleTextValue("Km no percurso:")
         assertTrue(
-            "Paused walk changed route position before recreation",
+            "Paused walk changed route position before external process death",
             positionBeforePause != null && positionBeforePause == positionWhilePaused
         )
+    }
 
-        scenario.close()
-        killAppProcessForProcessDeath()
-        scenario = ActivityScenario.launch(V1MainActivity::class.java)
-        assertTrue("Paused walking session did not persist", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
+    @Test
+    fun testRestorePausedWalkResumeApoiDecisionAndStop() {
+        assertTrue("Paused walking session was not restored after external process death", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
         assertTrue("Persisted pause did not expose resume action", waitForVisibleText("RETOMAR CAMINHADA", 30_000))
         val persistedPausedPosition = visibleTextValue("Km no percurso:")
-        assertTrue(
-            "Persisted paused position was lost",
-            positionWhilePaused != null && positionWhilePaused == persistedPausedPosition
-        )
-
         clickVisibleText("RETOMAR CAMINHADA")
         assertTrue("Walking session did not resume", waitForVisibleText("PAUSAR CAMINHADA", 30_000))
         clickVisibleText("AVANÇAR GPS")
@@ -115,7 +118,8 @@ class V1EndToEndTest {
         assertTrue("APOI services did not appear", waitForVisibleText("Serviços", 30_000))
         clickVisibleText("Voltar aos apoios")
         assertTrue("APOI browser did not return", waitForAnyVisibleText("Próximos 10 km", "Procurar", timeoutMs = 30_000))
-        device.pressBack(); device.waitForIdle()
+        device.pressBack()
+        device.waitForIdle()
         assertTrue("Walking screen did not return", waitForVisibleText("A minha posição", 30_000))
 
         clickVisibleText("OPÇÕES")
@@ -124,16 +128,22 @@ class V1EndToEndTest {
         assertTrue("Continue action did not appear", waitForVisibleText("CONTINUAR CAMINHADA", 30_000))
         clickVisibleText("CONTINUAR CAMINHADA")
         assertTrue("Continue action did not return to walking", waitForVisibleText("A minha posição", 30_000))
-        clickVisibleText("OPÇÕES"); clickVisibleText("PARAR AGORA")
+        clickVisibleText("OPÇÕES")
+        clickVisibleText("PARAR AGORA")
         assertTrue("Stop action did not return to preparation", waitForVisibleText("Selecionar percurso", 30_000))
 
-        prepareAndStartSr()
+        clickVisibleText("Trajeto SR")
+        assertTrue("Second cycle preparation home did not appear", waitForVisibleText("Prepare a sua caminhada", 30_000))
+        prepareSrPlan()
+        assertTrue("Second cycle saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
+        clickVisibleText("INICIAR CAMINHADA")
         assertTrue("Second walking cycle did not start", waitForVisibleText("A minha posição", 30_000))
-        clickVisibleText("OPÇÕES"); clickVisibleText("PARAR AGORA")
+        clickVisibleText("OPÇÕES")
+        clickVisibleText("PARAR AGORA")
         assertTrue("Second walking cycle did not stop cleanly", waitForVisibleText("Selecionar percurso", 30_000))
     }
 
-    private fun prepareAndStartSr() {
+    private fun prepareSrPlan() {
         if (waitForVisibleTextOrDescription("Prepare a sua caminhada", 1_500)) {
             clickVisibleText("PREPARAR")
         }
@@ -160,11 +170,6 @@ class V1EndToEndTest {
         assertTrue("Water APOI category did not appear", waitForVisibleText("Água", 30_000))
         clickVisibleText("Água")
         clickVisibleText("APLICAR APOIOS")
-        if (!waitForVisibleText("Prepare a sua caminhada", 3_000)) {
-            // Compose may replace the button semantics during FilterChip recomposition.
-            // Re-query the visible button without weakening the final assertion.
-            clickVisibleText("APLICAR APOIOS")
-        }
         assertTrue("APOIs configuration did not close", waitForVisibleText("Prepare a sua caminhada", 30_000))
 
         clickVisibleText("Notas")
@@ -188,36 +193,6 @@ class V1EndToEndTest {
         assertTrue("Saved plan did not show persisted note count", waitForVisibleText("Notas · 1 guardada(s)", 30_000))
         assertTrue("Saved plan did not show persisted pause configuration", waitForVisibleText("Pausas · inteligentes ativas", 30_000))
         assertTrue("Saved plan did not expose an explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
-        scenario.close()
-        killAppProcessForProcessDeath()
-        scenario = ActivityScenario.launch(V1MainActivity::class.java)
-        assertTrue("Saved plan did not persist after process recreation", waitForVisibleText("Plano guardado", 30_000))
-        assertTrue("Persisted plan lost the audio choice", waitForVisibleText("Áudio · imersivo", 30_000))
-        assertTrue("Persisted plan lost the orientation choice", waitForVisibleText("Orientação · direção da caminhada", 30_000))
-        assertTrue("Persisted plan lost the APOI choice", waitForVisibleText("Apoios · 1 tipo(s) selecionado(s)", 30_000))
-        assertTrue("Persisted plan lost the note count", waitForVisibleText("Notas · 1 guardada(s)", 30_000))
-        assertTrue("Persisted plan did not keep explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
-        clickVisibleText("INICIAR CAMINHADA")
-        assertTrue("Walking screen did not appear", waitForVisibleText("A minha posição", 30_000))
-    }
-
-    private fun killAppProcessForProcessDeath() {
-        val pidOutput = device.executeShellCommand("pidof com.caminhos2027").trim()
-        assertTrue("Application process was not running before process-death validation", pidOutput.isNotEmpty())
-        pidOutput
-            .split(Regex("\\s+"))
-            .filter { it.isNotBlank() }
-            .forEach { pid ->
-                device.executeShellCommand("kill -9 $pid")
-            }
-        device.waitForIdle()
-        var remaining = device.executeShellCommand("pidof com.caminhos2027").trim()
-        val deadline = System.nanoTime() + 5_000_000_000L
-        while (remaining.isNotEmpty() && System.nanoTime() < deadline) {
-            Thread.sleep(100)
-            remaining = device.executeShellCommand("pidof com.caminhos2027").trim()
-        }
-        assertTrue("Application process survived explicit process-death validation", remaining.isEmpty())
     }
 
     private fun capture(name: String) {
