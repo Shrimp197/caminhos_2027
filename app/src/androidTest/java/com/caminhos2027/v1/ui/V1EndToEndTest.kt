@@ -34,7 +34,6 @@ class V1EndToEndTest {
             "Route-selection preparation screen did not appear",
             waitForVisibleText("Selecionar percurso", 120_000)
         )
-        capture("caminhos-preparacao.png")
     }
 
     @After
@@ -45,6 +44,7 @@ class V1EndToEndTest {
         assertTrue("Centenário route option missing", waitForVisibleText("Caminho do Centenário", 30_000))
         clickVisibleText("Caminho do Centenário")
         assertTrue("Preparation home did not appear after route selection", waitForVisibleText("Prepare a sua caminhada", 30_000))
+        capture("caminhos-preparacao.png")
 
         prepareAndStartSr()
         assertTrue("Walking actions did not appear", waitForAnyVisibleText("VER APOIOS", "OPÇÕES", timeoutMs = 30_000))
