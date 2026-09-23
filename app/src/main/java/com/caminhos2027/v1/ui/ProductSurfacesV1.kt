@@ -240,7 +240,12 @@ private fun DiaryPhotoThumbnail(uriString: String) {
     val bitmap by produceState<android.graphics.Bitmap?>(initialValue = null, key1 = uriString) {
         value = runCatching { context.contentResolver.openInputStream(Uri.parse(uriString)).use { input -> if (input == null) null else BitmapFactory.decodeStream(input) } }.getOrNull()
     }
-    bitmap?.let { value -> Image(BitmapPainter(value.asImageBitmap()), "Fotografia do diário", Modifier.fillMaxWidth().height(190.dp), ContentScale.Crop) }
+    bitmap?.let { value -> Image(
+            painter = BitmapPainter(value.asImageBitmap()),
+            contentDescription = "Fotografia do diário",
+            modifier = Modifier.fillMaxWidth().height(190.dp),
+            contentScale = ContentScale.Crop
+        ) }
         ?: Text("Fotografia anexada.", color = NavMuted, style = MaterialTheme.typography.bodySmall)
 }
 
@@ -362,7 +367,7 @@ internal fun MoreSurfaceV1(onPrepare: () -> Unit, onMap: () -> Unit, onApoi: () 
 
 @Composable
 private fun MoreAction(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, subtitle: String, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick).semantics { role = Role.Button; contentDescription = "\$title. \$subtitle" }, RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+    Card(Modifier.fillMaxWidth().clickable(onClick = onClick).semantics { role = Role.Button; contentDescription = "$title. $subtitle" }, RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Row(Modifier.padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = NavBlue, modifier = Modifier.size(28.dp))
             Spacer(Modifier.width(12.dp))
