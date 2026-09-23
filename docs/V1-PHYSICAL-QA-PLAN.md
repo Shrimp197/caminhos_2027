@@ -4,7 +4,7 @@
 
 Validar no dispositivo Android real a experiência V1 já construída, sem introduzir alterações funcionais não observadas.
 
-A validação física começa a partir do baseline funcional `943c3b70ba8ab3149ae8ffc5ec94d63c78a75275`.
+A validação física começa a partir do baseline funcional `5826216af34c9e34ae1b22dbc66816ab4373b101`. A branch pode conter commits posteriores exclusivamente documentais; a versão funcional a testar é a indicada pelo APK validado.
 
 ## Regra
 
