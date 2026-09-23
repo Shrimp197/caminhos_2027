@@ -40,6 +40,7 @@ internal fun V1ApplicationScreenV1(
     onOpenSos: () -> Unit,
     onOpenSmartwatch: () -> Unit,
     onOpenPilgrimMode: () -> Unit,
+    onExitPilgrimMode: () -> Unit,
     onNavigate: (WalkingSurface) -> Unit,
     onDiaryChoosePhoto: () -> Unit,
     onDiaryClearPhoto: () -> Unit,
@@ -96,7 +97,7 @@ internal fun V1ApplicationScreenV1(
             SmartwatchSurfaceV1(onNavigate, onOpenMap)
 
         surface == WalkingSurface.PILGRIM_MODE && state != null ->
-            PilgrimModeSurfaceV1(state, onOpenApoi, onOpenSos, onOpenMap)
+            PilgrimModeSurfaceV1(state, onOpenApoi, onOpenSos, onExitPilgrimMode)
 
         surface == WalkingSurface.MORE ->
             MoreSurfaceV1(
