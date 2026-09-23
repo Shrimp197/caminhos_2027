@@ -127,6 +127,12 @@ internal fun V1ActiveExperienceScreenV2(
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.labelSmall
                 )
+                Text(
+                    "Tempo · " + elapsed,
+                    color = V2Muted,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.labelSmall
+                )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 OutlinedButton(onClick = onOpenSos) { Text("SOS") }
