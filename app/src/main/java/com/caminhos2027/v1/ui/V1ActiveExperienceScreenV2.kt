@@ -1,5 +1,6 @@
 package com.caminhos2027.v1.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -305,9 +306,16 @@ private fun RealOpenStreetMap(
     val html = remember(routeJs, projectedJs, nextApoiJs, rotation) { openStreetMapHtml(routeJs, projectedJs, nextApoiJs, rotation) }
     Card(modifier, RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = V2Map), elevation = CardDefaults.cardElevation(2.dp)) {
         Box(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp))) {
+            RouteMapFallbackCanvas(
+                modifier = Modifier.fillMaxSize(),
+                geometry = points,
+                projectedPoint = projectedPoint,
+                nextApoi = nextApoi
+            )
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { context -> WebView(context).apply {
+                    setBackgroundColor(AndroidColor.TRANSPARENT)
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
                     settings.cacheMode = WebSettings.LOAD_DEFAULT
@@ -353,9 +361,65 @@ private fun RealOpenStreetMap(
     }
 }
 
+@Composable
+private fun RouteMapFallbackCanvas(
+    modifier: Modifier,
+    geometry: List<GeoPoint>,
+    projectedPoint: GeoPoint?,
+    nextApoi: com.caminhos2027.v1.core.model.Apoi?
+) {
+    if (geometry.size < 2) {
+        Box(modifier.background(V2Map))
+        return
+    }
+    Canvas(modifier.background(V2Map)) {
+        val valid = geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() }
+        if (valid.size < 2) return@Canvas
+        val minLat = valid.minOf { it.latitude }
+        val maxLat = valid.maxOf { it.latitude }
+        val minLon = valid.minOf { it.longitude }
+        val maxLon = valid.maxOf { it.longitude }
+        val latSpan = (maxLat - minLat).coerceAtLeast(1e-9)
+        val lonSpan = (maxLon - minLon).coerceAtLeast(1e-9)
+        val pad = 28f
+        fun point(point: GeoPoint): Offset {
+            val x = pad + (((point.longitude - minLon) / lonSpan).toFloat() * (size.width - pad * 2f))
+            val y = pad + ((1f - ((point.latitude - minLat) / latSpan).toFloat()) * (size.height - pad * 2f))
+            return Offset(x, y)
+        }
+        for (index in 1 until valid.size) {
+            drawLine(
+                color = V2Road,
+                start = point(valid[index - 1]),
+                end = point(valid[index]),
+                strokeWidth = 12f
+            )
+            drawLine(
+                color = V2Forest,
+                start = point(valid[index - 1]),
+                end = point(valid[index]),
+                strokeWidth = 7f
+            )
+        }
+        drawCircle(V2Forest, radius = 10f, center = point(valid.first()))
+        drawCircle(Color(0xFFC28A16), radius = 10f, center = point(valid.last()))
+        projectedPoint?.takeIf { it.latitude.isFinite() && it.longitude.isFinite() }?.let {
+            drawCircle(Color(0xFF1464C8), radius = 11f, center = point(it))
+        }
+        nextApoi?.location?.let { location ->
+            val lat = location.latitude
+            val lon = location.longitude
+            if (lat?.isFinite() == true && lon?.isFinite() == true) {
+                drawCircle(Color(0xFF8B5CF6), radius = 10f, center = point(GeoPoint(lat, lon)))
+                drawCircle(Color.White, radius = 4f, center = point(GeoPoint(lat, lon)))
+            }
+        }
+    }
+}
+
 private fun openStreetMapHtml(routeJs: String, projectedJs: String, nextApoiJs: String, rotation: Float): String = """
 <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>
-html,body,#map{margin:0;width:100%;height:100%;overflow:hidden;background:#eef0eb}#tiles{position:absolute;inset:0;transform-origin:50% 50%}.tile{position:absolute;width:256px;height:256px}svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.route{fill:none;stroke:white;stroke-width:12;stroke-linecap:round;stroke-linejoin:round}.route2{fill:none;stroke:#0e6546;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}.marker{stroke:white;stroke-width:5}
+html,body,#map{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}#tiles{position:absolute;inset:0;transform-origin:50% 50%}.tile{position:absolute;width:256px;height:256px}svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.route{fill:none;stroke:white;stroke-width:12;stroke-linecap:round;stroke-linejoin:round}.route2{fill:none;stroke:#0e6546;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}.marker{stroke:white;stroke-width:5}
 </style></head><body><div id="map"><div id="tiles"></div><svg id="overlay"></svg></div><script>
 const route=$routeJs,current=$projectedJs,nextApoi=$nextApoiJs,rotation=$rotation,size=256;const map=document.getElementById('map'),tiles=document.getElementById('tiles'),svg=document.getElementById('overlay');
 function mercator(lat,lon,z){const n=Math.pow(2,z),x=(lon+180)/360*n,r=lat*Math.PI/180,y=(1-Math.asinh(Math.tan(r))/Math.PI)/2*n;return[x,y]}
