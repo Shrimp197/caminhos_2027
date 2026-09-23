@@ -125,7 +125,10 @@ internal fun V1ActiveExperienceScreenV2(
                     style = MaterialTheme.typography.labelSmall
                 )
             }
-            OutlinedButton(onClick = onStop) { Text("PARAR") }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                OutlinedButton(onClick = onOpenSos) { Text("SOS") }
+                OutlinedButton(onClick = onStop) { Text("PARAR") }
+            }
         }
 
         InteractiveOfflineRouteMap(
@@ -241,7 +244,6 @@ internal fun V1ActiveExperienceScreenV2(
                 }
             }
         }
-    }
         BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
     }
 }
