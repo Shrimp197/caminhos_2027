@@ -71,6 +71,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.diary.DiaryEntry
+import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.walking.WalkingState
 import java.time.ZoneId
@@ -250,7 +251,7 @@ private fun DiaryPhotoThumbnail(uriString: String) {
 }
 
 @Composable
-internal fun SosSurfaceV1(state: WalkingState?, onNavigate: (WalkingSurface) -> Unit) {
+internal fun SosSurfaceV1(state: WalkingState?, emergencyApoi: List<com.caminhos2027.v1.core.apoi.ApoiAhead>, onNavigate: (WalkingSurface) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val coordinates = state?.routePosition?.projectedPoint
     val shareText = coordinates?.let { "Localização no Caminhos do Peregrino: \${"%.5f".format(Locale.US, it.latitude)}, \${"%.5f".format(Locale.US, it.longitude)}" }
@@ -278,9 +279,16 @@ internal fun SosSurfaceV1(state: WalkingState?, onNavigate: (WalkingSurface) -> 
                 context.startActivity(Intent.createChooser(intent, "Partilhar localização"))
             }, Modifier.fillMaxWidth(), enabled = shareText != null) { Icon(Icons.Filled.Share, null); Spacer(Modifier.width(8.dp)); Text("PARTILHAR LOCALIZAÇÃO") }
             Card(Modifier.fillMaxWidth(), RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF242424))) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Apoios de emergência", color = Color.White, fontWeight = FontWeight.ExtraBold)
-                    Text("Não existem apoios de emergência publicados no contexto atual. Não são apresentados dados fictícios.", color = Color(0xFFE0E0E0))
+                    if (emergencyApoi.isEmpty()) {
+                        Text("Não existem apoios de emergência publicados no contexto atual. Não são apresentados dados fictícios.", color = Color(0xFFE0E0E0))
+                    } else {
+                        emergencyApoi.forEach { item ->
+                            Text(item.apoi.name, color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(fmtDistance(item.distanceKm), color = Color(0xFFFFB4AB))
+                        }
+                    }
                 }
             }
         }
