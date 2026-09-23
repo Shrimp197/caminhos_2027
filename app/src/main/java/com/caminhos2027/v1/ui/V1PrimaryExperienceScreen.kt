@@ -71,7 +71,7 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
-internal enum class WalkingSurface { ACTIVE, PREPARATION, APOI_BROWSER, APOI_DETAIL, DECISION }
+internal enum class WalkingSurface { ACTIVE, SUMMARY, PREPARATION, APOI_BROWSER, APOI_DETAIL, NEXT_10_KM, DIARY, SOS, SMARTWATCH, PILGRIM_MODE, MORE, DECISION }
 
 private val Forest = Color(0xFF0E6546)
 private val ForestSoft = Color(0xFFE6F2EB)
