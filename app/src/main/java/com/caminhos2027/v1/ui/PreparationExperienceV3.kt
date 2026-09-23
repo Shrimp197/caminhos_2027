@@ -156,34 +156,68 @@ private fun ApoiCategoriesSub(
         ApoiCategory.TRANSPORTE,
         ApoiCategory.EMERGENCIA
     )
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(PSurface)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(16.dp)
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier.semantics {
-                    contentDescription = "Voltar"
-                    role = Role.Button
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 76.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.semantics {
+                        contentDescription = "Voltar"
+                        role = Role.Button
+                    }
+                ) {
+                    Icon(Icons.Filled.ArrowBack, null, tint = PBlue)
                 }
-            ) {
-                Icon(Icons.Filled.ArrowBack, null, tint = PBlue)
+                Text(
+                    "Apoios",
+                    color = PBlue,
+                    fontWeight = FontWeight.ExtraBold,
+                    style = MaterialTheme.typography.titleLarge
+                )
             }
             Text(
-                "Apoios",
-                color = PBlue,
-                fontWeight = FontWeight.ExtraBold,
-                style = MaterialTheme.typography.titleLarge
+                "Escolha os tipos de apoio que pretende acompanhar durante a caminhada.",
+                color = PMuted
+            )
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                categories.forEach { category ->
+                    FilterChip(
+                        selected = category in selected,
+                        onClick = {
+                            selected = if (category in selected) {
+                                selected - category
+                            } else {
+                                selected + category
+                            }
+                        },
+                        label = { Text(categoryLabel(category)) }
+                    )
+                }
+            }
+            Text(
+                if (selected.isEmpty()) {
+                    "Nenhum tipo selecionado: pode consultar todos os APOI a partir da caminhada."
+                } else {
+                    "${selected.size} tipo(s) de apoio selecionado(s)."
+                },
+                color = PMuted,
+                style = MaterialTheme.typography.bodySmall
             )
         }
-        Text(
-            "Escolha os tipos de apoio que pretende acompanhar durante a caminhada.",
-            color = PMuted
-        )
+
         Button(
             onClick = {
                 onApply(selected)
@@ -191,6 +225,7 @@ private fun ApoiCategoriesSub(
             },
             modifier = Modifier
                 .fillMaxWidth()
+                .align(Alignment.BottomCenter)
                 .semantics {
                     contentDescription = "APLICAR APOIOS"
                     role = Role.Button
@@ -199,33 +234,6 @@ private fun ApoiCategoriesSub(
         ) {
             Text("APLICAR APOIOS", fontWeight = FontWeight.ExtraBold)
         }
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            categories.forEach { category ->
-                FilterChip(
-                    selected = category in selected,
-                    onClick = {
-                        selected = if (category in selected) {
-                            selected - category
-                        } else {
-                            selected + category
-                        }
-                    },
-                    label = { Text(categoryLabel(category)) }
-                )
-            }
-        }
-        Text(
-            if (selected.isEmpty()) {
-                "Nenhum tipo selecionado: pode consultar todos os APOI a partir da caminhada."
-            } else {
-                "${selected.size} tipo(s) de apoio selecionado(s)."
-            },
-            color = PMuted,
-            style = MaterialTheme.typography.bodySmall
-        )
     }
 }
 private fun categoryLabel(category: ApoiCategory): String = when (category) {
