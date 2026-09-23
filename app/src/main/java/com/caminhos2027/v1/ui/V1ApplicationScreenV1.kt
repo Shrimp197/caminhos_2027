@@ -91,7 +91,7 @@ internal fun V1ApplicationScreenV1(
             DiarySurfaceV1(diaryEntries, state, diaryPhotoUri, onDiaryChoosePhoto, onDiaryClearPhoto, onDiaryAdd, onNavigate)
 
         surface == WalkingSurface.SOS ->
-            SosSurfaceV1(state, onNavigate)
+            SosSurfaceV1(state, appState.apoiBrowser?.results ?: emptyList(), onNavigate)
 
         surface == WalkingSurface.SMARTWATCH ->
             SmartwatchSurfaceV1(onNavigate, onOpenMap)
