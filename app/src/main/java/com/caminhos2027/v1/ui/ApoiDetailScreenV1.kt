@@ -3,6 +3,7 @@ package com.caminhos2027.v1.ui
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +19,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -52,50 +52,76 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            Button(
-                onClick = onBack,
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .semantics {
                         contentDescription = "Voltar aos apoios"
                         role = Role.Button
                     }
+                    .clickable(onClick = onBack),
+                shape = MaterialTheme.shapes.medium,
+                tonalElevation = 2.dp
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                Text("Voltar aos apoios")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    Text("Voltar aos apoios", fontWeight = FontWeight.SemiBold)
+                }
             }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                Text("APOI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                Text(apoi.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            }
-            apoi.description?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
-            StatusCard(apoi)
-            LocationCard(apoi)
-            if (apoi.location.latitude != null && apoi.location.longitude != null) {
-                Button(
-                    onClick = {
-                        val lat = apoi.location.latitude
-                        val lon = apoi.location.longitude
-                        val navigationIntent = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=$lat,$lon&mode=w"))
-                        try {
-                            context.startActivity(navigationIntent)
-                        } catch (_: ActivityNotFoundException) {
-                            val fallbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:$lat,$lon?q=$lat,$lon"))
-                            context.startActivity(fallbackIntent)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Navegar a pé", fontWeight = FontWeight.Bold) }
-            }
-            ServicesCard(apoi)
-            OperationalCard(apoi)
+                Text(
+                    "APOI",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    apoi.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                apoi.description?.takeIf { it.isNotBlank() }?.let {
+                    Text(it, style = MaterialTheme.typography.bodyLarge)
+                }
+                StatusCard(apoi)
+                LocationCard(apoi)
+                if (apoi.location.latitude != null && apoi.location.longitude != null) {
+                    Button(
+                        onClick = {
+                            val lat = apoi.location.latitude
+                            val lon = apoi.location.longitude
+                            val navigationIntent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("google.navigation:q=$lat,$lon&mode=w")
+                            )
+                            try {
+                                context.startActivity(navigationIntent)
+                            } catch (_: ActivityNotFoundException) {
+                                val fallbackIntent = Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("geo:$lat,$lon?q=$lat,$lon")
+                                )
+                                context.startActivity(fallbackIntent)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Navegar a pé", fontWeight = FontWeight.Bold)
+                    }
+                }
+                ServicesCard(apoi)
+                OperationalCard(apoi)
                 ContactCard(apoi)
                 ConfidenceCard(apoi)
                 Text(
@@ -106,7 +132,6 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
             }
         }
     }
-}
 
 @Composable private fun StatusCard(apoi: Apoi) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
