@@ -58,6 +58,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.Locale
 import kotlin.math.cos
+import kotlin.math.min
 
 private val V2Forest = Color(0xFF0E6546)
 private val V2ForestSoft = Color(0xFFE6F2EB)
@@ -290,187 +291,215 @@ private fun ActiveWalkingAudioFeedback(state: WalkingState) {
 }
 
 @Composable
-private fun RealOpenStreetMap(
+private fun InteractiveOfflineRouteMap(
     modifier: Modifier,
     geometry: List<GeoPoint>,
+    stages: List<com.caminhos2027.v1.core.model.Stage>,
+    totalKm: Double,
     projectedPoint: GeoPoint?,
+    currentKm: Double,
     gpsState: GpsState,
     mapOrientation: MapOrientation,
     nextApoi: com.caminhos2027.v1.core.model.Apoi?
 ) {
-    val points = geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() }
-    val routeJs = remember(points) {
-        points.joinToString(prefix = "[", postfix = "]") { point ->
-            "[" + point.latitude + "," + point.longitude + "]"
-        }
+    var zoom by remember(geometry) { mutableStateOf(1.0f) }
+    var pan by remember(geometry) { mutableStateOf(Offset.Zero) }
+    val points = remember(geometry) { geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() } }
+    val currentPoint = remember(points, projectedPoint, currentKm) {
+        projectedPoint ?: pointAtRouteKm(points, currentKm, totalKm)
     }
-    val projectedJs = projectedPoint
-        ?.takeIf { it.latitude.isFinite() && it.longitude.isFinite() }
-        ?.let { "[" + it.latitude + "," + it.longitude + "]" }
-        ?: "null"
-    val nextApoiJs = nextApoi?.location?.let { location ->
-        if (location.latitude?.isFinite() == true && location.longitude?.isFinite() == true) {
-            "[" + location.latitude + "," + location.longitude + "]"
-        } else null
-    } ?: "null"
-    val rotation = if (mapOrientation == MapOrientation.WALK_DIRECTION) {
-        routeBearingDegrees(points, projectedPoint)
+    val bearing = if (mapOrientation == MapOrientation.WALK_DIRECTION) {
+        routeBearingDegrees(points, currentPoint)
     } else {
         0f
     }
-    val html = remember(routeJs, projectedJs, nextApoiJs, rotation, gpsState) {
-        interactiveOpenStreetMapHtml(routeJs, projectedJs, nextApoiJs)
-    }
 
-    Card(
-        modifier,
-        RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = V2Map),
-        elevation = CardDefaults.cardElevation(2.dp)
+    Box(
+        modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(V2Map)
+            .pointerInput(points) {
+                detectTransformGestures { _, panChange, zoomChange, _ ->
+                    zoom = (zoom * zoomChange).coerceIn(0.75f, 6.0f)
+                    pan += panChange
+                }
+            }
     ) {
-        Box(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp))) {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    WebView(context).apply {
-                        setBackgroundColor(AndroidColor.TRANSPARENT)
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
-                        settings.cacheMode = WebSettings.LOAD_DEFAULT
-                        settings.loadsImagesAutomatically = true
-                        settings.setSupportZoom(true)
-                        settings.builtInZoomControls = false
-                        settings.displayZoomControls = false
-                        settings.userAgentString =
-                            "CaminhosDoPeregrino/${BuildConfig.VERSION_NAME} (+https://github.com/Shrimp197/caminhos2027)"
-                        webViewClient = object : android.webkit.WebViewClient() {}
-                        tag = html
-                        loadDataWithBaseURL(
-                            "https://appassets.androidplatform.net/",
-                            html,
-                            "text/html",
-                            "UTF-8",
-                            null
-                        )
-                    }
-                },
-                update = { webView ->
-                    if (webView.tag != html) {
-                        webView.tag = html
-                        webView.loadDataWithBaseURL(
-                            "https://appassets.androidplatform.net/",
-                            html,
-                            "text/html",
-                            "UTF-8",
-                            null
-                        )
+        Canvas(Modifier.fillMaxSize()) {
+            repeat(8) { index ->
+                val y = size.height * (index + 1) / 9f
+                drawLine(Color(0xFFDCE4DD), Offset(0f, y), Offset(size.width, y), 1f)
+            }
+            repeat(6) { index ->
+                val x = size.width * (index + 1) / 7f
+                drawLine(Color(0xFFDCE4DD), Offset(x, 0f), Offset(x, size.height), 1f)
+            }
+
+            if (points.size < 2) return@Canvas
+
+            val minLat = points.minOf { it.latitude }
+            val maxLat = points.maxOf { it.latitude }
+            val minLon = points.minOf { it.longitude }
+            val maxLon = points.maxOf { it.longitude }
+            val latSpan = (maxLat - minLat).coerceAtLeast(1e-9)
+            val lonSpan = (maxLon - minLon).coerceAtLeast(1e-9)
+            val baseScale = min(
+                (size.width * 0.80f) / lonSpan.toFloat(),
+                (size.height * 0.80f) / latSpan.toFloat()
+            )
+            val center = Offset(size.width / 2f + pan.x, size.height / 2f + pan.y)
+
+            fun project(point: GeoPoint): Offset =
+                Offset(
+                    center.x + (point.longitude - (minLon + lonSpan / 2.0)).toFloat() * baseScale * zoom,
+                    center.y + ((maxLat + minLat) / 2.0 - point.latitude).toFloat() * baseScale * zoom
+                )
+
+            val pivot = currentPoint?.let(::project) ?: project(points.first())
+            rotate(degrees = -bearing, pivot = pivot) {
+                val path = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(project(points.first()).x, project(points.first()).y)
+                    points.drop(1).forEach { point ->
+                        val p = project(point)
+                        lineTo(p.x, p.y)
                     }
                 }
-            )
+                drawPath(
+                    path,
+                    Color.White,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        13f,
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                        join = androidx.compose.ui.graphics.StrokeJoin.Round
+                    )
+                )
+                drawPath(
+                    path,
+                    V2Forest,
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        6f,
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                        join = androidx.compose.ui.graphics.StrokeJoin.Round
+                    )
+                )
 
+                val startPoint = project(points.first())
+                val endPoint = project(points.last())
+                drawCircle(Color.White, 13f, startPoint)
+                drawCircle(V2Forest, 9f, startPoint)
+                drawCircle(Color.White, 13f, endPoint)
+                drawCircle(Color(0xFFC28A16), 9f, endPoint)
+
+                currentPoint?.let {
+                    val cursor = project(it)
+                    drawCircle(V2ForestSoft, 22f, cursor)
+                    drawCircle(Color(0xFF1464C8), 11f, cursor)
+                    drawCircle(Color.White, 4f, cursor)
+                }
+
+                stages.forEach { stage ->
+                    val midpoint = ((stage.startRouteKm + stage.endRouteKm) / 2.0).coerceIn(0.0, totalKm)
+                    pointAtRouteKm(points, midpoint, totalKm)?.let {
+                        val marker = project(it)
+                        drawCircle(Color.White, 7f, marker)
+                        drawCircle(Color(0xFF164B63), 4f, marker)
+                    }
+                }
+            }
+        }
+
+        Column(
+            Modifier.align(Alignment.TopEnd).padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            OutlinedButton(
+                onClick = { zoom = (zoom * 1.25f).coerceAtMost(6f) },
+                modifier = Modifier.size(48.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) { Text("+", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) }
+            OutlinedButton(
+                onClick = { zoom = (zoom / 1.25f).coerceAtLeast(0.75f) },
+                modifier = Modifier.size(48.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) { Text("−", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) }
+            OutlinedButton(
+                onClick = { zoom = 1f; pan = Offset.Zero },
+                modifier = Modifier.size(48.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+            ) { Text("⌖", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) }
+        }
+
+        Card(
+            Modifier.align(Alignment.TopStart).padding(12.dp),
+            RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))
+        ) {
+            Column(Modifier.padding(12.dp)) {
+                Text("MAPA OFFLINE", color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
+                Text("Traçado oficial local", color = V2Muted, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    when (gpsState) {
+                        GpsState.ON_ROUTE -> "GPS no percurso"
+                        GpsState.ACQUIRING -> "A obter GPS"
+                        GpsState.NO_SIGNAL -> "Sem sinal GPS"
+                        GpsState.POSSIBLE_DEVIATION -> "Possível desvio"
+                        GpsState.PROBABLE_DEVIATION -> "Provável desvio"
+                    },
+                    color = gpsColor(gpsState),
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+
+        Card(
+            Modifier.align(Alignment.BottomStart).padding(12.dp),
+            RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))
+        ) {
+            Column(Modifier.padding(10.dp)) {
+                Text("INÍCIO", color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelSmall)
+                Text("●", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                Text("DESTINO  ●", color = Color(0xFFC28A16), fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelSmall)
+            }
+        }
+
+        nextApoi?.let {
             Card(
-                Modifier.align(Alignment.TopStart).padding(12.dp),
+                Modifier.align(Alignment.BottomEnd).padding(12.dp),
                 RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))
             ) {
-                Column(Modifier.padding(12.dp)) {
-                    Text(
-                        "A MINHA POSIÇÃO",
-                        color = V2Forest,
-                        fontWeight = FontWeight.ExtraBold,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                    Text(
-                        gpsLabel(gpsState),
-                        color = gpsColor(gpsState),
-                        fontWeight = FontWeight.SemiBold,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                Column(Modifier.padding(11.dp)) {
+                    Text("PRÓXIMO APOI", color = V2Muted, style = MaterialTheme.typography.labelSmall)
+                    Text(it.name, color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.bodySmall)
                 }
             }
-
-            AndroidView(
-                modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
-                factory = { context ->
-                    TextView(context).apply {
-                        text = "MAPA INTERATIVO · OPENSTREETMAP\n© OpenStreetMap contributors"
-                        contentDescription = "MAPA INTERATIVO · OPENSTREETMAP"
-                        gravity = Gravity.START
-                        setTextColor(AndroidColor.rgb(14, 101, 70))
-                        setTextSize(12f)
-                        setTypeface(typeface, android.graphics.Typeface.BOLD)
-                        setPadding(24, 16, 24, 16)
-                        background = GradientDrawable().apply {
-                            setColor(AndroidColor.argb(245, 255, 255, 255))
-                            cornerRadius = 28f
-                        }
-                        isFocusable = false
-                        importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_YES
-                    }
-                }
-            )
         }
     }
 }
 
-private fun interactiveOpenStreetMapHtml(
-    routeJs: String,
-    projectedJs: String,
-    nextApoiJs: String
-): String = """
-<!doctype html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<style>
-html,body,#map{margin:0;width:100%;height:100%;overflow:hidden;background:#f0f0e9}
-.leaflet-container{font-family:system-ui,sans-serif;background:#f0f0e9}
-</style>
-</head>
-<body>
-<div id="map"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-(function(){
-  const route=$routeJs;
-  const current=$projectedJs;
-  const nextApoi=$nextApoiJs;
-  const map=L.map('map',{zoomControl:true,attributionControl:true,dragging:true,touchZoom:true,scrollWheelZoom:true,doubleClickZoom:true,boxZoom:true,keyboard:true}).setView([39.7,-8.0],9);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    maxZoom:19,
-    attribution:'© OpenStreetMap contributors'
-  }).addTo(map);
-
-  const latLngs=route.map(p=>[p[0],p[1]]);
-  if(latLngs.length>1){
-    L.polyline(latLngs,{color:'white',weight:9,opacity:.95,lineCap:'round',lineJoin:'round'}).addTo(map);
-    L.polyline(latLngs,{color:'#0e6546',weight:5,opacity:.98,lineCap:'round',lineJoin:'round'}).addTo(map);
-    map.fitBounds(L.latLngBounds(latLngs),{padding:[24,24],maxZoom:14});
-  }
-
-  if(latLngs.length){
-    L.circleMarker(latLngs[0],{radius:8,color:'white',weight:3,fillColor:'#0e6546',fillOpacity:1}).addTo(map).bindTooltip('Início');
-    L.circleMarker(latLngs[latLngs.length-1],{radius:8,color:'white',weight:3,fillColor:'#c28a16',fillOpacity:1}).addTo(map).bindTooltip('Destino');
-  }
-
-  if(current){
-    L.circleMarker(current,{radius:10,color:'white',weight:3,fillColor:'#1464c8',fillOpacity:1})
-      .addTo(map).bindTooltip('A minha posição');
-    map.setView(current,16);
-  }
-
-  if(nextApoi){
-    L.circleMarker(nextApoi,{radius:9,color:'white',weight:3,fillColor:'#8b5cf6',fillOpacity:1})
-      .addTo(map).bindTooltip('Próximo APOI');
-  }
-
-  setTimeout(function(){map.invalidateSize();},80);
-})();
-</script>
-</body>
-</html>
-""".trimIndent()
+private fun pointAtRouteKm(points: List<GeoPoint>, routeKm: Double, totalKm: Double): GeoPoint? {
+    if (points.isEmpty()) return null
+    if (points.size == 1) return points.first()
+    val target = routeKm.coerceIn(0.0, totalKm.coerceAtLeast(0.0))
+    if (target <= 0.0) return points.first()
+    var accumulated = 0.0
+    for (index in 1 until points.size) {
+        val a = points[index - 1]
+        val b = points[index]
+        val segment = geoDistanceKm(a, b)
+        if (accumulated + segment >= target) {
+            val fraction = if (segment <= 0.0) 0.0 else ((target - accumulated) / segment).coerceIn(0.0, 1.0)
+            return GeoPoint(
+                latitude = a.latitude + (b.latitude - a.latitude) * fraction,
+                longitude = a.longitude + (b.longitude - a.longitude) * fraction
+            )
+        }
+        accumulated += segment
+    }
+    return points.last()
+}
 
 private fun routeBearingDegrees(route: List<GeoPoint>, projected: GeoPoint?): Float {
     if (route.size < 2 || projected == null) return 0f
