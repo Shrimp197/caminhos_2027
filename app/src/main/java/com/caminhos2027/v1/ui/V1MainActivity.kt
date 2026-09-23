@@ -45,13 +45,14 @@ class V1MainActivity : ComponentActivity() {
                     startRequested = pendingStart
                     pendingStartDistanceMeters = pendingDistanceMeters
                     appContainer.store.setWalking(activeState)
-                } else if (state == null) {
+                } else if (state == null && walkingState == null && preparedWalk == null) {
+                    // A bound-only Service instance can legitimately have no in-memory container after
+                    // Activity/process recreation of a paused walk. Keep any state already restored from
+                    // persistence until the long-lived Service publishes its authoritative state.
                     walkingState = null
                     startRequested = pendingStart
                     pendingStartDistanceMeters = pendingDistanceMeters
-                    if (savedPlanId == null) {
-                        appContainer.store.setWalking(null)
-                    }
+                    appContainer.store.setWalking(null)
                 }
             }
         }
