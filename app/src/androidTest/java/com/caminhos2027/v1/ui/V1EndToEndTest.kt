@@ -60,7 +60,7 @@ class V1EndToEndTest {
         clickVisibleText("INICIAR CAMINHADA")
 
         assertTrue("Walking screen did not appear", waitForVisibleText("A minha posição", 30_000))
-        assertTrue("Real map label did not appear", waitForVisibleText("MAPA REAL · OPENSTREETMAP", 30_000))
+        assertTrue("Real map label did not appear", waitForVisibleText("MAPA OFFLINE · TRAÇADO OFICIAL", 30_000))
         assertTrue("Route progress did not appear", waitForVisibleText("Progresso", 30_000))
         assertTrue("Elapsed walking time did not appear", waitForVisibleTextOrDescription("Tempo", 30_000))
         assertTrue("QA controls did not appear for the test route", waitForVisibleText("QA · percurso de teste", 30_000))
