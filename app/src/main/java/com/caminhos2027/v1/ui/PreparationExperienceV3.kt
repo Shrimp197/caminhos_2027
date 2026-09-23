@@ -169,7 +169,6 @@ private fun ApoiCategoriesSub(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .navigationBarsPadding()
                     .semantics {
                         contentDescription = "APLICAR APOIOS"
                         role = Role.Button
