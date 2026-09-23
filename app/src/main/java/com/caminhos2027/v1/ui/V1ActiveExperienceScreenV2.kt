@@ -288,54 +288,102 @@ private fun RealOpenStreetMap(
     nextApoi: com.caminhos2027.v1.core.model.Apoi?
 ) {
     val points = geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() }
-    val routeJs = remember(points) { points.joinToString(prefix = "[", postfix = "]") { point -> "[" + point.latitude + "," + point.longitude + "]" } }
-    val projectedJs = projectedPoint?.takeIf { it.latitude.isFinite() && it.longitude.isFinite() }?.let { "[" + it.latitude + "," + it.longitude + "]" } ?: "null"
+    val routeJs = remember(points) {
+        points.joinToString(prefix = "[", postfix = "]") { point ->
+            "[" + point.latitude + "," + point.longitude + "]"
+        }
+    }
+    val projectedJs = projectedPoint
+        ?.takeIf { it.latitude.isFinite() && it.longitude.isFinite() }
+        ?.let { "[" + it.latitude + "," + it.longitude + "]" }
+        ?: "null"
     val nextApoiJs = nextApoi?.location?.let { location ->
         if (location.latitude?.isFinite() == true && location.longitude?.isFinite() == true) {
             "[" + location.latitude + "," + location.longitude + "]"
         } else null
     } ?: "null"
-    val rotation = if (mapOrientation == MapOrientation.WALK_DIRECTION) routeBearingDegrees(points, projectedPoint) else 0f
-    val html = remember(routeJs, projectedJs, nextApoiJs, rotation) { openStreetMapHtml(routeJs, projectedJs, nextApoiJs, rotation) }
-    Card(modifier, RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = V2Map), elevation = CardDefaults.cardElevation(2.dp)) {
+    val rotation = if (mapOrientation == MapOrientation.WALK_DIRECTION) {
+        routeBearingDegrees(points, projectedPoint)
+    } else {
+        0f
+    }
+    val html = remember(routeJs, projectedJs, nextApoiJs, rotation, gpsState) {
+        interactiveOpenStreetMapHtml(routeJs, projectedJs, nextApoiJs)
+    }
+
+    Card(
+        modifier,
+        RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = V2Map),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
         Box(Modifier.fillMaxSize().clip(RoundedCornerShape(24.dp))) {
-            RouteMapFallbackCanvas(
-                modifier = Modifier.fillMaxSize(),
-                geometry = points,
-                projectedPoint = projectedPoint,
-                nextApoi = nextApoi
-            )
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
-                factory = { context -> WebView(context).apply {
-                    setBackgroundColor(AndroidColor.TRANSPARENT)
-                    settings.javaScriptEnabled = true
-                    settings.domStorageEnabled = true
-                    settings.cacheMode = WebSettings.LOAD_DEFAULT
-                    settings.loadsImagesAutomatically = true
-                    settings.userAgentString = "${settings.userAgentString} CaminhosDoPeregrino/1.0"
-                    tag = html
-                    loadDataWithBaseURL("https://tile.openstreetmap.org/", html, "text/html", "UTF-8", null)
-                }},
+                factory = { context ->
+                    WebView(context).apply {
+                        setBackgroundColor(AndroidColor.TRANSPARENT)
+                        settings.javaScriptEnabled = true
+                        settings.domStorageEnabled = true
+                        settings.cacheMode = WebSettings.LOAD_DEFAULT
+                        settings.loadsImagesAutomatically = true
+                        settings.setSupportZoom(true)
+                        settings.builtInZoomControls = false
+                        settings.displayZoomControls = false
+                        settings.userAgentString =
+                            "CaminhosDoPeregrino/${BuildConfig.VERSION_NAME} (+https://github.com/Shrimp197/caminhos2027)"
+                        webViewClient = object : android.webkit.WebViewClient() {}
+                        tag = html
+                        loadDataWithBaseURL(
+                            "https://appassets.androidplatform.net/",
+                            html,
+                            "text/html",
+                            "UTF-8",
+                            null
+                        )
+                    }
+                },
                 update = { webView ->
                     if (webView.tag != html) {
                         webView.tag = html
-                        webView.loadDataWithBaseURL("https://tile.openstreetmap.org/", html, "text/html", "UTF-8", null)
+                        webView.loadDataWithBaseURL(
+                            "https://appassets.androidplatform.net/",
+                            html,
+                            "text/html",
+                            "UTF-8",
+                            null
+                        )
                     }
                 }
             )
-            Card(Modifier.align(Alignment.TopStart).padding(12.dp), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))) {
+
+            Card(
+                Modifier.align(Alignment.TopStart).padding(12.dp),
+                RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))
+            ) {
                 Column(Modifier.padding(12.dp)) {
-                    Text("A MINHA POSIÇÃO", color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
-                    Text(gpsLabel(gpsState), color = gpsColor(gpsState), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "A MINHA POSIÇÃO",
+                        color = V2Forest,
+                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Text(
+                        gpsLabel(gpsState),
+                        color = gpsColor(gpsState),
+                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
+
             AndroidView(
                 modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
                 factory = { context ->
                     TextView(context).apply {
-                        text = "MAPA REAL · OPENSTREETMAP\n© OpenStreetMap contributors"
-                        contentDescription = "MAPA REAL · OPENSTREETMAP"
+                        text = "MAPA INTERATIVO · OPENSTREETMAP\n© OpenStreetMap contributors"
+                        contentDescription = "MAPA INTERATIVO · OPENSTREETMAP"
                         gravity = Gravity.START
                         setTextColor(AndroidColor.rgb(14, 101, 70))
                         setTextSize(12f)
@@ -354,71 +402,63 @@ private fun RealOpenStreetMap(
     }
 }
 
-@Composable
-private fun RouteMapFallbackCanvas(
-    modifier: Modifier,
-    geometry: List<GeoPoint>,
-    projectedPoint: GeoPoint?,
-    nextApoi: com.caminhos2027.v1.core.model.Apoi?
-) {
-    if (geometry.size < 2) {
-        Box(modifier.background(V2Map))
-        return
-    }
-    Canvas(modifier.background(V2Map)) {
-        val valid = geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() }
-        if (valid.size < 2) return@Canvas
-        val minLat = valid.minOf { it.latitude }
-        val maxLat = valid.maxOf { it.latitude }
-        val minLon = valid.minOf { it.longitude }
-        val maxLon = valid.maxOf { it.longitude }
-        val latSpan = (maxLat - minLat).coerceAtLeast(1e-9)
-        val lonSpan = (maxLon - minLon).coerceAtLeast(1e-9)
-        val pad = 28f
-        fun point(point: GeoPoint): Offset {
-            val x = pad + (((point.longitude - minLon) / lonSpan).toFloat() * (size.width - pad * 2f))
-            val y = pad + ((1f - ((point.latitude - minLat) / latSpan).toFloat()) * (size.height - pad * 2f))
-            return Offset(x, y)
-        }
-        for (index in 1 until valid.size) {
-            drawLine(
-                color = V2Road,
-                start = point(valid[index - 1]),
-                end = point(valid[index]),
-                strokeWidth = 12f
-            )
-            drawLine(
-                color = V2Forest,
-                start = point(valid[index - 1]),
-                end = point(valid[index]),
-                strokeWidth = 7f
-            )
-        }
-        drawCircle(V2Forest, radius = 10f, center = point(valid.first()))
-        drawCircle(Color(0xFFC28A16), radius = 10f, center = point(valid.last()))
-        projectedPoint?.takeIf { it.latitude.isFinite() && it.longitude.isFinite() }?.let {
-            drawCircle(Color(0xFF1464C8), radius = 11f, center = point(it))
-        }
-        nextApoi?.location?.let { location ->
-            val lat = location.latitude
-            val lon = location.longitude
-            if (lat?.isFinite() == true && lon?.isFinite() == true) {
-                drawCircle(Color(0xFF8B5CF6), radius = 10f, center = point(GeoPoint(lat, lon)))
-                drawCircle(Color.White, radius = 4f, center = point(GeoPoint(lat, lon)))
-            }
-        }
-    }
-}
+private fun interactiveOpenStreetMapHtml(
+    routeJs: String,
+    projectedJs: String,
+    nextApoiJs: String
+): String = """
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+html,body,#map{margin:0;width:100%;height:100%;overflow:hidden;background:#f0f0e9}
+.leaflet-container{font-family:system-ui,sans-serif;background:#f0f0e9}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+  const route=$routeJs;
+  const current=$projectedJs;
+  const nextApoi=$nextApoiJs;
+  const map=L.map('map',{zoomControl:true,attributionControl:true,dragging:true,touchZoom:true,scrollWheelZoom:true,doubleClickZoom:true,boxZoom:true,keyboard:true}).setView([39.7,-8.0],9);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,
+    attribution:'© OpenStreetMap contributors'
+  }).addTo(map);
 
-private fun openStreetMapHtml(routeJs: String, projectedJs: String, nextApoiJs: String, rotation: Float): String = """
-<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>
-html,body,#map{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}#tiles{position:absolute;inset:0;transform-origin:50% 50%}.tile{position:absolute;width:256px;height:256px}svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.route{fill:none;stroke:white;stroke-width:12;stroke-linecap:round;stroke-linejoin:round}.route2{fill:none;stroke:#0e6546;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}.marker{stroke:white;stroke-width:5}
-</style></head><body><div id="map"><div id="tiles"></div><svg id="overlay"></svg></div><script>
-const route=$routeJs,current=$projectedJs,nextApoi=$nextApoiJs,rotation=$rotation,size=256;const map=document.getElementById('map'),tiles=document.getElementById('tiles'),svg=document.getElementById('overlay');
-function mercator(lat,lon,z){const n=Math.pow(2,z),x=(lon+180)/360*n,r=lat*Math.PI/180,y=(1-Math.asinh(Math.tan(r))/Math.PI)/2*n;return[x,y]}
-function chooseZoom(){if(!route.length)return 12;let minLat=route[0][0],maxLat=route[0][0],minLon=route[0][1],maxLon=route[0][1];for(const q of route){minLat=Math.min(minLat,q[0]);maxLat=Math.max(maxLat,q[0]);minLon=Math.min(minLon,q[1]);maxLon=Math.max(maxLon,q[1])}const s=Math.max(maxLat-minLat,maxLon-minLon);return s>8?7:s>4?8:s>2?9:s>1?10:s>.5?11:12}
-function render(){const z=chooseZoom(),world=Math.pow(2,z),lat=route.reduce((a,p)=>a+p[0],0)/route.length,lon=route.reduce((a,p)=>a+p[1],0)/route.length,c=mercator(lat,lon,z),w=map.clientWidth,h=map.clientHeight;tiles.innerHTML='';const bx=Math.floor(c[0]),by=Math.floor(c[1]),left=w/2-(c[0]-bx)*size,top=h/2-(c[1]-by)*size;for(let dx=-5;dx<=5;dx++)for(let dy=-4;dy<=4;dy++){let tx=((bx+dx)%world+world)%world,ty=by+dy;if(ty<0||ty>=world)continue;let img=document.createElement('img');img.className='tile';img.src='https://tile.openstreetmap.org/'+z+'/'+tx+'/'+ty+'.png';img.style.left=(left+dx*size)+'px';img.style.top=(top+dy*size)+'px';tiles.appendChild(img)}if(!route.length)return;svg.setAttribute('viewBox','0 0 '+w+' '+h);function p(q){let m=mercator(q[0],q[1],z);return[w/2+(m[0]-c[0])*size,h/2+(m[1]-c[1])*size]}let d=route.map((q,i)=>{let p0=p(q);return(i?'L':'M')+p0[0].toFixed(1)+' '+p0[1].toFixed(1)}).join(' '),s=p(route[0]),e=p(route[route.length-1]);svg.innerHTML='<path class="route" d="'+d+'"/><path class="route2" d="'+d+'"/><circle class="marker" fill="#0e6546" r="9" cx="'+s[0]+'" cy="'+s[1]+'"/><circle class="marker" fill="#c28a16" r="9" cx="'+e[0]+'" cy="'+e[1]+'"/>';if(current){let q=p(current);svg.innerHTML+='<circle class="marker" fill="#1464c8" r="11" cx="'+q[0]+'" cy="'+q[1]+'"/>'}if(nextApoi){let q=p(nextApoi);svg.innerHTML+='<circle class="marker" fill="#8b5cf6" r="10" cx="'+q[0]+'" cy="'+q[1]+'"/><circle fill="white" r="4" cx="'+q[0]+'" cy="'+q[1]+'"/>'}tiles.style.transform='rotate('+(-rotation)+'deg)';svg.style.transform='rotate('+(-rotation)+'deg)';svg.style.transformOrigin='50% 50%';}window.addEventListener('resize',render);setTimeout(render,40);
-</script></body></html>
+  const latLngs=route.map(p=>[p[0],p[1]]);
+  if(latLngs.length>1){
+    L.polyline(latLngs,{color:'white',weight:9,opacity:.95,lineCap:'round',lineJoin:'round'}).addTo(map);
+    L.polyline(latLngs,{color:'#0e6546',weight:5,opacity:.98,lineCap:'round',lineJoin:'round'}).addTo(map);
+    map.fitBounds(L.latLngBounds(latLngs),{padding:[24,24],maxZoom:14});
+  }
+
+  if(latLngs.length){
+    L.circleMarker(latLngs[0],{radius:8,color:'white',weight:3,fillColor:'#0e6546',fillOpacity:1}).addTo(map).bindTooltip('Início');
+    L.circleMarker(latLngs[latLngs.length-1],{radius:8,color:'white',weight:3,fillColor:'#c28a16',fillOpacity:1}).addTo(map).bindTooltip('Destino');
+  }
+
+  if(current){
+    L.circleMarker(current,{radius:10,color:'white',weight:3,fillColor:'#1464c8',fillOpacity:1})
+      .addTo(map).bindTooltip('A minha posição');
+    map.setView(current,16);
+  }
+
+  if(nextApoi){
+    L.circleMarker(nextApoi,{radius:9,color:'white',weight:3,fillColor:'#8b5cf6',fillOpacity:1})
+      .addTo(map).bindTooltip('Próximo APOI');
+  }
+
+  setTimeout(function(){map.invalidateSize();},80);
+})();
+</script>
+</body>
+</html>
 """.trimIndent()
 
 private fun routeBearingDegrees(route: List<GeoPoint>, projected: GeoPoint?): Float {
