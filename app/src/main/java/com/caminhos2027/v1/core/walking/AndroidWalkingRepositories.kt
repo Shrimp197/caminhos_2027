@@ -7,7 +7,11 @@ import com.caminhos2027.v1.core.model.WalkStatus
 /** Small Android persistence adapters for the current V1 walking session. */
 class AndroidWalkRepository(context: Context) : WalkRepository {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-    override fun save(walk: Walk) { prefs.edit().putString(KEY_WALK, WalkJsonCodec.encode(walk)).apply() }
+    override fun save(walk: Walk) {
+        check(prefs.edit().putString(KEY_WALK, WalkJsonCodec.encode(walk)).commit()) {
+            "Could not durably persist walking plan"
+        }
+    }
     override fun getById(id: String): Walk? = getStoredWalk()?.takeIf { it.id == id }
     override fun getActive(): Walk? = getStoredWalk()?.takeIf { it.status == WalkStatus.ACTIVE }
     override fun list(): List<Walk> = getStoredWalk()?.let(::listOf) ?: emptyList()
@@ -19,10 +23,16 @@ class AndroidWalkRepository(context: Context) : WalkRepository {
 class AndroidWalkingStateRepository(context: Context) : WalkingStateRepository {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     override fun save(walkId: String, checkpoint: WalkingCheckpoint) {
-        prefs.edit().putString(walkId, WalkingCheckpointJsonCodec.encode(checkpoint)).apply()
+        check(prefs.edit().putString(walkId, WalkingCheckpointJsonCodec.encode(checkpoint)).commit()) {
+            "Could not durably persist walking checkpoint"
+        }
     }
     override fun get(walkId: String): WalkingCheckpoint? =
         prefs.getString(walkId, null)?.let(WalkingCheckpointJsonCodec::decode)
-    override fun clear(walkId: String) { prefs.edit().remove(walkId).apply() }
+    override fun clear(walkId: String) {
+        check(prefs.edit().remove(walkId).commit()) {
+            "Could not durably clear walking checkpoint"
+        }
+    }
     companion object { private const val PREFS = "walking_state_v1" }
 }
