@@ -133,13 +133,6 @@ internal fun V1ActiveExperienceScreenV2(
             mapOrientation = state.walk.preparation.mapOrientation,
             nextApoi = state.nextApoi
         )
-        Text(
-            "MAPA REAL · OPENSTREETMAP",
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp),
-            color = V2Muted,
-            fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.labelSmall
-        )
 
         Card(
             Modifier
