@@ -8,7 +8,7 @@
 
 ## Current functional baseline
 
-- Current branch HEAD: `5826216af34c9e34ae1b22dbc66816ab4373b101`.
+- Current branch HEAD: `a18fdb57c6c9eb921a8a662dee756c8961812829`.
 - The six primary walking surfaces remain the acceptance baseline: preparation, active walking map, contextual bottom sheet, next-APOI horizon, APOI list/cards and walking progress.
 - The preparation surface is integrated into the V1 Activity flow with route selection, stage/start/end, audio, map orientation, breaks, APOIs, notes and explicit save/start semantics.
 
@@ -49,7 +49,7 @@ The Android E2E uses AndroidX Test Orchestrator and runs three ordered checkpoin
 
 Walking plan and checkpoint persistence use synchronous SharedPreferences commits for process-death durability. When a walk is stopped, the Activity detaches from the tracking Service so the next explicit start receives a fresh Service/container instance.
 
-HEAD `5826216af34c9e34ae1b22dbc66816ab4373b101` has passed:
+Functional code baseline `5826216af34c9e34ae1b22dbc66816ab4373b101` passed, and current HEAD `a18fdb57c6c9eb921a8a662dee756c8961812829` has subsequently passed the documentation-only CI rerun:
 - official GPX provenance validation;
 - route/APOI validation and JVM tests;
 - debug APK build and verification;
@@ -59,6 +59,12 @@ HEAD `5826216af34c9e34ae1b22dbc66816ab4373b101` has passed:
 - unsigned release APK build and verification.
 
 No completion claim is made for physical GPS validation on a real Android device; that remains the final human/device gate.
+
+## CI after documentation sync
+
+- `V1 Route Source Provenance`: run `35845649985` — success;
+- `V1 Route Import Validation`: run `35845650012` — success;
+- `V1 Route Import Build`: run `35845650145` — success.
 
 ## Completion rule
 
