@@ -45,7 +45,7 @@ A green JVM/build pipeline is necessary but not sufficient for human acceptance.
 
 ## Current blocker
 
-The branch has a real Android E2E pipeline. The required validation is run on every synchronized HEAD; no completion claim is made until all required checks finish. No completion claim is made from compilation alone.
+The branch has a real Android E2E pipeline. The process-death portion of the E2E uses direct target-process termination so the instrumentation runner remains alive; no completion claim is made until all required checks finish. No completion claim is made from compilation alone.
 
 ## Completion rule
 
