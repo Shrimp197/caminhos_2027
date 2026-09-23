@@ -17,6 +17,7 @@ import com.caminhos2027.R
 import com.caminhos2027.v1.core.AndroidV1AppContainer
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
 import com.caminhos2027.v1.core.model.RawGpsPosition
+import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.route.RouteLocationEngine
 import com.caminhos2027.v1.gps.AndroidLocationSource
 import com.caminhos2027.v1.gps.GpxSimulationLocationSource
@@ -67,10 +68,12 @@ class AndroidWalkingTrackingService : Service() {
     private var pendingStart = false
     private var pendingStartDistanceMeters: Double? = null
     private var routeId: String? = null
+    private lateinit var eventNotifier: WalkingEventNotifier
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        eventNotifier = WalkingEventNotifier(this)
     }
 
     override fun onBind(intent: Intent?): IBinder = binder
@@ -204,9 +207,34 @@ class AndroidWalkingTrackingService : Service() {
     }
 
     private fun updateWalkingState(state: WalkingState) {
+        val previous = walkingState
         walkingState = state
         container?.store?.setWalking(state)
+        notifyWalkingEvents(previous, state)
         notifyState()
+    }
+
+    private fun notifyWalkingEvents(previous: WalkingState?, current: WalkingState) {
+        if (previous == null) return
+        when {
+            previous.gpsState != GpsState.NO_SIGNAL && current.gpsState == GpsState.NO_SIGNAL ->
+                eventNotifier.notify("Sinal GPS perdido", "A última posição válida foi mantida. A aplicação não inventa movimento.")
+            previous.gpsState == GpsState.NO_SIGNAL && current.gpsState == GpsState.ON_ROUTE ->
+                eventNotifier.notify("Sinal GPS recuperado", "A posição voltou a estar no percurso.")
+            previous.gpsState != GpsState.POSSIBLE_DEVIATION && current.gpsState == GpsState.POSSIBLE_DEVIATION ->
+                eventNotifier.notify("Possível desvio", "Verifique a posição no mapa antes de continuar.")
+            previous.gpsState != GpsState.PROBABLE_DEVIATION && current.gpsState == GpsState.PROBABLE_DEVIATION ->
+                eventNotifier.notify("Provável desvio", "A posição atual está afastada do traçado oficial.")
+            !previous.isPaused && current.isPaused ->
+                eventNotifier.notify("Caminhada pausada", "A localização foi mantida e a caminhada pode ser retomada.")
+            previous.isPaused && !current.isPaused ->
+                eventNotifier.notify("Caminhada retomada", "O acompanhamento GPS voltou a estar ativo.")
+            previous.nextApoi?.id != current.nextApoi?.id && current.nextApoi != null ->
+                eventNotifier.notify(
+                    "Próximo APOI",
+                    current.nextApoi.name + " · " + (current.nextApoiDistanceKm?.let(::formatNotificationDistance) ?: "distância indisponível")
+                )
+        }
     }
 
     private fun pause() {
@@ -303,6 +331,8 @@ class AndroidWalkingTrackingService : Service() {
     private fun notifyState() {
         listeners.toList().forEach { it.onTrackingStateChanged(walkingState, pendingStart, pendingStartDistanceMeters) }
     }
+
+    private fun formatNotificationDistance(value: Double): String = if (value < 1.0) "${(value * 1000.0).toInt()} m" else String.format(java.util.Locale("pt", "PT"), "%.1f km", value)
 
     private fun reportError(message: String) {
         listeners.toList().forEach { it.onTrackingError(message) }
