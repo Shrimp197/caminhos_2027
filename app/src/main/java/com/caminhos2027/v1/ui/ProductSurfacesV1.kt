@@ -130,10 +130,10 @@ internal fun SummarySurfaceV1(state: WalkingState?, route: Route, onMap: () -> U
                 Card(Modifier.fillMaxWidth(), RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(route.officialName, color = NavBlue, fontWeight = FontWeight.ExtraBold)
-                        Text("\${fmtKm(current)} km", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
-                        Text("\${fmtKm((destination - current).coerceAtLeast(0.0))} km para o destino planeado", color = NavMuted)
+                        Text("${fmtKm(current)} km", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                        Text("${fmtKm((destination - current).coerceAtLeast(0.0))} km para o destino planeado", color = NavMuted)
                         LinearProgressIndicator(progress = { progress.toFloat() }, Modifier.fillMaxWidth().height(10.dp), color = NavGreen)
-                        Text("\${(progress * 100.0).toInt()}% do percurso planeado", color = NavGreen, fontWeight = FontWeight.Bold)
+                        Text("${(progress * 100.0).toInt()}% do percurso planeado", color = NavGreen, fontWeight = FontWeight.Bold)
                     }
                 }
                 state.nextApoi?.let { apoi ->
@@ -168,7 +168,7 @@ internal fun Next10KmSurfaceV1(state: WalkingState?, results: List<com.caminhos2
                 else -> results.forEachIndexed { index, item ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(36.dp)) {
-                            Box(Modifier.size(28.dp).background(NavGreen, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) { Text("\${index + 1}", color = Color.White, fontWeight = FontWeight.ExtraBold) }
+                            Box(Modifier.size(28.dp).background(NavGreen, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) { Text("${index + 1}", color = Color.White, fontWeight = FontWeight.ExtraBold) }
                             if (index < results.lastIndex) Box(Modifier.width(2.dp).height(55.dp).background(Color(0xFFD6E4DB)))
                         }
                         Card(Modifier.fillMaxWidth().weight(1f), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
@@ -204,7 +204,7 @@ internal fun DiarySurfaceV1(entries: List<DiaryEntry>, activeState: WalkingState
                         label = { Text("Nova nota") }
                     )
                     activeState?.let { state ->
-                        Text("Associada à caminhada" + (state.routePosition?.routeKm?.let { " · km \${fmtKm(it)}" } ?: ""), color = NavGreen, style = MaterialTheme.typography.bodySmall)
+                        Text("Associada à caminhada" + (state.routePosition?.routeKm?.let { " · km ${fmtKm(it)}" } ?: ""), color = NavGreen, style = MaterialTheme.typography.bodySmall)
                     } ?: Text("Nota geral, sem caminhada ativa.", color = NavMuted, style = MaterialTheme.typography.bodySmall)
                     if (photoUri != null) {
                         DiaryPhotoThumbnail(photoUri)
@@ -224,8 +224,8 @@ internal fun DiarySurfaceV1(entries: List<DiaryEntry>, activeState: WalkingState
                 Card(Modifier.fillMaxWidth(), RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text(entry.createdAt.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm")), color = NavGreen, fontWeight = FontWeight.Bold)
-                        entry.routeKm?.let { Text("Km \${fmtKm(it)}", color = NavMuted, style = MaterialTheme.typography.bodySmall) }
-                        entry.location?.let { Text("Coordenadas \${"%.5f".format(Locale.US, it.latitude)}, \${"%.5f".format(Locale.US, it.longitude)}", color = NavMuted, style = MaterialTheme.typography.bodySmall) }
+                        entry.routeKm?.let { Text("Km ${fmtKm(it)}", color = NavMuted, style = MaterialTheme.typography.bodySmall) }
+                        entry.location?.let { Text("Coordenadas " + formatCoord(it.latitude) + ", " + formatCoord(it.longitude), color = NavMuted, style = MaterialTheme.typography.bodySmall) }
                         Text(entry.content)
                         entry.photoUri?.let { DiaryPhotoThumbnail(it) }
                     }
@@ -254,7 +254,7 @@ private fun DiaryPhotoThumbnail(uriString: String) {
 internal fun SosSurfaceV1(state: WalkingState?, emergencyApoi: List<com.caminhos2027.v1.core.apoi.ApoiAhead>, onNavigate: (WalkingSurface) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val coordinates = state?.routePosition?.projectedPoint
-    val shareText = coordinates?.let { "Localização no Caminhos do Peregrino: \${"%.5f".format(Locale.US, it.latitude)}, \${"%.5f".format(Locale.US, it.longitude)}" }
+    val shareText = coordinates?.let { "Localização no Caminhos do Peregrino: " + formatCoord(it.latitude) + ", " + formatCoord(it.longitude) }
     Scaffold(containerColor = Color(0xFF141414), bottomBar = { BottomNavBarV1(WalkingSurface.SOS, onNavigate) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -269,8 +269,8 @@ internal fun SosSurfaceV1(state: WalkingState?, emergencyApoi: List<com.caminhos
                     Text("A minha localização", color = Color.White, fontWeight = FontWeight.ExtraBold)
                     if (coordinates == null) Text("Sem uma posição GPS válida neste momento.", color = Color(0xFFFFDAD6))
                     else {
-                        Text("Latitude: \${"%.6f".format(Locale.US, coordinates.latitude)}", color = Color.White)
-                        Text("Longitude: \${"%.6f".format(Locale.US, coordinates.longitude)}", color = Color.White)
+                        Text("Latitude: " + formatCoord6(coordinates.latitude), color = Color.White)
+                        Text("Longitude: " + formatCoord6(coordinates.longitude), color = Color.White)
                     }
                 }
             }
@@ -333,9 +333,9 @@ internal fun PilgrimModeSurfaceV1(state: WalkingState, onOpenApoi: () -> Unit, o
             Card(Modifier.fillMaxWidth(), RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF202020))) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("PERCORRIDOS", color = Color(0xFFB8C8B8), fontWeight = FontWeight.Bold)
-                    Text("\${fmtKm(routeKm)} km", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.displaySmall)
+                    Text("${fmtKm(routeKm)} km", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.displaySmall)
                     Text("RESTANTES", color = Color(0xFFB8C8B8), fontWeight = FontWeight.Bold)
-                    Text("\${fmtKm(remaining)} km", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.displaySmall)
+                    Text("${fmtKm(remaining)} km", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.displaySmall)
                     LinearProgressIndicator(progress = { progress.toFloat() }, Modifier.fillMaxWidth().height(12.dp), color = Color(0xFF36D56E), trackColor = Color(0xFF354238))
                 }
             }
@@ -405,4 +405,6 @@ private fun costLabel(model: com.caminhos2027.v1.core.model.ApoiCostModel): Stri
 }
 
 private fun fmtKm(value: Double) = String.format(Locale("pt", "PT"), "%.2f", value.coerceAtLeast(0.0))
+private fun formatCoord(value: Double): String = String.format(Locale.US, "%.5f", value)
+private fun formatCoord6(value: Double): String = String.format(Locale.US, "%.6f", value)
 private fun fmtDistance(value: Double) = if (value < 1.0) String.format(Locale("pt", "PT"), "%.0f m", value * 1000.0) else String.format(Locale("pt", "PT"), "%.1f km", value)
