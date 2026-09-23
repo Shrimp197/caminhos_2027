@@ -17,6 +17,8 @@ import androidx.compose.runtime.setValue
 import com.caminhos2027.v1.core.AndroidV1AppContainer
 import com.caminhos2027.v1.core.apoi.ApoiFilter
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
+import com.caminhos2027.v1.core.diary.DiaryEntry
+import com.caminhos2027.v1.core.diary.DiaryRepository
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
@@ -27,6 +29,9 @@ import java.time.Instant
 
 class V1MainActivity : ComponentActivity() {
     private lateinit var appContainer: AndroidV1AppContainer
+    private lateinit var diaryRepository: DiaryRepository
+    private var diaryEntries by mutableStateOf<List<DiaryEntry>>(emptyList())
+    private var diaryPhotoUri by mutableStateOf<String?>(null)
     private var trackingBinder: AndroidWalkingTrackingService.TrackingBinder? = null
     private var trackingBound = false
     private var trackingBindRequested = false
@@ -84,6 +89,13 @@ class V1MainActivity : ComponentActivity() {
     private var surface by mutableStateOf(WalkingSurface.ACTIVE)
     private var selectedRouteId by mutableStateOf(AndroidRouteCatalog.CENTENARIO_ID)
 
+    private val diaryPhotoLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@registerForActivityResult
+        runCatching { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+        diaryPhotoUri = uri.toString()
+        surface = WalkingSurface.DIARY
+    }
+
     private val locationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
         if (hasLocationPermissionAfterResult(permissions)) startTrackingService()
     }
@@ -92,6 +104,8 @@ class V1MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val persistedRouteId = AndroidRouteCatalog.preferredPersistedRouteId(this)
         appContainer = AndroidV1AppContainer(this, persistedRouteId ?: AndroidRouteCatalog.CENTENARIO_ID)
+        diaryRepository = DiaryRepository(this)
+        diaryEntries = diaryRepository.load()
         selectedRouteId = appContainer.publishedRoute().id
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -103,6 +117,9 @@ class V1MainActivity : ComponentActivity() {
                     surface == WalkingSurface.APOI_BROWSER -> returnToWalking()
                     surface == WalkingSurface.APOI_DETAIL -> returnToApoiBrowser()
                     surface == WalkingSurface.DECISION -> returnToWalking()
+                    surface == WalkingSurface.PREPARATION -> finish()
+                    surface == WalkingSurface.ACTIVE -> finish()
+                    else -> returnToWalking()
                 }
             }
         })
@@ -126,7 +143,22 @@ class V1MainActivity : ComponentActivity() {
                     onStop = ::stopWalking,
                     onTogglePause = ::togglePause,
                     onOpenApoi = ::openApoiBrowser,
+                    onOpenNext10Km = ::openNext10Km,
                     onOpenDecision = ::openDecision,
+                    onOpenSummary = ::openSummary,
+                    onOpenMap = ::openMap,
+                    onOpenDiary = ::openDiary,
+                    onOpenMore = ::openMore,
+                    onOpenSos = ::openSos,
+                    onOpenSmartwatch = ::openSmartwatch,
+                    onOpenPilgrimMode = ::openPilgrimMode,
+                    onNavigate = ::navigate,
+                    diaryEntries = diaryEntries,
+                    diaryPhotoUri = diaryPhotoUri,
+                    onDiaryChoosePhoto = ::chooseDiaryPhoto,
+                    onDiaryClearPhoto = { diaryPhotoUri = null },
+                    onDiaryAdd = ::addDiaryEntry,
+                    onInfo = ::showInfo,
                     onApoiSelected = ::selectApoi,
                     onApoiScopeChanged = ::updateApoiScope,
                     onApoiSearchChanged = ::updateApoiSearch,
@@ -190,7 +222,7 @@ class V1MainActivity : ComponentActivity() {
             preparedWalk = null
             startRequested = false
             pendingStartDistanceMeters = null
-            surface = WalkingSurface.ACTIVE
+            surface = if (pilgrimModeEnabled()) WalkingSurface.PILGRIM_MODE else WalkingSurface.ACTIVE
             return
         }
         preparedWalk = appContainer.restorePreparedWalk()?.walk
@@ -293,11 +325,84 @@ class V1MainActivity : ComponentActivity() {
         appContainer.apoiDecisionController.browseApoi(
             text = query?.text ?: "",
             filter = query?.filter ?: ApoiFilter(),
-            limit = if (query?.maxDistanceKm == null) 50 else 8,
-            maxDistanceKm = 10.0
+            limit = 50,
+            maxDistanceKm = null
         )
         appContainer.apoiDecisionController.clearDecision()
         surface = WalkingSurface.APOI_BROWSER
+    }
+
+    private fun openNext10Km() {
+        if (walkingState?.routePosition == null) return
+        val query = appContainer.store.state.apoiBrowser?.query
+        appContainer.apoiDecisionController.browseApoi(
+            text = query?.text ?: "",
+            filter = query?.filter ?: ApoiFilter(),
+            limit = 50,
+            maxDistanceKm = 10.0
+        )
+        appContainer.apoiDecisionController.clearDecision()
+        surface = WalkingSurface.NEXT_10_KM
+    }
+
+    private fun openSummary() { surface = WalkingSurface.SUMMARY }
+    private fun openMap() { surface = WalkingSurface.ACTIVE }
+    private fun openDiary() { surface = WalkingSurface.DIARY }
+    private fun openMore() { surface = WalkingSurface.MORE }
+    private fun openSos() { surface = WalkingSurface.SOS }
+    private fun openSmartwatch() { surface = WalkingSurface.SMARTWATCH }
+
+    private fun openPilgrimMode() {
+        if (walkingState == null) return
+        getSharedPreferences("peregrino_preferences", MODE_PRIVATE).edit().putBoolean("pilgrim_mode", true).apply()
+        surface = WalkingSurface.PILGRIM_MODE
+    }
+
+    private fun exitPilgrimMode() {
+        getSharedPreferences("peregrino_preferences", MODE_PRIVATE).edit().putBoolean("pilgrim_mode", false).apply()
+        surface = WalkingSurface.ACTIVE
+    }
+
+    private fun pilgrimModeEnabled(): Boolean =
+        getSharedPreferences("peregrino_preferences", MODE_PRIVATE).getBoolean("pilgrim_mode", false)
+
+    private fun navigate(destination: WalkingSurface) {
+        when (destination) {
+            WalkingSurface.ACTIVE -> openMap()
+            WalkingSurface.SUMMARY -> openSummary()
+            WalkingSurface.APOI_BROWSER -> openApoiBrowser()
+            WalkingSurface.DIARY -> openDiary()
+            WalkingSurface.MORE -> openMore()
+            WalkingSurface.SOS -> openSos()
+            WalkingSurface.SMARTWATCH -> openSmartwatch()
+            WalkingSurface.PILGRIM_MODE -> openPilgrimMode()
+            WalkingSurface.NEXT_10_KM -> openNext10Km()
+            else -> Unit
+        }
+    }
+
+    private fun chooseDiaryPhoto() { diaryPhotoLauncher.launch(arrayOf("image/*")) }
+
+    private fun addDiaryEntry(text: String) {
+        val state = walkingState
+        val position = state?.routePosition
+        diaryEntries = diaryRepository.add(
+            DiaryEntry(
+                content = text,
+                walkId = state?.walk?.id,
+                routeKm = position?.routeKm,
+                location = position?.projectedPoint,
+                photoUri = diaryPhotoUri
+            )
+        )
+        diaryPhotoUri = null
+    }
+
+    private fun showInfo(message: String) {
+        android.app.AlertDialog.Builder(this)
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun updateApoiScope(maxDistanceKm: Double?) {
@@ -348,6 +453,7 @@ class V1MainActivity : ComponentActivity() {
         preparedWalk = null
         startRequested = false
         pendingStartDistanceMeters = null
+        getSharedPreferences("peregrino_preferences", MODE_PRIVATE).edit().putBoolean("pilgrim_mode", false).apply()
         surface = WalkingSurface.PREPARATION
     }
 }
