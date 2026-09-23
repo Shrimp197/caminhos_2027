@@ -34,9 +34,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -45,14 +47,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
-import android.webkit.WebView
-import android.webkit.WebSettings
-import android.graphics.Color as AndroidColor
-import android.graphics.drawable.GradientDrawable
-import android.view.Gravity
-import android.widget.TextView
-import com.caminhos2027.BuildConfig
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.AudioMode
 import com.caminhos2027.v1.core.model.GeoPoint
@@ -81,6 +75,13 @@ internal fun V1ActiveExperienceScreenV2(
     onTogglePause: () -> Unit,
     onOpenApoi: () -> Unit,
     onOpenDecision: () -> Unit,
+    onOpenNext10Km: () -> Unit,
+    onOpenSummary: () -> Unit,
+    onOpenDiary: () -> Unit,
+    onOpenMore: () -> Unit,
+    onOpenSos: () -> Unit,
+    onOpenPilgrimMode: () -> Unit,
+    onNavigate: (WalkingSurface) -> Unit,
     onQaAdvance: () -> Unit,
     onQaToggleGps: (Boolean) -> Unit,
     onQaDeviation: () -> Unit
@@ -117,7 +118,7 @@ internal fun V1ActiveExperienceScreenV2(
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    "MAPA REAL · OPENSTREETMAP",
+                    "MAPA OFFLINE · TRAÇADO OFICIAL",
                     color = V2Muted,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.labelSmall
@@ -126,10 +127,13 @@ internal fun V1ActiveExperienceScreenV2(
             OutlinedButton(onClick = onStop) { Text("PARAR") }
         }
 
-        RealOpenStreetMap(
+        InteractiveOfflineRouteMap(
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 12.dp),
             geometry = route.geometry.points,
+            stages = route.stages,
+            totalKm = route.totalDistanceKm,
             projectedPoint = projectedPoint,
+            currentKm = currentKm,
             gpsState = state.gpsState,
             mapOrientation = state.walk.preparation.mapOrientation,
             nextApoi = state.nextApoi
@@ -138,7 +142,7 @@ internal fun V1ActiveExperienceScreenV2(
         Card(
             Modifier
                 .fillMaxWidth()
-                .heightIn(max = 620.dp)
+                .heightIn(max = 340.dp)
                 .padding(12.dp),
             RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -213,8 +217,12 @@ internal fun V1ActiveExperienceScreenV2(
                         Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA")
                     }
                     OutlinedButton(onClick = onOpenApoi, Modifier.weight(1f)) { Text("VER APOIOS") }
+                    OutlinedButton(onClick = onOpenNext10Km, Modifier.weight(1f)) { Text("PRÓXIMOS 10 KM") }
                 }
-                OutlinedButton(onClick = onOpenDecision, Modifier.fillMaxWidth()) { Text("OPÇÕES") }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onOpenDecision, Modifier.weight(1f)) { Text("OPÇÕES") }
+                    OutlinedButton(onClick = onOpenPilgrimMode, Modifier.weight(1f)) { Text("MODO PEREGRINO") }
+                }
                 if (routeOptions.firstOrNull { it.id == route.id }?.testOnly == true) {
                     HorizontalDivider()
                     Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold)
@@ -232,6 +240,8 @@ internal fun V1ActiveExperienceScreenV2(
                 }
             }
         }
+    }
+        BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
     }
 }
 
