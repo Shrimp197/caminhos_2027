@@ -350,7 +350,21 @@ class V1MainActivity : ComponentActivity() {
     private fun openMap() { surface = WalkingSurface.ACTIVE }
     private fun openDiary() { surface = WalkingSurface.DIARY }
     private fun openMore() { surface = WalkingSurface.MORE }
-    private fun openSos() { surface = WalkingSurface.SOS }
+    private fun openSos() {
+        val query = appContainer.store.state.apoiBrowser?.query
+        val emergencyFilter = (query?.filter ?: ApoiFilter()).copy(
+            services = setOf(ApoiCategory.EMERGENCIA)
+        )
+        if (walkingState?.routePosition != null) {
+            appContainer.apoiDecisionController.browseApoi(
+                text = "",
+                filter = emergencyFilter,
+                limit = 20,
+                maxDistanceKm = null
+            )
+        }
+        surface = WalkingSurface.SOS
+    }
     private fun openSmartwatch() { surface = WalkingSurface.SMARTWATCH }
 
     private fun openPilgrimMode() {
