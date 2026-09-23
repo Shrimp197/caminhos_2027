@@ -133,6 +133,8 @@ fun ApoiDetailScreenV1(apoi: Apoi, onBack: () -> Unit = {}) {
         }
     }
 
+}
+
 @Composable private fun StatusCard(apoi: Apoi) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
