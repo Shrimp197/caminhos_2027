@@ -264,7 +264,7 @@ class AndroidWalkingTrackingService : Service() {
             )
         }
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_location)
             .setContentTitle("Caminhada em curso")
             .setContentText("A localização está a ser acompanhada.")
             .setOngoing(true)
