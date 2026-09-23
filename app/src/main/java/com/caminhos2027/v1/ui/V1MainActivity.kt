@@ -341,6 +341,9 @@ class V1MainActivity : ComponentActivity() {
 
     private fun stopWalking() {
         trackingBinder?.stopWalking()
+        // A Service can remain alive while bound even after stopSelf(). Detach the Activity so the next
+        // explicit start receives a fresh service/container instance rather than a stopped one.
+        disconnectTrackingService()
         walkingState = null
         preparedWalk = null
         startRequested = false
