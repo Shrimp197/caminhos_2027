@@ -92,7 +92,10 @@ internal fun PreparationExperienceV3(route: Route, routeOptions: List<AndroidRou
         "supports" -> ApoiCategoriesSub(
             selectedCategories = config.visibleApoiCategories,
             onBack = { screen = "home" },
-            onApply = { config = config.copy(visibleApoiCategories = it); screen = "home" }
+            onApply = { categories ->
+                config = config.copy(visibleApoiCategories = categories)
+                screen = "home"
+            }
         )
         "notes" -> NotesSub(notes.toList(), { screen = "home" }) { text -> if (text.isNotBlank()) notes.add(text.trim()); screen = "home" }
         else -> PreparationHomeV3(route, config, notes.size, onRoutes = { screen = "routes" }, onRange = { screen = "range" }, onBreaks = { screen = "breaks" }, onOrientation = { screen = "orientation" }, onAudio = { screen = "audio" }, onSupports = { screen = "supports" }, onNotes = { screen = "notes" }, onConfirm = { if (startKm >= 0.0 && destinationKm <= route.totalDistanceKm && startKm < destinationKm) onConfirm(startKm, destinationKm, config.copy(notes = notes.toList())) }, onBack = onBack)
@@ -163,10 +166,7 @@ private fun ApoiCategoriesSub(
         containerColor = PSurface,
         bottomBar = {
             Button(
-                onClick = {
-                    onApply(selected)
-                    onBack()
-                },
+                onClick = { onApply(selected) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
