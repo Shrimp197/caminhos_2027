@@ -259,6 +259,7 @@ internal fun V1ActiveExperienceScreenV2(
                 }
             }
             }
+            }
         }
         BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
     }
