@@ -260,8 +260,8 @@ internal fun RealWalkingMap(
                     )
                 },
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(12.dp)
+                    .align(Alignment.TopEnd)
+                    .padding(top = 72.dp, end = 12.dp)
                     .semantics { contentDescription = "GUARDAR MAPA OFFLINE" }
             ) {
                 Text("GUARDAR MAPA OFFLINE")
