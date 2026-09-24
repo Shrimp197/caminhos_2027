@@ -53,7 +53,7 @@ class AndroidWalkingTrackingService : Service() {
                 if (available) {
                     source.emitRecoveryFix()
                 }
-            }
+            })
         }
         fun qaSimulateDeviation() { postWhenSimulationReady(action = { source -> source.simulateDeviation() }) }
     }
