@@ -36,7 +36,10 @@ class V1EndToEndTest {
     }
 
     @After
-    fun closeActivity() { scenario.close() }
+    fun closeActivity() {
+        scenario.close()
+        runCatching { device.executeShellCommand("cmd connectivity airplane-mode disable") }
+    }
 
     @Test
     fun test1PrepareAndPersistPlanCheckpoint() {
@@ -65,6 +68,41 @@ class V1EndToEndTest {
         assertTrue("Route progress did not appear", waitForVisibleText("Progresso", 30_000))
         assertTrue("Elapsed walking time did not appear", waitForVisibleTextOrDescription("Tempo", 30_000))
         assertTrue("QA controls did not appear for the test route", waitForVisibleText("QA · percurso de teste", 30_000))
+
+        // The sheet starts expanded for QA routes. Collapse it so the offline-map control is exposed,
+        // then exercise the native MapLibre gesture surface before taking the map offline.
+        device.swipe(
+            device.displayWidth / 2,
+            (device.displayHeight * 0.46).toInt(),
+            device.displayWidth / 2,
+            (device.displayHeight * 0.86).toInt(),
+            12
+        )
+        device.waitForIdle()
+        assertTrue("Offline map control did not appear after collapsing the walking sheet", waitForVisibleText("GUARDAR MAPA OFFLINE", 30_000))
+        clickVisibleText("GUARDAR MAPA OFFLINE")
+        assertTrue("Offline map download did not start", waitForAnyVisibleText("A preparar mapa offline", "MAPA OFFLINE · DISPONÍVEL", timeoutMs = 30_000))
+        assertTrue("Offline map was not reported complete", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 180_000))
+
+        // Pan the real map. The native MapLibre surface must remain responsive while the sheet is compact.
+        device.swipe(
+            (device.displayWidth * 0.30).toInt(),
+            (device.displayHeight * 0.30).toInt(),
+            (device.displayWidth * 0.72).toInt(),
+            (device.displayHeight * 0.34).toInt(),
+            12
+        )
+        device.waitForIdle()
+        assertTrue("Real map context was lost after a pan gesture", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 30_000))
+
+        // Recreate the Activity without network access. The downloaded region must be discoverable
+        // again from persisted MapLibre offline state.
+        device.executeShellCommand("cmd connectivity airplane-mode enable")
+        Thread.sleep(2_000)
+        scenario.close()
+        scenario = ActivityScenario.launch(V1MainActivity::class.java)
+        assertTrue("Walking screen did not restore while offline", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 60_000))
+        assertTrue("Persisted offline map state was not restored", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 60_000))
         clickVisibleText("AVANÇAR GPS")
         assertTrue("Simulated GPS advance did not update the route position", waitForVisibleText("Km no percurso:", 30_000))
         clickVisibleText("PERDER GPS")
