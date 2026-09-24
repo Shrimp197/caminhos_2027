@@ -145,6 +145,7 @@ internal fun V1ActiveExperienceScreenV2(
         Box(Modifier.fillMaxWidth().weight(1f)) {
             RealWalkingMap(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                routeId = state.walk.routeId,
                 geometry = route.geometry.points,
                 projectedPoint = projectedPoint,
                 currentKm = currentKm,
