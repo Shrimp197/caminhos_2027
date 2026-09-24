@@ -118,7 +118,7 @@ internal fun V1ActiveExperienceScreenV2(
             Column(Modifier.weight(1f)) {
                 Text(route.officialName, color = V2Forest, fontWeight = FontWeight.ExtraBold)
                 Text(
-                    if (state.isPaused) "GPS em pausa" else gpsLabel(state.gpsState),
+                    if (state.isPaused) "CAMINHADA PAUSADA" else gpsLabel(state.gpsState),
                     color = if (state.isPaused) Color(0xFF7A4A00) else gpsColor(state.gpsState),
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodySmall
