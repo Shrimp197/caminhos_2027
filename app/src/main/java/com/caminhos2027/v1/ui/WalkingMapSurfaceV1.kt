@@ -91,7 +91,7 @@ internal fun RealWalkingMap(
     var currentMarker by remember { mutableStateOf<org.maplibre.android.annotations.Marker?>(null) }
     var nextApoiMarker by remember { mutableStateOf<org.maplibre.android.annotations.Marker?>(null) }
     val points = remember(geometry) { geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() } }
-    val mapPoints = remember(points) { simplifyForMap(points, 1200) }
+    val mapPoints = remember(points) { simplifyForMap(points, 400) }
     val currentPoint = projectedPoint ?: pointAtRouteKmForMap(points, currentKm, totalKm)
 
     DisposableEffect(lifecycleOwner, mapView) {
@@ -134,12 +134,12 @@ internal fun RealWalkingMap(
         }
     }
 
-    LaunchedEffect(map, styleReady, points) {
+    LaunchedEffect(map, styleReady, mapPoints) {
         val loaded = map ?: return@LaunchedEffect
-        if (!styleReady || points.size < 2 || cameraInitialized) return@LaunchedEffect
+        if (!styleReady || mapPoints.size < 2 || cameraInitialized) return@LaunchedEffect
         runCatching {
             val bounds = LatLngBounds.Builder()
-            points.forEach { bounds.include(LatLng(it.latitude, it.longitude)) }
+            mapPoints.forEach { bounds.include(LatLng(it.latitude, it.longitude)) }
             loaded.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 70))
             cameraInitialized = true
         }
@@ -173,7 +173,7 @@ internal fun RealWalkingMap(
         if (!styleReady || points.size < 2) return@LaunchedEffect
         runCatching {
             if (mapOrientation == MapOrientation.WALK_DIRECTION) {
-                val bearing = routeBearing(points, currentPoint)
+                val bearing = routeBearing(mapPoints, currentPoint)
                 org.maplibre.android.camera.CameraPosition.Builder(loaded.cameraPosition)
                     .bearing(bearing)
                     .build()
