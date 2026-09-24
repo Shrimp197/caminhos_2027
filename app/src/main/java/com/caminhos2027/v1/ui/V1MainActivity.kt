@@ -241,7 +241,7 @@ class V1MainActivity : ComponentActivity() {
             preparedWalk = null
             startRequested = false
             pendingStartDistanceMeters = null
-            surface = if (pilgrimModeEnabled()) WalkingSurface.PILGRIM_MODE else WalkingSurface.ACTIVE
+            surface = if (pilgrimModeOnStart) WalkingSurface.PILGRIM_MODE else WalkingSurface.ACTIVE
             return
         }
         preparedWalk = appContainer.restorePreparedWalk()?.walk
