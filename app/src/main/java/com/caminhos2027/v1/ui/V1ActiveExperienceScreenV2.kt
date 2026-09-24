@@ -1,6 +1,5 @@
 package com.caminhos2027.v1.ui
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,15 +34,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -52,16 +47,12 @@ import androidx.compose.ui.platform.LocalContext
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.AudioMode
-import com.caminhos2027.v1.core.model.GeoPoint
-import com.caminhos2027.v1.core.model.MapOrientation
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.walking.WalkingState
 import java.time.Duration
 import java.time.Instant
 import java.util.Locale
-import kotlin.math.cos
-import kotlin.math.min
 
 private val V2Forest = Color(0xFF0E6546)
 private val V2ForestSoft = Color(0xFFE6F2EB)
@@ -140,17 +131,17 @@ internal fun V1ActiveExperienceScreenV2(
             }
         }
 
-        InteractiveOfflineRouteMap(
-            modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 12.dp),
-            geometry = route.geometry.points,
-            stages = route.stages,
-            totalKm = route.totalDistanceKm,
-            projectedPoint = projectedPoint,
-            currentKm = currentKm,
-            gpsState = state.gpsState,
-            mapOrientation = state.walk.preparation.mapOrientation,
-            nextApoi = state.nextApoi
-        )
+        Box(Modifier.fillMaxWidth().weight(1f)) {
+            RealWalkingMap(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                geometry = route.geometry.points,
+                projectedPoint = projectedPoint,
+                currentKm = currentKm,
+                totalKm = route.totalDistanceKm,
+                gpsState = state.gpsState,
+                mapOrientation = state.walk.preparation.mapOrientation,
+                nextApoi = state.nextApoi
+            )
 
         Card(
             Modifier
@@ -253,7 +244,113 @@ internal fun V1ActiveExperienceScreenV2(
                 }
             }
         }
-        BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
+            DraggableWalkingSheet(
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+            ) {
+            Card(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = 620.dp)
+                .padding(12.dp),
+            RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(4.dp)
+        ) {
+            Column(
+                Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MetricCard("${fmt(currentKm)} km", "Percorridos", Modifier.weight(1f))
+                    MetricCard("${fmt(remainingKm)} km", "Para o fim", Modifier.weight(1f))
+                    MetricCard(elapsed, "Tempo", Modifier.weight(1f))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Progresso", color = V2Muted, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                    Text("${(progress * 100).toInt()}%", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                }
+                LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(10.dp)), color = V2Forest, trackColor = V2ForestSoft)
+                Text("Destino planeado · ${fmt(destinationKm)} km", color = V2Muted, style = MaterialTheme.typography.bodySmall)
+                pauseRecommendationText(state)?.let { recommendation ->
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = V2ForestSoft)
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text("PAUSA INTELIGENTE", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                            Text(recommendation, color = V2Forest, fontWeight = FontWeight.SemiBold)
+                            Text("Pode parar agora e retomar quando quiser.", color = V2Muted, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                HorizontalDivider()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Icon(Icons.Filled.LocationOn, null, tint = V2Forest)
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("A minha posição", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                        Text(positionDetail(state), color = V2Muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                state.nextApoi?.let { apoi ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        androidx.compose.material3.Icon(Icons.Filled.Place, null, tint = V2Forest)
+                        Spacer(Modifier.width(8.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Próximo APOI", color = V2Muted, style = MaterialTheme.typography.labelLarge)
+                            Text(apoi.name, fontWeight = FontWeight.ExtraBold)
+                        }
+                        Text(state.nextApoiDistanceKm?.let(::fmtDistance) ?: "—", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                    }
+                }
+                if (state.isPaused) {
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1D9))
+                    ) {
+                        Text(
+                            "CAMINHADA PAUSADA · a posição ficou guardada e o GPS não está a ser aceite.",
+                            Modifier.padding(12.dp),
+                            color = Color(0xFF7A4A00),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onTogglePause, Modifier.weight(1f)) {
+                        Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA")
+                    }
+                    OutlinedButton(onClick = onOpenApoi, Modifier.weight(1f)) { Text("VER APOIOS") }
+                    OutlinedButton(onClick = onOpenNext10Km, Modifier.weight(1f)) { Text("PRÓXIMOS 10 KM") }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onOpenDecision, Modifier.weight(1f)) { Text("OPÇÕES") }
+                    OutlinedButton(onClick = onOpenPilgrimMode, Modifier.weight(1f)) { Text("MODO PEREGRINO") }
+                }
+                if (AndroidRouteCatalog.isTestRoute(state.walk.routeId)) {
+                    HorizontalDivider()
+                    Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold)
+                    Text(
+                        "Controlos apenas para validar GPS simulado. Não aparecem no percurso de produção.",
+                        color = V2Muted,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        OutlinedButton(onClick = onQaAdvance, Modifier.weight(1f)) { Text("AVANÇAR GPS") }
+                        OutlinedButton(onClick = { onQaToggleGps(false) }, Modifier.weight(1f)) { Text("PERDER GPS") }
+                        OutlinedButton(onClick = { onQaToggleGps(true) }, Modifier.weight(1f)) { Text("RECUPERAR GPS") }
+                    }
+                    OutlinedButton(onClick = onQaDeviation, Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
+                }
+            }
+            }
+
+            }
+        }        BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
     }
 }
 
@@ -301,191 +398,42 @@ private fun ActiveWalkingAudioFeedback(state: WalkingState) {
     }
 }
 
+
 @Composable
-private fun InteractiveOfflineRouteMap(
+private fun DraggableWalkingSheet(
     modifier: Modifier,
-    geometry: List<GeoPoint>,
-    stages: List<com.caminhos2027.v1.core.model.Stage>,
-    totalKm: Double,
-    projectedPoint: GeoPoint?,
-    currentKm: Double,
-    gpsState: GpsState,
-    mapOrientation: MapOrientation,
-    nextApoi: com.caminhos2027.v1.core.model.Apoi?
+    content: @Composable () -> Unit
 ) {
-    var zoom by remember(geometry) { mutableStateOf(1.0f) }
-    var pan by remember(geometry) { mutableStateOf(Offset.Zero) }
-    val points = remember(geometry) { geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() } }
-    val currentPoint = remember(points, projectedPoint, currentKm) {
-        projectedPoint ?: pointAtRouteKm(points, currentKm, totalKm)
-    }
-    val bearing = if (mapOrientation == MapOrientation.WALK_DIRECTION) {
-        routeBearingDegrees(points, currentPoint)
-    } else {
-        0f
-    }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val maxOffset = with(density) { 380.dp.toPx() }
+    var offsetPx by androidx.compose.runtime.remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
 
     Box(
         modifier
-            .clip(RoundedCornerShape(24.dp))
-            .background(V2Map)
-            .pointerInput(points) {
-                detectTransformGestures { _, panChange, zoomChange, _ ->
-                    zoom = (zoom * zoomChange).coerceIn(0.75f, 6.0f)
-                    pan += panChange
+            .offset { androidx.compose.ui.unit.IntOffset(0, offsetPx.roundToInt()) }
+            .clip(RoundedCornerShape(26.dp))
+            .background(Color.White)
+            .shadow(6.dp, RoundedCornerShape(26.dp))
+            .draggable(
+                state = androidx.compose.foundation.gestures.rememberDraggableState { delta ->
+                    offsetPx = (offsetPx + delta).coerceIn(0f, maxOffset)
+                },
+                orientation = androidx.compose.foundation.gestures.Orientation.Vertical,
+                onDragStopped = {
+                    offsetPx = if (offsetPx < maxOffset / 2f) 0f else maxOffset
                 }
-            }
-    ) {
-        Canvas(Modifier.fillMaxSize()) {
-            repeat(8) { index ->
-                val y = size.height * (index + 1) / 9f
-                drawLine(Color(0xFFDCE4DD), Offset(0f, y), Offset(size.width, y), 1f)
-            }
-            repeat(6) { index ->
-                val x = size.width * (index + 1) / 7f
-                drawLine(Color(0xFFDCE4DD), Offset(x, 0f), Offset(x, size.height), 1f)
-            }
-
-            if (points.size < 2) return@Canvas
-
-            val minLat = points.minOf { it.latitude }
-            val maxLat = points.maxOf { it.latitude }
-            val minLon = points.minOf { it.longitude }
-            val maxLon = points.maxOf { it.longitude }
-            val latSpan = (maxLat - minLat).coerceAtLeast(1e-9)
-            val lonSpan = (maxLon - minLon).coerceAtLeast(1e-9)
-            val baseScale = min(
-                (size.width * 0.80f) / lonSpan.toFloat(),
-                (size.height * 0.80f) / latSpan.toFloat()
             )
-            val center = Offset(size.width / 2f + pan.x, size.height / 2f + pan.y)
-
-            fun project(point: GeoPoint): Offset =
-                Offset(
-                    center.x + (point.longitude - (minLon + lonSpan / 2.0)).toFloat() * baseScale * zoom,
-                    center.y + ((maxLat + minLat) / 2.0 - point.latitude).toFloat() * baseScale * zoom
-                )
-
-            val pivot = currentPoint?.let(::project) ?: project(points.first())
-            rotate(degrees = -bearing, pivot = pivot) {
-                val path = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(project(points.first()).x, project(points.first()).y)
-                    points.drop(1).forEach { point ->
-                        val p = project(point)
-                        lineTo(p.x, p.y)
-                    }
-                }
-                drawPath(
-                    path,
-                    Color.White,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(
-                        13f,
-                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                        join = androidx.compose.ui.graphics.StrokeJoin.Round
-                    )
-                )
-                drawPath(
-                    path,
-                    V2Forest,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(
-                        6f,
-                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                        join = androidx.compose.ui.graphics.StrokeJoin.Round
-                    )
-                )
-
-                val startPoint = project(points.first())
-                val endPoint = project(points.last())
-                drawCircle(Color.White, 13f, startPoint)
-                drawCircle(V2Forest, 9f, startPoint)
-                drawCircle(Color.White, 13f, endPoint)
-                drawCircle(Color(0xFFC28A16), 9f, endPoint)
-
-                currentPoint?.let {
-                    val cursor = project(it)
-                    drawCircle(V2ForestSoft, 22f, cursor)
-                    drawCircle(Color(0xFF1464C8), 11f, cursor)
-                    drawCircle(Color.White, 4f, cursor)
-                }
-
-                stages.forEach { stage ->
-                    val midpoint = ((stage.startRouteKm + stage.endRouteKm) / 2.0).coerceIn(0.0, totalKm)
-                    pointAtRouteKm(points, midpoint, totalKm)?.let {
-                        val marker = project(it)
-                        drawCircle(Color.White, 7f, marker)
-                        drawCircle(Color(0xFF164B63), 4f, marker)
-                    }
-                }
-            }
-        }
-
-        Column(
-            Modifier.align(Alignment.TopEnd).padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            OutlinedButton(
-                onClick = { zoom = (zoom * 1.25f).coerceAtMost(6f) },
-                modifier = Modifier.size(48.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
-            ) { Text("+", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) }
-            OutlinedButton(
-                onClick = { zoom = (zoom / 1.25f).coerceAtLeast(0.75f) },
-                modifier = Modifier.size(48.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
-            ) { Text("−", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) }
-            OutlinedButton(
-                onClick = { zoom = 1f; pan = Offset.Zero },
-                modifier = Modifier.size(48.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
-            ) { Text("⌖", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) }
-        }
-
-        Card(
-            Modifier.align(Alignment.TopStart).padding(12.dp),
-            RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))
-        ) {
-            Column(Modifier.padding(12.dp)) {
-                Text("MAPA OFFLINE", color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
-                Text("Traçado oficial local", color = V2Muted, style = MaterialTheme.typography.bodySmall)
-                Text(
-                    when (gpsState) {
-                        GpsState.ON_ROUTE -> "GPS no percurso"
-                        GpsState.ACQUIRING -> "A obter GPS"
-                        GpsState.NO_SIGNAL -> "Sem sinal GPS"
-                        GpsState.POSSIBLE_DEVIATION -> "Possível desvio"
-                        GpsState.PROBABLE_DEVIATION -> "Provável desvio"
-                    },
-                    color = gpsColor(gpsState),
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
-
-        Card(
-            Modifier.align(Alignment.BottomStart).padding(12.dp),
-            RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))
-        ) {
-            Column(Modifier.padding(10.dp)) {
-                Text("INÍCIO", color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelSmall)
-                Text("●", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                Text("DESTINO  ●", color = Color(0xFFC28A16), fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelSmall)
-            }
-        }
-
-        nextApoi?.let {
-            Card(
-                Modifier.align(Alignment.BottomEnd).padding(12.dp),
-                RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .96f))
-            ) {
-                Column(Modifier.padding(11.dp)) {
-                    Text("PRÓXIMO APOI", color = V2Muted, style = MaterialTheme.typography.labelSmall)
-                    Text(it.name, color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.bodySmall)
-                }
-            }
+    ) {
+        Column(Modifier.fillMaxWidth()) {
+            Box(
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 9.dp, bottom = 3.dp)
+                    .size(width = 42.dp, height = 5.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(Color(0xFFB9C1BC))
+            )
+            content()
         }
     }
 }
