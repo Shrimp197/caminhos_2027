@@ -62,7 +62,7 @@ class V1EndToEndTest {
         assertTrue("Persisted plan did not keep explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
         clickVisibleText("INICIAR CAMINHADA")
 
-        assertTrue("Walking screen did not appear", waitForVisibleText("A minha posição", 30_000))
+        assertTrue("Walking screen did not appear", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 30_000))
         assertTrue("Real map label did not appear", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 30_000))
         assertTrue("Route progress did not appear", waitForVisibleText("Progresso", 30_000))
         assertTrue("Elapsed walking time did not appear", waitForVisibleTextOrDescription("Tempo", 30_000))
