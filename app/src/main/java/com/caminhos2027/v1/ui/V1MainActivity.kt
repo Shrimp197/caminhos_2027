@@ -32,6 +32,7 @@ import org.maplibre.android.module.http.HttpRequestUtil
 import java.time.Instant
 
 class V1MainActivity : ComponentActivity() {
+    // V1 final delivery flow: keep production/QA boundaries explicit.
     private lateinit var appContainer: AndroidV1AppContainer
     private lateinit var diaryRepository: DiaryRepository
     private var diaryEntries by mutableStateOf<List<DiaryEntry>>(emptyList())
