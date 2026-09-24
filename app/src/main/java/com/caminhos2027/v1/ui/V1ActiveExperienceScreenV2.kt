@@ -47,7 +47,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
@@ -59,7 +58,6 @@ import com.caminhos2027.v1.core.walking.WalkingState
 import java.time.Duration
 import java.time.Instant
 import java.util.Locale
-import kotlin.math.roundToInt
 
 private val V2Forest = Color(0xFF0E6546)
 private val V2ForestSoft = Color(0xFFE6F2EB)
@@ -314,22 +312,24 @@ private fun DraggableWalkingSheet(
     content: @Composable () -> Unit
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
-    val maxOffset = with(density) { 360.dp.toPx() }
-    var offsetPx by androidx.compose.runtime.remember { mutableFloatStateOf(0f) }
+    val minHeight = with(density) { 190.dp.toPx() }
+    val maxHeight = with(density) { 620.dp.toPx() }
+    val initialHeight = with(density) { 260.dp.toPx() }
+    var heightPx by androidx.compose.runtime.remember { mutableFloatStateOf(initialHeight) }
 
     Box(
         modifier
-            .offset { IntOffset(0, offsetPx.roundToInt()) }
+            .height(with(density) { heightPx.toDp() })
             .clip(RoundedCornerShape(26.dp))
             .background(Color.White)
             .shadow(6.dp, RoundedCornerShape(26.dp))
             .draggable(
                 state = rememberDraggableState { delta ->
-                    offsetPx = (offsetPx + delta).coerceIn(0f, maxOffset)
+                    heightPx = (heightPx - delta).coerceIn(minHeight, maxHeight)
                 },
                 orientation = Orientation.Vertical,
                 onDragStopped = {
-                    offsetPx = if (offsetPx < maxOffset / 2f) 0f else maxOffset
+                    heightPx = if (heightPx < (minHeight + maxHeight) / 2f) minHeight else maxHeight
                 }
             )
     ) {
