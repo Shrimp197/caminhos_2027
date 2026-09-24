@@ -355,7 +355,67 @@ internal fun PilgrimModeSurfaceV1(state: WalkingState, onOpenApoi: () -> Unit, o
 }
 
 @Composable
-internal fun MoreSurfaceV1(onPrepare: () -> Unit, onMap: () -> Unit, onApoi: () -> Unit, onDiary: () -> Unit, onHelp: () -> Unit, onContact: () -> Unit, onAbout: () -> Unit, onSmartwatch: () -> Unit, onSos: () -> Unit, onPilgrimMode: () -> Unit, onNavigate: (WalkingSurface) -> Unit) {
+internal fun SettingsSurfaceV1(
+    pilgrimModeOnStart: Boolean,
+    onTogglePilgrimModeOnStart: (Boolean) -> Unit,
+    onOpenNotificationSettings: () -> Unit,
+    onNavigate: (WalkingSurface) -> Unit
+) {
+    Scaffold(containerColor = NavSurface, bottomBar = { BottomNavBarV1(WalkingSurface.MORE, onNavigate) }) { padding ->
+        Column(
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Definições", color = NavBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall)
+            Text("Preferências da aplicação e do dispositivo.", color = NavMuted)
+
+            Card(
+                Modifier.fillMaxWidth(),
+                RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Modo Peregrino", fontWeight = FontWeight.ExtraBold)
+                    Text("Ao ativar, a aplicação reabre a próxima caminhada neste modo simplificado.", color = NavMuted)
+                    androidx.compose.material3.Switch(
+                        checked = pilgrimModeOnStart,
+                        onCheckedChange = onTogglePilgrimModeOnStart
+                    )
+                }
+            }
+
+            Card(
+                Modifier.fillMaxWidth(),
+                RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Notificações", fontWeight = FontWeight.ExtraBold)
+                    Text("As permissões e canais de notificação são geridos pelo Android.", color = NavMuted)
+                    OutlinedButton(onClick = onOpenNotificationSettings, Modifier.fillMaxWidth()) {
+                        Icon(Icons.Filled.Notifications, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("ABRIR DEFINIÇÕES DE NOTIFICAÇÕES")
+                    }
+                }
+            }
+
+            Card(
+                Modifier.fillMaxWidth(),
+                RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Unidades", fontWeight = FontWeight.ExtraBold)
+                    Text("Distâncias apresentadas em quilómetros e metros.", color = NavMuted)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun MoreSurfaceV1(onPrepare: () -> Unit, onMap: () -> Unit, onApoi: () -> Unit, onDiary: () -> Unit, onHelp: () -> Unit, onContact: () -> Unit, onAbout: () -> Unit, onSmartwatch: () -> Unit, onSos: () -> Unit, onPilgrimMode: () -> Unit, onSettings: () -> Unit, onNavigate: (WalkingSurface) -> Unit) {
     Scaffold(containerColor = NavSurface, bottomBar = { BottomNavBarV1(WalkingSurface.MORE, onNavigate) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Mais", color = NavBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall)
@@ -366,7 +426,7 @@ internal fun MoreSurfaceV1(onPrepare: () -> Unit, onMap: () -> Unit, onApoi: () 
             MoreAction("Smartwatch", Icons.Filled.Smartphone, "Notificações e compatibilidade externa", onSmartwatch)
             MoreAction("Modo Peregrino", Icons.Filled.DirectionsWalk, "Interface simplificada para caminhar", onPilgrimMode)
             MoreAction("SOS / Emergência", Icons.Filled.ReportProblem, "Acesso a 112 e localização", onSos)
-            MoreAction("Definições", Icons.Filled.Settings, "Configurações disponíveis no produto", onPrepare)
+            MoreAction("Definições", Icons.Filled.Settings, "Preferências da aplicação e notificações", onSettings)
             MoreAction("Ajuda", Icons.Filled.HelpOutline, "Como utilizar o produto", onHelp)
             MoreAction("Contacto", Icons.Filled.Call, "Abrir aplicação de comunicação", onContact)
             MoreAction("Sobre", Icons.Filled.Info, "Versão e dados do produto", onAbout)
