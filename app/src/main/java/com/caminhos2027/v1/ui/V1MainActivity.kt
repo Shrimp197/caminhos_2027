@@ -17,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.caminhos2027.BuildConfig
 import com.caminhos2027.v1.core.AndroidV1AppContainer
 import com.caminhos2027.v1.core.apoi.ApoiFilter
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
@@ -24,9 +25,12 @@ import com.caminhos2027.v1.core.diary.DiaryEntry
 import com.caminhos2027.v1.core.diary.DiaryRepository
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.Walk
+import com.caminhos2027.v1.core.model.RawGpsPosition
 import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.model.WalkingPreparationConfig
+import com.caminhos2027.v1.core.route.RouteLocationEngine
 import com.caminhos2027.v1.core.walking.WalkingState
+import com.caminhos2027.v1.gps.GpxSimulationStartIndex
 import com.caminhos2027.v1.core.walking.AndroidWalkingTrackingService
 import okhttp3.OkHttpClient
 import org.maplibre.android.MapLibre
@@ -307,8 +311,53 @@ class V1MainActivity : ComponentActivity() {
         require(preparedWalk?.status == WalkStatus.PLANNED) { "A planned walk is required before starting" }
         startRequested = true
         pendingStartDistanceMeters = null
-        scheduleWalkingStateReconciliation()
-        if (hasLocationPermission()) startTrackingService() else requestLocationPermission()
+        if (BuildConfig.DEBUG && isTestRoute()) {
+            startQaPreparedWalk()
+        } else {
+            scheduleWalkingStateReconciliation()
+            if (hasLocationPermission()) startTrackingService() else requestLocationPermission()
+        }
+    }
+
+    /**
+     * QA-only deterministic start: the debug GPX track supplies the first raw point, but the
+     * application still goes through the normal preparation controller and persistent runtime.
+     * Production routes always wait for the real Android GPS callback.
+     */
+    private fun startQaPreparedWalk() {
+        val saved = preparedWalk ?: return
+        val route = appContainer.publishedRoute()
+        val startKm = saved.plannedStartKm ?: 0.0
+        val index = GpxSimulationStartIndex.nearestPointIndex(route, startKm)
+        val point = route.geometry.points[index]
+        val raw = RawGpsPosition(
+            latitude = point.latitude,
+            longitude = point.longitude,
+            accuracyMeters = 1.0,
+            capturedAt = Instant.now()
+        )
+        val position = RouteLocationEngine.locate(route, raw)
+        val started = runCatching {
+            appContainer.preparationController.startSaved(
+                catalog = appContainer.publishedApoiCatalog(),
+                position = position,
+                now = raw.capturedAt
+            )
+        }.getOrElse {
+            pendingStartDistanceMeters = position.distanceToRouteMeters
+            startRequested = false
+            showInfo(it.message ?: "Não foi possível iniciar a caminhada de teste.")
+            return
+        }
+        val walking = started.walking ?: return
+        appContainer.attachWalk(walking.walk)
+        appContainer.store.setWalking(walking)
+        walkingState = walking
+        preparedWalk = null
+        startRequested = false
+        pendingStartDistanceMeters = null
+        surface = if (pilgrimModeOnStart) WalkingSurface.PILGRIM_MODE else WalkingSurface.ACTIVE
+        if (hasLocationPermission()) startTrackingService()
     }
 
     private fun cancelPendingStart() {
