@@ -25,6 +25,9 @@ import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.model.WalkingPreparationConfig
 import com.caminhos2027.v1.core.walking.WalkingState
 import com.caminhos2027.v1.core.walking.AndroidWalkingTrackingService
+import okhttp3.OkHttpClient
+import org.maplibre.android.MapLibre
+import org.maplibre.android.module.http.HttpRequestUtil
 import java.time.Instant
 
 class V1MainActivity : ComponentActivity() {
@@ -102,6 +105,17 @@ class V1MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        MapLibre.getInstance(this)
+        HttpRequestUtil.setOkHttpClient(
+            OkHttpClient.Builder()
+                .addInterceptor { chain ->
+                    val request = chain.request().newBuilder()
+                        .header("User-Agent", "Caminhos-do-Peregrino/1.2.0 Android")
+                        .build()
+                    chain.proceed(request)
+                }
+                .build()
+        )
         val persistedRouteId = AndroidRouteCatalog.preferredPersistedRouteId(this)
         appContainer = AndroidV1AppContainer(this, persistedRouteId ?: AndroidRouteCatalog.CENTENARIO_ID)
         diaryRepository = DiaryRepository(this)
