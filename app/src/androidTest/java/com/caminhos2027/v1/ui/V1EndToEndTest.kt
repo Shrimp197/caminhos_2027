@@ -68,16 +68,7 @@ class V1EndToEndTest {
         assertTrue("Elapsed walking time did not appear", waitForVisibleTextOrDescription("Tempo", 30_000))
         assertTrue("QA controls did not appear for the test route", waitForVisibleText("QA · percurso de teste", 30_000))
 
-        // The sheet starts expanded for QA routes. Collapse it so the offline-map control is exposed,
-        // then exercise the native MapLibre gesture surface before taking the map offline.
-        device.swipe(
-            device.displayWidth / 2,
-            (device.displayHeight * 0.46).toInt(),
-            device.displayWidth / 2,
-            (device.displayHeight * 0.86).toInt(),
-            12
-        )
-        device.waitForIdle()
+        // The offline-map action stays above the walking sheet so it remains reachable in the active experience.
         assertTrue("Offline map control did not appear after collapsing the walking sheet", waitForVisibleText("GUARDAR MAPA OFFLINE", 30_000))
         clickVisibleText("GUARDAR MAPA OFFLINE")
         assertTrue("Offline map download did not start", waitForAnyVisibleText("A preparar mapa offline", "MAPA OFFLINE · DISPONÍVEL", timeoutMs = 30_000))
