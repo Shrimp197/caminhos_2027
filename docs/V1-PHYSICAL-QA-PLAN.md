@@ -129,6 +129,14 @@ Só executar depois de SR/HF passarem o fluxo básico.
 - Confirmar preservação do percurso selecionado.
 - Confirmar que o sistema não troca silenciosamente para o Centenário, SR ou HF.
 
+## 5.1 Definições e notificações
+
+- Abrir **Mais → Definições**.
+- Confirmar que a superfície de definições é independente da preparação.
+- Ativar/desativar a preferência **Modo Peregrino ao iniciar** e confirmar persistência após reabertura.
+- Abrir as definições de notificações do Android a partir da aplicação.
+- Confirmar que os estados apresentados continuam a ser os do sistema Android e não uma simulação.
+
 ## 6. Critérios de falha imediata
 
 Considerar falha crítica qualquer ocorrência de:
