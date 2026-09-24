@@ -441,9 +441,19 @@ class V1MainActivity : ComponentActivity() {
         }
     }
 
-    private fun qaAdvance() { trackingBinder?.qaAdvance() }
-    private fun qaSetGpsAvailability(available: Boolean) { trackingBinder?.qaSetGpsAvailability(available) }
-    private fun qaSimulateDeviation() { trackingBinder?.qaSimulateDeviation() }
+    private fun qaAdvance() {
+        trackingBinder?.qaAdvance() ?: walkingReconcileHandler.postDelayed({ trackingBinder?.qaAdvance() }, 750L)
+    }
+
+    private fun qaSetGpsAvailability(available: Boolean) {
+        trackingBinder?.qaSetGpsAvailability(available)
+            ?: walkingReconcileHandler.postDelayed({ trackingBinder?.qaSetGpsAvailability(available) }, 750L)
+    }
+
+    private fun qaSimulateDeviation() {
+        trackingBinder?.qaSimulateDeviation()
+            ?: walkingReconcileHandler.postDelayed({ trackingBinder?.qaSimulateDeviation() }, 750L)
+    }
 
     private fun openApoiBrowser() {
         if (walkingState?.routePosition == null) return
