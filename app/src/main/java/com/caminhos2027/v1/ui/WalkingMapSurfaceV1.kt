@@ -182,8 +182,8 @@ internal fun RealWalkingMap(
     Box(Modifier.fillMaxSize()) {
         MapControls(
             modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
-            onZoomIn = { map?.let { it.animateCamera(CameraUpdateFactory.newLatLngZoom(it.cameraPosition.target, (it.cameraPosition.zoom + 1.0).coerceAtMost(17.0))) } },
-            onZoomOut = { map?.let { it.animateCamera(CameraUpdateFactory.newLatLngZoom(it.cameraPosition.target, (it.cameraPosition.zoom - 1.0).coerceAtLeast(7.0))) } },
+            onZoomIn = { map?.let { it.animateCamera(CameraUpdateFactory.it.cameraPosition.target?.let { target -> newLatLngZoom(target, (it.cameraPosition.zoom + 1.0).coerceAtMost(17.0)) }) } },
+            onZoomOut = { map?.let { it.animateCamera(CameraUpdateFactory.it.cameraPosition.target?.let { target -> newLatLngZoom(target, (it.cameraPosition.zoom - 1.0).coerceAtLeast(7.0)) }) } },
             onLocate = {
                 currentPoint?.let { p ->
                     map?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(p.latitude, p.longitude), 14.0))
@@ -354,7 +354,7 @@ private fun downloadOfflineRegion(
             override fun onCreate(region: OfflineRegion) {
                 onRegion(region)
                 region.setDeliverInactiveMessages(true)
-                region.setObserver(object : OfflineRegionObserver {
+                region.setObserver(object : OfflineRegion.OfflineRegionObserver {
                     override fun onStatusChanged(status: OfflineRegionStatus) { onStatus(status) }
                     override fun onError(error: OfflineRegionError) { onError(error.message ?: "erro desconhecido") }
                     override fun mapboxTileCountLimitExceeded(limit: Long) { onError("Limite de mapas offline atingido: $limit tiles.") }
