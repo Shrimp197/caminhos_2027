@@ -47,7 +47,6 @@ import org.maplibre.android.offline.OfflineGeometryRegionDefinition
 import org.maplibre.android.offline.OfflineManager
 import org.maplibre.android.offline.OfflineRegion
 import org.maplibre.android.offline.OfflineRegionError
-import org.maplibre.android.offline.OfflineRegionObserver
 import org.maplibre.android.offline.OfflineRegionStatus
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
@@ -148,7 +147,7 @@ internal fun RealWalkingMap(
         runCatching {
             if (mapOrientation == MapOrientation.WALK_DIRECTION && points.size >= 2) {
                 val bearing = routeBearing(points, currentPoint)
-                loaded.cameraPosition.toBuilder().bearing(bearing).build().also { loaded.setCameraPosition(it) }
+                org.maplibre.android.camera.CameraPosition.Builder(loaded.cameraPosition).bearing(bearing).build().also { loaded.setCameraPosition(it) }
             }
             loaded.clear()
             loaded.addPolyline(
@@ -310,7 +309,7 @@ private fun inspectOfflineRegion(
 }
 
 private fun offlineObserver(region: OfflineRegion, onResult: (OfflineRegion?, OfflineUiState) -> Unit) =
-    object : OfflineRegionObserver {
+    object : OfflineRegion.OfflineRegionObserver {
         override fun onStatusChanged(status: OfflineRegionStatus) {
             onResult(region, status.toUiState())
         }
