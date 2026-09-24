@@ -91,6 +91,7 @@ internal fun RealWalkingMap(
     var currentMarker by remember { mutableStateOf<org.maplibre.android.annotations.Marker?>(null) }
     var nextApoiMarker by remember { mutableStateOf<org.maplibre.android.annotations.Marker?>(null) }
     val points = remember(geometry) { geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() } }
+    val mapPoints = remember(points) { simplifyForMap(points, 1200) }
     val currentPoint = projectedPoint ?: pointAtRouteKmForMap(points, currentKm, totalKm)
 
     DisposableEffect(lifecycleOwner, mapView) {
@@ -144,13 +145,13 @@ internal fun RealWalkingMap(
         }
     }
 
-    LaunchedEffect(map, styleReady, points) {
+    LaunchedEffect(map, styleReady, mapPoints) {
         val loaded = map ?: return@LaunchedEffect
-        if (!styleReady || points.size < 2) return@LaunchedEffect
+        if (!styleReady || mapPoints.size < 2) return@LaunchedEffect
         runCatching {
             loaded.addPolyline(
                 PolylineOptions()
-                    .addAll(points.map { LatLng(it.latitude, it.longitude) })
+                    .addAll(mapPoints.map { LatLng(it.latitude, it.longitude) })
                     .color(AndroidColor.rgb(31, 107, 74))
                     .width(7f)
             )
@@ -390,6 +391,17 @@ private fun downloadOfflineRegion(
             override fun onError(error: String) { onError(error) }
         }
     )
+}
+
+private fun simplifyForMap(points: List<GeoPoint>, maxPoints: Int): List<GeoPoint> {
+    if (points.size <= maxPoints) return points
+    require(maxPoints >= 2)
+    val stride = (points.size - 1).toDouble() / (maxPoints - 1).toDouble()
+    return buildList(maxPoints) {
+        for (index in 0 until maxPoints) {
+            add(points[(index * stride).toInt().coerceIn(0, points.lastIndex)])
+        }
+    }.distinct()
 }
 
 private fun offlineMetadata(routeId: String): String =
