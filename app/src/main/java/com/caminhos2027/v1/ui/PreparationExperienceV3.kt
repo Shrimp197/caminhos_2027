@@ -104,7 +104,15 @@ internal fun PreparationExperienceV3(route: Route, routeOptions: List<AndroidRou
 
 @Composable
 private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, notesCount: Int, onRoutes: () -> Unit, onRange: () -> Unit, onBreaks: () -> Unit, onOrientation: () -> Unit, onAudio: () -> Unit, onSupports: () -> Unit, onNotes: () -> Unit, onConfirm: () -> Unit, onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize().background(PSurface).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(PSurface)
+            .semantics { contentDescription = "PREPARAÇÃO — HOME" }
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
         Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Filled.Menu, "Menu", tint = PBlue) }; Icon(Icons.Filled.DirectionsWalk, null, Modifier.size(38.dp), tint = Color(0xFFC28A16)); Column(Modifier.padding(start = 9.dp)) { Text("CAMINHOS", color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium); Text("DO PEREGRINO", color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium) } }
         Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = PBlue, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleLarge)
         Card(Modifier.fillMaxWidth(), RoundedCornerShape(20.dp), border = BorderStroke(1.dp, PBorder), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(3.dp)) { Box(Modifier.fillMaxWidth().height(250.dp)) { if (route.id == "caminho-do-centenario" || route.officialName.contains("Centenário", ignoreCase = true)) Image(painterResource(R.drawable.caminho_centenario_hero), "Imagem do Caminho do Centenário", Modifier.fillMaxSize(), contentScale = ContentScale.Crop) else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF6F9DB0), Color(0xFF1E6247))))); Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xD9000000))))); Column(Modifier.align(Alignment.BottomStart).padding(18.dp)) { Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall); Text(if (route.id == "caminho-do-centenario" || route.officialName.contains("Centenário", ignoreCase = true)) "212 km · Porto → Fátima" else "${fmt(route.totalDistanceKm)} km · Percurso selecionado", color = Color.White, fontWeight = FontWeight.Bold) }; Button(onClick = onRoutes, Modifier.align(Alignment.BottomEnd).padding(16.dp).height(48.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("PREPARAR", fontWeight = FontWeight.ExtraBold) } } }
@@ -166,7 +174,10 @@ private fun ApoiCategoriesSub(
         containerColor = PSurface,
         bottomBar = {
             Button(
-                onClick = { onApply(selected) },
+                onClick = {
+                    onApply(selected)
+                    onBack()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
