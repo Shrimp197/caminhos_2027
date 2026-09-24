@@ -1,5 +1,7 @@
 package com.caminhos2027.v1.ui
 
+import com.caminhos2027.BuildConfig
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -156,7 +158,8 @@ internal fun V1ActiveExperienceScreenV2(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(bottom = 6.dp)
+                    .padding(bottom = 6.dp),
+                initialExpanded = BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(state.walk.routeId)
             ) {
         Card(
             Modifier
@@ -313,12 +316,13 @@ private fun ActiveWalkingAudioFeedback(state: WalkingState) {
 @Composable
 private fun DraggableWalkingSheet(
     modifier: Modifier,
+    initialExpanded: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     val minHeight = with(density) { 190.dp.toPx() }
     val maxHeight = with(density) { 620.dp.toPx() }
-    val initialHeight = with(density) { 260.dp.toPx() }
+    val initialHeight = with(density) { if (initialExpanded) 560.dp.toPx() else 260.dp.toPx() }
     var heightPx by androidx.compose.runtime.remember { mutableFloatStateOf(initialHeight) }
 
     Box(
