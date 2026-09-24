@@ -124,6 +124,12 @@ internal fun V1ActiveExperienceScreenV2(
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
+                    "Progresso · ${(progress * 100).toInt()}%",
+                    color = V2Forest,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Text(
                     "MAPA · CARTOGRAFIA REAL",
                     color = V2Muted,
                     fontWeight = FontWeight.SemiBold,
