@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -91,6 +92,7 @@ class V1MainActivity : ComponentActivity() {
     private var pendingStartDistanceMeters by mutableStateOf<Double?>(null)
     private var surface by mutableStateOf(WalkingSurface.ACTIVE)
     private var selectedRouteId by mutableStateOf(AndroidRouteCatalog.CENTENARIO_ID)
+    private var pilgrimModeOnStart by mutableStateOf(false)
 
     private val diaryPhotoLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@registerForActivityResult
@@ -121,6 +123,7 @@ class V1MainActivity : ComponentActivity() {
         diaryRepository = DiaryRepository(this)
         diaryEntries = diaryRepository.load()
         selectedRouteId = appContainer.publishedRoute().id
+        pilgrimModeOnStart = getSharedPreferences("peregrino_preferences", MODE_PRIVATE).getBoolean("pilgrim_mode_on_start", false)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when {
@@ -131,6 +134,7 @@ class V1MainActivity : ComponentActivity() {
                     surface == WalkingSurface.APOI_BROWSER -> returnToWalking()
                     surface == WalkingSurface.APOI_DETAIL -> returnToApoiBrowser()
                     surface == WalkingSurface.DECISION -> returnToWalking()
+                    surface == WalkingSurface.SETTINGS -> openMore()
                     surface == WalkingSurface.PREPARATION -> finish()
                     surface == WalkingSurface.ACTIVE -> finish()
                     else -> returnToWalking()
@@ -381,6 +385,23 @@ class V1MainActivity : ComponentActivity() {
     }
     private fun openSmartwatch() { surface = WalkingSurface.SMARTWATCH }
 
+    private fun openSettings() { surface = WalkingSurface.SETTINGS }
+
+    private fun setPilgrimModeOnStart(enabled: Boolean) {
+        pilgrimModeOnStart = enabled
+        getSharedPreferences("peregrino_preferences", MODE_PRIVATE)
+            .edit()
+            .putBoolean("pilgrim_mode_on_start", enabled)
+            .apply()
+    }
+
+    private fun openNotificationSettings() {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        }
+        startActivity(intent)
+    }
+
     private fun openPilgrimMode() {
         if (walkingState == null) return
         getSharedPreferences("peregrino_preferences", MODE_PRIVATE).edit().putBoolean("pilgrim_mode", true).apply()
@@ -402,6 +423,7 @@ class V1MainActivity : ComponentActivity() {
             WalkingSurface.APOI_BROWSER -> openApoiBrowser()
             WalkingSurface.DIARY -> openDiary()
             WalkingSurface.MORE -> openMore()
+            WalkingSurface.SETTINGS -> openSettings()
             WalkingSurface.SOS -> openSos()
             WalkingSurface.SMARTWATCH -> openSmartwatch()
             WalkingSurface.PILGRIM_MODE -> openPilgrimMode()
