@@ -44,18 +44,18 @@ class AndroidWalkingTrackingService : Service() {
         fun resumeWalking() = beginTracking()
         fun stopWalking() = stopWalkingSession()
         fun cancelPendingStart() = cancelPendingStartInternal()
-        fun qaAdvance() { postWhenSimulationReady { it.advance() } }
+        fun qaAdvance() { postWhenSimulationReady(action = { source -> source.advance() }) }
         fun qaSetGpsAvailability(available: Boolean) {
-            postWhenSimulationReady {
-                it.setAvailable(available)
+            postWhenSimulationReady(action = { source ->
+                source.setAvailable(available)
                 // Recovery QA must exercise the same raw-position path as real GPS.
                 // Provider availability alone is not a GPS fix; force one fresh raw fix.
                 if (available) {
-                    it.emitRecoveryFix()
+                    source.emitRecoveryFix()
                 }
             }
         }
-        fun qaSimulateDeviation() { postWhenSimulationReady { it.simulateDeviation() } }
+        fun qaSimulateDeviation() { postWhenSimulationReady(action = { source -> source.simulateDeviation() }) }
     }
 
     private val binder = TrackingBinder()
