@@ -71,6 +71,7 @@ private data class OfflineUiState(
 @Composable
 internal fun RealWalkingMap(
     modifier: Modifier,
+    routeId: String,
     geometry: List<GeoPoint>,
     projectedPoint: GeoPoint?,
     currentKm: Double,
@@ -124,7 +125,7 @@ internal fun RealWalkingMap(
     }
 
     LaunchedEffect(Unit) {
-        inspectOfflineRegion(context) { region, state ->
+        inspectOfflineRegion(context, routeId) { region, state ->
             offlineRegion = region
             offlineState = state
         }
@@ -216,6 +217,7 @@ internal fun RealWalkingMap(
                     downloadOfflineRegion(
                         context,
                         points,
+                        routeId,
                         onRegion = {
                             offlineRegion = it
                             offlineState = OfflineUiState(active = true)
@@ -285,11 +287,13 @@ private fun MapButton(text: String, description: String, onClick: () -> Unit) {
 
 private fun inspectOfflineRegion(
     context: Context,
+    routeId: String,
     onResult: (OfflineRegion?, OfflineUiState) -> Unit
 ) {
+    val metadata = offlineMetadata(routeId)
     OfflineManager.getInstance(context).listOfflineRegions(object : OfflineManager.ListOfflineRegionsCallback {
         override fun onList(regions: Array<OfflineRegion>?) {
-            val region = regions?.firstOrNull { runCatching { String(it.metadata, Charsets.UTF_8) == OFFLINE_METADATA }.getOrDefault(false) }
+            val region = regions?.firstOrNull { runCatching { String(it.metadata, Charsets.UTF_8) == metadata }.getOrDefault(false) }
             if (region == null) {
                 onResult(null, OfflineUiState())
                 return
@@ -335,6 +339,7 @@ private fun OfflineRegionStatus.toUiState(): OfflineUiState {
 private fun downloadOfflineRegion(
     context: Context,
     points: List<GeoPoint>,
+    routeId: String,
     onRegion: (OfflineRegion) -> Unit,
     onStatus: (OfflineRegionStatus) -> Unit,
     onError: (String) -> Unit
@@ -349,7 +354,7 @@ private fun downloadOfflineRegion(
     )
     OfflineManager.getInstance(context).createOfflineRegion(
         definition,
-        OFFLINE_METADATA.toByteArray(Charsets.UTF_8),
+        offlineMetadata(routeId).toByteArray(Charsets.UTF_8),
         object : OfflineManager.CreateOfflineRegionCallback {
             override fun onCreate(region: OfflineRegion) {
                 onRegion(region)
@@ -365,6 +370,12 @@ private fun downloadOfflineRegion(
         }
     )
 }
+
+private fun offlineMetadata(routeId: String): String =
+    org.json.JSONObject()
+        .put("routeId", routeId)
+        .put("kind", "walking-route-map")
+        .toString()
 
 private fun gpsLabelForMap(state: GpsState): String = when (state) {
     GpsState.NO_SIGNAL -> "GPS sem sinal"
