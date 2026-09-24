@@ -182,8 +182,8 @@ internal fun RealWalkingMap(
     Box(Modifier.fillMaxSize()) {
         MapControls(
             modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
-            onZoomIn = { map?.let { it.animateCamera(CameraUpdateFactory.it.cameraPosition.target?.let { target -> newLatLngZoom(target, (it.cameraPosition.zoom + 1.0).coerceAtMost(17.0)) }) } },
-            onZoomOut = { map?.let { it.animateCamera(CameraUpdateFactory.it.cameraPosition.target?.let { target -> newLatLngZoom(target, (it.cameraPosition.zoom - 1.0).coerceAtLeast(7.0)) }) } },
+            onZoomIn = { map?.let { loaded -> loaded.cameraPosition.target?.let { target -> loaded.animateCamera(CameraUpdateFactory.newLatLngZoom(target, (loaded.cameraPosition.zoom + 1.0).coerceAtMost(17.0))) } } },
+            onZoomOut = { map?.let { loaded -> loaded.cameraPosition.target?.let { target -> loaded.animateCamera(CameraUpdateFactory.newLatLngZoom(target, (loaded.cameraPosition.zoom - 1.0).coerceAtLeast(7.0))) } } },
             onLocate = {
                 currentPoint?.let { p ->
                     map?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(p.latitude, p.longitude), 14.0))
@@ -296,7 +296,7 @@ private fun inspectOfflineRegion(
             }
             region.setDeliverInactiveMessages(true)
             region.setObserver(offlineObserver(region, onResult))
-            region.getStatus(object : OfflineManager.OfflineRegionStatusCallback {
+            region.getStatus(object : OfflineRegion.OfflineRegionStatusCallback {
                 override fun onStatus(status: OfflineRegionStatus?) {
                     if (status == null) return
                     onResult(region, status.toUiState())
