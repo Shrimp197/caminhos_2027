@@ -45,9 +45,13 @@ class V1MainActivity : ComponentActivity() {
         override fun onTrackingStateChanged(state: WalkingState?, pendingStart: Boolean, pendingDistanceMeters: Double?) {
             runOnUiThread {
                 val savedPlanId = preparedWalk?.id
+                val currentWalkId = walkingState?.walk?.id
                 val activeState = state?.takeIf { it.walk.status == WalkStatus.ACTIVE }
-                val belongsToCurrentPlan = savedPlanId == null ||
-                    (startRequested && activeState?.walk?.id == savedPlanId)
+                val belongsToCurrentPlan = activeState != null && (
+                    savedPlanId == null ||
+                        activeState.walk.id == savedPlanId ||
+                        activeState.walk.id == currentWalkId
+                    )
 
                 if (activeState != null && belongsToCurrentPlan) {
                     walkingState = activeState
