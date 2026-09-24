@@ -457,15 +457,15 @@ class V1MainActivity : ComponentActivity() {
     }
 
     private fun qaAdvance() {
-        postWhenTrackingBinderReady { it.qaAdvance() }
+        postWhenTrackingBinderReady(action = { it.qaAdvance() })
     }
 
     private fun qaSetGpsAvailability(available: Boolean) {
-        postWhenTrackingBinderReady { it.qaSetGpsAvailability(available) }
+        postWhenTrackingBinderReady(action = { it.qaSetGpsAvailability(available) })
     }
 
     private fun qaSimulateDeviation() {
-        postWhenTrackingBinderReady { it.qaSimulateDeviation() }
+        postWhenTrackingBinderReady(action = { it.qaSimulateDeviation() })
     }
 
     private fun openApoiBrowser() {
