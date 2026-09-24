@@ -160,7 +160,6 @@ internal fun V1ActiveExperienceScreenV2(
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .padding(bottom = 6.dp),
-                initialExpanded = BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(state.walk.routeId)
             ) {
         Card(
             Modifier
@@ -177,6 +176,21 @@ internal fun V1ActiveExperienceScreenV2(
                     .padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(state.walk.routeId)) {
+                    Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold)
+                    Text(
+                        "Controlos apenas para validar GPS simulado. Não aparecem no percurso de produção.",
+                        color = V2Muted,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        OutlinedButton(onClick = onQaAdvance, Modifier.weight(1f)) { Text("AVANÇAR GPS") }
+                        OutlinedButton(onClick = { onQaToggleGps(false) }, Modifier.weight(1f)) { Text("PERDER GPS") }
+                        OutlinedButton(onClick = { onQaToggleGps(true) }, Modifier.weight(1f)) { Text("RECUPERAR GPS") }
+                    }
+                    OutlinedButton(onClick = onQaDeviation, Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
+                    HorizontalDivider()
+                }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MetricCard("${fmt(currentKm)} km", "Percorridos", Modifier.weight(1f))
                     MetricCard("${fmt(remainingKm)} km", "Para o fim", Modifier.weight(1f))
@@ -246,21 +260,6 @@ internal fun V1ActiveExperienceScreenV2(
                     OutlinedButton(onClick = onOpenDecision, Modifier.weight(1f)) { Text("OPÇÕES") }
                     OutlinedButton(onClick = onOpenPilgrimMode, Modifier.weight(1f)) { Text("MODO PEREGRINO") }
                 }
-                if (AndroidRouteCatalog.isTestRoute(state.walk.routeId)) {
-                    HorizontalDivider()
-                    Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold)
-                    Text(
-                        "Controlos apenas para validar GPS simulado. Não aparecem no percurso de produção.",
-                        color = V2Muted,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        OutlinedButton(onClick = onQaAdvance, Modifier.weight(1f)) { Text("AVANÇAR GPS") }
-                        OutlinedButton(onClick = { onQaToggleGps(false) }, Modifier.weight(1f)) { Text("PERDER GPS") }
-                        OutlinedButton(onClick = { onQaToggleGps(true) }, Modifier.weight(1f)) { Text("RECUPERAR GPS") }
-                    }
-                    OutlinedButton(onClick = onQaDeviation, Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
-                }
             }
             }
             }
@@ -317,13 +316,12 @@ private fun ActiveWalkingAudioFeedback(state: WalkingState) {
 @Composable
 private fun DraggableWalkingSheet(
     modifier: Modifier,
-    initialExpanded: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     val minHeight = with(density) { 190.dp.toPx() }
     val maxHeight = with(density) { 620.dp.toPx() }
-    val initialHeight = with(density) { if (initialExpanded) 560.dp.toPx() else 260.dp.toPx() }
+    val initialHeight = with(density) { 260.dp.toPx() }
     var heightPx by androidx.compose.runtime.remember { mutableFloatStateOf(initialHeight) }
 
     Box(
