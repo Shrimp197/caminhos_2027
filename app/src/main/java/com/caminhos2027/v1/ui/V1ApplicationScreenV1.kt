@@ -41,6 +41,10 @@ internal fun V1ApplicationScreenV1(
     onOpenSmartwatch: () -> Unit,
     onOpenPilgrimMode: () -> Unit,
     onExitPilgrimMode: () -> Unit,
+    onOpenSettings: () -> Unit,
+    pilgrimModeOnStart: Boolean,
+    onTogglePilgrimModeOnStart: (Boolean) -> Unit,
+    onOpenNotificationSettings: () -> Unit,
     onNavigate: (WalkingSurface) -> Unit,
     onDiaryChoosePhoto: () -> Unit,
     onDiaryClearPhoto: () -> Unit,
@@ -111,6 +115,15 @@ internal fun V1ApplicationScreenV1(
                 onSmartwatch = onOpenSmartwatch,
                 onSos = onOpenSos,
                 onPilgrimMode = onOpenPilgrimMode,
+                onSettings = onOpenSettings,
+                onNavigate = onNavigate
+            )
+
+        surface == WalkingSurface.SETTINGS ->
+            SettingsSurfaceV1(
+                pilgrimModeOnStart = pilgrimModeOnStart,
+                onTogglePilgrimModeOnStart = onTogglePilgrimModeOnStart,
+                onOpenNotificationSettings = onOpenNotificationSettings,
                 onNavigate = onNavigate
             )
 
