@@ -441,18 +441,31 @@ class V1MainActivity : ComponentActivity() {
         }
     }
 
+    private fun postWhenTrackingBinderReady(
+        action: (AndroidWalkingTrackingService.TrackingBinder) -> Unit,
+        attemptsRemaining: Int = 20
+    ) {
+        val binder = trackingBinder
+        if (binder != null) {
+            action(binder)
+        } else if (attemptsRemaining > 0) {
+            walkingReconcileHandler.postDelayed(
+                { postWhenTrackingBinderReady(action, attemptsRemaining - 1) },
+                100L
+            )
+        }
+    }
+
     private fun qaAdvance() {
-        trackingBinder?.qaAdvance() ?: walkingReconcileHandler.postDelayed({ trackingBinder?.qaAdvance() }, 750L)
+        postWhenTrackingBinderReady { it.qaAdvance() }
     }
 
     private fun qaSetGpsAvailability(available: Boolean) {
-        trackingBinder?.qaSetGpsAvailability(available)
-            ?: walkingReconcileHandler.postDelayed({ trackingBinder?.qaSetGpsAvailability(available) }, 750L)
+        postWhenTrackingBinderReady { it.qaSetGpsAvailability(available) }
     }
 
     private fun qaSimulateDeviation() {
-        trackingBinder?.qaSimulateDeviation()
-            ?: walkingReconcileHandler.postDelayed({ trackingBinder?.qaSimulateDeviation() }, 750L)
+        postWhenTrackingBinderReady { it.qaSimulateDeviation() }
     }
 
     private fun openApoiBrowser() {
