@@ -38,6 +38,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import org.maplibre.android.annotations.MarkerOptions
 import org.maplibre.android.annotations.PolylineOptions
 import org.maplibre.android.camera.CameraUpdateFactory
+import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
@@ -84,6 +85,7 @@ internal fun RealWalkingMap(
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var styleReady by remember { mutableStateOf(false) }
     var offlineRegion by remember { mutableStateOf<OfflineRegion?>(null) }
+    var cameraInitialized by remember { mutableStateOf(false) }
     var offlineState by remember { mutableStateOf(OfflineUiState()) }
     val points = remember(geometry) { geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() } }
     val currentPoint = projectedPoint ?: pointAtRouteKmForMap(points, currentKm, totalKm)
@@ -106,18 +108,20 @@ internal fun RealWalkingMap(
     }
 
     AndroidView(
-        factory = {
-            mapView.getMapAsync { loaded ->
-                map = loaded
-                loaded.uiSettings.isZoomGesturesEnabled = true
-                loaded.uiSettings.isScrollGesturesEnabled = true
-                loaded.uiSettings.isRotateGesturesEnabled = true
-                loaded.uiSettings.isCompassEnabled = true
-                loaded.setStyle(WALKING_MAP_STYLE_URL) { styleReady = true }
-            }
-        },
+        factory = { mapView },
         modifier = modifier.clip(RoundedCornerShape(24.dp)).background(Color(0xFFE8EDE7))
     )
+
+    LaunchedEffect(mapView) {
+        mapView.getMapAsync { loaded ->
+            map = loaded
+            loaded.uiSettings.isZoomGesturesEnabled = true
+            loaded.uiSettings.isScrollGesturesEnabled = true
+            loaded.uiSettings.isRotateGesturesEnabled = true
+            loaded.uiSettings.isCompassEnabled = true
+            loaded.setStyle(WALKING_MAP_STYLE_URL) { styleReady = true }
+        }
+    }
 
     LaunchedEffect(Unit) {
         inspectOfflineRegion(context) { region, state ->
@@ -126,7 +130,18 @@ internal fun RealWalkingMap(
         }
     }
 
-    LaunchedEffect(map, styleReady, points, currentPoint, nextApoi) {
+    LaunchedEffect(map, styleReady, points) {
+        val loaded = map ?: return@LaunchedEffect
+        if (!styleReady || points.size < 2 || cameraInitialized) return@LaunchedEffect
+        runCatching {
+            val bounds = LatLngBounds.Builder()
+            points.forEach { bounds.include(LatLng(it.latitude, it.longitude)) }
+            loaded.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 70))
+            cameraInitialized = true
+        }
+    }
+
+    LaunchedEffect(map, styleReady, points, currentPoint, nextApoi, gpsState) {
         val loaded = map ?: return@LaunchedEffect
         if (!styleReady || points.size < 2) return@LaunchedEffect
         runCatching {
