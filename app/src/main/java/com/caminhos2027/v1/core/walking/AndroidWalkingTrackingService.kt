@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Binder
+import android.util.Log
 import android.os.Handler
 import android.os.Looper
 import android.os.Build
@@ -192,7 +193,9 @@ class AndroidWalkingTrackingService : Service() {
                 pendingStart = false
                 pendingStartDistanceMeters = null
                 notifyState()
-            } catch (_: IllegalArgumentException) {
+            } catch (error: IllegalArgumentException) {
+                Log.e(TAG, "Failed to start prepared walk from first GPS fix", error)
+                reportError(error.message ?: "Não foi possível iniciar a caminhada.")
                 notifyState()
             }
             return
@@ -353,5 +356,6 @@ class AndroidWalkingTrackingService : Service() {
         const val EXTRA_ROUTE_ID = "route_id"
         private const val CHANNEL_ID = "walking_tracking"
         private const val NOTIFICATION_ID = 2027
+        private const val TAG = "CaminhosWalking"
     }
 }
