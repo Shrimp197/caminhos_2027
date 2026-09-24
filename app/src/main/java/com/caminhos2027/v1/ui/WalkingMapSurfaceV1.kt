@@ -148,7 +148,7 @@ internal fun RealWalkingMap(
         runCatching {
             if (mapOrientation == MapOrientation.WALK_DIRECTION && points.size >= 2) {
                 val bearing = routeBearing(points, currentPoint)
-                loaded.cameraPosition.toBuilder().bearing(bearing).build().also { loaded.cameraPosition = it }
+                loaded.cameraPosition.toBuilder().bearing(bearing).build().also { loaded.setCameraPosition(it) }
             }
             loaded.clear()
             loaded.addPolyline(
