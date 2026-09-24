@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
@@ -38,6 +39,7 @@ import org.maplibre.android.module.http.HttpRequestUtil
 import java.time.Instant
 
 class V1MainActivity : ComponentActivity() {
+    private companion object { const val TAG = "CaminhosV1" }
     // V1 final delivery flow: keep production/QA boundaries explicit.
     private lateinit var appContainer: AndroidV1AppContainer
     private lateinit var diaryRepository: DiaryRepository
@@ -325,7 +327,10 @@ class V1MainActivity : ComponentActivity() {
      * Production routes always wait for the real Android GPS callback.
      */
     private fun startQaPreparedWalk() {
-        val saved = preparedWalk ?: return
+        val saved = preparedWalk ?: run {
+            Log.e(TAG, "QA start ignored: preparedWalk is null")
+            return
+        }
         val route = appContainer.publishedRoute()
         val startKm = saved.plannedStartKm ?: 0.0
         val index = GpxSimulationStartIndex.nearestPointIndex(route, startKm)
@@ -337,6 +342,7 @@ class V1MainActivity : ComponentActivity() {
             capturedAt = Instant.now()
         )
         val position = RouteLocationEngine.locate(route, raw)
+        Log.i(TAG, "QA start: route=" + route.id + ", plannedStartKm=" + startKm + ", index=" + index + ", positionKm=" + position.routeKm + ", distance=" + position.distanceToRouteMeters)
         val started = runCatching {
             appContainer.preparationController.startSaved(
                 catalog = appContainer.publishedApoiCatalog(),
@@ -346,7 +352,8 @@ class V1MainActivity : ComponentActivity() {
         }.getOrElse {
             pendingStartDistanceMeters = position.distanceToRouteMeters
             startRequested = false
-            showInfo(it.message ?: "Não foi possível iniciar a caminhada de teste.")
+            Log.e(TAG, "QA start failed", it)
+            showInfo("Não foi possível iniciar a caminhada de teste: " + (it.message ?: "erro desconhecido"))
             return
         }
         val walking = started.walking ?: return
@@ -357,6 +364,7 @@ class V1MainActivity : ComponentActivity() {
         startRequested = false
         pendingStartDistanceMeters = null
         surface = if (pilgrimModeOnStart) WalkingSurface.PILGRIM_MODE else WalkingSurface.ACTIVE
+        Log.i(TAG, "QA start succeeded: walk=" + walking.walk.id + ", status=" + walking.walk.status)
         if (hasLocationPermission()) startTrackingService()
     }
 
