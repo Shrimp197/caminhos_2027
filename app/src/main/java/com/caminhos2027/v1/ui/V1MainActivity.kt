@@ -174,7 +174,7 @@ class V1MainActivity : ComponentActivity() {
                     onExitPilgrimMode = ::exitPilgrimMode,
                     onOpenSettings = ::openSettings,
                     pilgrimModeOnStart = pilgrimModeOnStart,
-                    onTogglePilgrimModeOnStart = ::setPilgrimModeOnStart,
+                    onTogglePilgrimModeOnStart = ::updatePilgrimModeOnStart,
                     onOpenNotificationSettings = ::openNotificationSettings,
                     onNavigate = ::navigate,
                     diaryEntries = diaryEntries,
@@ -392,7 +392,7 @@ class V1MainActivity : ComponentActivity() {
 
     private fun openSettings() { surface = WalkingSurface.SETTINGS }
 
-    private fun setPilgrimModeOnStart(enabled: Boolean) {
+    private fun updatePilgrimModeOnStart(enabled: Boolean) {
         pilgrimModeOnStart = enabled
         getSharedPreferences("peregrino_preferences", MODE_PRIVATE)
             .edit()
