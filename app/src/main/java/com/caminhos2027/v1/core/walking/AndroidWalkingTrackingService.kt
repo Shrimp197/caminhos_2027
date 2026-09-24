@@ -44,19 +44,18 @@ class AndroidWalkingTrackingService : Service() {
         fun resumeWalking() = beginTracking()
         fun stopWalking() = stopWalkingSession()
         fun cancelPendingStart() = cancelPendingStartInternal()
-        fun qaAdvance() { mainHandler.post { simulationSource?.advance() } }
+        fun qaAdvance() { postWhenSimulationReady { it.advance() } }
         fun qaSetGpsAvailability(available: Boolean) {
-            mainHandler.post {
-                val source = simulationSource ?: return@post
-                source.setAvailable(available)
+            postWhenSimulationReady {
+                it.setAvailable(available)
                 // Recovery QA must exercise the same raw-position path as real GPS.
                 // Provider availability alone is not a GPS fix; force one fresh raw fix.
                 if (available) {
-                    source.emitRecoveryFix()
+                    it.emitRecoveryFix()
                 }
             }
         }
-        fun qaSimulateDeviation() { mainHandler.post { simulationSource?.simulateDeviation() } }
+        fun qaSimulateDeviation() { postWhenSimulationReady { it.simulateDeviation() } }
     }
 
     private val binder = TrackingBinder()
@@ -336,6 +335,27 @@ class AndroidWalkingTrackingService : Service() {
     }
 
     private fun formatNotificationDistance(value: Double): String = if (value < 1.0) "${(value * 1000.0).toInt()} m" else String.format(java.util.Locale("pt", "PT"), "%.1f km", value)
+
+    /**
+     * QA controls can be invoked immediately after Activity/service binding, before the test
+     * route source has finished initialization. Do not silently drop a command in that race.
+     */
+    private fun postWhenSimulationReady(
+        action: (GpxSimulationLocationSource) -> Unit,
+        attemptsRemaining: Int = 20
+    ) {
+        mainHandler.post {
+            val source = simulationSource
+            if (source != null) {
+                action(source)
+            } else if (attemptsRemaining > 0) {
+                mainHandler.postDelayed(
+                    { postWhenSimulationReady(action, attemptsRemaining - 1) },
+                    100L
+                )
+            }
+        }
+    }
 
     private fun reportError(message: String) {
         listeners.toList().forEach { it.onTrackingError(message) }
