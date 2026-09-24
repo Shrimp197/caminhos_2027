@@ -1,9 +1,6 @@
 package com.caminhos2027.v1.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +35,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,12 +52,16 @@ import androidx.compose.ui.platform.LocalContext
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.AudioMode
+import com.caminhos2027.v1.core.model.GeoPoint
+import com.caminhos2027.v1.core.model.MapOrientation
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.walking.WalkingState
 import java.time.Duration
 import java.time.Instant
 import java.util.Locale
+import kotlin.math.cos
+import kotlin.math.min
 
 private val V2Forest = Color(0xFF0E6546)
 private val V2ForestSoft = Color(0xFFE6F2EB)
@@ -148,12 +152,12 @@ internal fun V1ActiveExperienceScreenV2(
                 nextApoi = state.nextApoi
             )
 
-        DraggableWalkingSheet(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(bottom = 6.dp)
-        ) {
+            DraggableWalkingSheet(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp)
+            ) {
         Card(
             Modifier
                 .fillMaxWidth()
@@ -254,8 +258,7 @@ internal fun V1ActiveExperienceScreenV2(
                     OutlinedButton(onClick = onQaDeviation, Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
                 }
             }
-        }
-
+            }
         }
         BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
     }
