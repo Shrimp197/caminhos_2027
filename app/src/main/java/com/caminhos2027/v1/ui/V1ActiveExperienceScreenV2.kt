@@ -1,6 +1,9 @@
 package com.caminhos2027.v1.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,11 +41,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
@@ -53,6 +59,7 @@ import com.caminhos2027.v1.core.walking.WalkingState
 import java.time.Duration
 import java.time.Instant
 import java.util.Locale
+import kotlin.math.roundToInt
 
 private val V2Forest = Color(0xFF0E6546)
 private val V2ForestSoft = Color(0xFFE6F2EB)
@@ -143,6 +150,12 @@ internal fun V1ActiveExperienceScreenV2(
                 nextApoi = state.nextApoi
             )
 
+        DraggableWalkingSheet(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(bottom = 6.dp)
+        ) {
         Card(
             Modifier
                 .fillMaxWidth()
@@ -244,113 +257,9 @@ internal fun V1ActiveExperienceScreenV2(
                 }
             }
         }
-            DraggableWalkingSheet(
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-            ) {
-            Card(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(max = 620.dp)
-                .padding(12.dp),
-            RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(4.dp)
-        ) {
-            Column(
-                Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MetricCard("${fmt(currentKm)} km", "Percorridos", Modifier.weight(1f))
-                    MetricCard("${fmt(remainingKm)} km", "Para o fim", Modifier.weight(1f))
-                    MetricCard(elapsed, "Tempo", Modifier.weight(1f))
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Progresso", color = V2Muted, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
-                    Text("${(progress * 100).toInt()}%", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                }
-                LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(10.dp)), color = V2Forest, trackColor = V2ForestSoft)
-                Text("Destino planeado · ${fmt(destinationKm)} km", color = V2Muted, style = MaterialTheme.typography.bodySmall)
-                pauseRecommendationText(state)?.let { recommendation ->
-                    Card(
-                        Modifier.fillMaxWidth(),
-                        RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = V2ForestSoft)
-                    ) {
-                        Column(Modifier.padding(12.dp)) {
-                            Text("PAUSA INTELIGENTE", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                            Text(recommendation, color = V2Forest, fontWeight = FontWeight.SemiBold)
-                            Text("Pode parar agora e retomar quando quiser.", color = V2Muted, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-                HorizontalDivider()
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.Icon(Icons.Filled.LocationOn, null, tint = V2Forest)
-                    Spacer(Modifier.width(8.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("A minha posição", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                        Text(positionDetail(state), color = V2Muted, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-                state.nextApoi?.let { apoi ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        androidx.compose.material3.Icon(Icons.Filled.Place, null, tint = V2Forest)
-                        Spacer(Modifier.width(8.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Próximo APOI", color = V2Muted, style = MaterialTheme.typography.labelLarge)
-                            Text(apoi.name, fontWeight = FontWeight.ExtraBold)
-                        }
-                        Text(state.nextApoiDistanceKm?.let(::fmtDistance) ?: "—", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                    }
-                }
-                if (state.isPaused) {
-                    Card(
-                        Modifier.fillMaxWidth(),
-                        RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1D9))
-                    ) {
-                        Text(
-                            "CAMINHADA PAUSADA · a posição ficou guardada e o GPS não está a ser aceite.",
-                            Modifier.padding(12.dp),
-                            color = Color(0xFF7A4A00),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onTogglePause, Modifier.weight(1f)) {
-                        Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA")
-                    }
-                    OutlinedButton(onClick = onOpenApoi, Modifier.weight(1f)) { Text("VER APOIOS") }
-                    OutlinedButton(onClick = onOpenNext10Km, Modifier.weight(1f)) { Text("PRÓXIMOS 10 KM") }
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onOpenDecision, Modifier.weight(1f)) { Text("OPÇÕES") }
-                    OutlinedButton(onClick = onOpenPilgrimMode, Modifier.weight(1f)) { Text("MODO PEREGRINO") }
-                }
-                if (AndroidRouteCatalog.isTestRoute(state.walk.routeId)) {
-                    HorizontalDivider()
-                    Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold)
-                    Text(
-                        "Controlos apenas para validar GPS simulado. Não aparecem no percurso de produção.",
-                        color = V2Muted,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        OutlinedButton(onClick = onQaAdvance, Modifier.weight(1f)) { Text("AVANÇAR GPS") }
-                        OutlinedButton(onClick = { onQaToggleGps(false) }, Modifier.weight(1f)) { Text("PERDER GPS") }
-                        OutlinedButton(onClick = { onQaToggleGps(true) }, Modifier.weight(1f)) { Text("RECUPERAR GPS") }
-                    }
-                    OutlinedButton(onClick = onQaDeviation, Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
-                }
-            }
-            }
 
-            }
-        }        BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
+        }
+        }\n        BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
     }
 }
 
@@ -405,20 +314,20 @@ private fun DraggableWalkingSheet(
     content: @Composable () -> Unit
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
-    val maxOffset = with(density) { 380.dp.toPx() }
-    var offsetPx by androidx.compose.runtime.remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+    val maxOffset = with(density) { 360.dp.toPx() }
+    var offsetPx by androidx.compose.runtime.remember { mutableFloatStateOf(0f) }
 
     Box(
         modifier
-            .offset { androidx.compose.ui.unit.IntOffset(0, offsetPx.roundToInt()) }
+            .offset { IntOffset(0, offsetPx.roundToInt()) }
             .clip(RoundedCornerShape(26.dp))
             .background(Color.White)
             .shadow(6.dp, RoundedCornerShape(26.dp))
             .draggable(
-                state = androidx.compose.foundation.gestures.rememberDraggableState { delta ->
+                state = rememberDraggableState { delta ->
                     offsetPx = (offsetPx + delta).coerceIn(0f, maxOffset)
                 },
-                orientation = androidx.compose.foundation.gestures.Orientation.Vertical,
+                orientation = Orientation.Vertical,
                 onDragStopped = {
                     offsetPx = if (offsetPx < maxOffset / 2f) 0f else maxOffset
                 }
@@ -428,8 +337,8 @@ private fun DraggableWalkingSheet(
             Box(
                 Modifier
                     .align(Alignment.CenterHorizontally)
-                    .padding(top = 9.dp, bottom = 3.dp)
-                    .size(width = 42.dp, height = 5.dp)
+                    .padding(top = 8.dp, bottom = 3.dp)
+                    .size(width = 44.dp, height = 5.dp)
                     .clip(RoundedCornerShape(3.dp))
                     .background(Color(0xFFB9C1BC))
             )
