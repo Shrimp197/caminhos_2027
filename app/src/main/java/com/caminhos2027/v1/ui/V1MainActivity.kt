@@ -6,7 +6,9 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -40,6 +42,8 @@ class V1MainActivity : ComponentActivity() {
     private var trackingBinder: AndroidWalkingTrackingService.TrackingBinder? = null
     private var trackingBound = false
     private var trackingBindRequested = false
+    private val walkingReconcileHandler = Handler(Looper.getMainLooper())
+    private var walkingReconcileRunnable: Runnable? = null
 
     private val trackingListener = object : AndroidWalkingTrackingService.Listener {
         override fun onTrackingStateChanged(state: WalkingState?, pendingStart: Boolean, pendingDistanceMeters: Double?) {
@@ -208,6 +212,7 @@ class V1MainActivity : ComponentActivity() {
         if (startRequested || (walkingState != null && !walkingState!!.isPaused)) {
             if (hasLocationPermission()) startTrackingService() else requestLocationPermission()
         }
+        if (startRequested) scheduleWalkingStateReconciliation()
     }
 
     override fun onStop() {
@@ -216,6 +221,7 @@ class V1MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        cancelWalkingStateReconciliation()
         disconnectTrackingService()
         super.onDestroy()
     }
@@ -301,14 +307,49 @@ class V1MainActivity : ComponentActivity() {
         require(preparedWalk?.status == WalkStatus.PLANNED) { "A planned walk is required before starting" }
         startRequested = true
         pendingStartDistanceMeters = null
+        scheduleWalkingStateReconciliation()
         if (hasLocationPermission()) startTrackingService() else requestLocationPermission()
     }
 
     private fun cancelPendingStart() {
         startRequested = false
         pendingStartDistanceMeters = null
+        cancelWalkingStateReconciliation()
         trackingBinder?.cancelPendingStart()
         surface = WalkingSurface.ACTIVE
+    }
+
+    /**
+     * Closes the Activity/foreground-service callback race: the service persists an active walk
+     * before the binder callback necessarily reaches a newly created Activity.
+     */
+    private fun scheduleWalkingStateReconciliation() {
+        cancelWalkingStateReconciliation()
+        var attempts = 0
+        val runnable = object : Runnable {
+            override fun run() {
+                if (!startRequested) return
+                val restored = runCatching { appContainer.resumePersistedWalk().walking }.getOrNull()
+                val active = restored?.takeIf { it.walk.status == WalkStatus.ACTIVE }
+                if (active != null) {
+                    walkingState = active
+                    preparedWalk = null
+                    startRequested = false
+                    pendingStartDistanceMeters = null
+                    surface = if (pilgrimModeOnStart) WalkingSurface.PILGRIM_MODE else WalkingSurface.ACTIVE
+                    return
+                }
+                attempts += 1
+                if (attempts < 24) walkingReconcileHandler.postDelayed(this, 500L)
+            }
+        }
+        walkingReconcileRunnable = runnable
+        walkingReconcileHandler.post(runnable)
+    }
+
+    private fun cancelWalkingStateReconciliation() {
+        walkingReconcileRunnable?.let(walkingReconcileHandler::removeCallbacks)
+        walkingReconcileRunnable = null
     }
 
     private fun isTestRoute(): Boolean = AndroidRouteCatalog.isTestRoute(selectedRouteId)
