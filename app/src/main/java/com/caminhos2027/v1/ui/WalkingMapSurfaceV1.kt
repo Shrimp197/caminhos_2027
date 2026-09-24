@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -141,10 +142,14 @@ internal fun RealWalkingMap(
         }
     }
 
-    LaunchedEffect(map, styleReady, points, currentPoint, nextApoi, gpsState) {
+    LaunchedEffect(map, styleReady, points, currentPoint, nextApoi, gpsState, mapOrientation) {
         val loaded = map ?: return@LaunchedEffect
         if (!styleReady || points.size < 2) return@LaunchedEffect
         runCatching {
+            if (mapOrientation == MapOrientation.WALK_DIRECTION && points.size >= 2) {
+                val bearing = routeBearing(points, currentPoint)
+                loaded.cameraPosition.toBuilder().bearing(bearing).build().also { loaded.cameraPosition = it }
+            }
             loaded.clear()
             loaded.addPolyline(
                 PolylineOptions()
@@ -368,6 +373,22 @@ private fun gpsLabelForMap(state: GpsState): String = when (state) {
     GpsState.ON_ROUTE -> "GPS no percurso"
     GpsState.POSSIBLE_DEVIATION -> "Possível desvio"
     GpsState.PROBABLE_DEVIATION -> "Provável desvio"
+}
+
+private fun routeBearing(points: List<GeoPoint>, point: GeoPoint?): Double {
+    if (points.size < 2 || point == null) return 0.0
+    val index = points.indices.minByOrNull { i ->
+        val a = points[i]
+        val lat = a.latitude - point.latitude
+        val lon = a.longitude - point.longitude
+        lat * lat + lon * lon
+    } ?: return 0.0
+    val from = if (index < points.lastIndex) points[index] else points[index - 1]
+    val to = if (index < points.lastIndex) points[index + 1] else points[index]
+    val meanLat = Math.toRadians((from.latitude + to.latitude) / 2.0)
+    val east = (to.longitude - from.longitude) * kotlin.math.cos(meanLat)
+    val north = to.latitude - from.latitude
+    return if (east == 0.0 && north == 0.0) 0.0 else Math.toDegrees(kotlin.math.atan2(east, north))
 }
 
 private fun gpsColorForMap(state: GpsState): Color = when (state) {
