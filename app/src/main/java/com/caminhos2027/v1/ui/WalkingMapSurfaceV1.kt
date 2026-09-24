@@ -88,6 +88,8 @@ internal fun RealWalkingMap(
     var offlineRegion by remember { mutableStateOf<OfflineRegion?>(null) }
     var cameraInitialized by remember { mutableStateOf(false) }
     var offlineState by remember { mutableStateOf(OfflineUiState()) }
+    var currentMarker by remember { mutableStateOf<org.maplibre.android.annotations.Marker?>(null) }
+    var nextApoiMarker by remember { mutableStateOf<org.maplibre.android.annotations.Marker?>(null) }
     val points = remember(geometry) { geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() } }
     val currentPoint = projectedPoint ?: pointAtRouteKmForMap(points, currentKm, totalKm)
 
@@ -142,24 +144,42 @@ internal fun RealWalkingMap(
         }
     }
 
-    LaunchedEffect(map, styleReady, points, currentPoint, nextApoi, gpsState, mapOrientation) {
+    LaunchedEffect(map, styleReady, points) {
         val loaded = map ?: return@LaunchedEffect
         if (!styleReady || points.size < 2) return@LaunchedEffect
         runCatching {
-            if (mapOrientation == MapOrientation.WALK_DIRECTION && points.size >= 2) {
-                val bearing = routeBearing(points, currentPoint)
-                org.maplibre.android.camera.CameraPosition.Builder(loaded.cameraPosition).bearing(bearing).build().also { loaded.setCameraPosition(it) }
-            }
-            loaded.clear()
             loaded.addPolyline(
                 PolylineOptions()
                     .addAll(points.map { LatLng(it.latitude, it.longitude) })
                     .color(AndroidColor.rgb(31, 107, 74))
                     .width(7f)
             )
-            loaded.addMarker(MarkerOptions().position(LatLng(points.first().latitude, points.first().longitude)).title("Início"))
-            loaded.addMarker(MarkerOptions().position(LatLng(points.last().latitude, points.last().longitude)).title("Destino"))
-            currentPoint?.let {
+            loaded.addMarker(
+                MarkerOptions()
+                    .position(LatLng(points.first().latitude, points.first().longitude))
+                    .title("Início")
+            )
+            loaded.addMarker(
+                MarkerOptions()
+                    .position(LatLng(points.last().latitude, points.last().longitude))
+                    .title("Destino")
+            )
+        }
+    }
+
+    LaunchedEffect(map, styleReady, currentPoint, nextApoi, gpsState, mapOrientation) {
+        val loaded = map ?: return@LaunchedEffect
+        if (!styleReady || points.size < 2) return@LaunchedEffect
+        runCatching {
+            if (mapOrientation == MapOrientation.WALK_DIRECTION) {
+                val bearing = routeBearing(points, currentPoint)
+                org.maplibre.android.camera.CameraPosition.Builder(loaded.cameraPosition)
+                    .bearing(bearing)
+                    .build()
+                    .also { loaded.setCameraPosition(it) }
+            }
+            currentMarker?.let { loaded.removeMarker(it) }
+            currentMarker = currentPoint?.let {
                 loaded.addMarker(
                     MarkerOptions()
                         .position(LatLng(it.latitude, it.longitude))
@@ -167,7 +187,8 @@ internal fun RealWalkingMap(
                         .snippet(gpsLabelForMap(gpsState))
                 )
             }
-            nextApoi?.location?.latitude?.let { lat ->
+            nextApoiMarker?.let { loaded.removeMarker(it) }
+            nextApoiMarker = nextApoi?.location?.latitude?.let { lat ->
                 nextApoi.location.longitude?.let { lon ->
                     loaded.addMarker(
                         MarkerOptions()
