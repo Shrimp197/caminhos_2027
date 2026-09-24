@@ -33,9 +33,8 @@ object GpxSimulationStartIndex {
         require(plannedStartKm.isFinite()) { "Planned start kilometre must be finite" }
 
         val target = plannedStartKm.coerceIn(0.0, route.totalDistanceKm)
-        return cumulativeRouteKm(route.geometry.points)
-            .indices
-            .minBy { index -> abs(cumulativeRouteKm(route.geometry.points)[index] - target) }
+        val cumulative = cumulativeRouteKm(route.geometry.points)
+        return cumulative.indices.minBy { index -> abs(cumulative[index] - target) }
     }
 
     private fun cumulativeRouteKm(points: List<GeoPoint>): List<Double> {
