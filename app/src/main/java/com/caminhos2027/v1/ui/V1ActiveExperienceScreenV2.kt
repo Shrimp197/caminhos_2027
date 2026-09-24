@@ -120,7 +120,7 @@ internal fun V1ActiveExperienceScreenV2(
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    "MAPA OFFLINE · TRAÇADO OFICIAL",
+                    "MAPA · CARTOGRAFIA REAL",
                     color = V2Muted,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.labelSmall
@@ -259,7 +259,7 @@ internal fun V1ActiveExperienceScreenV2(
         }
 
         }
-        }\n        BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
+        BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
     }
 }
 
