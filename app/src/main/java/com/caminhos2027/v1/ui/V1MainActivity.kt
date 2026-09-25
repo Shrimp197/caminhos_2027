@@ -449,6 +449,7 @@ class V1MainActivity : ComponentActivity() {
             // rebuild its persisted runtime, but keep the existing Activity binder/listener attached.
             Log.i(TAG, "Resume requested: restarting tracking service without detaching listener")
             startTrackingService()
+            postWhenTrackingBinderReady(action = { it.resumeWalking() }, attemptsRemaining = 50)
             schedulePausedResumeReconciliation()
         } else {
             postWhenTrackingBinderReady(action = { it.pauseWalking() })
