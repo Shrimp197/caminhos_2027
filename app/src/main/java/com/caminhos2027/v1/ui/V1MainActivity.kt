@@ -436,6 +436,7 @@ class V1MainActivity : ComponentActivity() {
         if (walkingState?.isPaused == true) {
             // Pausing stops the Service. Restarting it with ACTION_START restores the persisted
             // paused session and resumes it inside the Service-owned runtime; no binder race is needed.
+            Log.i(TAG, "Resume requested: restarting tracking service")
             disconnectTrackingService()
             startTrackingService()
         } else {
