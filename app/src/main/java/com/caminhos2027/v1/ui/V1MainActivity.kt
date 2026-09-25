@@ -434,10 +434,9 @@ class V1MainActivity : ComponentActivity() {
 
     private fun togglePause() {
         if (walkingState?.isPaused == true) {
-            // Pausing intentionally stops the started service. After Activity/process recreation the
-            // existing binder may belong to a newly bound, non-started Service instance with no container.
-            // Always restart through the foreground-service entry point so persisted paused state is restored
-            // and the resume transition is executed by the long-lived service.
+            // Pausing stops the Service. Rebind before resuming so the Activity never sends QA/GPS
+            // commands through a stale binder from the stopped Service instance.
+            disconnectTrackingService()
             startTrackingService()
         } else {
             trackingBinder?.pauseWalking()
