@@ -465,7 +465,11 @@ class V1MainActivity : ComponentActivity() {
     }
 
     private fun qaSimulateDeviation() {
-        postWhenTrackingBinderReady(action = { it.qaSimulateDeviation() })
+        Log.i(TAG, "QA deviation button invoked; binderReady=" + (trackingBinder != null))
+        postWhenTrackingBinderReady(action = {
+            Log.i(TAG, "QA deviation forwarded to tracking binder")
+            it.qaSimulateDeviation()
+        })
     }
 
     private fun openApoiBrowser() {
