@@ -55,7 +55,7 @@ class AndroidWalkingTrackingService : Service() {
                 }
             })
         }
-        fun qaSimulateDeviation() { postWhenSimulationReady(action = { source -> source.simulateDeviation() }) }
+        fun qaSimulateDeviation() { postWhenSimulationReady(action = { source -> source.simulateDeviation(); source.simulateDeviation() }) }
     }
 
     private val binder = TrackingBinder()
