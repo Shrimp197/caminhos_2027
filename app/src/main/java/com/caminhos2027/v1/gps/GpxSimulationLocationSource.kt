@@ -63,7 +63,7 @@ class GpxSimulationLocationSource(
     }
 
     /** Emits one deliberate off-route raw position for deterministic deviation QA. */
-    fun simulateDeviation(offsetMeters: Double = 55.0) {
+    fun simulateDeviation(offsetMeters: Double = 120.0) {
         require(offsetMeters.isFinite() && offsetMeters > 0.0) {
             "Deviation offset must be finite and > 0"
         }
