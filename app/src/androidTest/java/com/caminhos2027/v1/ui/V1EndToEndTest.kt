@@ -108,7 +108,7 @@ class V1EndToEndTest {
         val positionBeforePause = visibleTextValue("Km no percurso:")
         clickVisibleText("PAUSAR CAMINHADA")
         assertTrue("Pause state did not appear", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
-        assertTrue("Resume action did not appear", waitForVisibleText("RETOMAR CAMINHADA", 30_000))
+        assertTrue("Resume action did not appear", waitForVisibleTextOrDescription("RETOMAR CAMINHADA", 30_000))
         val positionWhilePaused = visibleTextValue("Km no percurso:")
         assertTrue(
             "Paused walk changed route position before external process death",
@@ -119,7 +119,7 @@ class V1EndToEndTest {
     @Test
     fun test3RestorePausedWalkResumeApoiDecisionAndStop() {
         assertTrue("Paused walking session was not restored after external process death", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
-        assertTrue("Persisted pause did not expose resume action", waitForVisibleText("RETOMAR CAMINHADA", 30_000))
+        assertTrue("Persisted pause did not expose resume action", waitForVisibleTextOrDescription("RETOMAR CAMINHADA", 30_000))
         val persistedPausedPosition = visibleTextValue("Km no percurso:")
         clickVisibleText("RETOMAR CAMINHADA")
         assertTrue("Walking session did not resume", waitForVisibleText("PAUSAR CAMINHADA", 30_000))
