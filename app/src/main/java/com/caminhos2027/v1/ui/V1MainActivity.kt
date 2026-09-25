@@ -408,6 +408,20 @@ class V1MainActivity : ComponentActivity() {
         walkingReconcileRunnable?.let(walkingReconcileHandler::removeCallbacks)
         walkingReconcileRunnable = null
     }
+    private fun schedulePausedResumeReconciliation(attemptsRemaining: Int = 30) {
+        walkingReconcileHandler.postDelayed({
+            val restored = runCatching { appContainer.resumePersistedWalk().walking }.getOrNull()
+            if (restored != null && !restored.isPaused) {
+                walkingState = restored
+                preparedWalk = null
+                startRequested = false
+                pendingStartDistanceMeters = null
+                surface = if (pilgrimModeOnStart) WalkingSurface.PILGRIM_MODE else WalkingSurface.ACTIVE
+            } else if (attemptsRemaining > 0) {
+                schedulePausedResumeReconciliation(attemptsRemaining - 1)
+            }
+        }, 100L)
+    }
 
     private fun isTestRoute(): Boolean = AndroidRouteCatalog.isTestRoute(selectedRouteId)
 
@@ -435,6 +449,7 @@ class V1MainActivity : ComponentActivity() {
             // rebuild its persisted runtime, but keep the existing Activity binder/listener attached.
             Log.i(TAG, "Resume requested: restarting tracking service without detaching listener")
             startTrackingService()
+            schedulePausedResumeReconciliation()
         } else {
             postWhenTrackingBinderReady(action = { it.pauseWalking() })
         }
