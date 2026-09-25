@@ -14,7 +14,7 @@ class AndroidWalkingStateRepository(context: Context) : WalkingStateRepository {
     private val preferences = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     override fun save(walkId: String, checkpoint: WalkingCheckpoint) {
-        preferences.edit().putString(key(walkId), encode(checkpoint).toString()).apply()
+        preferences.edit().putString(key(walkId), encode(checkpoint).toString()).commit()
     }
 
     override fun get(walkId: String): WalkingCheckpoint? {
