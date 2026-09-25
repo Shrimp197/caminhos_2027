@@ -197,6 +197,12 @@ internal fun V1ActiveExperienceScreenV2(
                     OutlinedButton(onClick = onQaDeviation, Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
                     HorizontalDivider()
                 }
+                Text(
+                    "Km no percurso: ${fmt(currentKm)} km",
+                    color = V2Forest,
+                    fontWeight = FontWeight.ExtraBold,
+                    style = MaterialTheme.typography.labelLarge
+                )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MetricCard("${fmt(currentKm)} km", "Percorridos", Modifier.weight(1f))
                     MetricCard("${fmt(remainingKm)} km", "Para o fim", Modifier.weight(1f))
