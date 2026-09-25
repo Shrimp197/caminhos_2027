@@ -83,7 +83,7 @@ class GpxSimulationLocationSource(
                 latitude = point.latitude + offsetNorth / latitudeMeters,
                 longitude = point.longitude + offsetEast / longitudeMeters,
                 accuracyMeters = 1.0,
-                capturedAt = nextCapturedAt()
+                capturedAt = nextCapturedAt(minimumAdvanceMillis = 1_000L)
             )
         )
     }
