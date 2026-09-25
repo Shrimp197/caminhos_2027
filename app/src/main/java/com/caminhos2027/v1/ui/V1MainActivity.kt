@@ -88,9 +88,6 @@ class V1MainActivity : ComponentActivity() {
 
     private val trackingConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
-            if (!trackingBindRequested) {
-                return
-            }
             trackingBinder = service as AndroidWalkingTrackingService.TrackingBinder
             trackingBound = true
             trackingBinder?.register(trackingListener)
