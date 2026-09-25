@@ -124,6 +124,14 @@ class AndroidWalkingTrackingService : Service() {
 
     private fun beginTracking() {
         val app = container ?: return
+        // Rebuild the runtime coordinator before starting a GPS source. A Service instance can be
+        // rebound after Activity/process recreation with a restored read-model state but no in-memory
+        // coordinator; the first simulated/real fix must still enter the shared runtime pipeline.
+        if (walkingState != null) {
+            app.resumePersistedWalk()?.walking?.let { restored ->
+                walkingState = restored
+            }
+        }
         if (walkingState?.isPaused == true) {
             updateWalkingState(app.runtime.resumePaused(Instant.now()))
         }
