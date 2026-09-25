@@ -124,10 +124,9 @@ class V1EndToEndTest {
         clickVisibleText("RETOMAR CAMINHADA")
         assertTrue("Walking session did not resume", waitForVisibleTextOrDescription("PAUSAR CAMINHADA", 30_000))
         clickVisibleText("AVANÇAR GPS")
-        val positionAfterResume = visibleTextValue("Km no percurso:")
         assertTrue(
             "GPS did not advance after pause/resume",
-            persistedPausedPosition != null && persistedPausedPosition != positionAfterResume
+            waitForVisibleTextValueDifferent("Km no percurso:", persistedPausedPosition, 30_000)
         )
         capture("caminhos-navegacao.png")
 
@@ -277,6 +276,19 @@ class V1EndToEndTest {
         } catch (_: StaleObjectException) {
             null
         }
+    }
+
+    private fun waitForVisibleTextValueDifferent(prefix: String, previousValue: String?, timeoutMs: Long): Boolean {
+        if (previousValue == null) return false
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val currentValue = visibleTextValue(prefix)
+            if (currentValue != null && currentValue != previousValue) return true
+            device.waitForIdle()
+            Thread.sleep(150)
+        }
+        val currentValue = visibleTextValue(prefix)
+        return currentValue != null && currentValue != previousValue
     }
 
     private fun clickVisibleTextOrDescription(text: String) {
