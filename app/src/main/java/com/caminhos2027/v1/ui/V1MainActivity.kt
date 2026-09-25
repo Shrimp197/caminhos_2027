@@ -434,13 +434,13 @@ class V1MainActivity : ComponentActivity() {
 
     private fun togglePause() {
         if (walkingState?.isPaused == true) {
-            // Pausing stops the Service. Restarting it with ACTION_START restores the persisted
-            // paused session and resumes it inside the Service-owned runtime; no binder race is needed.
-            Log.i(TAG, "Resume requested: restarting tracking service")
-            disconnectTrackingService()
-            startTrackingService()
+            // Keep the existing binder/listener attached while the Service resumes the persisted
+            // paused session. Restarting the Service here could race the Activity listener and leave
+            // the UI on the paused read model even though GPS had already resumed.
+            Log.i(TAG, "Resume requested: resuming tracking through existing binder")
+            postWhenTrackingBinderReady(action = { it.resumeWalking() })
         } else {
-            trackingBinder?.pauseWalking()
+            postWhenTrackingBinderReady(action = { it.pauseWalking() })
         }
     }
 
