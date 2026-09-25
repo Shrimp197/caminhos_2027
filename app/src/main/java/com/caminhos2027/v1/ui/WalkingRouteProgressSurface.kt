@@ -96,7 +96,7 @@ internal fun WalkingRouteProgressSurface(progress: WalkingProgress?) {
                     Text("Início", style = MaterialTheme.typography.labelSmall)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        presentation.currentLabel,
+                        "Km no percurso: ${presentation.currentLabel}",
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
