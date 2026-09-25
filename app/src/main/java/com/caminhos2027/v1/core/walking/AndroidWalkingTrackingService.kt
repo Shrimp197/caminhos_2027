@@ -55,7 +55,13 @@ class AndroidWalkingTrackingService : Service() {
                 }
             })
         }
-        fun qaSimulateDeviation() { postWhenSimulationReady(action = { source -> source.simulateDeviation(); source.simulateDeviation() }) }
+        fun qaSimulateDeviation() {
+            postWhenSimulationReady(action = { source ->
+                Log.i(TAG, "QA deviation command: route=" + routeId + ", sourceReady=true")
+                source.simulateDeviation()
+                source.simulateDeviation()
+            })
+        }
     }
 
     private val binder = TrackingBinder()
@@ -201,7 +207,9 @@ class AndroidWalkingTrackingService : Service() {
         }
         if (walkingState != null) {
             try {
-                updateWalkingState(app.runtime.accept(position))
+                val updated = app.runtime.accept(position)
+                Log.i(TAG, "GPS position accepted: routeKm=" + (updated.routePosition?.routeKm ?: "null") + ", distance=" + (updated.routePosition?.distanceToRouteMeters ?: "null") + ", state=" + updated.gpsState)
+                updateWalkingState(updated)
             } catch (error: IllegalArgumentException) {
                 reportError(error.message ?: "Posição GPS rejeitada.")
             }
