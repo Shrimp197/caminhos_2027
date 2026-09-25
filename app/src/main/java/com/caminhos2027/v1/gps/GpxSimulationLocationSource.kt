@@ -134,4 +134,8 @@ class GpxSimulationLocationSource(
         lastCapturedAt = next
         return next
     }
+
+    private companion object {
+        const val MIN_ADVANCE_METERS = 10.0
+    }
 }
