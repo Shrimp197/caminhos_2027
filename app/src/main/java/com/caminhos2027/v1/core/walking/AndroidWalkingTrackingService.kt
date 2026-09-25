@@ -171,9 +171,11 @@ class AndroidWalkingTrackingService : Service() {
                 },
                 initialIndex = startIndex
             )
-            simulationSource = source
             locationSource = source
             source.start()
+            // Publish the QA source only after start() so queued commands cannot observe a
+            // non-started simulation and get silently discarded.
+            simulationSource = source
         } else {
             val source = AndroidLocationSource(
                 context = this,
