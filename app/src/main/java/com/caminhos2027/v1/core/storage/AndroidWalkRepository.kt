@@ -39,7 +39,7 @@ class AndroidWalkRepository(context: Context) : WalkRepository {
     private fun writeAll(walks: List<Walk>) {
         val array = JSONArray()
         walks.forEach { array.put(encode(it)) }
-        preferences.edit().putString(KEY_WALKS, array.toString()).apply()
+        preferences.edit().putString(KEY_WALKS, array.toString()).commit()
     }
 
     private fun encode(walk: Walk): JSONObject = JSONObject().apply {
