@@ -149,6 +149,9 @@ internal fun V1ActiveExperienceScreenV2(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                OutlinedButton(onClick = onTogglePause) {
+                    Text(if (state.isPaused) "RETOMAR" else "PAUSAR")
+                }
                 OutlinedButton(onClick = onOpenSos) { Text("SOS") }
                 OutlinedButton(onClick = onStop) { Text("PARAR") }
             }
