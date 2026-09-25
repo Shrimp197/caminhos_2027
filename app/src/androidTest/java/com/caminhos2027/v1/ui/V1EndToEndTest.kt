@@ -122,7 +122,7 @@ class V1EndToEndTest {
         assertTrue("Persisted pause did not expose resume action", waitForVisibleTextOrDescription("RETOMAR CAMINHADA", 30_000))
         val persistedPausedPosition = visibleTextValue("Km no percurso:")
         clickVisibleText("RETOMAR CAMINHADA")
-        assertTrue("Walking session did not resume", waitForVisibleText("PAUSAR CAMINHADA", 30_000))
+        assertTrue("Walking session did not resume", waitForVisibleTextOrDescription("PAUSAR CAMINHADA", 30_000))
         clickVisibleText("AVANÇAR GPS")
         val positionAfterResume = visibleTextValue("Km no percurso:")
         assertTrue(
