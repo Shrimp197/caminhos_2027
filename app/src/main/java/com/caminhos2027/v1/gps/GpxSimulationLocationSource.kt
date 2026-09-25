@@ -135,7 +135,4 @@ class GpxSimulationLocationSource(
     private companion object {
         const val MIN_ADVANCE_METERS = 10.0
     }
-    private companion object {
-        const val MIN_ADVANCE_METERS = 10.0
-    }
 }
