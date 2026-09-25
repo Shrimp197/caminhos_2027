@@ -322,13 +322,22 @@ class V1EndToEndTest {
                     // Re-query on the next iteration; Compose may replace the node between lookup and click.
                 }
             }
-            device.swipe(
-                device.displayWidth / 2,
-                (device.displayHeight * 0.82).toInt(),
-                device.displayWidth / 2,
-                (device.displayHeight * 0.28).toInt(),
-                8
-            )
+            val direction = if (it % 2 == 0) {
+                intArrayOf(
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.82).toInt(),
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.28).toInt()
+                )
+            } else {
+                intArrayOf(
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.28).toInt(),
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.82).toInt()
+                )
+            }
+            device.swipe(direction[0], direction[1], direction[2], direction[3], 8)
             device.waitForIdle()
         }
         val node = device.wait(Until.findObject(By.textContains(text)), 5_000)
