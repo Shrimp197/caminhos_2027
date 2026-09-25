@@ -94,16 +94,7 @@ class V1EndToEndTest {
         assertTrue("Walking screen did not restore while offline", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 60_000))
         assertTrue("Persisted offline map state was not restored", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 60_000))
         clickVisibleText("AVANÇAR GPS")
-        val routePositionVisible = waitForVisibleTextOrDescription("Km no percurso:", 30_000)
-        if (!routePositionVisible) {
-            val debugNodes = device.findObjects(By.textContains("Km")).joinToString(" | ") { node ->
-                runCatching {
-                    "text=${node.text};desc=${node.contentDescription};bounds=${node.visibleBounds}"
-                }.getOrDefault("stale")
-            }
-            println("QA_DEBUG_ROUTE_POSITION_NODES=$debugNodes")
-        }
-        assertTrue("Simulated GPS advance did not update the route position", routePositionVisible)
+        assertTrue("Simulated GPS advance did not update the route position", waitForVisibleTextOrDescription("Km no percurso:", 30_000))
         clickVisibleText("PERDER GPS")
         assertTrue("GPS loss state did not appear", waitForVisibleText("GPS sem sinal", 30_000))
         clickVisibleText("RECUPERAR GPS")
@@ -388,17 +379,12 @@ class V1EndToEndTest {
     }
 
     private fun findVisibleTextOrDescription(text: String): androidx.test.uiautomator.UiObject2? {
-        val descriptionNode = device.findObject(By.descContains(text))
-        try {
-            if (descriptionNode != null && !descriptionNode.visibleBounds.isEmpty) return descriptionNode
-        } catch (_: StaleObjectException) {
-            // Fall through to text lookup.
+        val descriptionNode = device.findObjects(By.descContains(text)).firstOrNull { node ->
+            runCatching { !node.visibleBounds.isEmpty }.getOrDefault(false)
         }
-        val textNode = device.findObject(By.textContains(text))
-        return try {
-            textNode?.takeIf { !it.visibleBounds.isEmpty }
-        } catch (_: StaleObjectException) {
-            null
+        if (descriptionNode != null) return descriptionNode
+        return device.findObjects(By.textContains(text)).firstOrNull { node ->
+            runCatching { !node.visibleBounds.isEmpty }.getOrDefault(false)
         }
     }
 
