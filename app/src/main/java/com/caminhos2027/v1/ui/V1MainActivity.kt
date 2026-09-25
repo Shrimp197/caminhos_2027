@@ -438,6 +438,7 @@ class V1MainActivity : ComponentActivity() {
             // commands through a stale binder from the stopped Service instance.
             disconnectTrackingService()
             startTrackingService()
+            postWhenTrackingBinderReady(action = { it.resumeWalking() })
         } else {
             trackingBinder?.pauseWalking()
         }
