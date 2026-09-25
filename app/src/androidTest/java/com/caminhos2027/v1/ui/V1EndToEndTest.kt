@@ -105,6 +105,18 @@ class V1EndToEndTest {
             "Deviation state did not appear",
             waitForAnyVisibleText("Possível desvio", "Provável desvio", timeoutMs = 30_000)
         )
+        // The QA controls are below the pause action in the scrollable walking sheet. Return
+        // the sheet content toward its top before locating the pause control.
+        repeat(3) {
+            device.swipe(
+                device.displayWidth / 2,
+                (device.displayHeight * 0.30).toInt(),
+                device.displayWidth / 2,
+                (device.displayHeight * 0.78).toInt(),
+                8
+            )
+            device.waitForIdle()
+        }
 
         val positionBeforePause = visibleTextValue("Km no percurso:")
         clickVisibleText("PAUSAR CAMINHADA")
