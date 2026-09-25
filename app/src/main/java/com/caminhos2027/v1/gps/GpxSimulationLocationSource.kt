@@ -15,7 +15,10 @@ import java.time.Instant
 class GpxSimulationLocationSource(
     points: List<GeoPoint>,
     private val onPosition: (RawGpsPosition) -> Unit,
-    private val onAvailabilityChanged: (Boolean) -> Unit = {},
+    private val onAvailabilityChanged: (Boolean) -> Unit = {    private companion object {
+        const val MIN_ADVANCE_METERS = 10.0
+    }
+},
     private val clock: () -> Instant = Instant::now,
     private val initialIndex: Int = 0
 ) : LocationSource {
@@ -44,7 +47,12 @@ class GpxSimulationLocationSource(
 
     fun advance() {
         if (!started || !available || index >= points.lastIndex) return
-        index += 1
+        var movedMeters = 0.0
+        while (index < points.lastIndex && movedMeters < MIN_ADVANCE_METERS) {
+            val previous = points[index]
+            index += 1
+            movedMeters += distanceMeters(previous, points[index])
+        }
         emitCurrentPoint()
     }
 
@@ -98,6 +106,19 @@ class GpxSimulationLocationSource(
                 capturedAt = nextCapturedAt(minimumAdvanceMillis)
             )
         )
+    }
+
+    private fun distanceMeters(a: GeoPoint, b: GeoPoint): Double {
+        val earthRadiusMeters = 6_371_008.8
+        val lat1 = Math.toRadians(a.latitude)
+        val lat2 = Math.toRadians(b.latitude)
+        val deltaLat = lat2 - lat1
+        val deltaLon = Math.toRadians(b.longitude - a.longitude)
+        val sinLat = kotlin.math.sin(deltaLat / 2.0)
+        val sinLon = kotlin.math.sin(deltaLon / 2.0)
+        val h = (sinLat * sinLat + kotlin.math.cos(lat1) * kotlin.math.cos(lat2) * sinLon * sinLon)
+            .coerceIn(0.0, 1.0)
+        return 2.0 * earthRadiusMeters * kotlin.math.atan2(kotlin.math.sqrt(h), kotlin.math.sqrt(1.0 - h))
     }
 
     private fun nextCapturedAt(minimumAdvanceMillis: Long = 0L): Instant {
