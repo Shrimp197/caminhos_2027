@@ -41,7 +41,7 @@ class AndroidWalkingTrackingService : Service() {
         fun unregister(listener: Listener) { listeners -= listener }
         fun startTracking() = postWhenContainerReady(action = { beginTracking() })
         fun pauseWalking() = postWhenContainerReady(action = { pause() })
-        fun resumeWalking() = postWhenContainerReady { beginTracking() }
+        fun resumeWalking() = postWhenContainerReady(action = { beginTracking() })
         fun stopWalking() = stopWalkingSession()
         fun cancelPendingStart() = cancelPendingStartInternal()
         fun qaAdvance() { postWhenSimulationReady(action = { source -> source.advance() }) }
