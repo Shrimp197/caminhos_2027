@@ -39,8 +39,8 @@ class AndroidWalkingTrackingService : Service() {
             listener.onTrackingStateChanged(walkingState, pendingStart, pendingStartDistanceMeters)
         }
         fun unregister(listener: Listener) { listeners -= listener }
-        fun startTracking() = postWhenContainerReady { beginTracking() }
-        fun pauseWalking() = postWhenContainerReady { pause() }
+        fun startTracking() = postWhenContainerReady(action = { beginTracking() })
+        fun pauseWalking() = postWhenContainerReady(action = { pause() })
         fun resumeWalking() = postWhenContainerReady { beginTracking() }
         fun stopWalking() = stopWalkingSession()
         fun cancelPendingStart() = cancelPendingStartInternal()
