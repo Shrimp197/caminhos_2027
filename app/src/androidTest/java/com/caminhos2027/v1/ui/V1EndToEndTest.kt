@@ -94,7 +94,7 @@ class V1EndToEndTest {
         assertTrue("Walking screen did not restore while offline", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 60_000))
         assertTrue("Persisted offline map state was not restored", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 60_000))
         clickVisibleText("AVANÇAR GPS")
-        assertTrue("Simulated GPS advance did not update the route position", waitForVisibleText("Km no percurso:", 30_000))
+        assertTrue("Simulated GPS advance did not update the route position", waitForVisibleTextOrDescription("Km no percurso:", 30_000))
         clickVisibleText("PERDER GPS")
         assertTrue("GPS loss state did not appear", waitForVisibleText("GPS sem sinal", 30_000))
         clickVisibleText("RECUPERAR GPS")
@@ -272,7 +272,8 @@ class V1EndToEndTest {
     private fun visibleTextValue(prefix: String): String? {
         val node = findVisibleTextOrDescription(prefix) ?: return null
         return try {
-            node.text
+            node.text?.takeIf { it.isNotBlank() }
+                ?: node.contentDescription?.toString()?.takeIf { it.isNotBlank() }
         } catch (_: StaleObjectException) {
             null
         }
