@@ -15,10 +15,7 @@ import java.time.Instant
 class GpxSimulationLocationSource(
     points: List<GeoPoint>,
     private val onPosition: (RawGpsPosition) -> Unit,
-    private val onAvailabilityChanged: (Boolean) -> Unit = {    private companion object {
-        const val MIN_ADVANCE_METERS = 10.0
-    }
-},
+    private val onAvailabilityChanged: (Boolean) -> Unit = {},
     private val clock: () -> Instant = Instant::now,
     private val initialIndex: Int = 0
 ) : LocationSource {
@@ -135,6 +132,9 @@ class GpxSimulationLocationSource(
         return next
     }
 
+    private companion object {
+        const val MIN_ADVANCE_METERS = 10.0
+    }
     private companion object {
         const val MIN_ADVANCE_METERS = 10.0
     }
