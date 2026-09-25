@@ -78,16 +78,14 @@ class GpxSimulationLocationSource(
         val length = kotlin.math.hypot(north, east).takeIf { it.isFinite() && it > 0.0 } ?: 1.0
         val offsetNorth = -east / length * offsetMeters
         val offsetEast = north / length * offsetMeters
-        repeat(2) {
-            onPosition(
-                RawGpsPosition(
-                    latitude = point.latitude + offsetNorth / latitudeMeters,
-                    longitude = point.longitude + offsetEast / longitudeMeters,
-                    accuracyMeters = 1.0,
-                    capturedAt = nextCapturedAt(minimumAdvanceMillis = 1_000L)
-                )
+        onPosition(
+            RawGpsPosition(
+                latitude = point.latitude + offsetNorth / latitudeMeters,
+                longitude = point.longitude + offsetEast / longitudeMeters,
+                accuracyMeters = 1.0,
+                capturedAt = nextCapturedAt(minimumAdvanceMillis = 1_000L)
             )
-        }
+        )
     }
 
     private fun emitCurrentPoint(minimumAdvanceMillis: Long = 0L) {
