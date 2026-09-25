@@ -133,7 +133,10 @@ internal fun V1ActiveExperienceScreenV2(
                     "Km no percurso: ${fmt(currentKm)} km",
                     color = V2Forest,
                     fontWeight = FontWeight.ExtraBold,
-                    style = MaterialTheme.typography.labelSmall
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.semantics {
+                        contentDescription = "Km no percurso: ${fmt(currentKm)} km"
+                    }
                 )
                 Text(
                     "MAPA · CARTOGRAFIA REAL",
