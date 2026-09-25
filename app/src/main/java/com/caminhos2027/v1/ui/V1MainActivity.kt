@@ -94,6 +94,9 @@ class V1MainActivity : ComponentActivity() {
             trackingBinder = service as AndroidWalkingTrackingService.TrackingBinder
             trackingBound = true
             trackingBinder?.register(trackingListener)
+            if (walkingState?.walk?.status == WalkStatus.ACTIVE && walkingState?.isPaused == false) {
+                trackingBinder?.startTracking()
+            }
         }
 
         override fun onServiceDisconnected(name: ComponentName) {
