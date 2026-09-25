@@ -113,6 +113,7 @@ class AndroidWalkingTrackingService : Service() {
         }
 
         promoteToForeground()
+        Log.i(TAG, "onStartCommand action=" + intent?.action + ", restoredState=" + (walkingState?.isPaused ?: "null"))
         when (intent?.action) {
             ACTION_PAUSE -> pause()
             ACTION_STOP -> stopWalkingSession()
@@ -133,6 +134,7 @@ class AndroidWalkingTrackingService : Service() {
             }
         }
         if (walkingState?.isPaused == true) {
+            Log.i(TAG, "beginTracking: resuming persisted paused state")
             updateWalkingState(app.runtime.resumePaused(Instant.now()))
         }
         if (walkingState == null) {
