@@ -412,13 +412,24 @@ class V1EndToEndTest {
             } catch (_: StaleObjectException) {
                 continue
             }
-            device.swipe(
-                device.displayWidth / 2,
-                (device.displayHeight * 0.82).toInt(),
-                device.displayWidth / 2,
-                (device.displayHeight * 0.28).toInt(),
-                8
-            )
+            val swipeUp = ((System.currentTimeMillis() / 150L) % 2L == 0L)
+            if (swipeUp) {
+                device.swipe(
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.82).toInt(),
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.28).toInt(),
+                    8
+                )
+            } else {
+                device.swipe(
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.28).toInt(),
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.82).toInt(),
+                    8
+                )
+            }
             device.waitForIdle()
             Thread.sleep(150)
         }
