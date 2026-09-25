@@ -434,11 +434,10 @@ class V1MainActivity : ComponentActivity() {
 
     private fun togglePause() {
         if (walkingState?.isPaused == true) {
-            // Pausing stops the Service. Rebind before resuming so the Activity never sends QA/GPS
-            // commands through a stale binder from the stopped Service instance.
+            // Pausing stops the Service. Restarting it with ACTION_START restores the persisted
+            // paused session and resumes it inside the Service-owned runtime; no binder race is needed.
             disconnectTrackingService()
             startTrackingService()
-            postWhenTrackingBinderReady(action = { it.resumeWalking() })
         } else {
             trackingBinder?.pauseWalking()
         }
