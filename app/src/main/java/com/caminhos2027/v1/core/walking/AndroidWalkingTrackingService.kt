@@ -39,9 +39,9 @@ class AndroidWalkingTrackingService : Service() {
             listener.onTrackingStateChanged(walkingState, pendingStart, pendingStartDistanceMeters)
         }
         fun unregister(listener: Listener) { listeners -= listener }
-        fun startTracking() = beginTracking()
-        fun pauseWalking() = pause()
-        fun resumeWalking() = beginTracking()
+        fun startTracking() = postWhenContainerReady { beginTracking() }
+        fun pauseWalking() = postWhenContainerReady { pause() }
+        fun resumeWalking() = postWhenContainerReady { beginTracking() }
         fun stopWalking() = stopWalkingSession()
         fun cancelPendingStart() = cancelPendingStartInternal()
         fun qaAdvance() { postWhenSimulationReady(action = { source -> source.advance() }) }
@@ -358,6 +358,22 @@ class AndroidWalkingTrackingService : Service() {
      * QA controls can be invoked immediately after Activity/service binding, before the test
      * route source has finished initialization. Do not silently drop a command in that race.
      */
+    private fun postWhenContainerReady(
+        action: () -> Unit,
+        attemptsRemaining: Int = 20
+    ) {
+        mainHandler.post {
+            if (container != null) {
+                action()
+            } else if (attemptsRemaining > 0) {
+                mainHandler.postDelayed(
+                    { postWhenContainerReady(action, attemptsRemaining - 1) },
+                    100L
+                )
+            }
+        }
+    }
+
     private fun postWhenSimulationReady(
         action: (GpxSimulationLocationSource) -> Unit,
         attemptsRemaining: Int = 20
