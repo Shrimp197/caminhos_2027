@@ -140,6 +140,7 @@ class V1EndToEndTest {
         expandWalkingSheet()
         assertTrue("Walking session did not resume", waitForVisibleTextOrDescription("PAUSAR CAMINHADA", 30_000))
 
+        scrollWalkingSheetUntilVisible("VER APOIOS")
         clickVisibleText("VER APOIOS")
         assertTrue("Apoios screen did not appear", waitForVisibleText("Próximos 10 km", 30_000))
         assertTrue("Apoios search did not appear", waitForVisibleText("Procurar", 30_000))
@@ -261,6 +262,18 @@ class V1EndToEndTest {
             }
             assertTrue("Screenshot was not created or is empty: $name", file.isFile && file.length() > 0)
         }
+    }
+
+    private fun scrollWalkingSheetUntilVisible(text: String) {
+        repeat(8) {
+            if (findVisibleTextOrDescription(text) != null) return
+            val x = device.displayWidth / 2
+            val startY = (device.displayHeight * 0.78).toInt()
+            val endY = (device.displayHeight * 0.42).toInt()
+            device.swipe(x, startY, x, endY, 10)
+            device.waitForIdle()
+        }
+        assertTrue("Walking sheet control did not become visible: $text", findVisibleTextOrDescription(text) != null)
     }
 
     private fun expandWalkingSheet() {
