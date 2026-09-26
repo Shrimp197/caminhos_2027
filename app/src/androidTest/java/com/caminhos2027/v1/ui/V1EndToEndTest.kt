@@ -137,6 +137,7 @@ class V1EndToEndTest {
         scenario = ActivityScenario.launch(V1MainActivity::class.java)
         assertTrue("Paused walking state did not persist after activity recreation", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
         clickVisibleText("RETOMAR CAMINHADA")
+        expandWalkingSheet()
         assertTrue("Walking session did not resume", waitForVisibleText("A minha posição", 30_000))
 
         clickVisibleText("VER APOIOS")
