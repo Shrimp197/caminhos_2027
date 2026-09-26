@@ -1,0 +1,1 @@
+SR and HF test-route hero artwork is intentionally synthetic and debug/test-only. Production artwork must be sourced/approved separately.

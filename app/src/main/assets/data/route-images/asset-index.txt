@@ -1,0 +1,3 @@
+centenario_hero.jpg
+sr_route_hero.png
+hf_route_hero.png

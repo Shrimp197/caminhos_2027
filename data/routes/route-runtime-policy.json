@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "route_id": "caminho-do-centenario",
+  "published_distance_km": 211.87,
+  "geometry_distance_km": 214.77816498997424,
+  "distance_semantics": {
+    "published": "ACF published/reference distance; preserved as editorial route fact",
+    "geometry": "Summed Haversine length of the validated official GPX; used for route projection and GPS endpoint"
+  },
+  "endpoint_policy": "navigation_uses_official_gpx_endpoint",
+  "display_policy": "never_silently_substitute_geometry_for_published_distance",
+  "source": {
+    "organization": "Associação Caminhos de Fátima",
+    "source_url": "https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx",
+    "sha256": "1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266"
+  }
+}

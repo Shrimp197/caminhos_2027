@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "route_id": "caminho-do-centenario",
+  "scope": "Caminhos de Fátima",
+  "classification": "community_reference_only",
+  "production_geometry_allowed": false,
+  "sources": [
+    {
+      "source_id": "wikiloc-186351941",
+      "platform": "Wikiloc",
+      "title": "6º Peregrinação a Pé: Porto / Fátima | Caminho do Centenário | 15 / 21 Julho 2025",
+      "url": "https://pt.wikiloc.com/trilhas-trekking/6o-peregrinacao-a-pe-porto-fatima-caminho-do-centenario-julho-2025-186351941",
+      "author": "JoséCosta",
+      "recorded_at": "2024-09",
+      "published_at": "2024-09-27",
+      "track_distance_km": 214.84,
+      "track_coordinate_count": 5046,
+      "elevation_gain_m": 2648,
+      "elevation_loss_m": 2370,
+      "description_distance_km": 212.0,
+      "planned_day_count": 7,
+      "planned_stops": [
+        "Porto",
+        "São João da Madeira",
+        "Albergaria-a-Velha",
+        "Curia",
+        "Coimbra",
+        "Soure",
+        "Meirinhas",
+        "Fátima"
+      ],
+      "evidence_role": [
+        "community_route_comparison",
+        "historical_pilgrim_planning",
+        "candidate_support_discovery"
+      ],
+      "limitations": [
+        "User-generated track; not an ACF-authoritative geometry.",
+        "Track distance differs from the author's stated 212 km description.",
+        "Availability and operational details from the 2025 plan must not be treated as confirmed for 2027 without fresh evidence.",
+        "The downloadable GPX/KML bytes have not been captured into this repository."
+      ],
+      "status": "metadata_recorded_bytes_not_captured"
+    }
+  ]
+}

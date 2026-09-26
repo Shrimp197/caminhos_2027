@@ -2,30 +2,53 @@ name: V1 Route Import Validation
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ v1-route-import ]
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+
+concurrency:
+  group: v1-route-import-validation
+  cancel-in-progress: true
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '8.11.1'
 
+      - name: Validate APOI master dataset
+        run: python3 tools/validate_apoi_master.py
+
+      - name: Validate APOI 2026 to 2027 transition
+        run: python3 tools/validate_apoi_transition.py
+
+      - name: Validate SR and HF QA APOI dataset
+        run: python3 tools/validate_qa_apoi.py
+
       - name: Run route import JVM tests
-        run: gradle --no-daemon :app:testDebugUnitTest
+        timeout-minutes: 10
+        run: gradle --no-daemon :app:testDebugUnitTest --stacktrace
+      - name: Upload JVM test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caminhos-v1-route-import-jvm-test-reports
+          path: app/build/test-results/testDebugUnitTest/**
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Build V1 without legacy rewrite scripts
         run: gradle --no-daemon :app:assembleDebug

@@ -1,9 +1,12 @@
 package com.caminhos2027.v1.core.walking
 
+import com.caminhos2027.v1.core.apoi.NextApoiFinder
 import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
+import java.time.Instant
 import com.caminhos2027.v1.core.route.GpsState
+import com.caminhos2027.v1.core.route.WalkingMovementCue
 import com.caminhos2027.v1.core.route.WalkingProgress
 
 /** Single read model for the active walking experience. UI consumes this state instead of rebuilding it. */
@@ -15,5 +18,14 @@ data class WalkingState(
     val nextApoi: Apoi?,
     /** Route distance from the current position to the next APOI, not absolute route km. */
     val nextApoiDistanceKm: Double?,
-    val isOffline: Boolean = false
+    /** Non-blocking recommendation produced when the configured distance pause threshold is reached. */
+    val pauseRecommendation: String? = null,
+    val movementCue: WalkingMovementCue? = null,
+    val isOffline: Boolean = false,
+    /** True while the pilgrim has deliberately paused the active walking session. */
+    val isPaused: Boolean = false,
+    /** Start of the current pause, when the session is paused. */
+    val pausedAt: Instant? = null,
+    /** Total completed pause duration in seconds. */
+    val pausedDurationSeconds: Long = 0L
 )

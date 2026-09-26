@@ -1,0 +1,1 @@
+Binary QA hero source is generated locally for SR test route. The image file will be committed through the Git object API when the visual preparation block is finalized.
