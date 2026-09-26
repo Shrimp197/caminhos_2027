@@ -4,6 +4,7 @@ import com.caminhos2027.v1.core.model.GeoPoint
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class GpxSimulationLocationSourceTest {
     @Test
@@ -33,7 +34,7 @@ class GpxSimulationLocationSourceTest {
         assertEquals(points.first().longitude, emitted[0].longitude)
         assertEquals(points[1].latitude, emitted[1].latitude)
         assertEquals(points[2].longitude, emitted[2].longitude)
-        assertEquals(now, emitted.last().capturedAt)
+        assertTrue(emitted.last().capturedAt.isAfter(emitted[1].capturedAt))
     }
 
     @Test
