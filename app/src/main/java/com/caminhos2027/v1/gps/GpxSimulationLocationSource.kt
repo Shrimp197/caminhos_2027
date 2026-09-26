@@ -50,7 +50,10 @@ class GpxSimulationLocationSource(
             index += 1
             movedMeters += distanceMeters(previous, points[index])
         }
-        emitCurrentPoint()
+        val minimumAdvanceMillis = ((movedMeters / 1000.0) / MAX_SIMULATED_SPEED_KMH * 3_600_000.0)
+            .toLong()
+            .coerceAtLeast(MIN_ADVANCE_MILLIS)
+        emitCurrentPoint(minimumAdvanceMillis = minimumAdvanceMillis)
     }
 
     /** Simulates a temporary loss of GPS without changing the last emitted position. */
@@ -134,5 +137,7 @@ class GpxSimulationLocationSource(
 
     private companion object {
         const val MIN_ADVANCE_METERS = 10.0
+        const val MAX_SIMULATED_SPEED_KMH = 8.0
+        const val MIN_ADVANCE_MILLIS = 100L
     }
 }
