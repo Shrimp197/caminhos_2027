@@ -122,6 +122,7 @@ class V1EndToEndTest {
         assertTrue("Persisted pause did not expose resume action", waitForVisibleTextOrDescription("RETOMAR CAMINHADA", 30_000))
         val persistedPausedPosition = visibleTextValue("Km no percurso:")
         clickVisibleText("RETOMAR CAMINHADA")
+        expandWalkingSheet()
         assertTrue("Walking session did not resume", waitForVisibleTextOrDescription("PAUSAR CAMINHADA", 30_000))
         clickVisibleText("AVANÇAR GPS")
         assertTrue(
@@ -259,6 +260,14 @@ class V1EndToEndTest {
             }
             assertTrue("Screenshot was not created or is empty: $name", file.isFile && file.length() > 0)
         }
+    }
+
+    private fun expandWalkingSheet() {
+        val x = device.displayWidth / 2
+        val startY = (device.displayHeight * 0.92).toInt()
+        val endY = (device.displayHeight * 0.38).toInt()
+        device.swipe(x, startY, x, endY, 12)
+        device.waitForIdle()
     }
 
     private fun setVisibleTextField(value: String) {
