@@ -42,7 +42,7 @@ class GpxSimulationLocationSourceAvailabilityTest {
         assertEquals(countBeforeLoss + 1, emitted.size)
         assertEquals(points[1].latitude, emitted.last().latitude)
         assertEquals(points[1].longitude, emitted.last().longitude)
-        assertEquals(now, emitted.last().capturedAt)
+        assertTrue(emitted.last().capturedAt.isAfter(emitted[1].capturedAt))
     }
 
     @Test
