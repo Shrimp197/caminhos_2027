@@ -154,6 +154,7 @@ class V1EndToEndTest {
         device.pressBack()
         device.waitForIdle()
         expandWalkingSheet()
+        scrollWalkingSheetUntilVisible("A minha posição")
         assertTrue("Walking screen did not return", waitForVisibleText("A minha posição", 30_000))
 
         clickVisibleText("OPÇÕES")
