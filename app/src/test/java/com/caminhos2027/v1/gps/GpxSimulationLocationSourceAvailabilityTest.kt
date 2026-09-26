@@ -35,7 +35,7 @@ class GpxSimulationLocationSourceAvailabilityTest {
         source.advance()
         assertEquals(countBeforeLoss, emitted.size)
 
-        now = now.plusSeconds(3)
+        now = now.plusSeconds(60)
         source.setAvailable(true)
 
         assertEquals(listOf(true, false, true), availability)
