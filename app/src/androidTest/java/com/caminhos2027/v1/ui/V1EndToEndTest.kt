@@ -153,10 +153,9 @@ class V1EndToEndTest {
         assertTrue("APOI browser did not return", waitForAnyVisibleText("Próximos 10 km", "Procurar", timeoutMs = 30_000))
         device.pressBack()
         device.waitForIdle()
+        assertTrue("Walking screen did not return", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 30_000))
         expandWalkingSheet()
-        scrollWalkingSheetUntilVisible("A minha posição")
-        assertTrue("Walking screen did not return", waitForVisibleText("A minha posição", 30_000))
-
+        scrollWalkingSheetUntilVisible("OPÇÕES")
         clickVisibleText("OPÇÕES")
         assertTrue("Decision information did not appear", waitForVisibleText("Informação para decidir", 30_000))
         assertTrue("Stop action did not appear", waitForVisibleText("PARAR AGORA", 30_000))
