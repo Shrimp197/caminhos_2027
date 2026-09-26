@@ -138,7 +138,7 @@ class V1EndToEndTest {
         assertTrue("Paused walking state did not persist after activity recreation", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
         clickVisibleText("RETOMAR CAMINHADA")
         expandWalkingSheet()
-        assertTrue("Walking session did not resume", waitForVisibleText("A minha posição", 30_000))
+        assertTrue("Walking session did not resume", waitForVisibleTextOrDescription("PAUSAR CAMINHADA", 30_000))
 
         clickVisibleText("VER APOIOS")
         assertTrue("Apoios screen did not appear", waitForVisibleText("Próximos 10 km", 30_000))
