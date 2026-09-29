@@ -7,7 +7,7 @@ on:
     types: [ opened, synchronize, reopened ]
 
 concurrency:
-  group: v1-route-import-android-smoke
+  group: v1-route-import-android-smoke-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
