@@ -17,7 +17,8 @@ import java.time.Instant
 class AndroidLocationSource(
     context: Context,
     private val onPosition: (RawGpsPosition) -> Unit,
-    private val onAvailabilityChanged: (Boolean) -> Unit = {}
+    private val onAvailabilityChanged: (Boolean) -> Unit = {},
+    private val onLastKnownPosition: ((RawGpsPosition) -> Unit)? = null
 ) : LocationSource {
     private val locationManager = context.getSystemService(LocationManager::class.java)
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -112,6 +113,22 @@ class AndroidLocationSource(
             updatesRegistered = false
         }
         lastAvailability = null
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun emitLastKnownPositionForGuidance() {
+        val callback = onLastKnownPosition ?: return
+        if (!hasLocationService() || !hasGpsProvider()) return
+        val location = runCatching { locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) }.getOrNull()
+            ?: return
+        callback(
+            RawGpsPosition(
+                latitude = location.latitude,
+                longitude = location.longitude,
+                accuracyMeters = if (location.hasAccuracy()) location.accuracy.toDouble() else null,
+                capturedAt = Instant.ofEpochMilli(location.time)
+            )
+        )
     }
 
     private fun hasGpsProvider(): Boolean =
