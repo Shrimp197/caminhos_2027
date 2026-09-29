@@ -135,7 +135,7 @@ internal fun V1ActiveExperienceScreenV2(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Caminhada", color = ActiveBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
-                        Text(if (state.isPaused) "PAUSADA" else "EM CURSO", color = if (state.isPaused) ActiveWarning else ActiveGreen, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelSmall)
+                        Text(if (state.isPaused) "CAMINHADA PAUSADA" else "MAPA · CARTOGRAFIA REAL", color = if (state.isPaused) ActiveWarning else ActiveGreen, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelSmall)
                     }
                     Text("${(progress * 100).toInt()}%", color = ActiveGreen, fontWeight = FontWeight.ExtraBold)
                 }
@@ -157,13 +157,13 @@ internal fun V1ActiveExperienceScreenV2(
                     OutlinedButton(onClick = onTogglePause, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
                         Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(5.dp))
-                        Text(if (state.isPaused) "RETOMAR" else "PAUSAR", fontWeight = FontWeight.Bold)
+                        Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA", fontWeight = FontWeight.Bold)
                     }
                     Button(onClick = onOpenNext10Km, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Text("PRÓXIMOS 10 KM", fontWeight = FontWeight.ExtraBold) }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onOpenApoi, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Text("APOIOS", fontWeight = FontWeight.Bold) }
-                    OutlinedButton(onClick = onOpenDecision, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Text("DECIDIR", fontWeight = FontWeight.Bold) }
+                    OutlinedButton(onClick = onOpenApoi, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Text("VER APOIOS", fontWeight = FontWeight.Bold) }
+                    OutlinedButton(onClick = onOpenDecision, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Text("OPÇÕES", fontWeight = FontWeight.Bold) }
                 }
                 if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(route.id)) {
                     Card(Modifier.fillMaxWidth(), RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F6F4))) {
