@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -26,6 +27,10 @@ import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.filled.PauseCircle
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -39,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -238,12 +245,16 @@ private fun PreparedWalkScreen(
     Scaffold(
         containerColor = Sand,
         bottomBar = {
-            androidx.compose.material3.NavigationBar(containerColor = Color.White, modifier = Modifier.navigationBarsPadding()) {
-                androidx.compose.material3.NavigationBarItem(selected = true, onClick = {}, icon = { Icon(Icons.Filled.Home, null) }, label = { Text("Resumo") })
-                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Map, null) }, label = { Text("Mapa") })
-                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Place, null) }, label = { Text("Apoios") })
-                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Notes, null) }, label = { Text("Diário") })
-                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Menu, null) }, label = { Text("Mais") })
+            Row(
+                Modifier.fillMaxWidth().background(Color.White).navigationBarsPadding().padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                listOf("Resumo" to Icons.Filled.Map, "Mapa" to Icons.Filled.Map, "Apoios" to Icons.Filled.Place, "Diário" to Icons.Filled.Notes, "Mais" to Icons.Filled.Menu).forEach { (label, icon) ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(icon, null, tint = if (label == "Resumo") Forest else Muted, modifier = Modifier.size(20.dp))
+                        Text(label, color = if (label == "Resumo") Forest else Muted, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
             }
         }
     ) { padding ->
