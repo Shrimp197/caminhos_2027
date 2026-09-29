@@ -96,6 +96,7 @@ internal fun V1ActiveExperienceScreenV2(
         }
     }
     val elapsedLabel = state.walk.startedAt?.let { elapsedWalkingLabel(it, clock) } ?: "00m"
+    var offlineActionRequestToken by remember { mutableStateOf(0) }
 
     Column(Modifier.fillMaxSize().background(Color(0xFFF7F7F4))) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -104,6 +105,15 @@ internal fun V1ActiveExperienceScreenV2(
             Column(Modifier.weight(1f)) {
                 Text(route.officialName, color = ActiveBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
                 Text(gpsLabel(state.gpsState), color = gpsColor(state.gpsState), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+            }
+            if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(route.id)) {
+                OutlinedButton(
+                    onClick = { offlineActionRequestToken += 1 },
+                    modifier = Modifier.height(38.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("GUARDAR MAPA OFFLINE", fontWeight = FontWeight.ExtraBold)
+                }
             }
             OutlinedButton(onClick = onOpenSos, modifier = Modifier.height(38.dp), shape = RoundedCornerShape(12.dp)) {
                 Icon(Icons.Filled.ReportProblem, null, modifier = Modifier.size(17.dp))
