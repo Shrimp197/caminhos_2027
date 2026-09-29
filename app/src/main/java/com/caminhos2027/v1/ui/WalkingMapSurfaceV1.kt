@@ -225,20 +225,19 @@ internal fun RealWalkingMap(
         )
 
         Card(
-            modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.96f))
+            modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
+            shape = RoundedCornerShape(13.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.94f))
         ) {
-            Column(Modifier.padding(11.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text("MAPA · CARTOGRAFIA REAL", fontWeight = FontWeight.ExtraBold)
-                Text("Traçado oficial local", color = Color(0xFF68736D))
-                Text(gpsLabelForMap(gpsState), color = gpsColorForMap(gpsState))
+            Column(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("MAPA · CARTOGRAFIA REAL", color = Color(0xFF0E6546), fontWeight = FontWeight.ExtraBold, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
+                Text(gpsLabelForMap(gpsState), color = gpsColorForMap(gpsState), style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
                 when {
-                    offlineState.complete -> Text("MAPA OFFLINE · DISPONÍVEL", color = Color(0xFF0E6546), fontWeight = FontWeight.Bold)
-                    offlineState.active -> Text("A preparar mapa offline · ${offlineState.percent}%", color = Color(0xFF7A4A00), fontWeight = FontWeight.Bold)
-                    else -> Text("Mapa offline ainda não guardado", color = Color(0xFF68736D))
+                    offlineState.complete -> Text("MAPA OFFLINE · DISPONÍVEL", color = Color(0xFF0E6546), fontWeight = FontWeight.Bold, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                    offlineState.active -> Text("A preparar mapa offline · " + offlineState.percent + "%", color = Color(0xFF7A4A00), fontWeight = FontWeight.Bold, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                    else -> Text("Mapa offline ainda não guardado", color = Color(0xFF68736D), style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
                 }
-                offlineState.message?.let { Text(it, color = Color(0xFF9A3A00)) }
+                offlineState.message?.let { Text(it, color = Color(0xFF9A3A00), style = androidx.compose.material3.MaterialTheme.typography.labelSmall) }
             }
         }
 
