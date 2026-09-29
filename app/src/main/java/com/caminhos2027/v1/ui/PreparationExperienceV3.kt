@@ -142,7 +142,7 @@ private fun PreparationHomeV3(
         }
     ) { innerPadding ->
         Column(
-            Modifier.fillMaxSize().padding(innerPadding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+            Modifier.fillMaxSize().padding(innerPadding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp).semantics { contentDescription = "PREPARAÇÃO — HOME" },
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -212,7 +212,7 @@ private fun PreparationHomeV3(
             ) {
                 Icon(Icons.Filled.DirectionsWalk, null, modifier = Modifier.size(21.dp))
                 Spacer(Modifier.size(8.dp))
-                Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold)
+                Text("GUARDAR PLANO", fontWeight = FontWeight.ExtraBold)
             }
 
             if (notesCount > 0) {
