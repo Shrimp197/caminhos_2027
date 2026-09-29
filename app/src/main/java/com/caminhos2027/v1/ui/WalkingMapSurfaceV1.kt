@@ -269,38 +269,55 @@ internal fun RealWalkingMap(
         }
 
         if (!offlineState.complete && !offlineState.active && points.size >= 2) {
-            OutlinedButton(
-                onClick = {
-                    offlineState = OfflineUiState(message = "A preparar o mapa offline…")
-                    downloadOfflineRegion(
-                        context,
-                        points,
-                        routeId,
-                        onRegion = {
-                            offlineRegion = it
-                            offlineState = OfflineUiState(active = true)
-                        },
-                        onStatus = { status ->
-                            val percent = if (status.requiredResourceCount > 0L) {
-                                ((status.completedResourceCount.toDouble() / status.requiredResourceCount.toDouble()) * 100.0).toInt().coerceIn(0, 100)
-                            } else 0
-                            offlineState = OfflineUiState(
-                                complete = status.isComplete,
-                                active = !status.isComplete,
-                                percent = percent,
-                                message = if (status.isComplete) "Cartografia guardada para utilização sem rede na região do percurso." else null
-                            )
-                            if (status.isComplete) offlineRegion?.setDownloadState(OfflineRegion.STATE_INACTIVE)
-                        },
-                        onError = { offlineState = OfflineUiState(message = "Download offline: $it") }
+            val offlineModifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 72.dp, end = 12.dp)
+            if (offlineState.message != null) {
+                Card(
+                    modifier = offlineModifier,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.96f)),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Text(
+                        offlineState.message!!,
+                        Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                        color = Color(0xFF0E6546),
+                        fontWeight = FontWeight.Bold,
+                        style = androidx.compose.material3.MaterialTheme.typography.labelMedium
                     )
-                },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 72.dp, end = 12.dp)
-                    .semantics { contentDescription = "GUARDAR MAPA OFFLINE" }
-            ) {
-                Text("GUARDAR MAPA OFFLINE")
+                }
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        offlineState = OfflineUiState(message = "A preparar o mapa offline…")
+                        downloadOfflineRegion(
+                            context,
+                            points,
+                            routeId,
+                            onRegion = {
+                                offlineRegion = it
+                                offlineState = OfflineUiState(active = true)
+                            },
+                            onStatus = { status ->
+                                val percent = if (status.requiredResourceCount > 0L) {
+                                    ((status.completedResourceCount.toDouble() / status.requiredResourceCount.toDouble()) * 100.0).toInt().coerceIn(0, 100)
+                                } else 0
+                                offlineState = OfflineUiState(
+                                    complete = status.isComplete,
+                                    active = !status.isComplete,
+                                    percent = percent,
+                                    message = if (status.isComplete) "Cartografia guardada para utilização sem rede na região do percurso." else null
+                                )
+                                if (status.isComplete) offlineRegion?.setDownloadState(OfflineRegion.STATE_INACTIVE)
+                            },
+                            onError = { offlineState = OfflineUiState(message = "Download offline: $it") }
+                        )
+                    },
+                    modifier = offlineModifier.semantics { contentDescription = "GUARDAR MAPA OFFLINE" }
+                ) {
+                    Text("GUARDAR MAPA OFFLINE")
+                }
             }
         }
 
