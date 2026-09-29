@@ -192,6 +192,38 @@ internal fun V1ActiveExperienceScreenV2(
                     .padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MetricCard("${fmt(currentKm)} km", "Percorridos", Modifier.weight(1f))
+                    MetricCard("${fmt(remainingKm)} km", "Para o fim", Modifier.weight(1f))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Progresso", color = V2Muted, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+                    Text("${(progress * 100).toInt()}%", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                }
+                LinearProgressIndicator(
+                    progress = { progress.toFloat() },
+                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(8.dp)),
+                    color = V2Forest,
+                    trackColor = V2ForestSoft
+                )
+                Text("Tempo de caminhada · $elapsed", color = V2Muted, style = MaterialTheme.typography.bodySmall)
+                state.nextApoi?.let { apoi ->
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = V2ForestSoft)
+                    ) {
+                        Row(Modifier.padding(11.dp), verticalAlignment = Alignment.CenterVertically) {
+                            androidx.compose.material3.Icon(Icons.Filled.Place, null, tint = V2Forest)
+                            Spacer(Modifier.width(8.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Próximo apoio", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                                Text(apoi.name, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                            }
+                            Text(state.nextApoiDistanceKm?.let(::fmtDistance) ?: "—", color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+                }
                 if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(state.walk.routeId)) {
                     Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold)
                     Text(
@@ -385,7 +417,7 @@ private fun DraggableWalkingSheet(
     val density = androidx.compose.ui.platform.LocalDensity.current
     val minHeight = with(density) { 190.dp.toPx() }
     val maxHeight = with(density) { 620.dp.toPx() }
-    val initialHeight = with(density) { 260.dp.toPx() }
+    val initialHeight = with(density) { 320.dp.toPx() }
     var heightPx by androidx.compose.runtime.remember { mutableFloatStateOf(initialHeight) }
 
     Box(
