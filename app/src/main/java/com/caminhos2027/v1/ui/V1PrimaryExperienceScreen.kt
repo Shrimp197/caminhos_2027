@@ -350,7 +350,7 @@ private fun PreparedWalkScreen(
                         )
                         pendingDistance?.let { Text("Distância ao percurso: " + fmtMeters(it), color = Muted) }
                         Text(
-                            "A caminhada ainda não começou. A aplicação vai orientá-lo até ao ponto de início planeado e só começa quando o GPS confirmar que chegou ao percurso.",
+                            "A caminhada ainda não começou. A navegação é iniciada a partir da sua localização atual e orienta-o até ao início planeado. A caminhada só começa quando o GPS confirmar que chegou ao percurso.",
                             color = Muted,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -364,7 +364,7 @@ private fun PreparedWalkScreen(
                             },
                             Modifier.fillMaxWidth()
                         ) {
-                            Text("IR PARA O INÍCIO")
+                            Text("NAVEGAR ATÉ AO INÍCIO")
                         }
                         OutlinedButton(
                             onClick = onCancel,
