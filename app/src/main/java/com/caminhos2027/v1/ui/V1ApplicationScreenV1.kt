@@ -46,6 +46,7 @@ internal fun V1ApplicationScreenV1(
     onTogglePilgrimModeOnStart: (Boolean) -> Unit,
     onOpenNotificationSettings: () -> Unit,
     onNavigate: (WalkingSurface) -> Unit,
+    onNavigateToCoordinate: (Double, Double, String) -> Unit,
     onDiaryChoosePhoto: () -> Unit,
     onDiaryClearPhoto: () -> Unit,
     onDiaryAdd: (String) -> Unit,
@@ -62,7 +63,7 @@ internal fun V1ApplicationScreenV1(
 ) {
     when {
         surface == WalkingSurface.PREPARATION ->
-            PreparationExperienceV3(route, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking)
+            PreparationExperienceV3(route, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking, onNavigateToCoordinate, preparedWalk, startRequested, pendingStartDistanceMeters)
 
         surface == WalkingSurface.ACTIVE && state != null ->
             V1ActiveExperienceScreenV2(
@@ -82,7 +83,8 @@ internal fun V1ApplicationScreenV1(
                 onNavigate = onNavigate,
                 onQaAdvance = onQaAdvance,
                 onQaToggleGps = onQaToggleGps,
-                onQaDeviation = onQaDeviation
+                onQaDeviation = onQaDeviation,
+                onNavigateToCoordinate = onNavigateToCoordinate
             )
 
         surface == WalkingSurface.SUMMARY ->
