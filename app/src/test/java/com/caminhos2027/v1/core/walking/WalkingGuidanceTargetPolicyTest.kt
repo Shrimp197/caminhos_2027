@@ -12,11 +12,15 @@ class WalkingGuidanceTargetPolicyTest {
     private val lastKnown = GeoPoint(41.1600, -8.6200)
     private val route = Route(
         id = "test",
+        name = "Teste",
         officialName = "Teste",
         totalDistanceKm = 10.0,
+        source = "test",
+        updatedAt = null,
         geometry = RouteGeometry(
             points = listOf(GeoPoint(40.0000, -8.0000), GeoPoint(40.0450, -8.0000))
-        )
+        ),
+        stages = emptyList()
     )
 
     @Test
