@@ -136,6 +136,7 @@ internal fun V1ActiveExperienceScreenV2(
                     Column(Modifier.weight(1f)) {
                         Text("Caminhada", color = ActiveBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
                         Text(if (state.isPaused) "CAMINHADA PAUSADA" else "MAPA · CARTOGRAFIA REAL", color = if (state.isPaused) ActiveWarning else ActiveGreen, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelSmall)
+                        Text("Progresso · ${(progress * 100).toInt()}%", color = ActiveMuted, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                     }
                     Text("${(progress * 100).toInt()}%", color = ActiveGreen, fontWeight = FontWeight.ExtraBold)
                 }
