@@ -30,6 +30,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -161,14 +163,21 @@ internal fun V1ActiveExperienceScreenV2(
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Column(
+                Modifier
+                    .height(330.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Caminhada", color = ActiveBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
                         Text(
-                            if (state.isPaused) "Pausada" else "${fmtKm(currentKm)} km percorridos",
-                            color = ActiveMuted,
-                            style = MaterialTheme.typography.bodySmall
+                            if (state.isPaused) "CAMINHADA PAUSADA" else "MAPA · CARTOGRAFIA REAL",
+                            color = if (state.isPaused) ActiveWarning else ActiveMuted,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.labelMedium
                         )
                     }
                     Text("${(progress * 100).toInt()}%", color = ActiveGreen, fontWeight = FontWeight.ExtraBold)
@@ -180,6 +189,15 @@ internal fun V1ActiveExperienceScreenV2(
                     color = ActiveGreen,
                     trackColor = Color(0xFFE2E7E3)
                 )
+
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ActiveMetric("${fmtKm(currentKm)} km", "Percorridos", Modifier.weight(1f))
+                    ActiveMetric("${fmtKm(remainingKm)} km", "Para o fim", Modifier.weight(1f))
+                }
+
+                Text("Progresso · ${(progress * 100).toInt()}%", color = ActiveMuted, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                Text("Km no percurso: ${fmtKm(currentKm)} km", color = ActiveMuted, style = MaterialTheme.typography.bodySmall)
+                Text("Tempo · caminhada em curso", color = ActiveMuted, style = MaterialTheme.typography.bodySmall)
 
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.LocationOn, null, tint = ActiveBlue, modifier = Modifier.size(24.dp))
@@ -205,15 +223,37 @@ internal fun V1ActiveExperienceScreenV2(
                     OutlinedButton(onClick = onTogglePause, modifier = Modifier.weight(1f)) {
                         Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(5.dp))
-                        Text(if (state.isPaused) "Retomar" else "Pausa")
+                        Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA")
                     }
                     Button(onClick = onOpenApoi, modifier = Modifier.weight(1f)) {
-                        Text("APOIOS", fontWeight = FontWeight.ExtraBold)
+                        Text("VER APOIOS", fontWeight = FontWeight.ExtraBold)
                     }
+                }
+
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onOpenDecision, modifier = Modifier.weight(1f)) { Text("OPÇÕES", fontWeight = FontWeight.Bold) }
                     OutlinedButton(onClick = onStop, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Filled.Stop, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(5.dp))
                         Text("Terminar")
+                    }
+                }
+
+                if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(route.id)) {
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F8F6))
+                    ) {
+                        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("QA · percurso de teste", color = ActiveMuted, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                OutlinedButton(onClick = onQaAdvance, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp)) { Text("AVANÇAR GPS") }
+                                OutlinedButton(onClick = { onQaToggleGps(false) }, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp)) { Text("PERDER GPS") }
+                                OutlinedButton(onClick = { onQaToggleGps(true) }, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp)) { Text("RECUPERAR GPS") }
+                            }
+                            OutlinedButton(onClick = onQaDeviation, modifier = Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
+                        }
                     }
                 }
             }
