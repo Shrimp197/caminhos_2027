@@ -57,6 +57,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -102,24 +103,109 @@ internal fun PreparationExperienceV3(route: Route, routeOptions: List<AndroidRou
 }
 
 @Composable
-private fun PreparationHomeV3(route: Route, config: WalkingPreparationConfig, notesCount: Int, onRoutes: () -> Unit, onRange: () -> Unit, onBreaks: () -> Unit, onOrientation: () -> Unit, onAudio: () -> Unit, onSupports: () -> Unit, onNotes: () -> Unit, onConfirm: () -> Unit, onBack: () -> Unit) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(PSurface)
-            .semantics { contentDescription = "PREPARAÇÃO — HOME" }
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Filled.Menu, "Menu", tint = PBlue) }; Icon(Icons.Filled.DirectionsWalk, null, Modifier.size(38.dp), tint = Color(0xFFC28A16)); Column(Modifier.padding(start = 9.dp)) { Text("CAMINHOS", color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium); Text("DO PEREGRINO", color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium) } }
-        Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = PBlue, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleLarge)
-        Card(Modifier.fillMaxWidth(), RoundedCornerShape(20.dp), border = BorderStroke(1.dp, PBorder), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(3.dp)) { Box(Modifier.fillMaxWidth().height(250.dp)) { if (route.id == "caminho-do-centenario" || route.officialName.contains("Centenário", ignoreCase = true)) Image(painterResource(com.caminhos2027.R.drawable.caminho_centenario_photo), "Imagem do Caminho do Centenário", Modifier.fillMaxSize(), contentScale = ContentScale.Crop) else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF6F9DB0), Color(0xFF1E6247))))); Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xD9000000))))); Column(Modifier.align(Alignment.BottomStart).padding(18.dp)) { Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall); Text(if (route.id == "caminho-do-centenario" || route.officialName.contains("Centenário", ignoreCase = true)) "212 km · Porto → Fátima" else "${fmt(route.totalDistanceKm)} km · Percurso selecionado", color = Color.White, fontWeight = FontWeight.Bold) }; Button(onClick = onRoutes, Modifier.align(Alignment.BottomEnd).padding(16.dp).height(48.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("PREPARAR", fontWeight = FontWeight.ExtraBold) } } }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) { Tile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f), onRange); Tile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f), onAudio); Tile(Icons.Filled.Map, "Orientação", Modifier.weight(1f), onOrientation) }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) { Tile(Icons.Filled.PauseCircle, "Pausas", Modifier.weight(1f), onBreaks); Tile(Icons.Filled.Place, "Apoios", Modifier.weight(1f), onSupports); Tile(Icons.Filled.Notes, "Notas", Modifier.weight(1f), onNotes) }
-        Button(onClick = onConfirm, Modifier.fillMaxWidth().height(58.dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("GUARDAR PLANO", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium) }
-        Card(Modifier.fillMaxWidth(), RoundedCornerShape(20.dp), border = BorderStroke(1.dp, PBorder), colors = CardDefaults.cardColors(containerColor = Color.White)) { Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Text("PROGRESSO DA CAMINHADA", color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium); Text("A sua caminhada começa aqui.", color = PMuted); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { ProgressMetric("0 km", "Percorrido", Modifier.weight(1f)); ProgressMetric(fmt(route.totalDistanceKm) + " km", "Percurso", Modifier.weight(1f)) }; if (config.audioMode != AudioMode.SILENT) Text("Áudio de orientação ativo", color = PGreen, fontWeight = FontWeight.Bold) } }
-        if (notesCount > 0) Text("$notesCount nota(s) guardada(s)", color = PMuted, style = MaterialTheme.typography.bodySmall)
+private fun PreparationHomeV3(
+    route: Route,
+    config: WalkingPreparationConfig,
+    notesCount: Int,
+    onRoutes: () -> Unit,
+    onRange: () -> Unit,
+    onBreaks: () -> Unit,
+    onOrientation: () -> Unit,
+    onAudio: () -> Unit,
+    onSupports: () -> Unit,
+    onNotes: () -> Unit,
+    onConfirm: () -> Unit,
+    onBack: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val heroBitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(initialValue = null, key1 = route.id) {
+        value = runCatching {
+            context.assets.open("data/hero_centenario.jpg.b64").use { input ->
+                val encoded = input.readBytes()
+                val decoded = android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
+                android.graphics.BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+            }
+        }.getOrNull()
+    }
+
+    Scaffold(
+        containerColor = PSurface,
+        bottomBar = {
+            androidx.compose.material3.NavigationBar(
+                containerColor = Color.White,
+                modifier = Modifier.navigationBarsPadding()
+            ) {
+                androidx.compose.material3.NavigationBarItem(selected = true, onClick = {}, icon = { Icon(Icons.Filled.Map, null) }, label = { Text("Resumo") })
+                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Map, null) }, label = { Text("Mapa") })
+                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Place, null) }, label = { Text("Apoios") })
+                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Notes, null) }, label = { Text("Diário") })
+                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Menu, null) }, label = { Text("Mais") })
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            Modifier.fillMaxSize().padding(innerPadding).verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .semantics { contentDescription = "PREPARAÇÃO — HOME" },
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) { Icon(Icons.Filled.Menu, "Menu", tint = PBlue) }
+                Icon(Icons.Filled.DirectionsWalk, null, Modifier.size(42.dp), tint = Color(0xFFC28A16))
+                Column(Modifier.padding(start = 8.dp)) {
+                    Text("CAMINHOS", color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
+                    Text("DO PEREGRINO", color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
+                }
+            }
+            Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = PBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall)
+
+            Card(
+                Modifier.fillMaxWidth().height(160.dp),
+                RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, PBorder),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Box(Modifier.fillMaxSize()) {
+                    if (heroBitmap != null && (route.id == "caminho-do-centenario" || route.officialName.contains("Centenário", ignoreCase = true))) {
+                        Image(bitmap = heroBitmap!!.asImageBitmap(), contentDescription = "Imagem do Caminho do Centenário", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    } else {
+                        Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF6F9DB0), Color(0xFF1E6247)))))
+                    }
+                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xD9000000)))))
+                    Column(Modifier.align(Alignment.BottomStart).padding(14.dp)) {
+                        Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            if (route.id == "caminho-do-centenario" || route.officialName.contains("Centenário", ignoreCase = true))
+                                "212 km · Porto → Fátima"
+                            else
+                                fmt(route.totalDistanceKm) + " km · Percurso selecionado",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Button(onClick = onRoutes, Modifier.align(Alignment.BottomEnd).padding(12.dp).height(44.dp), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) {
+                        Text("PREPARAR", fontWeight = FontWeight.ExtraBold)
+                    }
+                }
+            }
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Tile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f), onRange)
+                Tile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f), onAudio)
+                Tile(Icons.Filled.Map, "Orientação", Modifier.weight(1f), onOrientation)
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Tile(Icons.Filled.PauseCircle, "Pausas", Modifier.weight(1f), onBreaks)
+                Tile(Icons.Filled.Place, "Apoios", Modifier.weight(1f), onSupports)
+                Tile(Icons.Filled.Notes, "Notas", Modifier.weight(1f), onNotes)
+            }
+
+            Button(onClick = onConfirm, Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) {
+                Text("GUARDAR PLANO", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
+            }
+            if (notesCount > 0) Text(notesCount.toString() + " nota(s) guardada(s)", color = PMuted, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 
