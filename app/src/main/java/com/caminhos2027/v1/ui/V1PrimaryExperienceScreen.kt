@@ -307,6 +307,17 @@ private fun PreparedWalkScreen(
                     Text("Plano guardado", color = Forest, fontWeight = FontWeight.ExtraBold)
                     Text(fmtKm(walk.plannedStartKm ?: 0.0) + " km → " + fmtKm(walk.plannedDestinationKm ?: 0.0) + " km", fontWeight = FontWeight.Bold)
                     Text("Guardar o plano não inicia a caminhada.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    Text("Áudio · " + audioLabel(walk.preparation.audioMode), color = Forest, style = MaterialTheme.typography.bodySmall)
+                    Text("Orientação · " + orientationLabel(walk.preparation.mapOrientation), color = Forest, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "Pausas · " + if (walk.preparation.intelligentBreaksEnabled) {
+                            val distance = walk.preparation.customBreakDistanceKm?.let { fmtKm(it) + " km" }
+                            val minutes = walk.preparation.customBreakTimeMinutes?.let { it.toString() + " min" }
+                            listOfNotNull(distance, minutes).joinToString(" · ").ifBlank { "inteligentes ativas" }
+                        } else "desativadas",
+                        color = Forest,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                     Text("Apoios · " + walk.preparation.visibleApoiCategories.size + " tipo(s) selecionado(s)", color = Forest, style = MaterialTheme.typography.bodySmall)
                     Text("Notas · " + walk.preparation.notes.size + " guardada(s)", color = Forest, style = MaterialTheme.typography.bodySmall)
                 }
