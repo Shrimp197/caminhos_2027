@@ -272,7 +272,32 @@ private fun PreparationHomeV3(
 }
 
 @Composable private fun ProgressMetric(value: String, label: String, modifier: Modifier) { Card(modifier, RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F6F3))) { Column(Modifier.padding(12.dp)) { Text(value, color = PBlue, fontWeight = FontWeight.ExtraBold); Text(label, color = PMuted, style = MaterialTheme.typography.bodySmall) } } }
-@Composable private fun Tile(icon: ImageVector, title: String, modifier: Modifier, onClick: () -> Unit) { Card(modifier.clickable(onClick = onClick).semantics { contentDescription = title; role = Role.Button }, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, PBorder), elevation = CardDefaults.cardElevation(1.dp)) { Column(Modifier.fillMaxWidth().height(92.dp).padding(horizontal = 6.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(icon, null, Modifier.size(27.dp), tint = PBlue); Spacer(Modifier.height(8.dp)); Text(title, color = PBlue, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) } } }
+@Composable
+private fun Tile(
+    icon: ImageVector,
+    title: String,
+    modifier: Modifier,
+    onClick: () -> Unit,
+    height: androidx.compose.ui.unit.Dp = 82.dp
+) {
+    Card(
+        modifier.clickable(onClick = onClick).semantics { contentDescription = title; role = Role.Button },
+        RoundedCornerShape(15.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, PBorder),
+        elevation = CardDefaults.cardElevation(1.dp)
+    ) {
+        Column(
+            Modifier.fillMaxWidth().height(height).padding(horizontal = 4.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(icon, null, Modifier.size(22.dp), tint = PBlue)
+            Spacer(Modifier.height(5.dp))
+            Text(title, color = PBlue, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
 
 @Composable private fun AudioSub(mode: AudioMode, onBack: () -> Unit, onApply: (AudioMode) -> Unit) { var selected by rememberSaveable { mutableStateOf(mode) }; PrepScaffold("Áudio", "Defina a orientação áudio do plano.", onBack) { listOf(AudioMode.NORMAL to "ÁUDIO NORMAL", AudioMode.IMMERSIVE to "ÁUDIO IMERSIVO", AudioMode.SILENT to "SEM ÁUDIO").forEach { (value, label) -> Button(onClick = { selected = value }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = if (selected == value) PGreen else PBlue)) { Text(label) } }; Button(onClick = { onApply(selected) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = PGreen)) { Text("APLICAR") } } }
 @Composable private fun OrientationSub(orientation: MapOrientation, onBack: () -> Unit, onApply: (MapOrientation) -> Unit) {
