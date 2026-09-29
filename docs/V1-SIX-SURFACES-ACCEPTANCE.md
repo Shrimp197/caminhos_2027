@@ -2,7 +2,7 @@
 
 Este documento transforma o vertical slice principal da V1 num contrato de aceitação verificável para os ambientes SR e HF.
 
-A referência funcional é `V1-FOUNDATION.md`. A composição visual fornecida para o projeto é referência de experiência e hierarquia, não uma especificação para copiar literalmente elementos de funcionalidades futuras.
+A referência funcional é `V1-FOUNDATION.md`. A composição visual fornecida pelo produto é também a referência visual de aceitação desta V1: deve orientar hierarquia, densidade, navegação, cartões, tipografia, cores e composição dos dez momentos apresentados. Não é necessário copiar pixels literalmente nem inventar funcionalidades ausentes na referência.
 
 ## 1. Preparação da caminhada
 
