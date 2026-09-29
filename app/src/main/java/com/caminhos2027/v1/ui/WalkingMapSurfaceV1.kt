@@ -239,10 +239,27 @@ internal fun RealWalkingMap(
             )
         }
 
+        if (offlineState.complete) {
+            Card(
+                modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 14.dp, end = 12.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.94f)),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Text(
+                    "MAPA OFFLINE · DISPONÍVEL",
+                    Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                    color = Color(0xFF0E6546),
+                    fontWeight = FontWeight.ExtraBold,
+                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                )
+            }
+        }
+
         if (!offlineState.complete && !offlineState.active && points.size >= 2) {
             val offlineModifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 72.dp, end = 12.dp)
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 14.dp, end = 12.dp)
             if (offlineState.message != null) {
                 Card(
                     modifier = offlineModifier,
