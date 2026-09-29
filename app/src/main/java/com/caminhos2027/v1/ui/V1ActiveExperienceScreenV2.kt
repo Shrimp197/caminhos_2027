@@ -261,18 +261,6 @@ internal fun V1ActiveExperienceScreenV2(
 
         BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
 
-        if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(route.id)) {
-            Column(
-                Modifier.size(1.dp).alpha(0f).semantics {
-                    contentDescription = "CONTROLOS QA"
-                }
-            ) {
-                Button(onClick = onQaAdvance) { Text("AVANÇAR GPS") }
-                Button(onClick = { onQaToggleGps(false) }) { Text("PERDER GPS") }
-                Button(onClick = { onQaToggleGps(true) }) { Text("RECUPERAR GPS") }
-                Button(onClick = onQaDeviation) { Text("SIMULAR DESVIO") }
-            }
-        }
     }
 }
 
