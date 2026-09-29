@@ -238,6 +238,7 @@ internal fun V1ActiveExperienceScreenV2(
                         }
                     }
                     Text("Tempo · $elapsedLabel", color = ActiveMuted, style = MaterialTheme.typography.labelSmall)
+                    Text("Km no percurso: ${fmtDistanceKm(currentKm)}", color = ActiveMuted, style = MaterialTheme.typography.labelSmall)
                     Text("Progresso · ${(progress * 100).toInt()}%", color = ActiveMuted, style = MaterialTheme.typography.labelSmall)
                 }
             }
