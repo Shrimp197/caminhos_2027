@@ -337,12 +337,24 @@ private fun PreparedWalkScreen(
                             color = Muted,
                             style = MaterialTheme.typography.bodySmall
                         )
-                        if ((pendingDistance ?: 0.0) > 0.0) {
-                            Button(onClick = { onNavigateToCoordinate(target.latitude, target.longitude, "Início da caminhada · " + route.officialName) }, Modifier.fillMaxWidth()) {
-                                Text("IR PARA O INÍCIO")
-                            }
+                        Button(
+                            onClick = {
+                                onNavigateToCoordinate(
+                                    target.latitude,
+                                    target.longitude,
+                                    "Início da caminhada · " + route.officialName
+                                )
+                            },
+                            Modifier.fillMaxWidth()
+                        ) {
+                            Text("IR PARA O INÍCIO")
                         }
-                        OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("CANCELAR INÍCIO") }
+                        OutlinedButton(
+                            onClick = onCancel,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("CANCELAR INÍCIO")
+                        }
                     }
                 }
             } else {
