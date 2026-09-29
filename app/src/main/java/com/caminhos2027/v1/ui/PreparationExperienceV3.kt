@@ -135,7 +135,7 @@ private fun PreparationHomeV3(
             NavigationBar(
                 containerColor = Color.White,
                 tonalElevation = 0.dp,
-                modifier = Modifier.navigationBarsPadding()
+                
             ) {
                 listOf(
                     "Resumo" to Icons.Filled.Map,
