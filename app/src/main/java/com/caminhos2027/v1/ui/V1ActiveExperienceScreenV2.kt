@@ -81,19 +81,16 @@ internal fun V1ActiveExperienceScreenV2(
     val projectedPoint = state.routePosition?.projectedPoint
     val isOffRoute = state.gpsState == GpsState.POSSIBLE_DEVIATION || state.gpsState == GpsState.PROBABLE_DEVIATION
 
-    Column(Modifier.fillMaxSize().background(ActiveBg)) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Filled.LocationOn, null, tint = ActiveGreen, modifier = Modifier.size(26.dp))
+    Column(Modifier.fillMaxSize().background(Color(0xFFF7F7F4))) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.LocationOn, null, tint = ActiveGreen, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 Text(route.officialName, color = ActiveBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                Text(gpsLabel(state.gpsState), color = gpsColor(state.gpsState), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                Text(gpsLabel(state.gpsState), color = gpsColor(state.gpsState), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
             }
-            OutlinedButton(onClick = onOpenSos, modifier = Modifier.height(40.dp)) {
-                Icon(Icons.Filled.ReportProblem, null, modifier = Modifier.size(18.dp))
+            OutlinedButton(onClick = onOpenSos, modifier = Modifier.height(38.dp), shape = RoundedCornerShape(12.dp)) {
+                Icon(Icons.Filled.ReportProblem, null, modifier = Modifier.size(17.dp))
                 Spacer(Modifier.width(4.dp))
                 Text("SOS", fontWeight = FontWeight.ExtraBold)
             }
@@ -112,155 +109,75 @@ internal fun V1ActiveExperienceScreenV2(
                 nextApoi = state.nextApoi
             )
 
-            Row(
-                Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ActiveMetric("${fmtKm(currentKm)} km", "Percorridos", Modifier.weight(1f))
-                ActiveMetric("${fmtKm(remainingKm)} km", "Para o fim", Modifier.weight(1f))
+            Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActiveMetric("${{fmtKm(currentKm)} km", "Percorridos", Modifier.weight(1f))
+                ActiveMetric("${{fmtKm(remainingKm)} km", "Para o fim", Modifier.weight(1f))
             }
 
             if (isOffRoute && projectedPoint != null) {
-                Card(
-                    Modifier.align(Alignment.TopCenter).padding(top = 94.dp, start = 12.dp, end = 12.dp),
-                    RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = ActiveWarningBg),
-                    elevation = CardDefaults.cardElevation(3.dp)
-                ) {
-                    Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Text(
-                            if (state.gpsState == GpsState.PROBABLE_DEVIATION) "Está afastado do Caminho" else "Possível desvio do Caminho",
-                            color = ActiveWarning,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Text(
-                            "O progresso mantém-se no último ponto válido. Vamos orientá-lo de volta ao Caminho.",
-                            color = ActiveWarning,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Button(
-                            onClick = {
-                                onNavigateToCoordinate(
-                                    projectedPoint.latitude,
-                                    projectedPoint.longitude,
-                                    "Último ponto conhecido no Caminho"
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                Card(Modifier.align(Alignment.TopCenter).padding(top = 88.dp, start = 12.dp, end = 12.dp), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = ActiveWarningBg), elevation = CardDefaults.cardElevation(3.dp)) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(if (state.gpsState == GpsState.PROBABLE_DEVIATION) "Está afastado do Caminho" else "Possível desvio do Caminho", color = ActiveWarning, fontWeight = FontWeight.ExtraBold)
+                        Text("O progresso mantém-se no último ponto válido. A orientação leva-o de volta ao último ponto conhecido.", color = ActiveWarning, style = MaterialTheme.typography.bodySmall)
+                        Button(onClick = { onNavigateToCoordinate(projectedPoint.latitude, projectedPoint.longitude, "Último ponto conhecido no Caminho") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(11.dp)) {
                             Icon(Icons.Filled.ArrowForward, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("REGRESSAR AO ÚLTIMO PONTO")
+                            Text("REGRESSAR AO CAMINHO")
                         }
                     }
                 }
             }
         }
 
-        Card(
-            Modifier.fillMaxWidth().padding(horizontal = 10.dp).padding(top = 6.dp),
-            RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(4.dp)
-        ) {
-            Column(
-                Modifier
-                    .height(330.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(9.dp)
-            ) {
+        Card(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 18.dp, bottomEnd = 18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(5.dp)) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                Box(Modifier.align(Alignment.CenterHorizontally).width(42.dp).height(4.dp).background(Color(0xFFD0D4D1), RoundedCornerShape(4.dp)))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Caminhada", color = ActiveBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            if (state.isPaused) "CAMINHADA PAUSADA" else "MAPA · CARTOGRAFIA REAL",
-                            color = if (state.isPaused) ActiveWarning else ActiveMuted,
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.labelMedium
-                        )
+                        Text(if (state.isPaused) "PAUSADA" else "EM CURSO", color = if (state.isPaused) ActiveWarning else ActiveGreen, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelSmall)
                     }
-                    Text("${(progress * 100).toInt()}%", color = ActiveGreen, fontWeight = FontWeight.ExtraBold)
+                    Text("${{(progress * 100).toInt()}%", color = ActiveGreen, fontWeight = FontWeight.ExtraBold)
                 }
-
-                LinearProgressIndicator(
-                    progress = { progress.toFloat() },
-                    modifier = Modifier.fillMaxWidth().height(7.dp),
-                    color = ActiveGreen,
-                    trackColor = Color(0xFFE2E7E3)
-                )
-
+                LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.fillMaxWidth().height(7.dp), color = ActiveGreen, trackColor = Color(0xFFE2E7E3))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ActiveMetric("${fmtKm(currentKm)} km", "Percorridos", Modifier.weight(1f))
-                    ActiveMetric("${fmtKm(remainingKm)} km", "Para o fim", Modifier.weight(1f))
+                    ActiveMetric("${{fmtKm(currentKm)} km", "Percorridos", Modifier.weight(1f))
+                    ActiveMetric("${{fmtKm(remainingKm)} km", "Para o fim", Modifier.weight(1f))
                 }
-
-                Text("Progresso · ${(progress * 100).toInt()}%", color = ActiveMuted, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
-                Text("Km no percurso: ${fmtKm(currentKm)} km", color = ActiveMuted, style = MaterialTheme.typography.bodySmall)
-                Text("Tempo · caminhada em curso", color = ActiveMuted, style = MaterialTheme.typography.bodySmall)
-
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.LocationOn, null, tint = ActiveBlue, modifier = Modifier.size(24.dp))
-                    Spacer(Modifier.width(8.dp))
+                    Icon(Icons.Filled.LocationOn, null, tint = ActiveBlue, modifier = Modifier.size(22.dp))
+                    Spacer(Modifier.width(7.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("Próximos apoios", color = ActiveBlue, fontWeight = FontWeight.ExtraBold)
-                        if (state.nextApoi != null) {
-                            Text(
-                                state.nextApoi.name + (state.nextApoiDistanceKm?.let { " · ${fmtDistance(it)}" } ?: ""),
-                                color = ActiveMuted,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        } else {
-                            Text("Não existem apoios publicados neste contexto.", color = ActiveMuted, style = MaterialTheme.typography.bodySmall)
-                        }
+                        Text("Próximo apoio", color = ActiveBlue, fontWeight = FontWeight.ExtraBold)
+                        Text(state.nextApoi?.name ?: "Sem apoio publicado neste contexto", color = ActiveMuted, style = MaterialTheme.typography.bodySmall)
                     }
-                    OutlinedButton(onClick = onOpenNext10Km, modifier = Modifier.height(36.dp)) {
-                        Text("Ver todos", fontWeight = FontWeight.Bold)
-                    }
+                    state.nextApoiDistanceKm?.let { Text("${{fmtDistance(it)}", color = ActiveBlue, fontWeight = FontWeight.ExtraBold) }
                 }
-
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onTogglePause, modifier = Modifier.weight(1f)) {
+                    OutlinedButton(onClick = onTogglePause, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
                         Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(5.dp))
-                        Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA")
+                        Text(if (state.isPaused) "RETOMAR" else "PAUSAR", fontWeight = FontWeight.Bold)
                     }
-                    Button(onClick = onOpenApoi, modifier = Modifier.weight(1f)) {
-                        Text("VER APOIOS", fontWeight = FontWeight.ExtraBold)
-                    }
+                    Button(onClick = onOpenNext10Km, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Text("PRÓXIMOS 10 KM", fontWeight = FontWeight.ExtraBold) }
                 }
-
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onOpenDecision, modifier = Modifier.weight(1f)) { Text("OPÇÕES", fontWeight = FontWeight.Bold) }
-                    OutlinedButton(onClick = onStop, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Filled.Stop, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(5.dp))
-                        Text("Terminar")
-                    }
+                    OutlinedButton(onClick = onOpenApoi, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Text("APOIOS", fontWeight = FontWeight.Bold) }
+                    OutlinedButton(onClick = onOpenDecision, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Text("DECIDIR", fontWeight = FontWeight.Bold) }
                 }
-
                 if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(route.id)) {
-                    Card(
-                        Modifier.fillMaxWidth(),
-                        RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F8F6))
-                    ) {
-                        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("QA · percurso de teste", color = ActiveMuted, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                                OutlinedButton(onClick = onQaAdvance, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp)) { Text("AVANÇAR GPS") }
-                                OutlinedButton(onClick = { onQaToggleGps(false) }, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp)) { Text("PERDER GPS") }
-                                OutlinedButton(onClick = { onQaToggleGps(true) }, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp)) { Text("RECUPERAR GPS") }
-                            }
-                            OutlinedButton(onClick = onQaDeviation, modifier = Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
+                    Card(Modifier.fillMaxWidth(), RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F6F4))) {
+                        Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            OutlinedButton(onClick = onQaAdvance, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp)) { Text("GPS+") }
+                            OutlinedButton(onClick = { onQaToggleGps(false) }, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp)) { Text("SEM GPS") }
+                            OutlinedButton(onClick = { onQaToggleGps(true) }, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp)) { Text("GPS") }
+                            OutlinedButton(onClick = onQaDeviation, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp)) { Text("DESVIO") }
                         }
                     }
                 }
             }
         }
-
         BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
-
     }
 }
 
