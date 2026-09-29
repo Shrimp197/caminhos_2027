@@ -123,7 +123,11 @@ private fun PreparationHomeV3(
     Scaffold(
         containerColor = Color(0xFFF7F7F4),
         bottomBar = {
-            NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
+            NavigationBar(
+                modifier = Modifier.navigationBarsPadding(),
+                containerColor = Color.White,
+                tonalElevation = 0.dp
+            ) {
                 listOf(
                     "Resumo" to Icons.Filled.Map,
                     "Mapa" to Icons.Filled.Map,
@@ -142,7 +146,7 @@ private fun PreparationHomeV3(
         }
     ) { innerPadding ->
         Column(
-            Modifier.fillMaxSize().padding(innerPadding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp).semantics { contentDescription = "PREPARAÇÃO — HOME" },
+            Modifier.fillMaxSize().padding(innerPadding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 6.dp).semantics { contentDescription = "PREPARAÇÃO — HOME" },
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
