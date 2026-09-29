@@ -89,7 +89,6 @@ private val EmergencyRed = Color(0xFFB3261E)
 @Composable
 internal fun BottomNavBarV1(selected: WalkingSurface, onNavigate: (WalkingSurface) -> Unit) {
     NavigationBar(
-        modifier = Modifier.navigationBarsPadding(),
         containerColor = Color.White,
         tonalElevation = 0.dp
     ) {
