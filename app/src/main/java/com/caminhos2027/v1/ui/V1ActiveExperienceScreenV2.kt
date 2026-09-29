@@ -1,7 +1,6 @@
 package com.caminhos2027.v1.ui
 
 import com.caminhos2027.BuildConfig
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,66 +10,47 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.ReportProblem
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
 import com.caminhos2027.v1.core.data.AndroidRouteOption
-import com.caminhos2027.v1.core.model.AudioMode
-import com.caminhos2027.v1.core.model.GeoPoint
-import com.caminhos2027.v1.core.model.MapOrientation
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.walking.WalkingState
-import java.time.Duration
-import java.time.Instant
 import java.util.Locale
-import kotlin.math.cos
-import kotlin.math.min
 
-private val V2Forest = Color(0xFF0E6546)
-private val V2ForestSoft = Color(0xFFE6F2EB)
-private val V2Map = Color(0xFFF0F0E9)
-private val V2Road = Color(0xFFC9C7BF)
-private val V2MajorRoad = Color(0xFFB1AEA4)
-private val V2Muted = Color(0xFF68736D)
+private val ActiveBg = Color(0xFFF7F8F6)
+private val ActiveGreen = Color(0xFF159447)
+private val ActiveBlue = Color(0xFF164B63)
+private val ActiveMuted = Color(0xFF687278)
+private val ActiveWarning = Color(0xFF9A5A00)
+private val ActiveWarningBg = Color(0xFFFFF1D9)
 
 @Composable
 internal fun V1ActiveExperienceScreenV2(
@@ -93,64 +73,34 @@ internal fun V1ActiveExperienceScreenV2(
     onQaToggleGps: (Boolean) -> Unit,
     onQaDeviation: () -> Unit
 ) {
-    val currentKm = state.routePosition?.routeKm ?: 0.0
+    val currentKm = state.routePosition?.routeKm ?: state.progress?.currentRouteKm ?: 0.0
     val remainingKm = state.progress?.remainingKm ?: 0.0
-    var nowMillis by remember(state.walk.startedAt) { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(state.walk.startedAt) {
-        while (true) {
-            nowMillis = System.currentTimeMillis()
-            kotlinx.coroutines.delay(1_000)
-        }
-    }
-    val elapsed = elapsedWalkingTime(
-        startedAt = state.walk.startedAt,
-        nowMillis = nowMillis,
-        pausedAt = state.pausedAt,
-        pausedDurationSeconds = state.pausedDurationSeconds
-    )
-    val progress = state.progress?.progressRatio?.coerceIn(0.0, 1.0) ?: 0.0
-    val destinationKm = state.walk.plannedDestinationKm ?: 0.0
+    val progress = (state.progress?.progressRatio ?: 0.0).coerceIn(0.0, 1.0)
     val projectedPoint = state.routePosition?.projectedPoint
+    val isOffRoute = state.gpsState == GpsState.POSSIBLE_DEVIATION || state.gpsState == GpsState.PROBABLE_DEVIATION
 
-    ActiveWalkingAudioFeedback(state)
-
-    Column(Modifier.fillMaxSize().background(Color(0xFFF7F8F5))) {
+    Column(Modifier.fillMaxSize().background(ActiveBg)) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(Icons.Filled.LocationOn, null, tint = ActiveGreen, modifier = Modifier.size(26.dp))
+            Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
-                Text(route.officialName, color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                Text(
-                    if (state.isPaused) "CAMINHADA PAUSADA" else gpsLabel(state.gpsState),
-                    color = if (state.isPaused) Color(0xFF7A4A00) else gpsColor(state.gpsState),
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.labelMedium
-                )
+                Text(route.officialName, color = ActiveBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                Text(gpsLabel(state.gpsState), color = gpsColor(state.gpsState), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
             }
-            OutlinedButton(onClick = onOpenSos, modifier = Modifier.height(38.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)) {
+            OutlinedButton(onClick = onOpenSos, modifier = Modifier.height(40.dp)) {
+                Icon(Icons.Filled.ReportProblem, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
                 Text("SOS", fontWeight = FontWeight.ExtraBold)
-            }
-            Spacer(Modifier.width(6.dp))
-            OutlinedButton(
-                onClick = onTogglePause,
-                modifier = Modifier.height(38.dp).semantics {
-                    contentDescription = if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA"
-                },
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)
-            ) {
-                Text(if (state.isPaused) "▶" else "Ⅱ", fontWeight = FontWeight.ExtraBold)
-            }
-            Spacer(Modifier.width(6.dp))
-            OutlinedButton(onClick = onStop, modifier = Modifier.height(38.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)) {
-                Text("PARAR", fontWeight = FontWeight.ExtraBold)
             }
         }
 
         Box(Modifier.fillMaxWidth().weight(1f)) {
             RealWalkingMap(
-                modifier = Modifier.fillMaxSize() .padding(horizontal = 8.dp),
-                routeId = state.walk.routeId,
+                modifier = Modifier.fillMaxSize(),
+                routeId = route.id,
                 geometry = route.geometry.points,
                 projectedPoint = projectedPoint,
                 currentKm = currentKm,
@@ -161,455 +111,163 @@ internal fun V1ActiveExperienceScreenV2(
             )
 
             Row(
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                GlanceMetric(fmt(currentKm) + " km", "Percorridos", Modifier.weight(1f))
-                GlanceMetric(fmt(remainingKm) + " km", "Para o fim", Modifier.weight(1f))
+                ActiveMetric("${fmtKm(currentKm)} km", "Percorridos", Modifier.weight(1f))
+                ActiveMetric("${fmtKm(remainingKm)} km", "Para o fim", Modifier.weight(1f))
             }
 
-            if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(state.walk.routeId)) {
+            if (isOffRoute && projectedPoint != null) {
                 Card(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .width(360.dp)
-                        .padding(top = 82.dp, start = 18.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.96f)),
-                    elevation = CardDefaults.cardElevation(2.dp)
+                    Modifier.align(Alignment.TopCenter).padding(top = 94.dp, start = 12.dp, end = 12.dp),
+                    RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = ActiveWarningBg),
+                    elevation = CardDefaults.cardElevation(3.dp)
                 ) {
-                    Column(
-                        Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                            OutlinedButton(
-                                onClick = onQaAdvance,
-                                modifier = Modifier.weight(1f).semantics { contentDescription = "AVANÇAR GPS" },
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                            ) { Text("AVANÇAR GPS", style = MaterialTheme.typography.labelSmall) }
-                            OutlinedButton(
-                                onClick = { onQaToggleGps(false) },
-                                modifier = Modifier.weight(1f).semantics { contentDescription = "PERDER GPS" },
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                            ) { Text("PERDER GPS", style = MaterialTheme.typography.labelSmall) }
-                            OutlinedButton(
-                                onClick = { onQaToggleGps(true) },
-                                modifier = Modifier.weight(1f).semantics { contentDescription = "RECUPERAR GPS" },
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                            ) { Text("RECUPERAR GPS", style = MaterialTheme.typography.labelSmall) }
+                    Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        Text(
+                            if (state.gpsState == GpsState.PROBABLE_DEVIATION) "Está afastado do Caminho" else "Possível desvio do Caminho",
+                            color = ActiveWarning,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            "O progresso mantém-se no último ponto válido. Vamos orientá-lo de volta ao Caminho.",
+                            color = ActiveWarning,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Button(
+                            onClick = {
+                                onNavigateToCoordinate(
+                                    projectedPoint.latitude,
+                                    projectedPoint.longitude,
+                                    "Último ponto conhecido no Caminho"
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Filled.ArrowForward, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("REGRESSAR AO ÚLTIMO PONTO")
                         }
-                        OutlinedButton(
-                            onClick = onQaDeviation,
-                            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "SIMULAR DESVIO" },
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)
-                        ) { Text("SIMULAR DESVIO", style = MaterialTheme.typography.labelSmall) }
                     }
                 }
             }
+        }
 
-            DraggableWalkingSheet(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(bottom = 6.dp),
-            ) {
         Card(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(max = 620.dp)
-                .padding(12.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 10.dp).padding(top = 6.dp),
             RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
-            Column(
-                Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MetricCard("${fmt(currentKm)} km", "Percorridos", Modifier.weight(1f))
-                    MetricCard("${fmt(remainingKm)} km", "Para o fim", Modifier.weight(1f))
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Progresso", color = V2Muted, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
-                    Text("${(progress * 100).toInt()}%", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                }
-                LinearProgressIndicator(
-                    progress = { progress.toFloat() },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(8.dp)),
-                    color = V2Forest,
-                    trackColor = V2ForestSoft
-                )
-                Text("Tempo de caminhada · $elapsed", color = V2Muted, style = MaterialTheme.typography.bodySmall)
-                state.nextApoi?.let { apoi ->
-                    Card(
-                        Modifier.fillMaxWidth(),
-                        RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = V2ForestSoft)
-                    ) {
-                        Row(Modifier.padding(11.dp), verticalAlignment = Alignment.CenterVertically) {
-                            androidx.compose.material3.Icon(Icons.Filled.Place, null, tint = V2Forest)
-                            Spacer(Modifier.width(8.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text("Próximo apoio", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                                Text(apoi.name, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                            }
-                            Text(state.nextApoiDistanceKm?.let(::fmtDistance) ?: "—", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                        }
-                    }
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MetricCard("${fmt(currentKm)} km", "Percorridos", Modifier.weight(1f))
-                    MetricCard("${fmt(remainingKm)} km", "Para o fim", Modifier.weight(1f))
-                    MetricCard(elapsed, "Tempo", Modifier.weight(1f))
-                }
-                Text(
-                    "Km no percurso: " + fmt(currentKm) + " km",
-                    color = V2Forest,
-                    fontWeight = FontWeight.ExtraBold,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.semantics {
-                        contentDescription = "Km no percurso: " + fmt(currentKm) + " km"
-                    }
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Progresso", color = V2Muted, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
-                    Text("${(progress * 100).toInt()}%", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                }
-                LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(10.dp)), color = V2Forest, trackColor = V2ForestSoft)
-                Text("Destino planeado · ${fmt(destinationKm)} km", color = V2Muted, style = MaterialTheme.typography.bodySmall)
-                pauseRecommendationText(state)?.let { recommendation ->
-                    Card(
-                        Modifier.fillMaxWidth(),
-                        RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = V2ForestSoft)
-                    ) {
-                        Column(Modifier.padding(12.dp)) {
-                            Text("PAUSA INTELIGENTE", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                            Text(recommendation, color = V2Forest, fontWeight = FontWeight.SemiBold)
-                            Text("Pode parar agora e retomar quando quiser.", color = V2Muted, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-                HorizontalDivider()
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.Icon(Icons.Filled.LocationOn, null, tint = V2Forest)
-                    Spacer(Modifier.width(8.dp))
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("A minha posição", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                        Text(positionDetail(state), color = V2Muted, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-                state.nextApoi?.let { apoi ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        androidx.compose.material3.Icon(Icons.Filled.Place, null, tint = V2Forest)
-                        Spacer(Modifier.width(8.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Próximo APOI", color = V2Muted, style = MaterialTheme.typography.labelLarge)
-                            Text(apoi.name, fontWeight = FontWeight.ExtraBold)
-                        }
-                        Text(state.nextApoiDistanceKm?.let(::fmtDistance) ?: "—", color = V2Forest, fontWeight = FontWeight.ExtraBold)
-                    }
-                }
-                if (
-                    state.gpsState == GpsState.NO_SIGNAL ||
-                    state.gpsState == GpsState.POSSIBLE_DEVIATION ||
-                    state.gpsState == GpsState.PROBABLE_DEVIATION
-                ) {
-                    Card(
-                        Modifier.fillMaxWidth(),
-                        RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1D9))
-                    ) {
-                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                            Text(
-                                if (state.gpsState == GpsState.NO_SIGNAL) "Sinal GPS indisponível" else "Está fora do percurso",
-                                color = Color(0xFF7A4A00),
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                            Text(
-                                "O progresso continua ancorado no último ponto válido conhecido no Caminho. Pode usar a navegação do telefone para regressar a esse ponto.",
-                                color = V2Muted,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            state.routePosition?.projectedPoint?.let { target ->
-                                Button(
-                                    onClick = {
-                                        onNavigateToCoordinate(
-                                            target.latitude,
-                                            target.longitude,
-                                            "Último ponto conhecido no Caminho"
-                                        )
-                                    },
-                                    Modifier.fillMaxWidth()
-                                ) {
-                                    Text("IR PARA O ÚLTIMO PONTO")
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (state.isPaused) {
-                    Card(
-                        Modifier.fillMaxWidth(),
-                        RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1D9))
-                    ) {
+                        Text("Caminhada", color = ActiveBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
                         Text(
-                            "CAMINHADA PAUSADA · a posição ficou guardada e o GPS não está a ser aceite.",
-                            Modifier.padding(12.dp),
-                            color = Color(0xFF7A4A00),
-                            fontWeight = FontWeight.SemiBold
+                            if (state.isPaused) "Pausada" else "${fmtKm(currentKm)} km percorridos",
+                            color = ActiveMuted,
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
+                    Text("${(progress * 100).toInt()}%", color = ActiveGreen, fontWeight = FontWeight.ExtraBold)
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onTogglePause, Modifier.weight(1f)) {
-                        Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA")
+
+                LinearProgressIndicator(
+                    progress = { progress.toFloat() },
+                    modifier = Modifier.fillMaxWidth().height(7.dp),
+                    color = ActiveGreen,
+                    trackColor = Color(0xFFE2E7E3)
+                )
+
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.LocationOn, null, tint = ActiveBlue, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Próximos apoios", color = ActiveBlue, fontWeight = FontWeight.ExtraBold)
+                        if (state.nextApoi != null) {
+                            Text(
+                                state.nextApoi.name + (state.nextApoiDistanceKm?.let { " · ${fmtDistance(it)}" } ?: ""),
+                                color = ActiveMuted,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        } else {
+                            Text("Não existem apoios publicados neste contexto.", color = ActiveMuted, style = MaterialTheme.typography.bodySmall)
+                        }
                     }
-                    OutlinedButton(onClick = onOpenApoi, Modifier.weight(1f)) { Text("VER APOIOS") }
-                    OutlinedButton(onClick = onOpenNext10Km, Modifier.weight(1f)) { Text("PRÓXIMOS 10 KM") }
+                    OutlinedButton(onClick = onOpenNext10Km, modifier = Modifier.height(36.dp)) {
+                        Text("Ver todos", fontWeight = FontWeight.Bold)
+                    }
                 }
+
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onOpenDecision, Modifier.weight(1f)) { Text("OPÇÕES") }
-                    OutlinedButton(onClick = onOpenPilgrimMode, Modifier.weight(1f)) { Text("MODO PEREGRINO") }
+                    OutlinedButton(onClick = onTogglePause, modifier = Modifier.weight(1f)) {
+                        Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text(if (state.isPaused) "Retomar" else "Pausa")
+                    }
+                    Button(onClick = onOpenApoi, modifier = Modifier.weight(1f)) {
+                        Text("APOIOS", fontWeight = FontWeight.ExtraBold)
+                    }
+                    OutlinedButton(onClick = onStop, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Filled.Stop, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text("Terminar")
+                    }
                 }
             }
-            }
-            }
         }
+
         BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
-    }
-}
 
-@Composable
-private fun ActiveWalkingAudioFeedback(state: WalkingState) {
-    val mode = state.walk.preparation.audioMode
-    if (mode == AudioMode.SILENT) return
-
-    val context = LocalContext.current
-    val feedback = remember(context) { AndroidWalkingAudioFeedback(context) }
-    var previousGps by remember(state.walk.id) { mutableStateOf<GpsState?>(null) }
-    var previousPaused by remember(state.walk.id) { mutableStateOf(state.isPaused) }
-    var previousApoiId by remember(state.walk.id) { mutableStateOf(state.nextApoi?.id) }
-    var previousPauseRecommended by remember(state.walk.id) { mutableStateOf(false) }
-
-    DisposableEffect(feedback) {
-        onDispose { feedback.release() }
-    }
-
-    val pauseRecommended = pauseRecommendationText(state) != null
-    LaunchedEffect(state.walk.id, state.gpsState, state.isPaused, state.nextApoi?.id, pauseRecommended) {
-        val message = when {
-            !previousPaused && state.isPaused -> "Caminhada pausada."
-            previousPaused && !state.isPaused -> "Caminhada retomada."
-            previousGps == GpsState.ON_ROUTE && state.gpsState == GpsState.NO_SIGNAL ->
-                "Sinal GPS perdido. A última posição foi mantida."
-            previousGps == GpsState.NO_SIGNAL && state.gpsState == GpsState.ON_ROUTE ->
-                "Sinal GPS recuperado. Está no percurso."
-            state.gpsState == GpsState.POSSIBLE_DEVIATION && previousGps != GpsState.POSSIBLE_DEVIATION ->
-                "Possível desvio do percurso."
-            state.gpsState == GpsState.PROBABLE_DEVIATION && previousGps != GpsState.PROBABLE_DEVIATION ->
-                "Provável desvio do percurso."
-            !previousPauseRecommended && pauseRecommended ->
-                "Pausa recomendada. Pode parar agora e retomar quando quiser."
-            mode == AudioMode.IMMERSIVE && previousApoiId != null && previousApoiId != state.nextApoi?.id && state.nextApoi != null ->
-                "Próximo APOI: " + state.nextApoi.name + ". " +
-                    (state.nextApoiDistanceKm?.let(::fmtDistance) ?: "distância não disponível") + "."
-            else -> null
-        }
-        message?.let { feedback.speak(it, mode) }
-        previousGps = state.gpsState
-        previousPaused = state.isPaused
-        previousApoiId = state.nextApoi?.id
-        previousPauseRecommended = pauseRecommended
-    }
-}
-
-
-@Composable
-private fun DraggableWalkingSheet(
-    modifier: Modifier,
-    content: @Composable () -> Unit
-) {
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    val minHeight = with(density) { 190.dp.toPx() }
-    val maxHeight = with(density) { 620.dp.toPx() }
-    val initialHeight = with(density) { 320.dp.toPx() }
-    var heightPx by androidx.compose.runtime.remember { mutableFloatStateOf(initialHeight) }
-
-    Box(
-        modifier
-            .height(with(density) { heightPx.toDp() })
-            .clip(RoundedCornerShape(26.dp))
-            .background(Color.White)
-            .shadow(6.dp, RoundedCornerShape(26.dp))
-            .draggable(
-                state = rememberDraggableState { delta ->
-                    heightPx = (heightPx - delta).coerceIn(minHeight, maxHeight)
-                },
-                orientation = Orientation.Vertical,
-                onDragStopped = {
-                    heightPx = if (heightPx < (minHeight + maxHeight) / 2f) minHeight else maxHeight
+        if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(route.id)) {
+            Column(
+                Modifier.size(1.dp).alpha(0f).semantics {
+                    contentDescription = "CONTROLOS QA"
                 }
-            )
-    ) {
-        Column(Modifier.fillMaxWidth()) {
-            Box(
-                Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 8.dp, bottom = 3.dp)
-                    .size(width = 44.dp, height = 5.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(Color(0xFFB9C1BC))
-            )
-            content()
+            ) {
+                Button(onClick = onQaAdvance) { Text("AVANÇAR GPS") }
+                Button(onClick = { onQaToggleGps(false) }) { Text("PERDER GPS") }
+                Button(onClick = { onQaToggleGps(true) }) { Text("RECUPERAR GPS") }
+                Button(onClick = onQaDeviation) { Text("SIMULAR DESVIO") }
+            }
         }
     }
-}
-
-private fun pointAtRouteKm(points: List<GeoPoint>, routeKm: Double, totalKm: Double): GeoPoint? {
-    if (points.isEmpty()) return null
-    if (points.size == 1) return points.first()
-    val target = routeKm.coerceIn(0.0, totalKm.coerceAtLeast(0.0))
-    if (target <= 0.0) return points.first()
-    var accumulated = 0.0
-    for (index in 1 until points.size) {
-        val a = points[index - 1]
-        val b = points[index]
-        val segment = geoDistanceKmV2(a, b)
-        if (accumulated + segment >= target) {
-            val fraction = if (segment <= 0.0) 0.0 else ((target - accumulated) / segment).coerceIn(0.0, 1.0)
-            return GeoPoint(
-                latitude = a.latitude + (b.latitude - a.latitude) * fraction,
-                longitude = a.longitude + (b.longitude - a.longitude) * fraction
-            )
-        }
-        accumulated += segment
-    }
-    return points.last()
-}
-
-private fun geoDistanceKmV2(a: GeoPoint, b: GeoPoint): Double {
-    val earthRadiusKm = 6371.0088
-    val lat1 = Math.toRadians(a.latitude)
-    val lat2 = Math.toRadians(b.latitude)
-    val dLat = lat2 - lat1
-    val dLon = Math.toRadians(b.longitude - a.longitude)
-    val sinLat = kotlin.math.sin(dLat / 2.0)
-    val sinLon = kotlin.math.sin(dLon / 2.0)
-    val h = sinLat * sinLat + kotlin.math.cos(lat1) * kotlin.math.cos(lat2) * sinLon * sinLon
-    return 2.0 * earthRadiusKm * kotlin.math.asin(kotlin.math.sqrt(h.coerceIn(0.0, 1.0)))
-}
-
-private fun routeBearingDegrees(route: List<GeoPoint>, projected: GeoPoint?): Float {
-    if (route.size < 2 || projected == null) return 0f
-    val index = route.indices.minByOrNull { index ->
-        val point = route[index]
-        val dLat = point.latitude - projected.latitude
-        val dLon = point.longitude - projected.longitude
-        dLat * dLat + dLon * dLon
-    } ?: return 0f
-    val from = if (index < route.lastIndex) route[index] else route[index - 1]
-    val to = if (index < route.lastIndex) route[index + 1] else route[index]
-    val meanLat = (from.latitude + to.latitude) / 2.0
-    val east = (to.longitude - from.longitude) * cos(meanLat * Math.PI / 180.0)
-    val north = to.latitude - from.latitude
-    if (east == 0.0 && north == 0.0) return 0f
-    return Math.toDegrees(kotlin.math.atan2(east, north)).toFloat()
 }
 
 @Composable
-private fun GlanceMetric(value: String, label: String, modifier: Modifier) {
+private fun ActiveMetric(value: String, label: String, modifier: Modifier) {
     Card(
         modifier,
         RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.94f)),
-        elevation = CardDefaults.cardElevation(2.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .97f)),
+        elevation = CardDefaults.cardElevation(3.dp)
     ) {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 9.dp)) {
-            Text(value, color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
-            Text(label, color = V2Muted, style = MaterialTheme.typography.bodySmall)
+        Column(Modifier.padding(horizontal = 13.dp, vertical = 9.dp)) {
+            Text(value, color = Color(0xFF202020), fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
+            Text(label, color = ActiveMuted, style = MaterialTheme.typography.labelSmall)
         }
     }
 }
 
-@Composable private fun MetricCard(value: String, label: String, modifier: Modifier) {
-    Card(
-        modifier.semantics { contentDescription = label },
-        RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = V2ForestSoft)
-    ) {
-        Column(Modifier.padding(12.dp)) { Text(value, color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge); Text(label, color = V2Muted, style = MaterialTheme.typography.bodySmall) }
-    }
-}
-
-private fun gpsLabel(state: GpsState) = when (state) {
-    GpsState.NO_SIGNAL -> "GPS sem sinal"
+private fun gpsLabel(state: GpsState): String = when (state) {
     GpsState.ACQUIRING -> "A obter sinal GPS"
     GpsState.ON_ROUTE -> "GPS no percurso"
+    GpsState.NO_SIGNAL -> "Sem sinal GPS"
     GpsState.POSSIBLE_DEVIATION -> "Possível desvio"
     GpsState.PROBABLE_DEVIATION -> "Provável desvio"
 }
 
-private fun gpsColor(state: GpsState) = when (state) {
-    GpsState.ON_ROUTE -> V2Forest
-    GpsState.NO_SIGNAL, GpsState.POSSIBLE_DEVIATION, GpsState.PROBABLE_DEVIATION -> Color(0xFF9A5A00)
-    GpsState.ACQUIRING -> V2Muted
+private fun gpsColor(state: GpsState): Color = when (state) {
+    GpsState.ON_ROUTE -> ActiveGreen
+    GpsState.ACQUIRING -> ActiveMuted
+    GpsState.NO_SIGNAL, GpsState.POSSIBLE_DEVIATION, GpsState.PROBABLE_DEVIATION -> ActiveWarning
 }
 
-private fun positionDetail(state: WalkingState): String {
-    val routeKm = state.routePosition?.routeKm?.let(::fmt) ?: "—"
-    val routeDistance = state.routePosition?.distanceToRouteMeters?.let(::fmtMeters) ?: "—"
-    val confidence = state.routePosition?.confidence?.name?.lowercase(Locale("pt", "PT")) ?: "desconhecida"
-    return "Km no percurso: $routeKm · distância ao traçado: $routeDistance · confiança: $confidence"
+private fun fmtKm(value: Double): String = String.format(Locale("pt", "PT"), "%.1f", value.coerceAtLeast(0.0))
+private fun fmtDistance(value: Double): String = if (value < 1.0) {
+    String.format(Locale("pt", "PT"), "%.0f m", value * 1000.0)
+} else {
+    String.format(Locale("pt", "PT"), "%.1f km", value)
 }
-
-private fun pauseRecommendationText(state: WalkingState): String? {
-    if (state.isPaused) return null
-    state.pauseRecommendation?.let { return it }
-    val startedAt = state.walk.startedAt ?: return null
-    val now = Instant.now()
-    val currentPauseSeconds = state.pausedAt?.let { Duration.between(it, now).seconds.coerceAtLeast(0L) } ?: 0L
-    val activeSeconds = (
-        Duration.between(startedAt, now).seconds -
-            state.pausedDurationSeconds.coerceAtLeast(0L) -
-            currentPauseSeconds
-        ).coerceAtLeast(0L)
-    val minutes = activeSeconds / 60L
-    val threshold = state.walk.preparation.customBreakTimeMinutes?.takeIf { it > 0 } ?: 60
-    return if (state.walk.preparation.intelligentBreaksEnabled && minutes >= threshold) {
-        "Já passaram $minutes min de caminhada."
-    } else null
-}
-private fun elapsedWalkingTime(
-    startedAt: Instant?,
-    nowMillis: Long,
-    pausedAt: Instant?,
-    pausedDurationSeconds: Long
-): String {
-    if (startedAt == null) return "—"
-    val now = Instant.ofEpochMilli(nowMillis)
-    val currentPauseSeconds = pausedAt?.let { Duration.between(it, now).seconds.coerceAtLeast(0L) } ?: 0L
-    val seconds = (
-        Duration.between(startedAt, now).seconds -
-            pausedDurationSeconds.coerceAtLeast(0L) -
-            currentPauseSeconds
-        ).coerceAtLeast(0L)
-    val hours = seconds / 3600
-    val minutes = (seconds % 3600) / 60
-    return if (hours > 0) String.format(Locale("pt", "PT"), "%dh %02dm", hours, minutes)
-    else String.format(Locale("pt", "PT"), "%02dm", minutes)
-}
-
-private fun fmt(value: Double) = String.format(Locale("pt", "PT"), "%.2f", value)
-private fun fmtDistance(value: Double) = if (value < 1.0) String.format(Locale("pt", "PT"), "%.0f m", value * 1000.0) else String.format(Locale("pt", "PT"), "%.1f km", value)
-private fun fmtMeters(value: Double) = if (value >= 1000.0) String.format(Locale("pt", "PT"), "%.1f km", value / 1000.0) else String.format(Locale("pt", "PT"), "%.0f m", value)
