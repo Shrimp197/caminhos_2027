@@ -87,7 +87,6 @@ class V1MainActivity : ComponentActivity() {
 
         override fun onStartGuidanceNeeded(target: com.caminhos2027.v1.core.model.GeoPoint, label: String) {
             runOnUiThread {
-                pendingStartDistanceMeters = pendingStartDistanceMeters
                 navigateToCoordinate(target.latitude, target.longitude, label)
             }
         }
