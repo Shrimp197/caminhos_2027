@@ -171,6 +171,46 @@ internal fun V1ActiveExperienceScreenV2(
                 GlanceMetric(fmt(remainingKm) + " km", "Para o fim", Modifier.weight(1f))
             }
 
+            if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(state.walk.routeId)) {
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 82.dp, start = 18.dp, end = 18.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.96f)),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(
+                        Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            OutlinedButton(
+                                onClick = onQaAdvance,
+                                modifier = Modifier.weight(1f).semantics { contentDescription = "AVANÇAR GPS" },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                            ) { Text("AVANÇAR GPS", style = MaterialTheme.typography.labelSmall) }
+                            OutlinedButton(
+                                onClick = { onQaToggleGps(false) },
+                                modifier = Modifier.weight(1f).semantics { contentDescription = "PERDER GPS" },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                            ) { Text("PERDER GPS", style = MaterialTheme.typography.labelSmall) }
+                            OutlinedButton(
+                                onClick = { onQaToggleGps(true) },
+                                modifier = Modifier.weight(1f).semantics { contentDescription = "RECUPERAR GPS" },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                            ) { Text("RECUPERAR GPS", style = MaterialTheme.typography.labelSmall) }
+                        }
+                        OutlinedButton(
+                            onClick = onQaDeviation,
+                            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "SIMULAR DESVIO" },
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)
+                        ) { Text("SIMULAR DESVIO", style = MaterialTheme.typography.labelSmall) }
+                    }
+                }
+            }
+
             DraggableWalkingSheet(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -223,33 +263,6 @@ internal fun V1ActiveExperienceScreenV2(
                             Text(state.nextApoiDistanceKm?.let(::fmtDistance) ?: "—", color = V2Forest, fontWeight = FontWeight.ExtraBold)
                         }
                     }
-                }
-                if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(state.walk.routeId)) {
-                    Text("QA · percurso de teste", color = V2Muted, fontWeight = FontWeight.ExtraBold)
-                    Text(
-                        "Controlos apenas para validar GPS simulado. Não aparecem no percurso de produção.",
-                        color = V2Muted,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        OutlinedButton(
-                            onClick = onQaAdvance,
-                            modifier = Modifier.weight(1f).semantics { contentDescription = "AVANÇAR GPS" }
-                        ) { Text("AVANÇAR GPS") }
-                        OutlinedButton(
-                            onClick = { onQaToggleGps(false) },
-                            modifier = Modifier.weight(1f).semantics { contentDescription = "PERDER GPS" }
-                        ) { Text("PERDER GPS") }
-                        OutlinedButton(
-                            onClick = { onQaToggleGps(true) },
-                            modifier = Modifier.weight(1f).semantics { contentDescription = "RECUPERAR GPS" }
-                        ) { Text("RECUPERAR GPS") }
-                    }
-                    OutlinedButton(
-                        onClick = onQaDeviation,
-                        modifier = Modifier.fillMaxWidth().semantics { contentDescription = "SIMULAR DESVIO" }
-                    ) { Text("SIMULAR DESVIO") }
-                    HorizontalDivider()
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MetricCard("${fmt(currentKm)} km", "Percorridos", Modifier.weight(1f))
