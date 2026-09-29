@@ -226,46 +226,17 @@ internal fun RealWalkingMap(
 
         Card(
             modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.96f)),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
             elevation = CardDefaults.cardElevation(2.dp)
         ) {
-            Column(
-                Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    "MAPA · CARTOGRAFIA REAL",
-                    color = Color(0xFF0E6546),
-                    fontWeight = FontWeight.ExtraBold,
-                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(9.dp)
-                ) {
-                    Text(
-                        gpsLabelForMap(gpsState),
-                        color = gpsColorForMap(gpsState),
-                        fontWeight = FontWeight.ExtraBold,
-                        style = androidx.compose.material3.MaterialTheme.typography.labelLarge
-                    )
-                    when {
-                        offlineState.complete -> Text(
-                            "MAPA OFFLINE · DISPONÍVEL",
-                            color = Color(0xFF0E6546),
-                            fontWeight = FontWeight.Bold,
-                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall
-                        )
-                        offlineState.active -> Text(
-                            "A preparar mapa offline · " + offlineState.percent + "%",
-                            color = Color(0xFF7A4A00),
-                            fontWeight = FontWeight.Bold,
-                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall
-                        )
-                    }
-                }
-            }
+            Text(
+                gpsLabelForMap(gpsState),
+                Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
+                color = gpsColorForMap(gpsState),
+                fontWeight = FontWeight.ExtraBold,
+                style = androidx.compose.material3.MaterialTheme.typography.labelMedium
+            )
         }
 
         if (!offlineState.complete && !offlineState.active && points.size >= 2) {
