@@ -238,6 +238,21 @@ class AndroidWalkingTrackingService : Service() {
             return
         }
         if (walkingState != null) {
+            val currentRoutePosition = RouteLocationEngine.locate(app.publishedRoute(), position)
+            val possibleDeviationMeters = com.caminhos2027.v1.core.route.GpsTrackingPolicy().possibleDeviationMeters
+            val wasOnRoute = currentRoutePosition.distanceToRouteMeters < possibleDeviationMeters
+            val lastKnownOnRoutePoint = walkingState?.routePosition?.projectedPoint
+            if (!wasOnRoute && lastKnownOnRoutePoint != null && !startGuidanceIssued) {
+                startGuidanceIssued = true
+                listeners.toList().forEach {
+                    it.onStartGuidanceNeeded(
+                        lastKnownOnRoutePoint,
+                        "Regressar ao último ponto conhecido no Caminho"
+                    )
+                }
+            } else if (wasOnRoute) {
+                startGuidanceIssued = false
+            }
             try {
                 val updated = app.runtime.accept(position)
                 Log.i(TAG, "GPS position accepted: routeKm=" + (updated.routePosition?.routeKm ?: "null") + ", distance=" + (updated.routePosition?.distanceToRouteMeters ?: "null") + ", state=" + updated.gpsState)
