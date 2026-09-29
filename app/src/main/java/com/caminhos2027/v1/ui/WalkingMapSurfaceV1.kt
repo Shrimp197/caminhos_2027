@@ -236,6 +236,12 @@ internal fun RealWalkingMap(
                 horizontalArrangement = Arrangement.spacedBy(9.dp)
             ) {
                 Text(
+                    "MAPA · CARTOGRAFIA REAL",
+                    color = Color(0xFF0E6546),
+                    fontWeight = FontWeight.ExtraBold,
+                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                )
+                Text(
                     gpsLabelForMap(gpsState),
                     color = gpsColorForMap(gpsState),
                     fontWeight = FontWeight.ExtraBold,
