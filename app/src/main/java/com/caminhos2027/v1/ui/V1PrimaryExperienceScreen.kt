@@ -60,7 +60,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -237,6 +236,14 @@ private fun PreparedWalkScreen(
 ) {
     val isCentenario = route.id == "caminho-do-centenario" ||
         route.officialName.contains("Centenário", ignoreCase = true)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val heroBitmap = androidx.compose.runtime.remember(route.id) {
+        runCatching {
+            val encoded = context.assets.open("data/hero_centenario.jpg.b64").use { it.readBytes() }
+            val decoded = android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
+            android.graphics.BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+        }.getOrNull()
+    }
     val target = pointAtRouteKmForNavigation(route, walk.plannedStartKm ?: 0.0)
     Scaffold(
         containerColor = Sand,
@@ -270,12 +277,14 @@ private fun PreparedWalkScreen(
             Card(Modifier.fillMaxWidth().height(132.dp), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Forest)) {
                 Box(Modifier.fillMaxSize()) {
                     if (isCentenario) {
-                        Image(
-                            painter = painterResource(com.caminhos2027.R.drawable.caminho_centenario_hero),
-                            contentDescription = "Caminho do Centenário",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                        )
+                        heroBitmap?.let { bitmap ->
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = "Caminho do Centenário",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                        }
                     } else {
                         Box(
                             Modifier
