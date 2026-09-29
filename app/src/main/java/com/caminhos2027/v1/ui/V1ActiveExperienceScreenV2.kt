@@ -212,6 +212,15 @@ internal fun V1ActiveExperienceScreenV2(
                     MetricCard("${fmt(remainingKm)} km", "Para o fim", Modifier.weight(1f))
                     MetricCard(elapsed, "Tempo", Modifier.weight(1f))
                 }
+                Text(
+                    "Km no percurso: " + fmt(currentKm) + " km",
+                    color = V2Forest,
+                    fontWeight = FontWeight.ExtraBold,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.semantics {
+                        contentDescription = "Km no percurso: " + fmt(currentKm) + " km"
+                    }
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Progresso", color = V2Muted, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
                     Text("${(progress * 100).toInt()}%", color = V2Forest, fontWeight = FontWeight.ExtraBold)
