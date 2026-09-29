@@ -37,6 +37,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -165,7 +167,14 @@ internal fun V1ActiveExperienceScreenV2(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(7.dp)
             ) {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(360.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 14.dp, vertical = 9.dp),
+                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
                     Box(Modifier.align(Alignment.CenterHorizontally).width(42.dp).height(4.dp).background(Color(0xFFD0D4D1), RoundedCornerShape(4.dp)))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -177,7 +186,10 @@ internal fun V1ActiveExperienceScreenV2(
                                 style = MaterialTheme.typography.labelSmall
                             )
                         }
-                        Text("\${(progress * 100).toInt()}%", color = ActiveGreen, fontWeight = FontWeight.ExtraBold)
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("\${(progress * 100).toInt()}%", color = ActiveGreen, fontWeight = FontWeight.ExtraBold)
+                            Text("Progresso", color = ActiveMuted, style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                     LinearProgressIndicator(
                         progress = { progress.toFloat() },
@@ -202,14 +214,14 @@ internal fun V1ActiveExperienceScreenV2(
                         OutlinedButton(onClick = onTogglePause, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
                             Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(5.dp))
-                            Text(if (state.isPaused) "RETOMAR" else "PAUSAR", fontWeight = FontWeight.Bold)
+                            Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA", fontWeight = FontWeight.Bold)
                         }
                         Button(onClick = onOpenNext10Km, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
                             Text("PRÓXIMOS 10 KM", fontWeight = FontWeight.ExtraBold)
                         }
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onOpenApoi, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Text("APOIOS", fontWeight = FontWeight.Bold) }
+                        OutlinedButton(onClick = onOpenApoi, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Text("VER APOIOS", fontWeight = FontWeight.Bold) }
                         OutlinedButton(onClick = onOpenDecision, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Text("OPÇÕES", fontWeight = FontWeight.Bold) }
                     }
                     if (isTestRoute) {
@@ -217,15 +229,16 @@ internal fun V1ActiveExperienceScreenV2(
                             Column(Modifier.padding(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text("QA · percurso de teste", color = ActiveMuted, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelSmall)
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    OutlinedButton(onClick = onQaAdvance, modifier = Modifier.weight(1f)) { Text("GPS+") }
-                                    OutlinedButton(onClick = { onQaToggleGps(false) }, modifier = Modifier.weight(1f)) { Text("SEM GPS") }
-                                    OutlinedButton(onClick = { onQaToggleGps(true) }, modifier = Modifier.weight(1f)) { Text("GPS") }
+                                    OutlinedButton(onClick = onQaAdvance, modifier = Modifier.weight(1f)) { Text("AVANÇAR GPS") }
+                                    OutlinedButton(onClick = { onQaToggleGps(false) }, modifier = Modifier.weight(1f)) { Text("PERDER GPS") }
+                                    OutlinedButton(onClick = { onQaToggleGps(true) }, modifier = Modifier.weight(1f)) { Text("RECUPERAR GPS") }
                                 }
-                                OutlinedButton(onClick = onQaDeviation, modifier = Modifier.fillMaxWidth()) { Text("DESVIO") }
+                                OutlinedButton(onClick = onQaDeviation, modifier = Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
                             }
                         }
                     }
                     Text("Tempo · $elapsedLabel", color = ActiveMuted, style = MaterialTheme.typography.labelSmall)
+                    Text("Progresso · ${(progress * 100).toInt()}%", color = ActiveMuted, style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
