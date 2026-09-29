@@ -408,7 +408,7 @@ private fun OfflineRegionStatus.toUiState(): OfflineUiState {
     )
 }
 
-private fun downloadOfflineRegion(
+internal fun downloadOfflineRegion(
     context: Context,
     points: List<GeoPoint>,
     routeId: String,
