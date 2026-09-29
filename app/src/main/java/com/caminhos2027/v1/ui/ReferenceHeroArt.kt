@@ -1,7 +1,6 @@
 package com.caminhos2027.v1.ui
 
 import android.graphics.BitmapFactory
-import com.caminhos2027.R
 import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -12,19 +11,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import java.io.ByteArrayInputStream
 
 /**
- * Production hero artwork used by the preparation surface.
+ * Approved offline hero artwork.
  *
- * The approved product reference uses a real Caminho do Centenário photograph.
- * Keep the source in the already validated offline asset bundle so the preparation
- * screen remains deterministic and works without network access.
+ * The repository keeps the image as a UTF-8 base64 asset so the source tree remains
+ * portable. The preparation screen must render the real artwork, never the placeholder
+ * vector that was previously used as a fallback.
  */
 @Composable
 internal fun ReferenceHeroArt(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val bitmap = remember {
-        BitmapFactory.decodeResource(context.resources, R.drawable.caminho_centenario_hero)
+        runCatching {
+            val encoded = context.assets.open("data/hero_centenario.jpg.b64")
+                .bufferedReader()
+                .use { it.readText() }
+                .replace("\\s".toRegex(), "")
+            BitmapFactory.decodeStream(ByteArrayInputStream(Base64.decode(encoded, Base64.DEFAULT)))
+        }.getOrNull()
     }
 
     Box(modifier) {
