@@ -227,28 +227,30 @@ private fun PreparationHomeV3(
             Card(
                 Modifier
                     .fillMaxWidth()
-                    .height(166.dp),
+                    .height(166.dp)
+                    .clickable(
+                        enabled = isCentenario,
+                        onClick = onRoutes
+                    )
+                    .semantics {
+                        if (isCentenario) {
+                            contentDescription = "PREPARAR"
+                            role = Role.Button
+                        }
+                    },
                 RoundedCornerShape(22.dp),
                 border = BorderStroke(1.dp, PBorder),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Box(Modifier.fillMaxSize()) {
-                    if (isCentenario) {
-                        if (heroBitmap != null) {
-                            Image(
-                                bitmap = heroBitmap.asImageBitmap(),
-                                contentDescription = "Caminho do Centenário",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(Brush.linearGradient(listOf(Color(0xFF6F9DB0), Color(0xFF1E6247))))
-                            )
-                        }
+                    if (isCentenario && heroBitmap != null) {
+                        Image(
+                            bitmap = heroBitmap.asImageBitmap(),
+                            contentDescription = "Caminho do Centenário",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
                     } else {
                         Box(
                             Modifier
@@ -259,48 +261,44 @@ private fun PreparationHomeV3(
                                     )
                                 )
                         )
-                    }
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(Color.Transparent, Color(0xE0000000))
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(Color.Transparent, Color(0xE0000000))
+                                    )
                                 )
+                        )
+                        Column(
+                            Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(14.dp)
+                                .padding(end = 118.dp)
+                        ) {
+                            Text(
+                                route.officialName,
+                                color = Color.White,
+                                fontWeight = FontWeight.ExtraBold,
+                                style = MaterialTheme.typography.titleLarge
                             )
-                    )
-                    Column(
-                        Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(14.dp)
-                            .padding(end = 118.dp)
-                    ) {
-                        Text(
-                            route.officialName,
-                            color = Color.White,
-                            fontWeight = FontWeight.ExtraBold,
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Text(
-                            if (isCentenario) {
-                                "212 km · Porto → Fátima"
-                            } else {
-                                fmt(route.totalDistanceKm) + " km · Percurso selecionado"
-                            },
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Button(
-                        onClick = onRoutes,
-                        Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(12.dp)
-                            .height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PGreen)
-                    ) {
-                        Text("PREPARAR", fontWeight = FontWeight.ExtraBold)
+                            Text(
+                                fmt(route.totalDistanceKm) + " km · Percurso selecionado",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Button(
+                            onClick = onRoutes,
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(12.dp)
+                                .height(46.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PGreen)
+                        ) {
+                            Text("PREPARAR", fontWeight = FontWeight.ExtraBold)
+                        }
                     }
                 }
             }
