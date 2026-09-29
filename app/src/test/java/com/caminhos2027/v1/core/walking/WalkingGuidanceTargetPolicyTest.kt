@@ -14,7 +14,7 @@ class WalkingGuidanceTargetPolicyTest {
         id = "test",
         name = "Teste",
         officialName = "Teste",
-        totalDistanceKm = 10.0,
+        totalDistanceKm = 5.0,
         source = "test",
         updatedAt = null,
         geometry = RouteGeometry(
@@ -62,7 +62,7 @@ class WalkingGuidanceTargetPolicyTest {
 
     @Test
     fun pointAtRouteKmInterpolatesAlongRoute() {
-        val point = WalkingGuidanceTargetPolicy.pointAtRouteKm(route, 5.0)
+        val point = WalkingGuidanceTargetPolicy.pointAtRouteKm(route, 2.5)
         assertEquals(40.0225, point.latitude, 0.0005)
         assertEquals(-8.0000, point.longitude, 0.000001)
     }
