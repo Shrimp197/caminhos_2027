@@ -185,11 +185,14 @@ internal fun V1ActiveExperienceScreenV2(
                 }
                 if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(route.id)) {
                     Card(Modifier.fillMaxWidth(), RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F6F4))) {
-                        Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("QA · percurso de teste", color = ActiveMuted, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             OutlinedButton(onClick = onQaAdvance, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp)) { Text("GPS+") }
                             OutlinedButton(onClick = { onQaToggleGps(false) }, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp)) { Text("SEM GPS") }
                             OutlinedButton(onClick = { onQaToggleGps(true) }, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp)) { Text("GPS") }
                             OutlinedButton(onClick = onQaDeviation, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp)) { Text("DESVIO") }
+                            }
                         }
                     }
                 }
