@@ -181,6 +181,17 @@ internal fun V1ActiveExperienceScreenV2(
                 nextApoi = state.nextApoi
             )
 
+            Row(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                GlanceMetric(fmt(currentKm) + " km", "Percorridos", Modifier.weight(1f))
+                GlanceMetric(fmt(remainingKm) + " km", "Para o fim", Modifier.weight(1f))
+            }
+
             DraggableWalkingSheet(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -464,6 +475,21 @@ private fun routeBearingDegrees(route: List<GeoPoint>, projected: GeoPoint?): Fl
     val north = to.latitude - from.latitude
     if (east == 0.0 && north == 0.0) return 0f
     return Math.toDegrees(kotlin.math.atan2(east, north)).toFloat()
+}
+
+@Composable
+private fun GlanceMetric(value: String, label: String, modifier: Modifier) {
+    Card(
+        modifier,
+        RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.94f)),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 9.dp)) {
+            Text(value, color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
+            Text(label, color = V2Muted, style = MaterialTheme.typography.bodySmall)
+        }
+    }
 }
 
 @Composable private fun MetricCard(value: String, label: String, modifier: Modifier) {
