@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.ui
 
 import android.graphics.BitmapFactory
+import com.caminhos2027.R
 import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -23,11 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 internal fun ReferenceHeroArt(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val bitmap = remember {
-        runCatching {
-            val encoded = context.assets.open("data/hero_centenario.jpg.b64").use { it.readBytes() }
-            val decoded = Base64.decode(encoded, Base64.DEFAULT)
-            BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
-        }.getOrNull()
+        BitmapFactory.decodeResource(context.resources, R.drawable.caminho_centenario_hero)
     }
 
     Box(modifier) {
