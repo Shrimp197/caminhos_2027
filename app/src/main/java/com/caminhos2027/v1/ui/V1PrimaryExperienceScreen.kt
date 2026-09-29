@@ -109,7 +109,8 @@ internal fun V1PrimaryExperienceScreen(
     onQaToggleGps: (Boolean) -> Unit,
     onQaDeviation: () -> Unit,
     onBackToWalking: () -> Unit,
-    onBackToApoiBrowser: () -> Unit
+    onBackToApoiBrowser: () -> Unit,
+    onNavigateToCoordinate: (Double, Double, String) -> Unit
 ) {
     Surface(Modifier.fillMaxSize(), color = Sand) {
         when (surface) {
@@ -127,7 +128,7 @@ internal fun V1PrimaryExperienceScreen(
             }
             WalkingSurface.ACTIVE -> when {
                 state != null -> ActiveWalkingScreen(state, route, routeOptions, onStop, onOpenApoi, onOpenDecision, onQaAdvance, onQaToggleGps, onQaDeviation)
-                preparedWalk != null -> PreparedWalkScreen(preparedWalk, route, startRequested, pendingStartDistanceMeters, onStart, onCancelPendingStart)
+                preparedWalk != null -> PreparedWalkScreen(preparedWalk, route, startRequested, pendingStartDistanceMeters, onStart, onCancelPendingStart, onNavigateToCoordinate)
                 else -> LandingScreen(route, routeOptions, onPrepare)
             }
             else -> LandingScreen(route, routeOptions, onPrepare)
@@ -213,7 +214,15 @@ private fun PreparationScreen(route: Route, options: List<AndroidRouteOption>, s
 }
 
 @Composable
-private fun PreparedWalkScreen(walk: Walk, route: Route, startRequested: Boolean, pendingDistance: Double?, onStart: () -> Unit, onCancel: () -> Unit) {
+private fun PreparedWalkScreen(
+    walk: Walk,
+    route: Route,
+    startRequested: Boolean,
+    pendingDistance: Double?,
+    onStart: () -> Unit,
+    onCancel: () -> Unit,
+    onNavigateToCoordinate: (Double, Double, String) -> Unit
+) {
     val test = route.id == "sr-test" || route.id == "hf-test"
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center) {
         Card(Modifier.fillMaxWidth(), RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
@@ -241,7 +250,26 @@ private fun PreparedWalkScreen(walk: Walk, route: Route, startRequested: Boolean
                     HorizontalDivider()
                     Text(if (test) "A iniciar pelo percurso de teste…" else if ((pendingDistance ?: 0.0) > 0.0) "Está fora do percurso" else "A procurar GPS…", fontWeight = FontWeight.Bold, color = if ((pendingDistance ?: 0.0) > 0.0) Warning else Forest)
                     pendingDistance?.let { Text("Distância ao percurso: ${fmtMeters(it)}", color = Muted) }
-                    Text(if (test) "A simulação percorre o mesmo fluxo de posição, projeção e estado usado pelo GPS real." else "A caminhada só fica ativa quando existir uma posição válida no percurso.", color = Muted)
+                    Text(
+                        if (test) "A simulação percorre o mesmo fluxo de posição, projeção e estado usado pelo GPS real."
+                        else "Está fora do percurso. A caminhada ainda não começou: siga primeiro até ao ponto de início planeado.",
+                        color = Muted
+                    )
+                    if (!test && (pendingDistance ?: 0.0) > 0.0) {
+                        val target = pointAtRouteKmForNavigation(route, walk.plannedStartKm ?: 0.0)
+                        Button(
+                            onClick = {
+                                onNavigateToCoordinate(
+                                    target.latitude,
+                                    target.longitude,
+                                    "Início da caminhada · ${route.officialName}"
+                                )
+                            },
+                            Modifier.fillMaxWidth()
+                        ) {
+                            Text("IR PARA O INÍCIO")
+                        }
+                    }
                     Button(onCancel, Modifier.fillMaxWidth()) { Text("CANCELAR INÍCIO") }
                 } else Button(onStart, Modifier.fillMaxWidth()) { Text("INICIAR CAMINHADA") }
             }
