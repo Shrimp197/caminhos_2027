@@ -115,62 +115,41 @@ internal fun V1ActiveExperienceScreenV2(
     ActiveWalkingAudioFeedback(state)
 
     Column(Modifier.fillMaxSize().background(Color(0xFFF7F8F5))) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Column(Modifier.weight(1f)) {
-                Text(route.officialName, color = V2Forest, fontWeight = FontWeight.ExtraBold)
+                Text(route.officialName, color = V2Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
                 Text(
                     if (state.isPaused) "CAMINHADA PAUSADA" else gpsLabel(state.gpsState),
                     color = if (state.isPaused) Color(0xFF7A4A00) else gpsColor(state.gpsState),
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    "Progresso · ${(progress * 100).toInt()}%",
-                    color = V2Forest,
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.labelSmall
-                )
-                Text(
-                    "Km no percurso: ${fmt(currentKm)} km",
-                    color = V2Forest,
-                    fontWeight = FontWeight.ExtraBold,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.semantics {
-                        contentDescription = "Km no percurso: ${fmt(currentKm)} km"
-                    }
-                )
-                Text(
-                    "MAPA · CARTOGRAFIA REAL",
-                    color = V2Muted,
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.labelSmall
-                )
-                Text(
-                    "Tempo · " + elapsed,
-                    color = V2Muted,
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.labelSmall
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelMedium
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                OutlinedButton(
-                    onClick = onTogglePause,
-                    modifier = Modifier
-                        .width(48.dp)
-                        .semantics {
-                            contentDescription = if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA"
-                        }
-                ) {
-                    Text(if (state.isPaused) "▶" else "Ⅱ")
-                }
-                OutlinedButton(onClick = onOpenSos) { Text("SOS") }
-                OutlinedButton(onClick = onStop) { Text("PARAR") }
+            OutlinedButton(onClick = onOpenSos, modifier = Modifier.height(38.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)) {
+                Text("SOS", fontWeight = FontWeight.ExtraBold)
+            }
+            Spacer(Modifier.width(6.dp))
+            OutlinedButton(
+                onClick = onTogglePause,
+                modifier = Modifier.height(38.dp).semantics {
+                    contentDescription = if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA"
+                },
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)
+            ) {
+                Text(if (state.isPaused) "▶" else "Ⅱ", fontWeight = FontWeight.ExtraBold)
+            }
+            Spacer(Modifier.width(6.dp))
+            OutlinedButton(onClick = onStop, modifier = Modifier.height(38.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)) {
+                Text("PARAR", fontWeight = FontWeight.ExtraBold)
             }
         }
 
         Box(Modifier.fillMaxWidth().weight(1f)) {
             RealWalkingMap(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                modifier = Modifier.fillMaxSize() .padding(horizontal = 8.dp),
                 routeId = state.walk.routeId,
                 geometry = route.geometry.points,
                 projectedPoint = projectedPoint,
