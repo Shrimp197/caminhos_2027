@@ -114,7 +114,7 @@ internal fun V1ActiveExperienceScreenV2(
 
     ActiveWalkingAudioFeedback(state)
 
-    Column(Modifier.fillMaxSize().background(Color(0xFFF7F5EF))) {
+    Column(Modifier.fillMaxSize().background(Color(0xFFF7F8F5))) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(route.officialName, color = V2Forest, fontWeight = FontWeight.ExtraBold)
