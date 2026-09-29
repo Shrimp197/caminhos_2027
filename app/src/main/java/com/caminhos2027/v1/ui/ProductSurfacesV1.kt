@@ -49,6 +49,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -87,7 +88,11 @@ private val EmergencyRed = Color(0xFFB3261E)
 
 @Composable
 internal fun BottomNavBarV1(selected: WalkingSurface, onNavigate: (WalkingSurface) -> Unit) {
-    NavigationBar(modifier = Modifier.navigationBarsPadding(), containerColor = Color.White) {
+    NavigationBar(
+        modifier = Modifier.navigationBarsPadding(),
+        containerColor = Color.White,
+        tonalElevation = 0.dp
+    ) {
         navItem(WalkingSurface.SUMMARY, "Resumo", Icons.Filled.Home, selected, onNavigate)
         navItem(WalkingSurface.ACTIVE, "Mapa", Icons.Filled.Map, selected, onNavigate)
         navItem(WalkingSurface.APOI_BROWSER, "Apoios", Icons.Filled.Place, selected, onNavigate)
@@ -102,7 +107,14 @@ private fun RowScope.navItem(destination: WalkingSurface, label: String, icon: a
         selected = selected == destination,
         onClick = { onNavigate(destination) },
         icon = { Icon(icon, contentDescription = label) },
-        label = { Text(label) }
+        label = { Text(label, fontWeight = FontWeight.SemiBold) },
+        colors = NavigationBarItemDefaults.colors(
+            selectedIconColor = NavBlue,
+            selectedTextColor = NavBlue,
+            indicatorColor = Color(0xFFF4E8CF),
+            unselectedIconColor = NavMuted,
+            unselectedTextColor = NavMuted
+        )
     )
 }
 
