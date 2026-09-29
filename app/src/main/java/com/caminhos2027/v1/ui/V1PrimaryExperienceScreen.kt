@@ -234,16 +234,8 @@ private fun PreparedWalkScreen(
     onCancel: () -> Unit,
     onNavigateToCoordinate: (Double, Double, String) -> Unit
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val heroBitmap = androidx.compose.runtime.remember(route.id) {
-        runCatching {
-            context.assets.open("data/hero_centenario.jpg.b64").use { input ->
-                val encoded = input.readBytes()
-                val decoded = android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
-                android.graphics.BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
-            }
-        }.getOrNull()
-    }
+    val isCentenario = route.id == "caminho-do-centenario" ||
+        route.officialName.contains("Centenário", ignoreCase = true)
     val target = pointAtRouteKmForNavigation(route, walk.plannedStartKm ?: 0.0)
     Scaffold(
         containerColor = Sand,
@@ -276,8 +268,23 @@ private fun PreparedWalkScreen(
             Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall)
             Card(Modifier.fillMaxWidth().height(160.dp), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Forest)) {
                 Box(Modifier.fillMaxSize()) {
-                    if (heroBitmap != null && (route.id == "caminho-do-centenario" || route.officialName.contains("Centenário", ignoreCase = true))) {
-                        Image(bitmap = heroBitmap!!.asImageBitmap(), contentDescription = "Imagem do Caminho do Centenário", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                    if (isCentenario) {
+                        Image(
+                            painter = androidx.compose.ui.res.painterResource(com.caminhos2027.R.drawable.caminho_centenario_photo),
+                            contentDescription = "Caminho do Centenário",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(
+                                    androidx.compose.ui.graphics.Brush.linearGradient(
+                                        listOf(Color(0xFF6F9DB0), Color(0xFF1E6247))
+                                    )
+                                )
+                        )
                     }
                     Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color(0xD9000000)))))
                     Column(Modifier.align(Alignment.BottomStart).padding(14.dp)) {
@@ -376,8 +383,8 @@ private fun PreparedWalkScreen(
 @Composable
 private fun PreparedTile(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, modifier: Modifier) {
     Card(modifier, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-        Column(Modifier.fillMaxWidth().height(84.dp).padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Icon(icon, null, tint = Forest, modifier = Modifier.size(25.dp))
+        Column(Modifier.fillMaxWidth().height(72.dp).padding(5.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Icon(icon, null, tint = Forest, modifier = Modifier.size(22.dp))
             Text(title, color = Forest, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
         }
     }
