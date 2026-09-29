@@ -252,10 +252,21 @@ private fun PreparationHome(
 
 @Composable
 private fun RouteSelectionCard(route: Route, isTest: Boolean, onClick: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val heroBitmap = androidx.compose.runtime.remember(route.id) {
+        runCatching {
+            val encoded = context.assets.open("data/hero_centenario.jpg.b64").use { it.readBytes() }
+            val decoded = android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
+            android.graphics.BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+        }.getOrNull()
+    }
     Card(Modifier.fillMaxWidth().clickable { onClick() }, RoundedCornerShape(18.dp), border = BorderStroke(1.dp, CardBorder), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Box(Modifier.fillMaxWidth().height(210.dp)) {
-            if (!isTest) Image(painterResource(R.drawable.caminho_centenario_hero), "Imagem do Caminho do Centenário", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF7FA6B8), Color(0xFF35634B)))))
+            if (!isTest && heroBitmap != null) {
+                Image(heroBitmap.asImageBitmap(), "Imagem do Caminho do Centenário", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            } else if (!isTest) {
+                Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF6F9DB0), Color(0xFF1E6247)))))
+            } else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF7FA6B8), Color(0xFF35634B)))))
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xB9000000)))))
             Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
                 Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall)
