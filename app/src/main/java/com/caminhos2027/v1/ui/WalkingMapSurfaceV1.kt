@@ -78,7 +78,8 @@ internal fun RealWalkingMap(
     totalKm: Double,
     gpsState: GpsState,
     mapOrientation: MapOrientation,
-    nextApoi: Apoi?
+    nextApoi: Apoi?,
+    offlineActionRequestToken: Int = 0
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -93,6 +94,38 @@ internal fun RealWalkingMap(
     val points = remember(geometry) { geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() } }
     val mapPoints = remember(points) { simplifyForMap(points, 400) }
     val currentPoint = projectedPoint ?: pointAtRouteKmForMap(points, currentKm, totalKm)
+
+    fun requestOfflineDownload() {
+        offlineState = OfflineUiState(message = "A preparar mapa offline…")
+        downloadOfflineRegion(
+            context,
+            points,
+            routeId,
+            onRegion = {
+                offlineRegion = it
+                offlineState = OfflineUiState(active = true)
+            },
+            onStatus = { status ->
+                val percent = if (status.requiredResourceCount > 0L) {
+                    ((status.completedResourceCount.toDouble() / status.requiredResourceCount.toDouble()) * 100.0).toInt().coerceIn(0, 100)
+                } else 0
+                offlineState = OfflineUiState(
+                    complete = status.isComplete,
+                    active = !status.isComplete,
+                    percent = percent,
+                    message = if (status.isComplete) "Cartografia guardada para utilização sem rede na região do percurso." else null
+                )
+                if (status.isComplete) offlineRegion?.setDownloadState(OfflineRegion.STATE_INACTIVE)
+            },
+            onError = { offlineState = OfflineUiState(message = "Download offline: $it") }
+        )
+    }
+
+    LaunchedEffect(offlineActionRequestToken) {
+        if (offlineActionRequestToken > 0 && !offlineState.complete && !offlineState.active) {
+            requestOfflineDownload()
+        }
+    }
 
     DisposableEffect(lifecycleOwner, mapView) {
         val observer = LifecycleEventObserver { _, event ->
@@ -277,31 +310,7 @@ internal fun RealWalkingMap(
                 }
             } else {
                 OutlinedButton(
-                    onClick = {
-                        offlineState = OfflineUiState(message = "A preparar mapa offline…")
-                        downloadOfflineRegion(
-                            context,
-                            points,
-                            routeId,
-                            onRegion = {
-                                offlineRegion = it
-                                offlineState = OfflineUiState(active = true)
-                            },
-                            onStatus = { status ->
-                                val percent = if (status.requiredResourceCount > 0L) {
-                                    ((status.completedResourceCount.toDouble() / status.requiredResourceCount.toDouble()) * 100.0).toInt().coerceIn(0, 100)
-                                } else 0
-                                offlineState = OfflineUiState(
-                                    complete = status.isComplete,
-                                    active = !status.isComplete,
-                                    percent = percent,
-                                    message = if (status.isComplete) "Cartografia guardada para utilização sem rede na região do percurso." else null
-                                )
-                                if (status.isComplete) offlineRegion?.setDownloadState(OfflineRegion.STATE_INACTIVE)
-                            },
-                            onError = { offlineState = OfflineUiState(message = "Download offline: $it") }
-                        )
-                    },
+                    onClick = ::requestOfflineDownload,
                     modifier = offlineModifier.semantics { contentDescription = "GUARDAR MAPA OFFLINE" }
                 ) {
                     Text("GUARDAR MAPA OFFLINE")
