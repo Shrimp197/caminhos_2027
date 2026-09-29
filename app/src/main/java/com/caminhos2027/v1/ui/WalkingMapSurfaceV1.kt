@@ -134,13 +134,23 @@ internal fun RealWalkingMap(
         }
     }
 
-    LaunchedEffect(map, styleReady, mapPoints) {
+    LaunchedEffect(map, styleReady, mapPoints, currentPoint) {
         val loaded = map ?: return@LaunchedEffect
         if (!styleReady || mapPoints.size < 2 || cameraInitialized) return@LaunchedEffect
         runCatching {
-            val bounds = LatLngBounds.Builder()
-            mapPoints.forEach { bounds.include(LatLng(it.latitude, it.longitude)) }
-            loaded.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 70))
+            val point = currentPoint
+            if (point != null) {
+                loaded.moveCamera(
+                    CameraUpdateFactory.newLatLngZoom(
+                        LatLng(point.latitude, point.longitude),
+                        14.0
+                    )
+                )
+            } else {
+                val bounds = LatLngBounds.Builder()
+                mapPoints.forEach { bounds.include(LatLng(it.latitude, it.longitude)) }
+                loaded.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 70))
+            }
             cameraInitialized = true
         }
     }
