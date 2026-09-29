@@ -121,6 +121,13 @@ private fun PreparationHomeV3(
 ) {
     val isCentenario = route.id == "caminho-do-centenario" ||
         route.officialName.contains("Centenário", ignoreCase = true)
+    val heroBitmap = androidx.compose.runtime.remember(route.id) {
+        runCatching {
+            val encoded = androidx.compose.ui.platform.LocalContext.current.assets.open("data/hero_centenario.jpg.b64").use { it.readBytes() }
+            val decoded = android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
+            android.graphics.BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+        }.getOrNull()
+    }
 
     Scaffold(
         containerColor = PSurface,
@@ -227,12 +234,20 @@ private fun PreparationHomeV3(
             ) {
                 Box(Modifier.fillMaxSize()) {
                     if (isCentenario) {
-                        Image(
-                            painter = painterResource(com.caminhos2027.R.drawable.caminho_centenario_photo),
-                            contentDescription = "Caminho do Centenário",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
+                        if (heroBitmap != null) {
+                            Image(
+                                bitmap = heroBitmap.asImageBitmap(),
+                                contentDescription = "Caminho do Centenário",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(Brush.linearGradient(listOf(Color(0xFF6F9DB0), Color(0xFF1E6247))))
+                            )
+                        }
                     } else {
                         Box(
                             Modifier
