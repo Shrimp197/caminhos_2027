@@ -134,22 +134,21 @@ private fun PreparationHomeV3(
         bottomBar = {
             NavigationBar(
                 containerColor = Color.White,
-                tonalElevation = 2.dp,
+                tonalElevation = 0.dp,
                 modifier = Modifier.navigationBarsPadding()
             ) {
-                val items = listOf(
+                listOf(
                     "Resumo" to Icons.Filled.Map,
                     "Mapa" to Icons.Filled.Map,
                     "Apoios" to Icons.Filled.Place,
                     "Diário" to Icons.Filled.Notes,
                     "Mais" to Icons.Filled.Menu
-                )
-                items.forEachIndexed { index, (label, icon) ->
+                ).forEachIndexed { index, (label, icon) ->
                     NavigationBarItem(
                         selected = index == 0,
                         onClick = { if (index == 4) onBack() },
                         icon = { Icon(icon, contentDescription = label, modifier = Modifier.size(21.dp)) },
-                        label = { Text(label, maxLines = 1) }
+                        label = { Text(label, maxLines = 1, fontWeight = FontWeight.SemiBold) }
                     )
                 }
             }
@@ -162,13 +161,13 @@ private fun PreparationHomeV3(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .semantics { contentDescription = "PREPARAÇÃO — HOME" },
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
-                Modifier.fillMaxWidth().height(42.dp),
+                Modifier.fillMaxWidth().height(44.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onBack, modifier = Modifier.size(38.dp)) {
+                IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                     Icon(Icons.Filled.Menu, "Menu", tint = PBlue, modifier = Modifier.size(24.dp))
                 }
                 Icon(Icons.Filled.DirectionsWalk, null, tint = Color(0xFFC28A16), modifier = Modifier.size(28.dp))
@@ -180,7 +179,7 @@ private fun PreparationHomeV3(
 
             Text(
                 "Prepare a sua caminhada",
-                Modifier.fillMaxWidth().padding(top = 2.dp),
+                Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 color = PBlue,
                 fontWeight = FontWeight.ExtraBold,
@@ -188,17 +187,17 @@ private fun PreparationHomeV3(
             )
 
             Card(
-                Modifier.fillMaxWidth().height(132.dp),
-                RoundedCornerShape(18.dp),
+                Modifier.fillMaxWidth().height(156.dp),
+                RoundedCornerShape(20.dp),
                 border = BorderStroke(1.dp, PBorder),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Box(Modifier.fillMaxSize()) {
                     if (isCentenario) {
-                        heroBitmap?.let { bitmap ->
+                        heroBitmap?.let {
                             Image(
-                                bitmap = bitmap.asImageBitmap(),
+                                bitmap = it.asImageBitmap(),
                                 contentDescription = "Caminho do Centenário",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
@@ -217,7 +216,7 @@ private fun PreparationHomeV3(
                         )
                     )
                     Column(
-                        Modifier.align(Alignment.BottomStart).padding(12.dp).padding(end = 104.dp)
+                        Modifier.align(Alignment.BottomStart).padding(14.dp).padding(end = 118.dp)
                     ) {
                         Text(
                             route.officialName,
@@ -228,7 +227,7 @@ private fun PreparationHomeV3(
                         )
                         Text(
                             if (isCentenario) "212 km · Porto → Fátima"
-                            else "\${fmt(route.totalDistanceKm)} km · Percurso selecionado",
+                            else "${fmt(route.totalDistanceKm)} km · Percurso selecionado",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodyMedium
@@ -236,41 +235,49 @@ private fun PreparationHomeV3(
                     }
                     Button(
                         onClick = onRoutes,
-                        Modifier.align(Alignment.BottomEnd).padding(10.dp).height(42.dp),
+                        Modifier.align(Alignment.BottomEnd).padding(12.dp).height(42.dp),
                         shape = RoundedCornerShape(11.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = PGreen),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 15.dp)
                     ) {
-                        Text("PREPARAR", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelLarge)
+                        Text("PREPARAR", fontWeight = FontWeight.ExtraBold)
                     }
                 }
             }
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                Tile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f), onRange, height = 72.dp)
-                Tile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f), onAudio, height = 72.dp)
-                Tile(Icons.Filled.Map, "Orientação", Modifier.weight(1f), onOrientation, height = 72.dp)
+            Text(
+                "Configure o início, destino e preferências. Guardar o plano não inicia o GPS; o início é sempre explícito.",
+                color = PMuted,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 3.dp)
+            )
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Tile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f), onRange, height = 78.dp)
+                Tile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f), onAudio, height = 78.dp)
+                Tile(Icons.Filled.Map, "Orientação", Modifier.weight(1f), onOrientation, height = 78.dp)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                Tile(Icons.Filled.PauseCircle, "Pausas", Modifier.weight(1f), onBreaks, height = 72.dp)
-                Tile(Icons.Filled.Place, "Apoios", Modifier.weight(1f), onSupports, height = 72.dp)
-                Tile(Icons.Filled.Notes, "Notas", Modifier.weight(1f), onNotes, height = 72.dp)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Tile(Icons.Filled.PauseCircle, "Pausas", Modifier.weight(1f), onBreaks, height = 78.dp)
+                Tile(Icons.Filled.Place, "Apoios", Modifier.weight(1f), onSupports, height = 78.dp)
+                Tile(Icons.Filled.Notes, "Notas", Modifier.weight(1f), onNotes, height = 78.dp)
             }
 
             Button(
                 onClick = onConfirm,
-                Modifier.fillMaxWidth().height(50.dp),
-                shape = RoundedCornerShape(13.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PGreen)
+                Modifier.fillMaxWidth().height(54.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PGreen),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 18.dp)
             ) {
                 Icon(Icons.Filled.DirectionsWalk, null, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.size(7.dp))
+                Spacer(Modifier.size(8.dp))
                 Text("GUARDAR PLANO", fontWeight = FontWeight.ExtraBold)
             }
 
             if (notesCount > 0) {
                 Text(
-                    "\${notesCount} nota(s) guardada(s)",
+                    "${notesCount} nota(s) guardada(s)",
                     color = PMuted,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(horizontal = 4.dp)
