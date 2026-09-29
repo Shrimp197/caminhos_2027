@@ -236,6 +236,14 @@ private fun PreparedWalkScreen(
 ) {
     val isCentenario = route.id == "caminho-do-centenario" ||
         route.officialName.contains("Centenário", ignoreCase = true)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val heroBitmap = androidx.compose.runtime.remember(route.id) {
+        runCatching {
+            val encoded = context.assets.open("data/hero_centenario.jpg.b64").use { it.readBytes() }
+            val decoded = android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
+            android.graphics.BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+        }.getOrNull()
+    }
     val target = pointAtRouteKmForNavigation(route, walk.plannedStartKm ?: 0.0)
     Scaffold(
         containerColor = Sand,
@@ -269,12 +277,24 @@ private fun PreparedWalkScreen(
             Card(Modifier.fillMaxWidth().height(160.dp), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Forest)) {
                 Box(Modifier.fillMaxSize()) {
                     if (isCentenario) {
-                        Image(
-                            painter = androidx.compose.ui.res.painterResource(com.caminhos2027.R.drawable.caminho_centenario_photo),
-                            contentDescription = "Caminho do Centenário",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                        )
+                        if (heroBitmap != null) {
+                            Image(
+                                bitmap = heroBitmap.asImageBitmap(),
+                                contentDescription = "Caminho do Centenário",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        androidx.compose.ui.graphics.Brush.linearGradient(
+                                            listOf(Color(0xFF6F9DB0), Color(0xFF1E6247))
+                                        )
+                                    )
+                            )
+                        }
                     } else {
                         Box(
                             Modifier
