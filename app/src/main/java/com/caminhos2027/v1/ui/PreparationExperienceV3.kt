@@ -121,9 +121,10 @@ private fun PreparationHomeV3(
 ) {
     val isCentenario = route.id == "caminho-do-centenario" ||
         route.officialName.contains("Centenário", ignoreCase = true)
+    val context = androidx.compose.ui.platform.LocalContext.current
     val heroBitmap = androidx.compose.runtime.remember(route.id) {
         runCatching {
-            val encoded = androidx.compose.ui.platform.LocalContext.current.assets.open("data/hero_centenario.jpg.b64").use { it.readBytes() }
+            val encoded = context.assets.open("data/hero_centenario.jpg.b64").use { it.readBytes() }
             val decoded = android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
             android.graphics.BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
         }.getOrNull()
