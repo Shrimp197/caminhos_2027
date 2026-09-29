@@ -174,8 +174,8 @@ internal fun V1ActiveExperienceScreenV2(
             if (BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(state.walk.routeId)) {
                 Card(
                     modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 82.dp, start = 18.dp, end = 18.dp),
+                        .align(Alignment.TopStart)
+                        .padding(top = 82.dp, start = 18.dp),
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.96f)),
                     elevation = CardDefaults.cardElevation(2.dp)
