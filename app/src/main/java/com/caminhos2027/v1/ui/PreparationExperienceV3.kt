@@ -194,22 +194,7 @@ private fun PreparationHomeV3(
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Box(Modifier.fillMaxSize()) {
-                    if (isCentenario) {
-                        heroBitmap?.let {
-                            Image(
-                                bitmap = it.asImageBitmap(),
-                                contentDescription = "Caminho do Centenário",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                    } else {
-                        Box(
-                            Modifier.fillMaxSize().background(
-                                Brush.linearGradient(listOf(Color(0xFF6F9DB0), Color(0xFF1E6247)))
-                            )
-                        )
-                    }
+                    ReferenceHeroArt(Modifier.fillMaxSize())
                     Box(
                         Modifier.fillMaxSize().background(
                             Brush.verticalGradient(listOf(Color.Transparent, Color(0xE0000000)))
