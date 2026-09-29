@@ -5,6 +5,7 @@ import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.res.painterResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -12,6 +13,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import java.io.ByteArrayInputStream
+import com.caminhos2027.R
 
 /**
  * Approved offline hero artwork.
@@ -34,9 +36,16 @@ internal fun ReferenceHeroArt(modifier: Modifier = Modifier) {
     }
 
     Box(modifier) {
-        bitmap?.let {
+        if (bitmap != null) {
             Image(
-                bitmap = it.asImageBitmap(),
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = "Caminho do Centenário",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Image(
+                painter = painterResource(R.drawable.caminho_centenario_photo),
                 contentDescription = "Caminho do Centenário",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
