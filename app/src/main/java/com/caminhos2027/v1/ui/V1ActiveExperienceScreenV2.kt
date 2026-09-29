@@ -88,6 +88,7 @@ internal fun V1ActiveExperienceScreenV2(
     onOpenSos: () -> Unit,
     onOpenPilgrimMode: () -> Unit,
     onNavigate: (WalkingSurface) -> Unit,
+    onNavigateToCoordinate: (Double, Double, String) -> Unit,
     onQaAdvance: () -> Unit,
     onQaToggleGps: (Boolean) -> Unit,
     onQaDeviation: () -> Unit
@@ -260,6 +261,41 @@ internal fun V1ActiveExperienceScreenV2(
                         Text(state.nextApoiDistanceKm?.let(::fmtDistance) ?: "—", color = V2Forest, fontWeight = FontWeight.ExtraBold)
                     }
                 }
+                if (state.gpsState == GpsState.POSSIBLE_DEVIATION || state.gpsState == GpsState.PROBABLE_DEVIATION) {
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1D9))
+                    ) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                            Text(
+                                "Está fora do percurso",
+                                color = Color(0xFF7A4A00),
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                "A caminhada mantém o último ponto válido no Caminho. Pode voltar a esse ponto a partir da sua localização atual.",
+                                color = V2Muted,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            state.routePosition?.projectedPoint?.let { target ->
+                                Button(
+                                    onClick = {
+                                        onNavigateToCoordinate(
+                                            target.latitude,
+                                            target.longitude,
+                                            "Último ponto conhecido no Caminho"
+                                        )
+                                    },
+                                    Modifier.fillMaxWidth()
+                                ) {
+                                    Text("IR PARA O ÚLTIMO PONTO")
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (state.isPaused) {
                     Card(
                         Modifier.fillMaxWidth(),
