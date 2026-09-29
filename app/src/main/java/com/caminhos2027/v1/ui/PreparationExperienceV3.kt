@@ -131,15 +131,16 @@ private fun PreparationHomeV3(
     Scaffold(
         containerColor = PSurface,
         bottomBar = {
-            androidx.compose.material3.NavigationBar(
-                containerColor = Color.White,
-                modifier = Modifier.navigationBarsPadding()
+            Row(
+                Modifier.fillMaxWidth().background(Color.White).navigationBarsPadding().padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                androidx.compose.material3.NavigationBarItem(selected = true, onClick = {}, icon = { Icon(Icons.Filled.Map, null) }, label = { Text("Resumo") })
-                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Map, null) }, label = { Text("Mapa") })
-                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Place, null) }, label = { Text("Apoios") })
-                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Notes, null) }, label = { Text("Diário") })
-                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Menu, null) }, label = { Text("Mais") })
+                listOf("Resumo" to Icons.Filled.Map, "Mapa" to Icons.Filled.Map, "Apoios" to Icons.Filled.Place, "Diário" to Icons.Filled.Notes, "Mais" to Icons.Filled.Menu).forEach { (label, icon) ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(icon, null, tint = if (label == "Resumo") PGreen else PMuted, modifier = Modifier.size(20.dp))
+                        Text(label, color = if (label == "Resumo") PGreen else PMuted, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
             }
         }
     ) { innerPadding ->
