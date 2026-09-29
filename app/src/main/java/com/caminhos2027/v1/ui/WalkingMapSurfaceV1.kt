@@ -241,7 +241,7 @@ internal fun RealWalkingMap(
 
         if (offlineState.complete) {
             Card(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 14.dp, end = 12.dp),
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 68.dp, end = 12.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.94f)),
                 elevation = CardDefaults.cardElevation(2.dp)
@@ -258,8 +258,8 @@ internal fun RealWalkingMap(
 
         if (!offlineState.complete && !offlineState.active && points.size >= 2) {
             val offlineModifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = 14.dp, end = 12.dp)
+                .align(Alignment.TopEnd)
+                .padding(top = 68.dp, end = 12.dp)
             if (offlineState.message != null) {
                 Card(
                     modifier = offlineModifier,
