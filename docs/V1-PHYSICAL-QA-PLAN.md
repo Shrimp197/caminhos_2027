@@ -23,6 +23,12 @@ SR e HF usam GPX de teste e servem para validar o comportamento da aplicação. 
   - HF — TEST/FICTITIOUS
 - Confirmar que a escolha de SR/HF não altera o percurso de produção nem o catálogo de APOI de produção.
 
+## Regra de orientação antes de retomar o percurso
+
+Quando o peregrino ainda não iniciou a caminhada e carrega em **Iniciar caminhada** estando fora do percurso, a aplicação deve manter a caminhada como não iniciada e abrir a navegação do telefone para o **ponto de início planeado**. O acompanhamento só passa a `ACTIVE` quando existir uma posição GPS válida no percurso.
+
+Quando já existe uma caminhada `ACTIVE` e o peregrino se encontra fora do percurso ou sem sinal GPS, a aplicação deve manter o **último ponto fiável conhecido no percurso** e oferecer navegação do telefone de regresso a esse ponto. Uma projeção da posição atual para o traçado não substitui o último ponto fiável para efeitos de progresso.
+
 ## 2. SR — fluxo completo controlado
 
 ### 2.1 Preparação
