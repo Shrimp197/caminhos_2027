@@ -158,7 +158,8 @@ internal fun V1ApplicationScreenV1(
                 onQaToggleGps = onQaToggleGps,
                 onQaDeviation = onQaDeviation,
                 onBackToWalking = onBackToWalking,
-                onBackToApoiBrowser = onBackToApoiBrowser
+                onBackToApoiBrowser = onBackToApoiBrowser,
+                onNavigateToCoordinate = onNavigateToCoordinate
             )
 
         else ->
@@ -190,7 +191,8 @@ internal fun V1ApplicationScreenV1(
                 onQaToggleGps = onQaToggleGps,
                 onQaDeviation = onQaDeviation,
                 onBackToWalking = onBackToWalking,
-                onBackToApoiBrowser = onBackToApoiBrowser
+                onBackToApoiBrowser = onBackToApoiBrowser,
+                onNavigateToCoordinate = onNavigateToCoordinate
             )
     }
 }
