@@ -217,7 +217,9 @@ class AndroidWalkingTrackingService : Service() {
                     )
                     if (guidance != null) {
                         startGuidanceIssued = true
-                        listeners.toList().forEach { it.onStartGuidanceNeeded(guidance.point, guidance.label) }
+                        if (!AndroidRouteCatalog.isTestRoute(route.id)) {
+                            listeners.toList().forEach { it.onStartGuidanceNeeded(guidance.point, guidance.label) }
+                        }
                     }
                 }
                 notifyState()
@@ -254,7 +256,9 @@ class AndroidWalkingTrackingService : Service() {
             )
             if (guidance != null && !startGuidanceIssued) {
                 startGuidanceIssued = true
-                listeners.toList().forEach { it.onStartGuidanceNeeded(guidance.point, guidance.label) }
+                if (!AndroidRouteCatalog.isTestRoute(app.publishedRoute().id)) {
+                    listeners.toList().forEach { it.onStartGuidanceNeeded(guidance.point, guidance.label) }
+                }
             } else if (guidance == null) {
                 startGuidanceIssued = false
             }
