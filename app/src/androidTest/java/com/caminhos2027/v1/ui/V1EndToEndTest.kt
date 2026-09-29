@@ -172,6 +172,8 @@ class V1EndToEndTest {
         assertTrue("Second cycle saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
         clickVisibleText("INICIAR CAMINHADA")
         assertTrue("Second walking cycle did not start", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 30_000))
+        expandWalkingSheet()
+        scrollWalkingSheetUntilVisible("OPÇÕES")
         clickVisibleText("OPÇÕES")
         clickVisibleText("PARAR AGORA")
         assertTrue("Second walking cycle did not stop cleanly", waitForVisibleText("Selecionar percurso", 30_000))
