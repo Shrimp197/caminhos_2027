@@ -261,7 +261,7 @@ internal fun RealWalkingMap(
             } else {
                 OutlinedButton(
                     onClick = {
-                        offlineState = OfflineUiState(message = "A preparar o mapa offline…")
+                        offlineState = OfflineUiState(message = "A preparar mapa offline…")
                         downloadOfflineRegion(
                             context,
                             points,
