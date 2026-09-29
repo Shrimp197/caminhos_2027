@@ -191,6 +191,7 @@ class V1MainActivity : ComponentActivity() {
                     onTogglePilgrimModeOnStart = ::updatePilgrimModeOnStart,
                     onOpenNotificationSettings = ::openNotificationSettings,
                     onNavigate = ::navigate,
+                    onNavigateToCoordinate = ::navigateToCoordinate,
                     diaryEntries = diaryEntries,
                     diaryPhotoUri = diaryPhotoUri,
                     onDiaryChoosePhoto = ::chooseDiaryPhoto,
@@ -564,6 +565,10 @@ class V1MainActivity : ComponentActivity() {
 
     private fun pilgrimModeEnabled(): Boolean =
         getSharedPreferences("peregrino_preferences", MODE_PRIVATE).getBoolean("pilgrim_mode", false)
+
+    private fun navigateToCoordinate(latitude: Double, longitude: Double, label: String) {
+        openWalkingNavigation(this, com.caminhos2027.v1.core.model.GeoPoint(latitude, longitude), label)
+    }
 
     private fun navigate(destination: WalkingSurface) {
         when (destination) {
