@@ -314,6 +314,7 @@ class V1MainActivity : ComponentActivity() {
         startRequested = false
         pendingStartDistanceMeters = null
         surface = WalkingSurface.ACTIVE
+        requestStartPreparedWalk()
     }
 
     private fun requestStartPreparedWalk() {
