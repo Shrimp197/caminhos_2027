@@ -30,6 +30,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
@@ -45,7 +50,10 @@ import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.walking.WalkingState
+import java.time.Duration
+import java.time.Instant
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 private val ActiveBg = Color(0xFFF7F8F6)
 private val ActiveGreen = Color(0xFF159447)
@@ -80,6 +88,14 @@ internal fun V1ActiveExperienceScreenV2(
     val progress = (state.progress?.progressRatio ?: 0.0).coerceIn(0.0, 1.0)
     val projectedPoint = state.routePosition?.projectedPoint
     val isOffRoute = state.gpsState == GpsState.POSSIBLE_DEVIATION || state.gpsState == GpsState.PROBABLE_DEVIATION
+    var clock by remember { mutableStateOf(Instant.now()) }
+    LaunchedEffect(state.walk.id, state.walk.startedAt) {
+        while (true) {
+            clock = Instant.now()
+            delay(1_000L)
+        }
+    }
+    val elapsedLabel = state.walk.startedAt?.let { elapsedWalkingLabel(it, clock) } ?: "00m"
 
     Column(Modifier.fillMaxSize().background(Color(0xFFF7F7F4))) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -137,6 +153,7 @@ internal fun V1ActiveExperienceScreenV2(
                         Text("Caminhada", color = ActiveBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
                         Text(if (state.isPaused) "CAMINHADA PAUSADA" else "MAPA · CARTOGRAFIA REAL", color = if (state.isPaused) ActiveWarning else ActiveGreen, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelSmall)
                         Text("Progresso · ${(progress * 100).toInt()}%", color = ActiveMuted, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                        Text("Tempo · \$elapsedLabel", color = ActiveMuted, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                     }
                     Text("${(progress * 100).toInt()}%", color = ActiveGreen, fontWeight = FontWeight.ExtraBold)
                 }
@@ -209,6 +226,14 @@ private fun gpsColor(state: GpsState): Color = when (state) {
     GpsState.ON_ROUTE -> ActiveGreen
     GpsState.ACQUIRING -> ActiveMuted
     GpsState.NO_SIGNAL, GpsState.POSSIBLE_DEVIATION, GpsState.PROBABLE_DEVIATION -> ActiveWarning
+}
+
+private fun elapsedWalkingLabel(startedAt: Instant, now: Instant): String {
+    val seconds = Duration.between(startedAt, now).seconds.coerceAtLeast(0L)
+    val hours = seconds / 3600L
+    val minutes = (seconds % 3600L) / 60L
+    return if (hours > 0L) "${hours}h ${minutes.toString().padStart(2, '0')}m"
+    else "${minutes.toString().padStart(2, '0')}m"
 }
 
 private fun fmtKm(value: Double): String = String.format(Locale("pt", "PT"), "%.1f", value.coerceAtLeast(0.0))
