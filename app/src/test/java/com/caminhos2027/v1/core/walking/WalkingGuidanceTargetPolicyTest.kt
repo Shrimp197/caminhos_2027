@@ -1,6 +1,8 @@
 package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.model.GeoPoint
+import com.caminhos2027.v1.core.model.Route
+import com.caminhos2027.v1.core.model.RouteGeometry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -8,6 +10,14 @@ import org.junit.Test
 class WalkingGuidanceTargetPolicyTest {
     private val start = GeoPoint(41.1496, -8.6109)
     private val lastKnown = GeoPoint(41.1600, -8.6200)
+    private val route = Route(
+        id = "test",
+        officialName = "Teste",
+        totalDistanceKm = 10.0,
+        geometry = RouteGeometry(
+            points = listOf(GeoPoint(40.0000, -8.0000), GeoPoint(40.0450, -8.0000))
+        )
+    )
 
     @Test
     fun pendingStartGuidesToPlannedStartWhenOutsideRoute() {
@@ -19,7 +29,7 @@ class WalkingGuidanceTargetPolicyTest {
         )
 
         assertEquals(start, target?.point)
-        assertEquals("Início da caminhada · Caminho do Centenário", target?.label)
+        assertEquals("Ir para o início da caminhada · Caminho do Centenário", target?.label)
     }
 
     @Test
@@ -44,6 +54,13 @@ class WalkingGuidanceTargetPolicyTest {
 
         assertEquals(lastKnown, target?.point)
         assertEquals("Regressar ao último ponto conhecido no Caminho", target?.label)
+    }
+
+    @Test
+    fun pointAtRouteKmInterpolatesAlongRoute() {
+        val point = WalkingGuidanceTargetPolicy.pointAtRouteKm(route, 5.0)
+        assertEquals(40.0225, point.latitude, 0.0005)
+        assertEquals(-8.0000, point.longitude, 0.000001)
     }
 
     @Test
