@@ -235,8 +235,8 @@ private fun PreparedWalkScreen(
     onNavigateToCoordinate: (Double, Double, String) -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val heroBitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(initialValue = null, key1 = route.id) {
-        value = runCatching {
+    val heroBitmap = androidx.compose.runtime.remember(route.id) {
+        runCatching {
             context.assets.open("data/hero_centenario.jpg.b64").use { input ->
                 val encoded = input.readBytes()
                 val decoded = android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
