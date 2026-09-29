@@ -42,10 +42,10 @@ Quando já existe uma caminhada `ACTIVE` e o peregrino se encontra fora do percu
 
 ### 2.2 Início
 
-- Iniciar a caminhada guardada.
-- Confirmar estado `ACTIVE`.
-- Confirmar publicação da posição inicial.
-- Confirmar estado GPS inicial `ACQUIRING`.
+- Se o utilizador estiver fora do percurso quando pedir **Iniciar caminhada**, a caminhada não começa artificialmente.
+- A aplicação deve orientar o utilizador até ao ponto de início planeado do intervalo escolhido.
+- Se já existir uma caminhada ativa e o utilizador estiver fora do percurso, a orientação deve apontar para o último ponto válido conhecido no traçado, preservando o progresso real.
+- A caminhada só transita para `ACTIVE` depois de uma posição GPS válida confirmar a chegada ao percurso.
 
 ### 2.3 Simulação GPS
 
