@@ -110,8 +110,8 @@ internal fun V1ActiveExperienceScreenV2(
             )
 
             Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ActiveMetric("${{fmtKm(currentKm)} km", "Percorridos", Modifier.weight(1f))
-                ActiveMetric("${{fmtKm(remainingKm)} km", "Para o fim", Modifier.weight(1f))
+                ActiveMetric("${fmtKm(currentKm)} km", "Percorridos", Modifier.weight(1f))
+                ActiveMetric("${fmtKm(remainingKm)} km", "Para o fim", Modifier.weight(1f))
             }
 
             if (isOffRoute && projectedPoint != null) {
@@ -137,12 +137,12 @@ internal fun V1ActiveExperienceScreenV2(
                         Text("Caminhada", color = ActiveBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
                         Text(if (state.isPaused) "PAUSADA" else "EM CURSO", color = if (state.isPaused) ActiveWarning else ActiveGreen, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelSmall)
                     }
-                    Text("${{(progress * 100).toInt()}%", color = ActiveGreen, fontWeight = FontWeight.ExtraBold)
+                    Text("${(progress * 100).toInt()}%", color = ActiveGreen, fontWeight = FontWeight.ExtraBold)
                 }
                 LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.fillMaxWidth().height(7.dp), color = ActiveGreen, trackColor = Color(0xFFE2E7E3))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ActiveMetric("${{fmtKm(currentKm)} km", "Percorridos", Modifier.weight(1f))
-                    ActiveMetric("${{fmtKm(remainingKm)} km", "Para o fim", Modifier.weight(1f))
+                    ActiveMetric("${fmtKm(currentKm)} km", "Percorridos", Modifier.weight(1f))
+                    ActiveMetric("${fmtKm(remainingKm)} km", "Para o fim", Modifier.weight(1f))
                 }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.LocationOn, null, tint = ActiveBlue, modifier = Modifier.size(22.dp))
@@ -151,7 +151,7 @@ internal fun V1ActiveExperienceScreenV2(
                         Text("Próximo apoio", color = ActiveBlue, fontWeight = FontWeight.ExtraBold)
                         Text(state.nextApoi?.name ?: "Sem apoio publicado neste contexto", color = ActiveMuted, style = MaterialTheme.typography.bodySmall)
                     }
-                    state.nextApoiDistanceKm?.let { Text("${{fmtDistance(it)}", color = ActiveBlue, fontWeight = FontWeight.ExtraBold) }
+                    state.nextApoiDistanceKm?.let { Text("${fmtDistance(it)}", color = ActiveBlue, fontWeight = FontWeight.ExtraBold) }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = onTogglePause, modifier = Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
