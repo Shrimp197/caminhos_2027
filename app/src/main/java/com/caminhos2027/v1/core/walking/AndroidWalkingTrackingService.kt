@@ -206,12 +206,18 @@ class AndroidWalkingTrackingService : Service() {
             val possibleDeviationMeters = com.caminhos2027.v1.core.route.GpsTrackingPolicy().possibleDeviationMeters
             if (routePosition.distanceToRouteMeters >= possibleDeviationMeters) {
                 if (!startGuidanceIssued) {
-                    startGuidanceIssued = true
                     val prepared = app.restorePreparedWalk()?.walk
                     val targetKm = prepared?.plannedStartKm ?: 0.0
                     val target = pointAtRouteKm(route, targetKm)
-                    listeners.toList().forEach {
-                        it.onStartGuidanceNeeded(target, "Início da caminhada · " + route.officialName)
+                    val guidance = WalkingGuidanceTargetPolicy.forPendingStart(
+                        currentDistanceToRouteMeters = routePosition.distanceToRouteMeters,
+                        possibleDeviationMeters = possibleDeviationMeters,
+                        plannedStart = target,
+                        routeName = route.officialName
+                    )
+                    if (guidance != null) {
+                        startGuidanceIssued = true
+                        listeners.toList().forEach { it.onStartGuidanceNeeded(guidance.point, guidance.label) }
                     }
                 }
                 notifyState()
@@ -240,17 +246,16 @@ class AndroidWalkingTrackingService : Service() {
         if (walkingState != null) {
             val currentRoutePosition = RouteLocationEngine.locate(app.publishedRoute(), position)
             val possibleDeviationMeters = com.caminhos2027.v1.core.route.GpsTrackingPolicy().possibleDeviationMeters
-            val wasOnRoute = currentRoutePosition.distanceToRouteMeters < possibleDeviationMeters
             val lastKnownOnRoutePoint = walkingState?.routePosition?.projectedPoint
-            if (!wasOnRoute && lastKnownOnRoutePoint != null && !startGuidanceIssued) {
+            val guidance = WalkingGuidanceTargetPolicy.forActiveWalk(
+                currentDistanceToRouteMeters = currentRoutePosition.distanceToRouteMeters,
+                possibleDeviationMeters = possibleDeviationMeters,
+                lastKnownOnRoute = lastKnownOnRoutePoint
+            )
+            if (guidance != null && !startGuidanceIssued) {
                 startGuidanceIssued = true
-                listeners.toList().forEach {
-                    it.onStartGuidanceNeeded(
-                        lastKnownOnRoutePoint,
-                        "Regressar ao último ponto conhecido no Caminho"
-                    )
-                }
-            } else if (wasOnRoute) {
+                listeners.toList().forEach { it.onStartGuidanceNeeded(guidance.point, guidance.label) }
+            } else if (guidance == null) {
                 startGuidanceIssued = false
             }
             try {
