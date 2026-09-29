@@ -190,10 +190,39 @@ class AndroidWalkingTrackingService : Service() {
                     if (!available && walkingState != null) {
                         updateWalkingState(app.runtime.markNoSignal(Instant.now()))
                     }
-                }
+                },
+                onLastKnownPosition = ::handleLastKnownPositionForGuidance
             )
             locationSource = source
             source.start()
+        }
+    }
+
+    /**
+     * A navigation hand-off must not wait for a brand-new GPS fix. When a device already
+     * has a last-known position, use it only to decide whether start guidance is needed;
+     * never promote that stale point into the walking state. A fresh GPS observation is
+     * still required before the walk becomes ACTIVE.
+     */
+    private fun handleLastKnownPositionForGuidance(position: RawGpsPosition) {
+        val app = container ?: return
+        if (!pendingStart || walkingState != null || startGuidanceIssued) return
+        val route = app.publishedRoute()
+        if (AndroidRouteCatalog.isTestRoute(route.id)) return
+        val routePosition = RouteLocationEngine.locate(route, position)
+        val policy = com.caminhos2027.v1.core.route.GpsTrackingPolicy()
+        if (routePosition.distanceToRouteMeters < policy.possibleDeviationMeters) return
+        val prepared = app.restorePreparedWalk()?.walk ?: return
+        val target = WalkingGuidanceTargetPolicy.pointAtRouteKm(
+            route,
+            prepared.plannedStartKm ?: 0.0
+        )
+        startGuidanceIssued = true
+        listeners.toList().forEach {
+            it.onStartGuidanceNeeded(
+                target,
+                "Ir para o início da caminhada · ${route.officialName}"
+            )
         }
     }
 
