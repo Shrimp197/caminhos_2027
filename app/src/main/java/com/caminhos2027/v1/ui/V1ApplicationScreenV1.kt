@@ -63,7 +63,7 @@ internal fun V1ApplicationScreenV1(
 ) {
     when {
         surface == WalkingSurface.PREPARATION ->
-            PreparationExperienceV3(route, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking, onNavigateToCoordinate, preparedWalk, startRequested, pendingStartDistanceMeters)
+            PreparationExperienceV3(route, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking)
 
         surface == WalkingSurface.ACTIVE && state != null ->
             V1ActiveExperienceScreenV2(
