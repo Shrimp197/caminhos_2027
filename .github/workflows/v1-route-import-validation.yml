@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: v1-route-import-validation
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   validate:
