@@ -122,7 +122,21 @@ jobs:
           echo "Instrumentation test will own activity launch."
       - name: Run Android V1 end-to-end tests with orchestrated process-death checkpoints
         timeout-minutes: 25
-        run: gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest
+        run: |
+          set -o pipefail
+          gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.caminhos2027.v1.ui.V1EndToEndTest --stacktrace 2>&1 | tee "$RUNNER_TEMP/v1-e2e.log"
+      - name: Upload Android E2E diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caminhos-v1-route-import-e2e-diagnostics
+          path: |
+            ${{ runner.temp }}/v1-e2e.log
+            app/build/outputs/androidTest-results/**
+            app/build/reports/androidTests/**
+            app/build/reports/tests/**
+          if-no-files-found: warn
+          retention-days: 7
       - name: Collect visual validation screenshots
         id: visual_screenshots
         if: steps.emulator_setup.outcome == 'success'
