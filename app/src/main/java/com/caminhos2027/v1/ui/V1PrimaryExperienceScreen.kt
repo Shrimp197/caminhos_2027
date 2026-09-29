@@ -50,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -223,56 +224,124 @@ private fun PreparedWalkScreen(
     onCancel: () -> Unit,
     onNavigateToCoordinate: (Double, Double, String) -> Unit
 ) {
-    val test = route.id == "sr-test" || route.id == "hf-test"
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center) {
-        Card(Modifier.fillMaxWidth(), RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Plano guardado", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text(route.officialName, color = Forest, fontWeight = FontWeight.Bold)
-                Text("${fmtKm(walk.plannedStartKm ?: 0.0)} → ${fmtKm(walk.plannedDestinationKm ?: 0.0)} km", style = MaterialTheme.typography.titleLarge)
-                Text("Guardar o plano não inicia a caminhada.", color = Muted)
-                val preparation = walk.preparation
-                Text("Áudio · ${audioLabel(preparation.audioMode)}", color = Forest, style = MaterialTheme.typography.bodySmall)
-                Text("Orientação · ${orientationLabel(preparation.mapOrientation)}", color = Forest, style = MaterialTheme.typography.bodySmall)
-                Text(
-                    "Pausas · " + if (preparation.intelligentBreaksEnabled) {
-                        val distance = preparation.customBreakDistanceKm?.let { "${fmtKm(it)} km" }
-                        val minutes = preparation.customBreakTimeMinutes?.let { "$it min" }
-                        listOfNotNull(distance, minutes).joinToString(" · ").ifBlank { "inteligentes ativas" }
-                    } else "desativadas",
-                    color = Forest,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text("Apoios · ${preparation.visibleApoiCategories.size} tipo(s) selecionado(s)", color = Forest, style = MaterialTheme.typography.bodySmall)
-                Text("Notas · ${preparation.notes.size} guardada(s)", color = Forest, style = MaterialTheme.typography.bodySmall)
-                HorizontalDivider()
-                if (startRequested) {
-                    HorizontalDivider()
-                    Text(if (test) "A iniciar pelo percurso de teste…" else if ((pendingDistance ?: 0.0) > 0.0) "Está fora do percurso" else "A procurar GPS…", fontWeight = FontWeight.Bold, color = if ((pendingDistance ?: 0.0) > 0.0) Warning else Forest)
-                    pendingDistance?.let { Text("Distância ao percurso: ${fmtMeters(it)}", color = Muted) }
-                    Text(
-                        if (test) "A simulação percorre o mesmo fluxo de posição, projeção e estado usado pelo GPS real."
-                        else "Está fora do percurso. A caminhada ainda não começou: siga primeiro até ao ponto de início planeado.",
-                        color = Muted
-                    )
-                    if (!test && (pendingDistance ?: 0.0) > 0.0) {
-                        val target = pointAtRouteKmForNavigation(route, walk.plannedStartKm ?: 0.0)
-                        Button(
-                            onClick = {
-                                onNavigateToCoordinate(
-                                    target.latitude,
-                                    target.longitude,
-                                    "Início da caminhada · ${route.officialName}"
-                                )
-                            },
-                            Modifier.fillMaxWidth()
-                        ) {
-                            Text("IR PARA O INÍCIO")
-                        }
-                    }
-                    Button(onCancel, Modifier.fillMaxWidth()) { Text("CANCELAR INÍCIO") }
-                } else Button(onStart, Modifier.fillMaxWidth()) { Text("INICIAR CAMINHADA") }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val heroBitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(initialValue = null, key1 = route.id) {
+        value = runCatching {
+            context.assets.open("data/hero_centenario.jpg.b64").use { input ->
+                val encoded = input.readBytes()
+                val decoded = android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
+                android.graphics.BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
             }
+        }.getOrNull()
+    }
+    val target = pointAtRouteKmForNavigation(route, walk.plannedStartKm ?: 0.0)
+    Scaffold(
+        containerColor = Sand,
+        bottomBar = {
+            androidx.compose.material3.NavigationBar(containerColor = Color.White, modifier = Modifier.navigationBarsPadding()) {
+                androidx.compose.material3.NavigationBarItem(selected = true, onClick = {}, icon = { Icon(Icons.Filled.Home, null) }, label = { Text("Resumo") })
+                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Map, null) }, label = { Text("Mapa") })
+                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Place, null) }, label = { Text("Apoios") })
+                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Notes, null) }, label = { Text("Diário") })
+                androidx.compose.material3.NavigationBarItem(selected = false, enabled = false, onClick = {}, icon = { Icon(Icons.Filled.Menu, null) }, label = { Text("Mais") })
+            }
+        }
+    ) { padding ->
+        Column(
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Menu, "Menu", tint = Forest, modifier = Modifier.size(30.dp))
+                Icon(Icons.Filled.DirectionsWalk, null, tint = Color(0xFFC28A16), modifier = Modifier.padding(start = 12.dp).size(38.dp))
+                Column(Modifier.padding(start = 8.dp)) {
+                    Text("CAMINHOS", color = Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
+                    Text("DO PEREGRINO", color = Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
+                }
+            }
+            Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = Forest, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall)
+            Card(Modifier.fillMaxWidth().height(160.dp), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Forest)) {
+                Box(Modifier.fillMaxSize()) {
+                    if (heroBitmap != null && (route.id == "caminho-do-centenario" || route.officialName.contains("Centenário", ignoreCase = true))) {
+                        Image(bitmap = heroBitmap!!.asImageBitmap(), contentDescription = "Imagem do Caminho do Centenário", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                    }
+                    Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color(0xD9000000)))))
+                    Column(Modifier.align(Alignment.BottomStart).padding(14.dp)) {
+                        Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            if (route.id == "caminho-do-centenario" || route.officialName.contains("Centenário", ignoreCase = true)) "212 km · Porto → Fátima"
+                            else fmtKm(route.totalDistanceKm) + " km · Percurso selecionado",
+                            color = Color.White, fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                PreparedTile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f))
+                PreparedTile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f))
+                PreparedTile(Icons.Filled.Map, "Orientação", Modifier.weight(1f))
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                PreparedTile(Icons.Filled.PauseCircle, "Pausas", Modifier.weight(1f))
+                PreparedTile(Icons.Filled.Place, "Apoios", Modifier.weight(1f))
+                PreparedTile(Icons.Filled.Notes, "Notas", Modifier.weight(1f))
+            }
+
+            Card(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Plano guardado", color = Forest, fontWeight = FontWeight.ExtraBold)
+                    Text(fmtKm(walk.plannedStartKm ?: 0.0) + " km → " + fmtKm(walk.plannedDestinationKm ?: 0.0) + " km", fontWeight = FontWeight.Bold)
+                    Text("Guardar o plano não inicia a caminhada.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    Text("Apoios · " + walk.preparation.visibleApoiCategories.size + " tipo(s) selecionado(s)", color = Forest, style = MaterialTheme.typography.bodySmall)
+                    Text("Notas · " + walk.preparation.notes.size + " guardada(s)", color = Forest, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            if (startRequested) {
+                Card(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            if ((pendingDistance ?: 0.0) > 0.0) "Está fora do percurso" else "A procurar GPS…",
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if ((pendingDistance ?: 0.0) > 0.0) Warning else Forest
+                        )
+                        pendingDistance?.let { Text("Distância ao percurso: " + fmtMeters(it), color = Muted) }
+                        Text(
+                            "A caminhada ainda não começou. A aplicação vai orientá-lo até ao ponto de início planeado e só começa quando o GPS confirmar que chegou ao percurso.",
+                            color = Muted,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        if ((pendingDistance ?: 0.0) > 0.0) {
+                            Button(onClick = { onNavigateToCoordinate(target.latitude, target.longitude, "Início da caminhada · " + route.officialName) }, Modifier.fillMaxWidth()) {
+                                Text("IR PARA O INÍCIO")
+                            }
+                        }
+                        OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("CANCELAR INÍCIO") }
+                    }
+                }
+            } else {
+                Button(
+                    onClick = onStart,
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF159447))
+                ) {
+                    Icon(Icons.Filled.DirectionsWalk, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreparedTile(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, modifier: Modifier) {
+    Card(modifier, RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Column(Modifier.fillMaxWidth().height(84.dp).padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Icon(icon, null, tint = Forest, modifier = Modifier.size(25.dp))
+            Text(title, color = Forest, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
