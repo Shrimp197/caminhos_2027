@@ -232,11 +232,23 @@ internal fun V1ActiveExperienceScreenV2(
                         style = MaterialTheme.typography.bodySmall
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        OutlinedButton(onClick = onQaAdvance, Modifier.weight(1f)) { Text("AVANÇAR GPS") }
-                        OutlinedButton(onClick = { onQaToggleGps(false) }, Modifier.weight(1f)) { Text("PERDER GPS") }
-                        OutlinedButton(onClick = { onQaToggleGps(true) }, Modifier.weight(1f)) { Text("RECUPERAR GPS") }
+                        OutlinedButton(
+                            onClick = onQaAdvance,
+                            modifier = Modifier.weight(1f).semantics { contentDescription = "AVANÇAR GPS" }
+                        ) { Text("AVANÇAR GPS") }
+                        OutlinedButton(
+                            onClick = { onQaToggleGps(false) },
+                            modifier = Modifier.weight(1f).semantics { contentDescription = "PERDER GPS" }
+                        ) { Text("PERDER GPS") }
+                        OutlinedButton(
+                            onClick = { onQaToggleGps(true) },
+                            modifier = Modifier.weight(1f).semantics { contentDescription = "RECUPERAR GPS" }
+                        ) { Text("RECUPERAR GPS") }
                     }
-                    OutlinedButton(onClick = onQaDeviation, Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
+                    OutlinedButton(
+                        onClick = onQaDeviation,
+                        modifier = Modifier.fillMaxWidth().semantics { contentDescription = "SIMULAR DESVIO" }
+                    ) { Text("SIMULAR DESVIO") }
                     HorizontalDivider()
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
