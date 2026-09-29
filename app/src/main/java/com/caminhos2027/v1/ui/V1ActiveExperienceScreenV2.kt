@@ -175,6 +175,7 @@ internal fun V1ActiveExperienceScreenV2(
                 Card(
                     modifier = Modifier
                         .align(Alignment.TopStart)
+                        .width(360.dp)
                         .padding(top = 82.dp, start = 18.dp),
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.96f)),
