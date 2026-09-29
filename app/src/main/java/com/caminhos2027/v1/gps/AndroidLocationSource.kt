@@ -121,6 +121,7 @@ class AndroidLocationSource(
         if (!hasLocationService() || !hasGpsProvider()) return
         val location = runCatching { locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) }.getOrNull()
             ?: return
+        if (location.time <= 0L || System.currentTimeMillis() - location.time > LAST_KNOWN_MAX_AGE_MS) return
         callback(
             RawGpsPosition(
                 latitude = location.latitude,
@@ -146,5 +147,6 @@ class AndroidLocationSource(
         const val UPDATE_INTERVAL_MS = 2000L
         const val MIN_DISPLACEMENT_METERS = 5f
         const val AVAILABILITY_CHECK_INTERVAL_MS = 3000L
+        const val LAST_KNOWN_MAX_AGE_MS = 5 * 60 * 1000L
     }
 }
