@@ -2,7 +2,6 @@ package com.caminhos2027.v1.ui
 
 import android.content.Context
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,9 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -65,7 +62,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.caminhos2027.R
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.AudioMode
@@ -115,7 +111,7 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
             Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = RefBlue, fontWeight = FontWeight.ExtraBold)
             Card(Modifier.fillMaxWidth().height(166.dp), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = RefBlue), border = BorderStroke(1.dp, RefBorder), elevation = CardDefaults.cardElevation(2.dp)) {
                 Box(Modifier.fillMaxSize()) {
-                    if (route.id == "caminho-do-centenario") Image(painterResource(R.drawable.caminho_centenario_photo), "Caminho do Centenário", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    if (route.id == "caminho-do-centenario") ReferenceHeroArt(Modifier.fillMaxSize())
                     else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(RefBlue, Color(0xFF2E6C56)))))
                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xE6000000)))))
                     Column(Modifier.align(Alignment.BottomStart).padding(13.dp).padding(end = 118.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
