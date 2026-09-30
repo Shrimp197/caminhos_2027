@@ -62,9 +62,9 @@ class GpxSimulationLocationSource(
             index += 1
             movedMeters += distanceMeters(previous, points[index])
         }
-        val minimumAdvanceMillis = ((movedMeters / 1000.0) / MAX_SIMULATED_SPEED_KMH * 3_600_000.0)
-            .toLong()
-            .coerceAtLeast(MIN_ADVANCE_MILLIS)
+        val minimumAdvanceMillis = kotlin.math.ceil(
+            (movedMeters / 1000.0) / MAX_SIMULATED_SPEED_KMH * 3_600_000.0
+        ).toLong().coerceAtLeast(MIN_ADVANCE_MILLIS)
         emitCurrentPoint(minimumAdvanceMillis = minimumAdvanceMillis)
         return index > beforeIndex
     }
