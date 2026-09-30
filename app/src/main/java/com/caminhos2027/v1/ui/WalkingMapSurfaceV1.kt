@@ -481,7 +481,7 @@ private fun gpsColorForMap(state: GpsState): Color = when (state) {
     GpsState.NO_SIGNAL, GpsState.POSSIBLE_DEVIATION, GpsState.PROBABLE_DEVIATION -> Color(0xFF9A5A00)
 }
 
-private fun pointAtRouteKmForMap(points: List<GeoPoint>, routeKm: Double, totalKm: Double): GeoPoint? {
+internal fun pointAtRouteKmForMap(points: List<GeoPoint>, routeKm: Double, totalKm: Double): GeoPoint? {
     if (points.isEmpty()) return null
     if (points.size == 1) return points.first()
     val targetRouteKm = routeKm.coerceIn(0.0, totalKm.coerceAtLeast(0.0))
