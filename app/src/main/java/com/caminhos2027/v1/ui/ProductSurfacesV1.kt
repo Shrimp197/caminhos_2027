@@ -265,7 +265,12 @@ private fun DiaryPhotoThumbnail(uriString: String) {
 @Composable
 internal fun SosSurfaceV1(state: WalkingState?, emergencyApoi: List<com.caminhos2027.v1.core.apoi.ApoiAhead>, onNavigate: (WalkingSurface) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val coordinates = state?.routePosition?.projectedPoint
+    val coordinates = state?.currentPhysicalPoint ?: state?.routePosition?.projectedPoint
+    val coordinatesLabel = when {
+        state?.currentPhysicalPoint != null -> "Última posição física conhecida"
+        state?.routePosition?.projectedPoint != null -> "Última posição conhecida no Caminho"
+        else -> "Sem posição conhecida"
+    }
     val shareText = coordinates?.let { "Localização no Caminhos do Peregrino: " + formatCoord(it.latitude) + ", " + formatCoord(it.longitude) }
     Scaffold(containerColor = Color(0xFF141414), bottomBar = { BottomNavBarV1(WalkingSurface.SOS, onNavigate) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -281,6 +286,7 @@ internal fun SosSurfaceV1(state: WalkingState?, emergencyApoi: List<com.caminhos
                     Text("A minha localização", color = Color.White, fontWeight = FontWeight.ExtraBold)
                     if (coordinates == null) Text("Sem uma posição GPS válida neste momento.", color = Color(0xFFFFDAD6))
                     else {
+                        Text(coordinatesLabel, color = Color(0xFFFFDAD6), fontWeight = FontWeight.Bold)
                         Text("Latitude: " + formatCoord6(coordinates.latitude), color = Color.White)
                         Text("Longitude: " + formatCoord6(coordinates.longitude), color = Color.White)
                     }
