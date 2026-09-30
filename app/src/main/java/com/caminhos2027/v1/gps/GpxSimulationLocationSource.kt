@@ -25,6 +25,12 @@ class GpxSimulationLocationSource(
     private var available = false
     private var lastCapturedAt: Instant? = null
 
+    val currentIndex: Int
+        get() = index
+
+    val isStarted: Boolean
+        get() = started
+
     init {
         require(initialIndex >= 0) { "Initial index must be non-negative" }
     }
@@ -42,8 +48,9 @@ class GpxSimulationLocationSource(
         available = false
     }
 
-    fun advance() {
-        if (!started || !available || index >= points.lastIndex) return
+    fun advance(): Boolean {
+        if (!started || !available || index >= points.lastIndex) return false
+        val beforeIndex = index
         var movedMeters = 0.0
         while (index < points.lastIndex && movedMeters < MIN_ADVANCE_METERS) {
             val previous = points[index]
@@ -54,6 +61,7 @@ class GpxSimulationLocationSource(
             .toLong()
             .coerceAtLeast(MIN_ADVANCE_MILLIS)
         emitCurrentPoint(minimumAdvanceMillis = minimumAdvanceMillis)
+        return index > beforeIndex
     }
 
     /** Simulates a temporary loss of GPS without changing the last emitted position. */
