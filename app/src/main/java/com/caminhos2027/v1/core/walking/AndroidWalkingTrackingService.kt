@@ -49,7 +49,7 @@ class AndroidWalkingTrackingService : Service() {
         fun qaAdvance() {
             postWhenSimulationReady(action = { source ->
                 val before = source.currentIndex
-                val moved = source.advance()
+                val moved = source.advance(minimumMeters = 150.0)
                 Log.i(TAG, "QA advance: started=" + source.isStarted + ", index=" + before + "->" + source.currentIndex + ", moved=" + moved)
             })
         }
