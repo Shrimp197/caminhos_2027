@@ -63,13 +63,20 @@ internal fun V1ApplicationScreenV1(
 ) {
     when {
         surface == WalkingSurface.PREPARATION ->
-            PreparationExperienceV3(route, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onBackToWalking)
-
-        surface == WalkingSurface.ACTIVE && state != null ->
-            V1ActiveExperienceScreenV2(
-                state = state,
+            PreparationExperienceV4(
                 route = route,
                 routeOptions = routeOptions,
+                selectedRouteId = selectedRouteId,
+                onSelectRoute = onSelectRoute,
+                onConfirm = onConfirmPreparation,
+                onStart = onStart,
+                onBack = onBackToWalking
+            )
+
+        surface == WalkingSurface.ACTIVE && state != null ->
+            V1ActiveExperienceScreenV3(
+                state = state,
+                route = route,
                 onStop = onStop,
                 onTogglePause = onTogglePause,
                 onOpenApoi = onOpenApoi,
@@ -81,10 +88,10 @@ internal fun V1ApplicationScreenV1(
                 onOpenSos = onOpenSos,
                 onOpenPilgrimMode = onOpenPilgrimMode,
                 onNavigate = onNavigate,
+                onNavigateToCoordinate = onNavigateToCoordinate,
                 onQaAdvance = onQaAdvance,
                 onQaToggleGps = onQaToggleGps,
-                onQaDeviation = onQaDeviation,
-                onNavigateToCoordinate = onNavigateToCoordinate
+                onQaDeviation = onQaDeviation
             )
 
         surface == WalkingSurface.SUMMARY ->
