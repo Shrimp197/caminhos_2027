@@ -67,7 +67,20 @@ class GpsStateEvaluatorTest {
             t0
         )
 
+        assertEquals(GpsState.ACQUIRING, state.state)
+        assertEquals(null, state.lastReliableObservation)
+    }
+
+    @Test
+    fun weakAccuracyDoesNotReplaceReliableRoutePosition() {
+        var state = GpsTrackingState(GpsState.ON_ROUTE)
+        state = GpsStateEvaluator.update(state, observation(0.5, 5.0, 5.0, t0), t0)
+        val weak = observation(1.2, 5.0, 100.0, t0.plusSeconds(10))
+        state = GpsStateEvaluator.update(state, weak, t0.plusSeconds(10))
+
         assertEquals(GpsState.ON_ROUTE, state.state)
+        assertEquals(0.5, state.lastReliableObservation?.routePosition?.routeKm ?: -1.0, 0.001)
+        assertEquals(1.2, state.lastObservation?.routePosition?.routeKm ?: -1.0, 0.001)
     }
 
     @Test
