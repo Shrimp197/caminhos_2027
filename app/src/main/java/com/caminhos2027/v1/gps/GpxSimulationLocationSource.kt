@@ -147,7 +147,8 @@ class GpxSimulationLocationSource(
         if (requestedNext.isAfter(now)) {
             onClockAdvance(java.time.Duration.between(now, requestedNext).toMillis())
         }
-        lastCapturedAt = clock()
+        val advancedNow = clock()
+        lastCapturedAt = if (advancedNow.isAfter(now)) advancedNow else requestedNext
         return lastCapturedAt!!
     }
 
