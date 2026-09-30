@@ -42,6 +42,7 @@ import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.maps.Style
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.offline.OfflineGeometryRegionDefinition
 import org.maplibre.android.offline.OfflineManager
@@ -158,7 +159,16 @@ internal fun RealWalkingMap(
             loaded.uiSettings.isScrollGesturesEnabled = true
             loaded.uiSettings.isRotateGesturesEnabled = true
             loaded.uiSettings.isCompassEnabled = true
-            loaded.setStyle(WALKING_MAP_STYLE_URL) { styleReady = true }
+            val localStyle = runCatching {
+                context.assets.open("data/map/openfreemap-liberty.json")
+                    .bufferedReader()
+                    .use { it.readText() }
+            }.getOrNull()
+            if (localStyle != null) {
+                loaded.setStyle(Style.Builder.fromJson(localStyle)) { styleReady = true }
+            } else {
+                loaded.setStyle(WALKING_MAP_STYLE_URL) { styleReady = true }
+            }
         }
     }
 
