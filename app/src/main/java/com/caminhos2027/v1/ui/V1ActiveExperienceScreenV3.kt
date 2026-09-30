@@ -238,6 +238,11 @@ internal fun V1ActiveExperienceScreenV3(
                                 color = if (state.isPaused) WalkWarning else WalkGreen,
                                 fontWeight = FontWeight.ExtraBold
                             )
+                            Text(
+                                "Tempo · $elapsedLabel",
+                                color = WalkMuted,
+                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                            )
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text("${(progress * 100).toInt()}%", color = WalkGreen, fontWeight = FontWeight.ExtraBold)
@@ -334,7 +339,6 @@ internal fun V1ActiveExperienceScreenV3(
                             }
                         }
 
-                        Text("Tempo · $elapsedLabel", color = WalkMuted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
                     }
                     }
                 }
