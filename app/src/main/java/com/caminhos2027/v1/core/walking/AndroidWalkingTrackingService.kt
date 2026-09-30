@@ -56,6 +56,7 @@ class AndroidWalkingTrackingService : Service() {
         }
         fun qaSetGpsAvailability(available: Boolean) {
             postWhenSimulationReady(action = { source ->
+                Log.i(TAG, "QA GPS availability: requested=" + available + ", beforeAvailableSourceStarted=" + source.isStarted + ", index=" + source.currentIndex)
                 source.setAvailable(available)
                 // Recovery QA must exercise the same raw-position path as real GPS.
                 // Provider availability alone is not a GPS fix; force one fresh raw fix.
@@ -126,7 +127,7 @@ class AndroidWalkingTrackingService : Service() {
             return START_NOT_STICKY
         }
 
-        Log.i(TAG, "onStartCommand action=" + intent?.action + ", restoredState=" + (walkingState?.isPaused ?: "null"))
+        Log.i(TAG, "onStartCommand action=" + intent?.action + ", routeId=" + routeId + ", routePoints=" + (container?.publishedRoute()?.geometry?.points?.size ?: -1) + ", routeTotalKm=" + (container?.publishedRoute()?.totalDistanceKm ?: -1.0) + ", restoredState=" + (walkingState?.isPaused ?: "null"))
         when (intent?.action) {
             ACTION_PAUSE -> pause()
             ACTION_STOP -> stopWalkingSession()
@@ -178,6 +179,7 @@ class AndroidWalkingTrackingService : Service() {
                     route,
                     app.restorePreparedWalk()?.walk?.plannedStartKm ?: 0.0
                 )
+            Log.i(TAG, "QA source init: routeId=" + route.id + ", points=" + route.geometry.points.size + ", totalKm=" + route.totalDistanceKm + ", startIndex=" + startIndex + ", resumedKm=" + (resumedKm ?: "null"))
             val source = GpxSimulationLocationSource(
                 points = route.geometry.points,
                 onPosition = ::handlePosition,
@@ -312,7 +314,7 @@ class AndroidWalkingTrackingService : Service() {
             }
             try {
                 val updated = app.runtime.accept(position)
-                Log.i(TAG, "GPS position accepted: routeKm=" + (updated.routePosition?.routeKm ?: "null") + ", distance=" + (updated.routePosition?.distanceToRouteMeters ?: "null") + ", state=" + updated.gpsState)
+                Log.i(TAG, "GPS position accepted: routeId=" + route.id + ", routeKm=" + (updated.routePosition?.routeKm ?: "null") + ", distance=" + (updated.routePosition?.distanceToRouteMeters ?: "null") + ", state=" + updated.gpsState + ", rawLat=" + position.latitude + ", rawLon=" + position.longitude + ", capturedAt=" + position.capturedAt + ", trackingClock=" + trackingClock())
                 updateWalkingState(updated)
             } catch (error: IllegalArgumentException) {
                 reportError(error.message ?: "Posição GPS rejeitada.")
