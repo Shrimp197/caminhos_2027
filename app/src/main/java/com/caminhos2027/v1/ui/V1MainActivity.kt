@@ -675,6 +675,7 @@ class V1MainActivity : ComponentActivity() {
         startRequested = false
         pendingStartDistanceMeters = null
         getSharedPreferences("peregrino_preferences", MODE_PRIVATE).edit().putBoolean("pilgrim_mode", false).apply()
+        getSharedPreferences("v1_preparation_ui", MODE_PRIVATE).edit().putBoolean("route_selector_seen", false).apply()
         surface = WalkingSurface.PREPARATION
 
         disconnectTrackingService()

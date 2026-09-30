@@ -361,11 +361,11 @@ class AndroidWalkingTrackingService : Service() {
     }
 
     private fun stopWalkingSession() {
-        val state = walkingState ?: run {
+        val app = container ?: return
+        val state = walkingState ?: app.runtime.resume()?.also { walkingState = it } ?: run {
             cancelPendingStartInternal()
             return
         }
-        val app = container ?: return
         val position = state.routePosition ?: app.runtime.lastKnownPosition()
         if (position == null) {
             reportError("Não existe uma posição válida para terminar a caminhada.")
