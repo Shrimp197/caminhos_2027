@@ -39,6 +39,14 @@ object GpsStateEvaluator {
             return previous
         }
 
+        val weakAccuracy = observation.accuracyMeters?.let { it > policy.weakAccuracyMeters } == true
+        if (weakAccuracy) {
+            return previous.copy(
+                state = if (previous.lastReliableObservation == null) GpsState.ACQUIRING else previous.state,
+                lastObservation = observation
+            )
+        }
+
         val lastObservation = previous.lastObservation
         if (lastObservation != null && observation.capturedAt.isBefore(lastObservation.capturedAt)) {
             return previous
