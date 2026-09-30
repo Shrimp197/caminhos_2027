@@ -107,7 +107,7 @@ internal fun V1ActiveExperienceScreenV3(
     val isTestRoute = BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(state.walk.routeId)
     val elapsedLabel = elapsedLabelV3(state.walk.startedAt)
     var expanded by rememberSaveable(state.walk.id) { mutableStateOf(true) }
-    val sheetHeight = if (expanded) 380.dp else 220.dp
+    val sheetHeight = if (expanded) 350.dp else 170.dp
 
     Scaffold(containerColor = WalkBg, bottomBar = {
         BottomNavBarV1(WalkingSurface.ACTIVE, onNavigate)
@@ -133,8 +133,8 @@ internal fun V1ActiveExperienceScreenV3(
                 elevation = CardDefaults.cardElevation(3.dp)
             ) {
                 Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                    Text("MAPA · CARTOGRAFIA REAL", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
-                    Text("Tempo · $elapsedLabel", color = WalkMuted, fontWeight = FontWeight.SemiBold)
+                    Text("Caminhada atual", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
+                    Text(route.officialName, color = WalkMuted, fontWeight = FontWeight.SemiBold)
                 }
             }
 
