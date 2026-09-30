@@ -1,20 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="1080dp"
-    android:height="520dp"
-    android:viewportWidth="1080"
-    android:viewportHeight="520">
-    <path android:fillColor="#DDECF1" android:pathData="M0,0 L1080,0 L1080,520 L0,520 Z" />
-    <path android:fillColor="#B9D9C3" android:pathData="M0,330 C150,250 280,285 410,340 C550,400 700,245 850,285 C960,315 1020,270 1080,250 L1080,520 L0,520 Z" />
-    <path android:fillColor="#82B88E" android:pathData="M0,385 C170,320 330,355 475,405 C650,465 790,330 930,360 C1000,375 1040,350 1080,335 L1080,520 L0,520 Z" />
-    <path android:fillColor="#F7F4E8" android:pathData="M410,520 C445,445 505,390 545,355 C590,318 635,300 680,288 C620,355 590,415 575,520 Z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M748,274 L748,202 L766,202 L766,174 L781,174 L781,202 L798,202 L798,274 Z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M732,202 L781,145 L814,202 Z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M794,274 L794,212 L812,212 L812,186 L827,186 L827,212 L844,212 L844,274 Z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M784,212 L827,159 L860,212 Z" />
-    <path android:fillColor="#D4B06A" android:pathData="M777,216 L793,216 L793,274 L777,274 Z" />
-    <path android:fillColor="#D4B06A" android:pathData="M827,216 L842,216 L842,274 L827,274 Z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M755,274 L855,274 L855,295 L755,295 Z" />
-    <path android:fillColor="#C9E2D0" android:pathData="M0,458 C220,420 355,440 505,470 C700,510 850,455 1080,420 L1080,520 L0,520 Z" />
-    <path android:fillColor="#5C9D68" android:pathData="M0,485 C210,450 370,475 520,500 C710,530 890,478 1080,455 L1080,520 L0,520 Z" />
-</vector>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/caminho_centenario_photo"
+    android:gravity="fill" />
