@@ -108,17 +108,12 @@ internal fun PreparationExperienceV4(
         valid
     }
 
-    Scaffold(
-        containerColor = RefBg,
-        bottomBar = {
-            NavigationBar(modifier = Modifier.navigationBarsPadding(), containerColor = Color.White, tonalElevation = 0.dp) {
-                val items = listOf("Resumo" to Icons.Filled.Map, "Mapa" to Icons.Filled.Map, "Apoios" to Icons.Filled.Place, "Diário" to Icons.Filled.Notes, "Mais" to Icons.Filled.Menu)
-                items.forEachIndexed { index, item ->
-                    NavigationBarItem(selected = index == 0, onClick = { if (index == 4) onBack() }, icon = { Icon(item.second, item.first, modifier = Modifier.size(21.dp)) }, label = { Text(item.first, maxLines = 1) })
-                }
-            }
+    Scaffold(containerColor = RefBg, bottomBar = {
+        NavigationBar(modifier = Modifier.navigationBarsPadding(), containerColor = Color.White, tonalElevation = 0.dp) {
+            val items = listOf("Resumo" to Icons.Filled.Map, "Mapa" to Icons.Filled.Map, "Apoios" to Icons.Filled.Place, "Diário" to Icons.Filled.Notes, "Mais" to Icons.Filled.Menu)
+            items.forEachIndexed { index, item -> NavigationBarItem(selected = index == 0, onClick = { if (index == 4) onBack() }, icon = { Icon(item.second, item.first, modifier = Modifier.size(21.dp)) }, label = { Text(item.first, maxLines = 1) }) }
         }
-    ) { padding ->
+    }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp).semantics { contentDescription = "PREPARAÇÃO — HOME" }, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth().height(46.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack, Modifier.size(40.dp)) { Icon(Icons.Filled.Menu, "Menu", tint = RefBlue) }
@@ -128,8 +123,7 @@ internal fun PreparationExperienceV4(
             Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = RefBlue, fontWeight = FontWeight.ExtraBold)
             Card(Modifier.fillMaxWidth().height(178.dp), RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = RefBlue), border = BorderStroke(1.dp, RefBorder), elevation = CardDefaults.cardElevation(3.dp)) {
                 Box(Modifier.fillMaxSize()) {
-                    if (route.id == "caminho-do-centenario") Image(painterResource(R.drawable.caminho_centenario_hero_vector), "Caminho do Centenário", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                    else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(RefBlue, Color(0xFF2E6C56)))))
+                    if (route.id == "caminho-do-centenario") Image(painterResource(R.drawable.caminho_centenario_hero_vector), "Caminho do Centenário", Modifier.fillMaxSize(), contentScale = ContentScale.Crop) else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(RefBlue, Color(0xFF2E6C56)))))
                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xDD000000)))))
                     Column(Modifier.align(Alignment.BottomStart).padding(14.dp).padding(end = 120.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, maxLines = 1)
@@ -138,16 +132,8 @@ internal fun PreparationExperienceV4(
                     Button(onClick = { dialog = "route" }, Modifier.align(Alignment.BottomEnd).padding(12.dp).height(44.dp), shape = RoundedCornerShape(11.dp), colors = ButtonDefaults.buttonColors(containerColor = RefGreen), contentPadding = PaddingValues(horizontal = 16.dp)) { Text("PREPARAR", fontWeight = FontWeight.ExtraBold) }
                 }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                PrepTile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f)) { dialog = "range" }
-                PrepTile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f)) { dialog = "audio" }
-                PrepTile(Icons.Filled.Map, "Orientação", Modifier.weight(1f)) { dialog = "orientation" }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                PrepTile(Icons.Filled.PauseCircle, "Pausas", Modifier.weight(1f)) { dialog = "breaks" }
-                PrepTile(Icons.Filled.Place, "Apoios", Modifier.weight(1f)) { dialog = "supports" }
-                PrepTile(Icons.Filled.Notes, "Notas", Modifier.weight(1f)) { dialog = "notes" }
-            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) { PrepTile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f)) { dialog = "range" }; PrepTile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f)) { dialog = "audio" }; PrepTile(Icons.Filled.Map, "Orientação", Modifier.weight(1f)) { dialog = "orientation" } }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) { PrepTile(Icons.Filled.PauseCircle, "Pausas", Modifier.weight(1f)) { dialog = "breaks" }; PrepTile(Icons.Filled.Place, "Apoios", Modifier.weight(1f)) { dialog = "supports" }; PrepTile(Icons.Filled.Notes, "Notas", Modifier.weight(1f)) { dialog = "notes" } }
             Button(onClick = { if (savePlan()) onStart() }, Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = RefGreen)) { Icon(Icons.Filled.DirectionsWalk, null, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(7.dp)); Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold) }
             TextButton(onClick = { savePlan() }, Modifier.fillMaxWidth()) { Text("GUARDAR PLANO", color = RefBlue, fontWeight = FontWeight.SemiBold) }
             error?.let { Text(it, color = Color(0xFF9A2F2F), fontWeight = FontWeight.SemiBold) }
@@ -159,10 +145,35 @@ internal fun PreparationExperienceV4(
         "range" -> { var startText by remember(startKm) { mutableStateOf(startKm.toString()) }; var destinationText by remember(destinationKm) { mutableStateOf(destinationKm.toString()) }; AlertDialog(onDismissRequest = { dialog = null }, title = { Text("Início e fim") }, text = { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedTextField(startText, { startText = it }, label = { Text("Início km") }, modifier = Modifier.weight(1f), singleLine = true); OutlinedTextField(destinationText, { destinationText = it }, label = { Text("Destino km") }, modifier = Modifier.weight(1f), singleLine = true) } }, confirmButton = { TextButton(onClick = { startText.replace(',', '.').toDoubleOrNull()?.let { startKm = it }; destinationText.replace(',', '.').toDoubleOrNull()?.let { destinationKm = it }; dialog = null }) { Text("APLICAR") } }, dismissButton = { TextButton(onClick = { dialog = null }) { Text("CANCELAR") } }) }
         "audio" -> ChoiceDialog("Áudio", listOf(AudioMode.NORMAL to "ÁUDIO NORMAL", AudioMode.IMMERSIVE to "ÁUDIO IMERSIVO", AudioMode.SILENT to "SEM ÁUDIO"), config.audioMode, { config = config.copy(audioMode = it) }, { dialog = null })
         "orientation" -> ChoiceDialog("Orientação", listOf(MapOrientation.NORTH to "NORTE", MapOrientation.WALK_DIRECTION to "DIREÇÃO DA CAMINHADA"), config.mapOrientation, { config = config.copy(mapOrientation = it) }, { dialog = null })
-        "breaks" -> AlertDialog(onDismissRequest = { dialog = null }, title = { Text("Pausas") }, text = { Column(verticalArrangement = Arrangement.spacedBy(9.dp)) { Text("Pausas inteligentes", color = RefBlue, fontWeight = FontWeight.Bold); Text("A aplicação recomenda pausas sem alterar o percurso.", color = RefMuted); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Text("Ativar pausas inteligentes"); Switch(checked = config.intelligentBreaksEnabled, onCheckedChange = { config = config.copy(intelligentBreaksEnabled = it) }) } } }, confirmButton = { TextButton(onClick = { dialog = null }) { Text("APLICAR PAUSAS") } })
+        "breaks" -> BreaksDialog(config = config, onChange = { config = it }, onClose = { dialog = null })
         "supports" -> AlertDialog(onDismissRequest = { dialog = null }, title = { Text("Apoios") }, text = { val cats = listOf(ApoiCategory.AGUA, ApoiCategory.ALIMENTACAO, ApoiCategory.PERNOITA, ApoiCategory.DUCHES, ApoiCategory.CARREGAMENTO, ApoiCategory.EMERGENCIA); Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { cats.forEach { cat -> FilterChip(selected = cat in config.visibleApoiCategories, onClick = { config = config.copy(visibleApoiCategories = config.visibleApoiCategories.toMutableSet().apply { if (!add(cat)) remove(cat) }) }, label = { Text(if (cat == ApoiCategory.AGUA) "Água" else cat.name.lowercase().replace('_', ' ')) }) } } }, confirmButton = { TextButton(onClick = { dialog = null }) { Text("APLICAR APOIOS") } })
         "notes" -> { var noteText by remember(notes) { mutableStateOf(notes) }; AlertDialog(onDismissRequest = { dialog = null }, title = { Text("Notas") }, text = { OutlinedTextField(noteText, { noteText = it }, label = { Text("Nova nota") }, minLines = 3) }, confirmButton = { TextButton(onClick = { notes = noteText.trim(); dialog = null }) { Text("GUARDAR NOTA") } }, dismissButton = { TextButton(onClick = { dialog = null }) { Text("CANCELAR") } }) }
     }
+}
+
+@Composable
+private fun BreaksDialog(config: WalkingPreparationConfig, onChange: (WalkingPreparationConfig) -> Unit, onClose: () -> Unit) {
+    var minutes by remember(config.customBreakTimeMinutes) { mutableStateOf(config.customBreakTimeMinutes?.toString() ?: "60") }
+    var distance by remember(config.customBreakDistanceKm) { mutableStateOf(config.customBreakDistanceKm?.toString() ?: "10") }
+    AlertDialog(onDismissRequest = onClose, title = { Text("Pausas") }, text = {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Pausas inteligentes", color = RefBlue, fontWeight = FontWeight.Bold)
+            Text("Escolha intervalos de tempo e distância para as sugestões de pausa.", color = RefMuted)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(minutes, { minutes = it }, label = { Text("Parar a cada X minutos") }, modifier = Modifier.weight(1f), singleLine = true)
+                OutlinedTextField(distance, { distance = it }, label = { Text("Parar a cada X km") }, modifier = Modifier.weight(1f), singleLine = true)
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Ativar pausas inteligentes")
+                Switch(checked = config.intelligentBreaksEnabled, onCheckedChange = { onChange(config.copy(intelligentBreaksEnabled = it)) })
+            }
+        }
+    }, confirmButton = {
+        TextButton(onClick = {
+            onChange(config.copy(customBreakTimeMinutes = minutes.toIntOrNull(), customBreakDistanceKm = distance.replace(',', '.').toDoubleOrNull()))
+            onClose()
+        }) { Text("APLICAR PAUSAS") }
+    }, dismissButton = { TextButton(onClick = onClose) { Text("CANCELAR") } })
 }
 
 @Composable
