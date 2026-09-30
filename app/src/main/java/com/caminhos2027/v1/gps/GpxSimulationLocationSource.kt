@@ -48,11 +48,14 @@ class GpxSimulationLocationSource(
         available = false
     }
 
-    fun advance(): Boolean {
+    fun advance(minimumMeters: Double = MIN_ADVANCE_METERS): Boolean {
+        require(minimumMeters.isFinite() && minimumMeters > 0.0) {
+            "Minimum simulation advance must be finite and > 0"
+        }
         if (!started || !available || index >= points.lastIndex) return false
         val beforeIndex = index
         var movedMeters = 0.0
-        while (index < points.lastIndex && movedMeters < MIN_ADVANCE_METERS) {
+        while (index < points.lastIndex && movedMeters < minimumMeters) {
             val previous = points[index]
             index += 1
             movedMeters += distanceMeters(previous, points[index])
