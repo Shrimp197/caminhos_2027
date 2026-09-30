@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,12 +66,12 @@ internal fun V1ActiveExperienceScreenV3(state: WalkingState, route: Route, onSto
     val remainingKm = state.progress?.remainingKm ?: 0.0
     val progress = (state.progress?.progressRatio ?: 0.0).coerceIn(0.0, 1.0)
     val projectedPoint = state.routePosition?.projectedPoint
-    val isOffRoute = state.gpsState == GpsState.POSSIBLE_DEVIATION || state.gpsState == GpsState.PROBABLE_DEVIATION
+    val offRoute = state.gpsState == GpsState.POSSIBLE_DEVIATION || state.gpsState == GpsState.PROBABLE_DEVIATION
     val isTestRoute = BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(route.id)
-    val elapsedLabel = elapsedLabelV3(state.walk.startedAt)
+    val elapsed = elapsedLabelV3(state.walk.startedAt)
 
     Scaffold(containerColor = WalkBg, bottomBar = {
-        NavigationBar(modifier = Modifier.navigationBarsPadding(), containerColor = Color.White, tonalElevation = 0.dp) {
+        NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
             NavItem("Resumo", Icons.Filled.Home, false) { onOpenSummary() }
             NavItem("Mapa", Icons.Filled.Map, true) { onNavigate(WalkingSurface.ACTIVE) }
             NavItem("Apoios", Icons.Filled.Place, false) { onOpenApoi() }
@@ -79,66 +80,73 @@ internal fun V1ActiveExperienceScreenV3(state: WalkingState, route: Route, onSto
         }
     }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
-            RealWalkingMap(modifier = Modifier.fillMaxSize(), routeId = route.id, geometry = route.geometry.points, projectedPoint = projectedPoint, currentKm = currentKm, totalKm = route.totalDistanceKm, gpsState = state.gpsState, mapOrientation = state.walk.preparation.mapOrientation, nextApoi = state.nextApoi)
+            RealWalkingMap(
+                modifier = Modifier.fillMaxSize(),
+                routeId = route.id,
+                geometry = route.geometry.points,
+                projectedPoint = projectedPoint,
+                currentKm = currentKm,
+                totalKm = route.totalDistanceKm,
+                gpsState = state.gpsState,
+                mapOrientation = state.walk.preparation.mapOrientation,
+                nextApoi = state.nextApoi
+            )
 
-            Card(Modifier.align(Alignment.TopStart).padding(10.dp), RoundedCornerShape(13.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(3.dp)) {
-                Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                    Text("MAPA · CARTOGRAFIA REAL", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
-                    Text("Tempo · $elapsedLabel", color = WalkMuted, fontWeight = FontWeight.SemiBold)
-                }
-            }
-
-            Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 78.dp, start = 10.dp, end = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetricCard(formatKm(currentKm), "Percorridos", Modifier.weight(1f))
                 MetricCard(formatKm(remainingKm), "Para o fim", Modifier.weight(1f))
             }
-
-            Row(Modifier.align(Alignment.TopEnd).padding(top = 88.dp, end = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                IconButtonCard(Icons.Filled.ReportProblem, "SOS", onOpenSos)
-                IconButtonCard(Icons.Filled.Stop, "Parar", onStop)
+            Row(Modifier.align(Alignment.TopEnd).padding(top = 92.dp, end = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                CompactMapAction(Icons.Filled.ReportProblem, "SOS", onOpenSos)
+                CompactMapAction(Icons.Filled.Stop, "Parar", onStop)
+            }
+            Card(Modifier.align(Alignment.TopStart).padding(top = 92.dp, start = 10.dp), RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.94f)), elevation = CardDefaults.cardElevation(2.dp)) {
+                Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                    Text(if (state.isPaused) "PAUSADA" else gpsLabelV3(state.gpsState), color = if (state.isPaused) WalkWarning else WalkGreen, fontWeight = FontWeight.ExtraBold)
+                    Text("Tempo · $elapsed", color = WalkMuted, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
+                }
             }
 
-            if (isOffRoute && projectedPoint != null) {
-                Card(Modifier.align(Alignment.TopCenter).padding(top = 128.dp, start = 12.dp, end = 12.dp), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = WalkWarningBg), elevation = CardDefaults.cardElevation(4.dp)) {
-                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            if (offRoute && projectedPoint != null) {
+                Card(Modifier.align(Alignment.TopCenter).padding(top = 140.dp, start = 12.dp, end = 12.dp), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = WalkWarningBg), elevation = CardDefaults.cardElevation(3.dp)) {
+                    Column(Modifier.padding(11.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(if (state.gpsState == GpsState.PROBABLE_DEVIATION) "Está afastado do Caminho" else "Possível desvio do Caminho", color = WalkWarning, fontWeight = FontWeight.ExtraBold)
-                        Text("O progresso mantém-se no último ponto válido.", color = WalkWarning)
-                        Button(onClick = { onNavigateToCoordinate(projectedPoint.latitude, projectedPoint.longitude, "Último ponto conhecido no Caminho") }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = WalkGreen)) {
+                        Text("O progresso fica no último ponto válido.", color = WalkWarning)
+                        Button(onClick = { onNavigateToCoordinate(projectedPoint.latitude, projectedPoint.longitude, "Último ponto conhecido no Caminho") }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = WalkGreen), contentPadding = PaddingValues(vertical = 8.dp)) {
                             Icon(Icons.Filled.ArrowForward, null, modifier = Modifier.size(17.dp)); Spacer(Modifier.width(5.dp)); Text("REGRESSAR AO CAMINHO", fontWeight = FontWeight.ExtraBold)
                         }
                     }
                 }
             }
 
-            Card(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp), shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 16.dp, bottomEnd = 16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(8.dp)) {
-                Column(Modifier.fillMaxWidth().height(if (isTestRoute) 285.dp else 238.dp).padding(horizontal = 14.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Card(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 16.dp, bottomEnd = 16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(8.dp)) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     Box(Modifier.align(Alignment.CenterHorizontally).width(42.dp).height(4.dp).background(Color(0xFFD0D4D1), RoundedCornerShape(4.dp)))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("Caminhada", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
-                            Text(if (state.isPaused) "CAMINHADA PAUSADA" else gpsLabelV3(state.gpsState), color = if (state.isPaused) WalkWarning else WalkGreen, fontWeight = FontWeight.ExtraBold)
+                            Text("${route.officialName}", color = WalkMuted, maxLines = 1)
                         }
                         Column(horizontalAlignment = Alignment.End) { Text("${(progress * 100).toInt()}%", color = WalkGreen, fontWeight = FontWeight.ExtraBold); Text("Progresso", color = WalkMuted) }
                     }
-                    LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.fillMaxWidth().height(5.dp), color = WalkGreen, trackColor = Color(0xFFE2E7E3))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { MetricCard(formatKm(currentKm), "Percorridos", Modifier.weight(1f)); MetricCard(formatKm(remainingKm), "Para o fim", Modifier.weight(1f)) }
+                    LinearProgressIndicator(progress = { progress.toFloat() }, Modifier.fillMaxWidth().height(5.dp), color = WalkGreen, trackColor = Color(0xFFE2E7E3))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.LocationOn, null, tint = WalkBlue, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(6.dp))
-                        Column(Modifier.weight(1f)) { Text("Próximo apoio", color = WalkBlue, fontWeight = FontWeight.ExtraBold); Text(state.nextApoi?.name ?: "Sem apoio publicado neste contexto", color = WalkMuted, maxLines = 1) }
+                        Column(Modifier.weight(1f)) { Text("Próximos apoios", color = WalkBlue, fontWeight = FontWeight.ExtraBold); Text(state.nextApoi?.name ?: "Sem apoio publicado neste contexto", color = WalkMuted, maxLines = 1) }
                         state.nextApoiDistanceKm?.let { Text(formatKm(it), color = WalkBlue, fontWeight = FontWeight.ExtraBold) }
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onTogglePause, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(if (state.isPaused) "RETOMAR" else "PAUSAR", fontWeight = FontWeight.Bold) }
-                        Button(onClick = onOpenNext10Km, Modifier.weight(1f), shape = RoundedCornerShape(11.dp), colors = ButtonDefaults.buttonColors(containerColor = WalkGreen)) { Text("PRÓXIMOS 10 KM", fontWeight = FontWeight.ExtraBold) }
+                        OutlinedButton(onClick = onTogglePause, Modifier.weight(1f), shape = RoundedCornerShape(11.dp), contentPadding = PaddingValues(vertical = 8.dp)) { Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(if (state.isPaused) "RETOMAR" else "PAUSAR", fontWeight = FontWeight.Bold) }
+                        Button(onClick = onOpenNext10Km, Modifier.weight(1f), shape = RoundedCornerShape(11.dp), colors = ButtonDefaults.buttonColors(containerColor = WalkGreen), contentPadding = PaddingValues(vertical = 8.dp)) { Text("PRÓXIMOS 10 KM", fontWeight = FontWeight.ExtraBold) }
                     }
                     if (isTestRoute) {
                         Text("QA · percurso de teste", color = WalkWarning, fontWeight = FontWeight.Bold)
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            OutlinedButton(onClick = onQaAdvance, Modifier.weight(1f)) { Text("AVANÇAR GPS") }
-                            OutlinedButton(onClick = { onQaToggleGps(false) }, Modifier.weight(1f)) { Text("PERDER GPS") }
-                            OutlinedButton(onClick = { onQaToggleGps(true) }, Modifier.weight(1f)) { Text("RECUPERAR") }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            OutlinedButton(onClick = onQaAdvance, Modifier.weight(1f), contentPadding = PaddingValues(vertical = 5.dp)) { Text("AVANÇAR GPS") }
+                            OutlinedButton(onClick = { onQaToggleGps(false) }, Modifier.weight(1f), contentPadding = PaddingValues(vertical = 5.dp)) { Text("PERDER GPS") }
+                            OutlinedButton(onClick = { onQaToggleGps(true) }, Modifier.weight(1f), contentPadding = PaddingValues(vertical = 5.dp)) { Text("RECUPERAR") }
                         }
-                        OutlinedButton(onClick = onQaDeviation, Modifier.fillMaxWidth()) { Text("SIMULAR DESVIO") }
+                        OutlinedButton(onClick = onQaDeviation, Modifier.fillMaxWidth(), contentPadding = PaddingValues(vertical = 5.dp)) { Text("SIMULAR DESVIO") }
                     }
                 }
             }
@@ -148,17 +156,17 @@ internal fun V1ActiveExperienceScreenV3(state: WalkingState, route: Route, onSto
 
 @Composable
 private fun NavItem(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, onClick: () -> Unit) {
-    NavigationBarItem(selected = selected, onClick = onClick, icon = { Icon(icon, label, modifier = Modifier.size(21.dp)) }, label = { Text(label, maxLines = 1) })
+    NavigationBarItem(selected = selected, onClick = onClick, icon = { Icon(icon, label, modifier = Modifier.size(20.dp)) }, label = { Text(label, maxLines = 1) })
 }
 
 @Composable
 private fun MetricCard(value: String, label: String, modifier: Modifier) {
-    Card(modifier, RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) { Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { Text(value, color = WalkBlue, fontWeight = FontWeight.ExtraBold); Text(label, color = WalkMuted) } }
+    Card(modifier, RoundedCornerShape(13.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.96f)), elevation = CardDefaults.cardElevation(3.dp)) { Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { Text(value, color = WalkBlue, fontWeight = FontWeight.ExtraBold); Text(label, color = WalkMuted) } }
 }
 
 @Composable
-private fun IconButtonCard(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    Button(onClick = onClick, shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = WalkBlue), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp)) { Icon(icon, label, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(label, fontWeight = FontWeight.Bold) }
+private fun CompactMapAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    Button(onClick = onClick, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = WalkBlue), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 7.dp)) { Icon(icon, label, modifier = Modifier.size(17.dp)); Spacer(Modifier.width(4.dp)); Text(label, fontWeight = FontWeight.Bold) }
 }
 
 private fun formatKm(value: Double): String = String.format(Locale.US, "%.1f km", value.coerceAtLeast(0.0))
@@ -166,16 +174,14 @@ private fun formatKm(value: Double): String = String.format(Locale.US, "%.1f km"
 private fun elapsedLabelV3(startedAt: Instant?): String {
     if (startedAt == null) return "--:--"
     val elapsed = Duration.between(startedAt, Instant.now()).coerceAtLeast(Duration.ZERO)
-    val hours = elapsed.toHours()
-    val minutes = elapsed.toMinutesPart()
-    val seconds = elapsed.toSecondsPart()
+    val hours = elapsed.toHours(); val minutes = elapsed.toMinutesPart(); val seconds = elapsed.toSecondsPart()
     return if (hours > 0) String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, seconds) else String.format(Locale.US, "%02d:%02d", minutes, seconds)
 }
 
 private fun gpsLabelV3(state: GpsState): String = when (state) {
     GpsState.ACQUIRING -> "A obter sinal GPS"
     GpsState.ON_ROUTE -> "GPS · no Caminho"
-    GpsState.NO_SIGNAL -> "Sem sinal GPS · última posição mantida"
+    GpsState.NO_SIGNAL -> "Sem sinal GPS"
     GpsState.POSSIBLE_DEVIATION -> "Possível desvio"
     GpsState.PROBABLE_DEVIATION -> "Desvio provável"
 }
