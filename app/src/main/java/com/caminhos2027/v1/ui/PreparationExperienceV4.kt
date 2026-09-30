@@ -151,8 +151,8 @@ internal fun PreparationExperienceV4(
 
 @Composable
 private fun BreaksDialog(config: WalkingPreparationConfig, onChange: (WalkingPreparationConfig) -> Unit, onClose: () -> Unit) {
-    var minutes by remember(config.customBreakTimeMinutes) { mutableStateOf(config.customBreakTimeMinutes?.toString() ?: "60") }
-    var distance by remember(config.customBreakDistanceKm) { mutableStateOf(config.customBreakDistanceKm?.toString() ?: "10") }
+    var minutes by remember(config.customBreakTimeMinutes) { mutableStateOf(config.customBreakTimeMinutes?.toString() ?: "") }
+    var distance by remember(config.customBreakDistanceKm) { mutableStateOf(config.customBreakDistanceKm?.toString() ?: "") }
     AlertDialog(onDismissRequest = onClose, title = { Text("Pausas") }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Pausas inteligentes", color = RefBlue, fontWeight = FontWeight.Bold)
