@@ -189,7 +189,7 @@ private fun PrepTile(icon: androidx.compose.ui.graphics.vector.ImageVector, labe
 
 @Composable
 private fun <T> ChoiceDialog(title: String, choices: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit, onClose: () -> Unit) {
-    AlertDialog(onDismissRequest = onClose, title = { Text(title) }, text = { Column(verticalArrangement = Arrangement.spacedBy(7.dp)) { choices.forEach { (value, label) -> Button(onClick = { onSelect(value) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = if (value == selected) RefGreen else RefBlue)) { Text(label) } } } }, confirmButton = { TextButton(onClick = onClose) { Text("APLICAR") } })
+    AlertDialog(onDismissRequest = onClose, title = { Text(title) }, text = { Column(verticalArrangement = Arrangement.spacedBy(7.dp)) { choices.forEach { (value, label) -> Button(onClick = { onSelect(value) }, Modifier.fillMaxWidth().semantics { contentDescription = label }, colors = ButtonDefaults.buttonColors(containerColor = if (value == selected) RefGreen else RefBlue)) { Text(label) } } } }, confirmButton = { TextButton(onClick = onClose) { Text("APLICAR") } })
 }
 
 
