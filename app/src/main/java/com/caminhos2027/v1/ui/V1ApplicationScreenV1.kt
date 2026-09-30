@@ -35,7 +35,7 @@ internal fun V1ApplicationScreenV1(
 
     when {
         surface == WalkingSurface.PREPARATION -> PreparationExperienceV4(effectiveRoute, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onStart, onBackToWalking)
-        surface == WalkingSurface.ACTIVE && state != null -> V1ActiveExperienceScreenV3(state, effectiveRoute, onStop, onTogglePause, onOpenApoi, onOpenDecision, onOpenNext10Km, onOpenSummary, onOpenDiary, onOpenMore, onOpenSos, onOpenPilgrimMode, onNavigate, onNavigateToCoordinate, onQaAdvance, onQaToggleGps, onQaDeviation)
+        surface == WalkingSurface.ACTIVE && state != null -> V1ActiveExperienceScreenV3(state, effectiveRoute, routeOptions, onStop, onTogglePause, onOpenApoi, onOpenDecision, onOpenNext10Km, onOpenSummary, onOpenDiary, onOpenMore, onOpenSos, onOpenPilgrimMode, onNavigate, onNavigateToCoordinate, onQaAdvance, onQaToggleGps, onQaDeviation)
         surface == WalkingSurface.SUMMARY -> SummarySurfaceV1(state, effectiveRoute, onOpenMap, onOpenApoi, onOpenDiary, onOpenMore)
         surface == WalkingSurface.NEXT_10_KM -> Next10KmSurfaceV1(state, appState.apoiBrowser?.results ?: emptyList(), onOpenMap, onNavigate)
         surface == WalkingSurface.DIARY -> DiarySurfaceV1(diaryEntries, state, diaryPhotoUri, onDiaryChoosePhoto, onDiaryClearPhoto, onDiaryAdd, onNavigate)
