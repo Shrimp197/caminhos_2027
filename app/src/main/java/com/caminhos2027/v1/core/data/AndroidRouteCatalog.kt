@@ -101,23 +101,11 @@ object AndroidRouteCatalog {
     fun preferredPersistedRouteId(context: Context): String? {
         val applicationContext = context.applicationContext
         val repository = AndroidWalkRepository(applicationContext)
-        val valid = { routeId: String -> routeId == CENTENARIO_ID || isTestRoute(routeId) }
-        val activeRoute = repository.list()
-            .asReversed()
-            .firstOrNull { it.status == WalkStatus.ACTIVE && valid(it.routeId) }
-            ?.routeId
-        if (activeRoute != null) return activeRoute
-
         val selected = applicationContext
             .getSharedPreferences(ROUTE_PREFS, Context.MODE_PRIVATE)
             .getString(SELECTED_ROUTE_KEY, null)
-            ?.takeIf(valid)
-        if (selected != null) return selected
-
-        return repository.list()
-            .asReversed()
-            .firstOrNull { it.status == WalkStatus.PLANNED && valid(it.routeId) }
-            ?.routeId
+        val valid = { routeId: String -> routeId == CENTENARIO_ID || isTestRoute(routeId) }
+        return RouteSelectionPolicy.preferredRouteId(repository.list(), selected, valid)
     }
 
     private const val ROUTE_PREFS = "walking_v1_route_selection"
