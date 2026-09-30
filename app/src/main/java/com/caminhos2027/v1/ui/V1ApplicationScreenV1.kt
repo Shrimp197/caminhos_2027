@@ -1,5 +1,6 @@
 package com.caminhos2027.v1.ui
 
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.caminhos2027.v1.core.AppState
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
@@ -28,9 +29,9 @@ internal fun V1ApplicationScreenV1(
 ) {
     val context = LocalContext.current
     val activeRouteId = state?.walk?.routeId ?: preparedWalk?.routeId
-    val effectiveRoute = if (activeRouteId != null && activeRouteId != route.id) {
-        AndroidRouteCatalog.loadRoute(context, activeRouteId)
-    } else route
+    val effectiveRoute = remember(activeRouteId, route.id) {
+        if (activeRouteId != null && activeRouteId != route.id) AndroidRouteCatalog.loadRoute(context, activeRouteId) else route
+    }
 
     when {
         surface == WalkingSurface.PREPARATION -> PreparationExperienceV4(effectiveRoute, routeOptions, selectedRouteId, onSelectRoute, onConfirmPreparation, onStart, onBackToWalking)
