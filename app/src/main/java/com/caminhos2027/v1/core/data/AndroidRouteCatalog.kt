@@ -85,7 +85,6 @@ object AndroidRouteCatalog {
     fun preferredPersistedRouteId(context: Context): String? =
         AndroidWalkRepository(context.applicationContext)
             .list()
-            .asReversed()
             .firstOrNull {
                 (it.status == WalkStatus.ACTIVE || it.status == WalkStatus.PLANNED) &&
                     (it.routeId == CENTENARIO_ID || isTestRoute(it.routeId))
