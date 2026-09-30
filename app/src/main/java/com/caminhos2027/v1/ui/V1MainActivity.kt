@@ -667,15 +667,21 @@ class V1MainActivity : ComponentActivity() {
     }
 
     private fun stopWalking() {
-        trackingBinder?.stopWalking()
-        // A Service can remain alive while bound even after stopSelf(). Detach the Activity so the next
-        // explicit start receives a fresh service/container instance rather than a stopped one.
-        disconnectTrackingService()
+        // Return the user to preparation immediately. The persistent session shutdown is delivered
+        // asynchronously to the foreground service so a synchronous persistence operation cannot
+        // freeze the UI at the moment of the stop action.
         walkingState = null
         preparedWalk = null
         startRequested = false
         pendingStartDistanceMeters = null
         getSharedPreferences("peregrino_preferences", MODE_PRIVATE).edit().putBoolean("pilgrim_mode", false).apply()
         surface = WalkingSurface.PREPARATION
+
+        disconnectTrackingService()
+        val intent = Intent(this, AndroidWalkingTrackingService::class.java).apply {
+            action = AndroidWalkingTrackingService.ACTION_STOP
+            putExtra(AndroidWalkingTrackingService.EXTRA_ROUTE_ID, selectedRouteId)
+        }
+        startService(intent)
     }
 }
