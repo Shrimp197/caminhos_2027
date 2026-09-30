@@ -99,6 +99,30 @@ class GpxSimulationLocationSourceTest {
     }
 
     @Test
+    fun keepsSimulationTimeAlignedWithEvaluatorClockWhenAdvancing() {
+        val points = listOf(
+            GeoPoint(41.1000, -8.5800),
+            GeoPoint(41.1010, -8.5800),
+            GeoPoint(41.1020, -8.5800),
+            GeoPoint(41.1030, -8.5800)
+        )
+        val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
+        var now = Instant.parse("2026-09-05T14:00:00Z")
+        val source = GpxSimulationLocationSource(
+            points = points,
+            onPosition = emitted::add,
+            clock = { now },
+            onClockAdvance = { now = now.plusMillis(it) }
+        )
+
+        source.start()
+        source.advance(150.0)
+
+        assertEquals(emitted.last().capturedAt, now)
+        assertTrue(emitted.last().capturedAt.isAfter(emitted.first().capturedAt))
+    }
+
+    @Test
     fun stopPreventsFurtherSimulation() {
         val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
         val source = GpxSimulationLocationSource(

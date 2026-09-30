@@ -14,6 +14,7 @@ import android.os.Looper
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.caminhos2027.BuildConfig
 import com.caminhos2027.R
 import com.caminhos2027.v1.core.AndroidV1AppContainer
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
@@ -84,6 +85,8 @@ class AndroidWalkingTrackingService : Service() {
     private var startGuidanceIssued = false
     private var routeId: String? = null
     private lateinit var eventNotifier: WalkingEventNotifier
+    private var simulationClock = Instant.now()
+    private var useSimulationClock = false
 
     override fun onCreate() {
         super.onCreate()
@@ -97,13 +100,15 @@ class AndroidWalkingTrackingService : Service() {
         val requestedRouteId = intent?.getStringExtra(EXTRA_ROUTE_ID)
         if (requestedRouteId != null && requestedRouteId != routeId) {
             routeId = requestedRouteId
-            container = AndroidV1AppContainer(this, requestedRouteId)
+            useSimulationClock = BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(requestedRouteId)
+            container = AndroidV1AppContainer(this, requestedRouteId, clock = ::trackingClock)
             walkingState = container?.resumePersistedWalk()?.walking
         } else if (container == null) {
             routeId = requestedRouteId
                 ?: AndroidRouteCatalog.preferredPersistedRouteId(this)
                 ?: AndroidRouteCatalog.CENTENARIO_ID
-            container = AndroidV1AppContainer(this, routeId)
+            useSimulationClock = BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(routeId!!)
+            container = AndroidV1AppContainer(this, routeId, clock = ::trackingClock)
             walkingState = container?.resumePersistedWalk()?.walking
         }
 
@@ -178,8 +183,12 @@ class AndroidWalkingTrackingService : Service() {
                 onPosition = ::handlePosition,
                 onAvailabilityChanged = { available ->
                     if (!available && walkingState != null) {
-                        updateWalkingState(app.runtime.markNoSignal(Instant.now()))
+                        updateWalkingState(app.runtime.markNoSignal(trackingClock()))
                     }
+                },
+                clock = ::trackingClock,
+                onClockAdvance = { deltaMillis ->
+                    if (useSimulationClock) simulationClock = simulationClock.plusMillis(deltaMillis)
                 },
                 initialIndex = startIndex
             )
@@ -504,7 +513,10 @@ class AndroidWalkingTrackingService : Service() {
         }
     }
 
-    private fun reportError(message: String) {
+    private fun trackingClock(): Instant =
+        if (useSimulationClock) simulationClock else Instant.now()
+
+
         listeners.toList().forEach { it.onTrackingError(message) }
     }
 

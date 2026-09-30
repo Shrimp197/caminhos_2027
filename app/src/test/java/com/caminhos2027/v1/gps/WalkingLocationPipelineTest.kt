@@ -29,6 +29,38 @@ class WalkingLocationPipelineTest {
     )
 
     @Test
+    fun qaRecoveryFixCanReturnOnRouteAfterA150MeterSimulatedAdvance() {
+        val points = listOf(
+            GeoPoint(41.0000, -8.0000),
+            GeoPoint(41.0010, -8.0000),
+            GeoPoint(41.0020, -8.0000),
+            GeoPoint(41.0030, -8.0000)
+        )
+        val emitted = mutableListOf<RawGpsPosition>()
+        var now = Instant.parse("2026-09-05T14:00:00Z")
+        val pipeline = WalkingLocationPipeline(route, clock = { now })
+        val source = GpxSimulationLocationSource(
+            points = points,
+            onPosition = { raw ->
+                now = raw.capturedAt
+                emitted += raw
+                pipeline.accept(raw)
+            },
+            clock = { now },
+            onClockAdvance = { now = now.plusMillis(it) }
+        )
+
+        source.start()
+        source.advance(150.0)
+        source.setAvailable(false)
+        pipeline.markNoSignal(now)
+        source.setAvailable(true)
+        source.emitRecoveryFix()
+
+        assertEquals(GpsState.ON_ROUTE, pipeline.trackingState.state)
+    }
+
+    @Test
     fun acceptsRawPositionAndProjectsItToRoute() {
         val now = Instant.parse("2026-09-01T10:00:05Z")
         val pipeline = WalkingLocationPipeline(route, clock = { now })

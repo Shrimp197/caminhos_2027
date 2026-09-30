@@ -14,8 +14,12 @@ import java.time.Instant
 class AndroidV1AppContainer(
     private val base: V1AppContainer
 ) {
-    constructor(context: Context, routeId: String? = null) : this(
-        V1AppContainer.forAndroid(context.applicationContext, routeId)
+    constructor(
+        context: Context,
+        routeId: String? = null,
+        clock: () -> Instant = Instant::now
+    ) : this(
+        V1AppContainer.forAndroid(context.applicationContext, routeId, clock = clock)
     )
 
     val store: AppStateStore = base.appStateStore

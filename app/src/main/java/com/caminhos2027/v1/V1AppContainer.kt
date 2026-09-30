@@ -42,7 +42,8 @@ class V1AppContainer(
         fun forAndroid(
             context: Context,
             routeId: String? = null,
-            apoiAssetPath: String? = null
+            apoiAssetPath: String? = null,
+            clock: () -> Instant = Instant::now
         ): V1AppContainer {
             val applicationContext = context.applicationContext
             val selectedRouteId = routeId
@@ -59,7 +60,7 @@ class V1AppContainer(
             val walkRepository = AndroidWalkRepository(applicationContext)
             val checkpointRepository = AndroidWalkingStateRepository(applicationContext)
             val sessionService = WalkingSessionService(walkRepository, checkpointRepository)
-            val sessionRuntime = WalkingSessionRuntime(route, sessionService, catalog.all())
+            val sessionRuntime = WalkingSessionRuntime(route, sessionService, catalog.all(), clock = clock)
             val preparationService = WalkingPreparationService(route, walkRepository, catalog)
             return V1AppContainer(
                 route = route,

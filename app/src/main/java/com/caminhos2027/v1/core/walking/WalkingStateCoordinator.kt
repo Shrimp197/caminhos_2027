@@ -17,10 +17,11 @@ class WalkingStateCoordinator(
     private val route: com.caminhos2027.v1.core.model.Route,
     initialWalk: Walk,
     publishedApoi: List<Apoi>,
-    private val policy: GpsTrackingPolicy = GpsTrackingPolicy()
+    private val policy: GpsTrackingPolicy = GpsTrackingPolicy(),
+    private val clock: () -> Instant = Instant::now
 ) {
     private val publishedApoi = publishedApoi.toList()
-    private val locationPipeline = WalkingLocationPipeline(route, policy)
+    private val locationPipeline = WalkingLocationPipeline(route, policy, clock = clock)
     private var walk: Walk = initialWalk
     private var lastReliableRouteKm: Double? = null
     private var lastFreshReliableObservedAt: Instant? = null

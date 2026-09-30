@@ -17,6 +17,7 @@ class GpxSimulationLocationSource(
     private val onPosition: (RawGpsPosition) -> Unit,
     private val onAvailabilityChanged: (Boolean) -> Unit = {},
     private val clock: () -> Instant = Instant::now,
+    private val onClockAdvance: (Long) -> Unit = {},
     private val initialIndex: Int = 0
 ) : LocationSource {
     private val points = points.toList()
@@ -136,14 +137,17 @@ class GpxSimulationLocationSource(
         require(minimumAdvanceMillis >= 0L)
         val now = clock()
         val previous = lastCapturedAt
-        val next = if (previous == null) {
+        val requestedNext = if (previous == null) {
             now
         } else {
             val minimumNext = previous.plusMillis(minimumAdvanceMillis)
             if (now.isAfter(minimumNext)) now else minimumNext
         }
-        lastCapturedAt = next
-        return next
+        if (requestedNext.isAfter(now)) {
+            onClockAdvance(java.time.Duration.between(now, requestedNext).toMillis())
+        }
+        lastCapturedAt = clock()
+        return lastCapturedAt!!
     }
 
     private companion object {

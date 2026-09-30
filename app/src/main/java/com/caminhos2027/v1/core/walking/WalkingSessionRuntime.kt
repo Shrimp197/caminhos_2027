@@ -13,7 +13,8 @@ class WalkingSessionRuntime(
     private val route: Route,
     private val sessionService: WalkingSessionService,
     private val publishedApoi: List<Apoi>,
-    private val policy: GpsTrackingPolicy = GpsTrackingPolicy()
+    private val policy: GpsTrackingPolicy = GpsTrackingPolicy(),
+    private val clock: () -> Instant = Instant::now
 ) {
     private var coordinator: WalkingStateCoordinator? = null
 
@@ -22,7 +23,7 @@ class WalkingSessionRuntime(
     fun start(walkId: String, position: RoutePosition, now: Instant = Instant.now()): WalkingState {
         validateRoutePosition(position)
         val started = sessionService.start(walkId, position, now)
-        val nextCoordinator = WalkingStateCoordinator(route, started, publishedApoi, policy)
+        val nextCoordinator = WalkingStateCoordinator(route, started, publishedApoi, policy, clock)
         val state = nextCoordinator.seedStartPosition(position, now)
         sessionService.updatePosition(
             walkId,
@@ -106,7 +107,7 @@ class WalkingSessionRuntime(
             "Active walking session route must match the published V1 route"
         }
 
-        val nextCoordinator = WalkingStateCoordinator(route, walk, publishedApoi, policy)
+        val nextCoordinator = WalkingStateCoordinator(route, walk, publishedApoi, policy, clock)
         val checkpoint = sessionService.resumeCheckpoint(walk.id)
         val state = checkpoint?.let { nextCoordinator.restoreCheckpoint(it, now) } ?: nextCoordinator.state
         coordinator = nextCoordinator
