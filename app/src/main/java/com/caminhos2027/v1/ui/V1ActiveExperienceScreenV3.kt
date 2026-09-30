@@ -46,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +75,7 @@ private val WalkWarningBg = Color(0xFFFFF1D9)
 internal fun V1ActiveExperienceScreenV3(
     state: WalkingState,
     route: Route,
+    routeOptions: List<AndroidRouteOption>,
     onStop: () -> Unit,
     onTogglePause: () -> Unit,
     onOpenApoi: () -> Unit,
