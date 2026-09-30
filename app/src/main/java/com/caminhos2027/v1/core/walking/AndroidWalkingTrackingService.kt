@@ -421,8 +421,7 @@ class AndroidWalkingTrackingService : Service() {
     }
 
     private fun hasLocationPermission(): Boolean =
-        checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     private fun notifyState() {
         listeners.toList().forEach { it.onTrackingStateChanged(walkingState, pendingStart, pendingStartDistanceMeters) }
