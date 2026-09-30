@@ -89,16 +89,10 @@ class RouteDatasetValidatorTest {
     @Test
     fun approximateStageDistanceMayDifferSlightlyFromRouteKmInterval() {
         val route = fixtureRoute().copy(
-            totalDistanceKm = 211.87,
+            totalDistanceKm = 11.0,
             stages = listOf(
-                Stage("s1", "test-route", 1, "A", 0.0, 32.0, 32.0, "A", "B", "test"),
-                Stage("s2", "test-route", 2, "B", 32.0, 60.0, 28.0, "B", "C", "test"),
-                Stage("s3", "test-route", 3, "C", 60.0, 93.0, 33.0, "C", "D", "test"),
-                Stage("s4", "test-route", 4, "D", 93.0, 117.0, 24.0, "D", "E", "test"),
-                Stage("s5", "test-route", 5, "E", 117.0, 145.0, 28.0, "E", "F", "test"),
-                Stage("s6", "test-route", 6, "F", 145.0, 167.0, 22.0, "F", "G", "test"),
-                Stage("s7", "test-route", 7, "G", 167.0, 191.0, 24.0, "G", "H", "test"),
-                Stage("s8", "test-route", 8, "H", 191.0, 211.87, 21.0, "H", "I", "test")
+                Stage("s1", "test-route", 1, "A", 0.0, 5.5, 5.4, "A", "B", "test"),
+                Stage("s2", "test-route", 2, "B", 5.5, 11.0, 5.6, "B", "C", "test")
             )
         )
         val result = RouteDatasetValidator.validate(route)
