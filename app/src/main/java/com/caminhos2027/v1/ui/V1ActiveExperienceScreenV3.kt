@@ -48,6 +48,8 @@ import com.caminhos2027.v1.core.data.AndroidRouteCatalog
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.walking.WalkingState
+import java.time.Duration
+import java.time.Instant
 import java.util.Locale
 
 private val WalkBlue = Color(0xFF164B63)
@@ -65,6 +67,7 @@ internal fun V1ActiveExperienceScreenV3(state: WalkingState, route: Route, onSto
     val projectedPoint = state.routePosition?.projectedPoint
     val isOffRoute = state.gpsState == GpsState.POSSIBLE_DEVIATION || state.gpsState == GpsState.PROBABLE_DEVIATION
     val isTestRoute = BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(route.id)
+    val elapsedLabel = elapsedLabelV3(state.walk.startedAt)
 
     Scaffold(containerColor = WalkBg, bottomBar = {
         NavigationBar(modifier = Modifier.navigationBarsPadding(), containerColor = Color.White, tonalElevation = 0.dp) {
@@ -78,7 +81,14 @@ internal fun V1ActiveExperienceScreenV3(state: WalkingState, route: Route, onSto
         Box(Modifier.fillMaxSize().padding(padding)) {
             RealWalkingMap(modifier = Modifier.fillMaxSize(), routeId = route.id, geometry = route.geometry.points, projectedPoint = projectedPoint, currentKm = currentKm, totalKm = route.totalDistanceKm, gpsState = state.gpsState, mapOrientation = state.walk.preparation.mapOrientation, nextApoi = state.nextApoi)
 
-            Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Card(Modifier.align(Alignment.TopStart).padding(10.dp), RoundedCornerShape(13.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(3.dp)) {
+                Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                    Text("MAPA · CARTOGRAFIA REAL", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
+                    Text("Tempo · $elapsedLabel", color = WalkMuted, fontWeight = FontWeight.SemiBold)
+                }
+            }
+
+            Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 78.dp, start = 10.dp, end = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetricCard(formatKm(currentKm), "Percorridos", Modifier.weight(1f))
                 MetricCard(formatKm(remainingKm), "Para o fim", Modifier.weight(1f))
             }
@@ -152,6 +162,15 @@ private fun IconButtonCard(icon: androidx.compose.ui.graphics.vector.ImageVector
 }
 
 private fun formatKm(value: Double): String = String.format(Locale.US, "%.1f km", value.coerceAtLeast(0.0))
+
+private fun elapsedLabelV3(startedAt: Instant?): String {
+    if (startedAt == null) return "--:--"
+    val elapsed = Duration.between(startedAt, Instant.now()).coerceAtLeast(Duration.ZERO)
+    val hours = elapsed.toHours()
+    val minutes = elapsed.toMinutesPart()
+    val seconds = elapsed.toSecondsPart()
+    return if (hours > 0) String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, seconds) else String.format(Locale.US, "%02d:%02d", minutes, seconds)
+}
 
 private fun gpsLabelV3(state: GpsState): String = when (state) {
     GpsState.ACQUIRING -> "A obter sinal GPS"
