@@ -22,9 +22,9 @@ class RouteValidatorTest {
     }
 
     @Test
-    fun stageDistanceInconsistentWithRouteIntervalIsRejected() {
-        val route = fixture().copy(stages = listOf(fixture().stages.first().copy(distanceKm = 0.5)))
-        assertFalse(RouteValidator.validate(route).isEmpty())
+    fun negativeStageDistanceIsRejected() {
+        val route = fixture().copy(stages = listOf(fixture().stages.first().copy(distanceKm = -0.5)))
+        assertTrue(RouteValidator.validate(route).any { it.contains("distanceKm") && it.contains("> 0") })
     }
 
     @Test
