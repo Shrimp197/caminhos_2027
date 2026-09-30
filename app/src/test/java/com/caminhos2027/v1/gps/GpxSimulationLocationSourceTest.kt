@@ -123,6 +123,36 @@ class GpxSimulationLocationSourceTest {
     }
 
     @Test
+    fun emitsOneFreshFixWhenGpsRecovers() {
+        val points = listOf(
+            GeoPoint(41.1000, -8.5800),
+            GeoPoint(41.1010, -8.5800),
+            GeoPoint(41.1020, -8.5800)
+        )
+        val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
+        var now = Instant.parse("2026-09-05T14:00:00Z")
+        val source = GpxSimulationLocationSource(
+            points = points,
+            onPosition = emitted::add,
+            clock = { now },
+            onClockAdvance = { now = now.plusMillis(it) }
+        )
+
+        source.start()
+        source.advance(150.0)
+        val beforeRecovery = emitted.size
+        val previousFix = emitted.last()
+
+        source.setAvailable(false)
+        source.setAvailable(true)
+
+        assertEquals(beforeRecovery + 1, emitted.size)
+        assertTrue(emitted.last().capturedAt.isAfter(previousFix.capturedAt))
+        assertEquals(emitted.last().latitude, previousFix.latitude)
+        assertEquals(emitted.last().longitude, previousFix.longitude)
+    }
+
+    @Test
     fun stopPreventsFurtherSimulation() {
         val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
         val source = GpxSimulationLocationSource(
