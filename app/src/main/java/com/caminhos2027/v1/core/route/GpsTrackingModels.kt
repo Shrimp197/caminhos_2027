@@ -30,6 +30,8 @@ data class GpsTrackingPolicy(
     val probableDeviationSamples: Int = 3,
     /** Poor accuracy must not by itself become a deviation. */
     val weakAccuracyMeters: Double = 50.0,
+    /** Fresh GPS must be close to the planned route-km before a prepared walk becomes ACTIVE. */
+    val startArrivalToleranceMeters: Double = 100.0,
     /** Reject physically implausible route jumps instead of moving the walking state. Initial test value. */
     val maxPlausibleSpeedKmh: Double = 8.0,
     /** Accept small device-clock skew, but never let a materially future observation advance state. */
@@ -47,6 +49,9 @@ data class GpsTrackingPolicy(
         require(probableDeviationSamples > 0) { "probableDeviationSamples must be > 0" }
         require(weakAccuracyMeters.isFinite() && weakAccuracyMeters >= 0.0) {
             "weakAccuracyMeters must be finite and >= 0"
+        }
+        require(startArrivalToleranceMeters.isFinite() && startArrivalToleranceMeters >= 0.0) {
+            "startArrivalToleranceMeters must be finite and >= 0"
         }
         require(maxPlausibleSpeedKmh.isFinite() && maxPlausibleSpeedKmh >= 0.0) {
             "maxPlausibleSpeedKmh must be finite and >= 0"
