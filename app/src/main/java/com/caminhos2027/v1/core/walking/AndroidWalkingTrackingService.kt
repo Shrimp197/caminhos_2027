@@ -46,7 +46,13 @@ class AndroidWalkingTrackingService : Service() {
         fun resumeWalking() = postWhenWalkingStateReady(action = { beginTracking() })
         fun stopWalking() = stopWalkingSession()
         fun cancelPendingStart() = cancelPendingStartInternal()
-        fun qaAdvance() { postWhenSimulationReady(action = { source -> source.advance() }) }
+        fun qaAdvance() {
+            postWhenSimulationReady(action = { source ->
+                val before = source.currentIndex
+                val moved = source.advance()
+                Log.i(TAG, "QA advance: started=" + source.isStarted + ", index=" + before + "->" + source.currentIndex + ", moved=" + moved)
+            })
+        }
         fun qaSetGpsAvailability(available: Boolean) {
             postWhenSimulationReady(action = { source ->
                 source.setAvailable(available)
@@ -177,11 +183,11 @@ class AndroidWalkingTrackingService : Service() {
                 },
                 initialIndex = startIndex
             )
+            // Publish the QA source before start() so commands queued during the synchronous
+            // first-fix callback cannot race the assignment.
+            simulationSource = source
             locationSource = source
             source.start()
-            // Publish the QA source only after start() so queued commands cannot observe a
-            // non-started simulation and get silently discarded.
-            simulationSource = source
         } else {
             val source = AndroidLocationSource(
                 context = this,
