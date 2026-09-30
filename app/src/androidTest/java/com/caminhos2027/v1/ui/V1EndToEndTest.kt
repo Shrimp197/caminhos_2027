@@ -187,7 +187,7 @@ class V1EndToEndTest {
         assertTrue("SR test route did not appear", waitForVisibleText("Trajeto SR", 30_000))
         clickVisibleText("Trajeto SR")
         assertTrue("Preparation home did not return after route selection", waitForVisibleText("Pausas", 30_000))
-        clickVisibleText("Áudio")
+        clickPreparationTile("Áudio")
         assertTrue("Audio configuration did not appear", waitForVisibleText("Áudio", 30_000))
         assertTrue("Immersive audio option did not appear", waitForVisibleText("ÁUDIO IMERSIVO", 30_000))
         clickVisibleText("ÁUDIO IMERSIVO")
@@ -195,7 +195,7 @@ class V1EndToEndTest {
         assertTrue("Audio configuration did not close", waitForTextToDisappear("ÁUDIO IMERSIVO", 10_000))
         assertTrue("Audio configuration did not return to preparation", waitForVisibleText("Pausas", 30_000))
 
-        clickVisibleText("Orientação")
+        clickPreparationTile("Orientação")
         assertTrue("Orientation configuration did not appear", waitForVisibleText("Orientação", 30_000))
         assertTrue("Walking-direction orientation option did not appear", waitForVisibleText("DIREÇÃO DA CAMINHADA", 30_000))
         clickVisibleText("DIREÇÃO DA CAMINHADA")
@@ -203,20 +203,20 @@ class V1EndToEndTest {
         assertTrue("Orientation configuration did not close", waitForTextToDisappear("DIREÇÃO DA CAMINHADA", 10_000))
         assertTrue("Orientation configuration did not return to preparation", waitForVisibleText("Pausas", 30_000))
 
-        clickVisibleText("Apoios")
+        clickPreparationTile("Apoios")
         assertTrue("Apoios configuration did not appear", waitForVisibleText("Apoios", 30_000))
         assertTrue("Water APOI category did not appear", waitForVisibleText("Água", 30_000))
         clickVisibleText("Água")
         clickVisibleText("APLICAR APOIOS")
         assertTrue("APOIs configuration did not close", waitForVisibleTextOrDescription("PREPARAÇÃO — HOME", 30_000))
 
-        clickVisibleText("Notas")
+        clickPreparationTile("Notas")
         assertTrue("Notes screen did not appear", waitForVisibleText("Notas", 30_000))
         assertTrue("Note input did not appear", waitForVisibleText("Nova nota", 30_000))
         setVisibleTextField("Nota E2E persistida")
         clickVisibleText("GUARDAR NOTA")
         assertTrue("Saved note did not return to preparation", waitForVisibleTextOrDescription("PREPARAÇÃO — HOME", 30_000))
-        clickVisibleText("Pausas")
+        clickPreparationTile("Pausas")
         assertTrue("Breaks screen did not appear", waitForAnyVisibleText("Pausas inteligentes", "Pausas", timeoutMs = 30_000))
         assertTrue("Minute break option did not appear", waitForVisibleText("Parar a cada X minutos", 30_000))
         assertTrue("Distance break option did not appear", waitForVisibleText("Parar a cada X km", 30_000))
@@ -330,6 +330,29 @@ class V1EndToEndTest {
         }
         val currentValue = visibleTextValue(prefix)
         return currentValue != null && currentValue != previousValue
+    }
+
+    private fun clickPreparationTile(label: String) {
+        val node = device.wait(Until.findObject(By.desc(label)), 5_000)
+            ?: run {
+                repeat(6) {
+                    if (device.findObject(By.desc(label)) != null) return@run device.findObject(By.desc(label))
+                    device.swipe(
+                        device.displayWidth / 2,
+                        (device.displayHeight * 0.80).toInt(),
+                        device.displayWidth / 2,
+                        (device.displayHeight * 0.30).toInt(),
+                        8
+                    )
+                    device.waitForIdle()
+                }
+                device.findObject(By.desc(label))
+            }
+        assertTrue("Preparation tile not found: $label", node != null)
+        val bounds = node!!.visibleBounds
+        assertTrue("Preparation tile not visible: $label", !bounds.isEmpty)
+        node.click()
+        device.waitForIdle()
     }
 
     private fun clickVisibleTextOrDescription(text: String) {
