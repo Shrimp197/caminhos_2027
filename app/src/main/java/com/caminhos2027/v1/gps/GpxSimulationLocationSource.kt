@@ -74,7 +74,7 @@ class GpxSimulationLocationSource(
         if (!started || available == value) return
         available = value
         onAvailabilityChanged(value)
-        if (value) emitCurrentPoint()
+        if (value) emitCurrentPoint(minimumAdvanceMillis = MIN_RECOVERY_MILLIS)
     }
 
     /** Forces one fresh raw fix after a QA recovery command without bypassing the real pipeline. */
