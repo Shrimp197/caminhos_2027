@@ -51,9 +51,9 @@ A implementação atual apresenta:
 - contexto do próximo APOI;
 - indicação de mapa offline quando a região foi guardada.
 
-**Problema funcional identificado:** no screenshot de validação recolhido após guardar a cartografia e recriar a caminhada sem rede, a rota aparece mas o fundo cartográfico não é renderizado. A aplicação diz “MAPA OFFLINE · DISPONÍVEL”, mas o utilizador vê essencialmente o traçado sobre um fundo vazio.
+**Problema funcional identificado e corrigido:** no primeiro screenshot de validação, após guardar a cartografia e recriar a caminhada sem rede, a rota aparecia mas o fundo cartográfico não era renderizado. A aplicação dizia “MAPA OFFLINE · DISPONÍVEL”, mas o utilizador via essencialmente o traçado sobre um fundo vazio.
 
-Este ponto é tratado como defeito de cartografia/offline e permanece aberto até ser explicado e validado.
+A causa foi a dependência do estilo remoto durante a reconstrução do mapa. O estilo Liberty passou a ficar dentro da aplicação, mantendo as mesmas fontes do OpenFreeMap. O build 1603 voltou a executar o cenário offline e o screenshot `navegacao.png` mostra agora a cartografia visível depois da reconstrução sem rede.
 
 Também se observa maior densidade visual que na referência, sobretudo no topo e no bottom sheet.
 
@@ -94,7 +94,7 @@ Existe uma superfície real de alto contraste ligada ao estado da caminhada, com
 ## Estado da auditoria
 
 - Preparação: estrutura auditada; fidelidade visual ainda incompleta.
-- Caminhada/mapa: auditada; problema de fundo cartográfico offline identificado.
+- Caminhada/mapa: auditada; cartografia offline corrigida e comprovada no CI.
 - Bottom sheet: funcionalmente auditado; comparação visual detalhada pendente.
 - Próximos 10 km: funcionalidade existente; comparação visual final pendente.
 - Apoios: funcionalidade existente; comparação visual final pendente.
