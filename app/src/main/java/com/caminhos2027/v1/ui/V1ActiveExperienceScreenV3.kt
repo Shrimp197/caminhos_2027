@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -57,6 +58,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
 import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.Route
@@ -290,15 +292,29 @@ internal fun V1ActiveExperienceScreenV3(
 
                         if (isTestRoute) {
                             Card(Modifier.fillMaxWidth(), RoundedCornerShape(11.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F6F4))) {
-                                Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                                Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Text("QA · percurso de teste", color = WalkWarning, fontWeight = FontWeight.Bold)
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                                        OutlinedButton(onClick = onQaAdvance, Modifier.weight(1f)) { Text("AVANÇAR GPS") }
-                                        OutlinedButton(onClick = { onQaToggleGps(false) }, Modifier.weight(1f)) { Text("PERDER GPS") }
-                                    }
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                                        OutlinedButton(onClick = { onQaToggleGps(true) }, Modifier.weight(1f)) { Text("RECUPERAR GPS") }
-                                        OutlinedButton(onClick = onQaDeviation, Modifier.weight(1f)) { Text("SIMULAR DESVIO") }
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        OutlinedButton(
+                                            onClick = onQaAdvance,
+                                            modifier = Modifier.weight(1f).height(38.dp).semantics { contentDescription = "AVANÇAR GPS" },
+                                            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp)
+                                        ) { Text("AVANÇAR GPS", fontSize = 9.sp, maxLines = 1, softWrap = false) }
+                                        OutlinedButton(
+                                            onClick = { onQaToggleGps(false) },
+                                            modifier = Modifier.weight(1f).height(38.dp).semantics { contentDescription = "PERDER GPS" },
+                                            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp)
+                                        ) { Text("PERDER GPS", fontSize = 9.sp, maxLines = 1, softWrap = false) }
+                                        OutlinedButton(
+                                            onClick = { onQaToggleGps(true) },
+                                            modifier = Modifier.weight(1f).height(38.dp).semantics { contentDescription = "RECUPERAR GPS" },
+                                            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp)
+                                        ) { Text("RECUPERAR GPS", fontSize = 9.sp, maxLines = 1, softWrap = false) }
+                                        OutlinedButton(
+                                            onClick = onQaDeviation,
+                                            modifier = Modifier.weight(1f).height(38.dp).semantics { contentDescription = "SIMULAR DESVIO" },
+                                            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp)
+                                        ) { Text("SIMULAR DESVIO", fontSize = 9.sp, maxLines = 1, softWrap = false) }
                                     }
                                 }
                             }
