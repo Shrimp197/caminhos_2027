@@ -16,9 +16,9 @@ object RouteSelectionPolicy {
             ?.routeId
         if (active != null) return active
 
-        selectedRouteId
-            ?.takeIf(isAvailableRoute)
-            ?.let { return it }
+        if (selectedRouteId != null) {
+            return selectedRouteId.takeIf(isAvailableRoute)
+        }
 
         return walks
             .asReversed()
