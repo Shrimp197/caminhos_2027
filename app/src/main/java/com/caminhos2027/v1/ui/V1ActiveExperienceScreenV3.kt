@@ -17,17 +17,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.Notes
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -59,25 +58,7 @@ private val WalkWarning = Color(0xFF9A5A00)
 private val WalkWarningBg = Color(0xFFFFF1D9)
 
 @Composable
-internal fun V1ActiveExperienceScreenV3(
-    state: WalkingState,
-    route: Route,
-    onStop: () -> Unit,
-    onTogglePause: () -> Unit,
-    onOpenApoi: () -> Unit,
-    onOpenDecision: () -> Unit,
-    onOpenNext10Km: () -> Unit,
-    onOpenSummary: () -> Unit,
-    onOpenDiary: () -> Unit,
-    onOpenMore: () -> Unit,
-    onOpenSos: () -> Unit,
-    onOpenPilgrimMode: () -> Unit,
-    onNavigate: (WalkingSurface) -> Unit,
-    onNavigateToCoordinate: (Double, Double, String) -> Unit,
-    onQaAdvance: () -> Unit,
-    onQaToggleGps: (Boolean) -> Unit,
-    onQaDeviation: () -> Unit
-) {
+internal fun V1ActiveExperienceScreenV3(state: WalkingState, route: Route, onStop: () -> Unit, onTogglePause: () -> Unit, onOpenApoi: () -> Unit, onOpenDecision: () -> Unit, onOpenNext10Km: () -> Unit, onOpenSummary: () -> Unit, onOpenDiary: () -> Unit, onOpenMore: () -> Unit, onOpenSos: () -> Unit, onOpenPilgrimMode: () -> Unit, onNavigate: (WalkingSurface) -> Unit, onNavigateToCoordinate: (Double, Double, String) -> Unit, onQaAdvance: () -> Unit, onQaToggleGps: (Boolean) -> Unit, onQaDeviation: () -> Unit) {
     val currentKm = state.routePosition?.routeKm ?: state.progress?.currentRouteKm ?: 0.0
     val remainingKm = state.progress?.remainingKm ?: 0.0
     val progress = (state.progress?.progressRatio ?: 0.0).coerceIn(0.0, 1.0)
@@ -85,77 +66,41 @@ internal fun V1ActiveExperienceScreenV3(
     val isOffRoute = state.gpsState == GpsState.POSSIBLE_DEVIATION || state.gpsState == GpsState.PROBABLE_DEVIATION
     val isTestRoute = BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(route.id)
 
-    Scaffold(
-        containerColor = WalkBg,
-        bottomBar = {
-            NavigationBar(modifier = Modifier.navigationBarsPadding(), containerColor = Color.White, tonalElevation = 0.dp) {
-                NavItem("Resumo", Icons.Filled.Home, false) { onOpenSummary() }
-                NavItem("Mapa", Icons.Filled.Map, true) { onNavigate(WalkingSurface.ACTIVE) }
-                NavItem("Apoios", Icons.Filled.Place, false) { onOpenApoi() }
-                NavItem("Diário", Icons.Filled.Notes, false) { onOpenDiary() }
-                NavItem("Mais", Icons.Filled.MoreHoriz, false) { onOpenMore() }
-            }
+    Scaffold(containerColor = WalkBg, bottomBar = {
+        NavigationBar(modifier = Modifier.navigationBarsPadding(), containerColor = Color.White, tonalElevation = 0.dp) {
+            NavItem("Resumo", Icons.Filled.Home, false) { onOpenSummary() }
+            NavItem("Mapa", Icons.Filled.Map, true) { onNavigate(WalkingSurface.ACTIVE) }
+            NavItem("Apoios", Icons.Filled.Place, false) { onOpenApoi() }
+            NavItem("Diário", Icons.Filled.Notes, false) { onOpenDiary() }
+            NavItem("Mais", Icons.Filled.MoreHoriz, false) { onOpenMore() }
         }
-    ) { padding ->
+    }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
-            RealWalkingMap(
-                modifier = Modifier.fillMaxSize(),
-                routeId = route.id,
-                geometry = route.geometry.points,
-                projectedPoint = projectedPoint,
-                currentKm = currentKm,
-                totalKm = route.totalDistanceKm,
-                gpsState = state.gpsState,
-                mapOrientation = state.walk.preparation.mapOrientation,
-                nextApoi = state.nextApoi
-            )
+            RealWalkingMap(modifier = Modifier.fillMaxSize(), routeId = route.id, geometry = route.geometry.points, projectedPoint = projectedPoint, currentKm = currentKm, totalKm = route.totalDistanceKm, gpsState = state.gpsState, mapOrientation = state.walk.preparation.mapOrientation, nextApoi = state.nextApoi)
 
-            Row(
-                Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetricCard(formatKm(currentKm), "Percorridos", Modifier.weight(1f))
                 MetricCard(formatKm(remainingKm), "Para o fim", Modifier.weight(1f))
             }
 
-            Row(
-                Modifier.align(Alignment.TopEnd).padding(top = 88.dp, end = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
+            Row(Modifier.align(Alignment.TopEnd).padding(top = 88.dp, end = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 IconButtonCard(Icons.Filled.ReportProblem, "SOS", onOpenSos)
                 IconButtonCard(Icons.Filled.Stop, "Parar", onStop)
             }
 
             if (isOffRoute && projectedPoint != null) {
-                Card(
-                    Modifier.align(Alignment.TopCenter).padding(top = 128.dp, start = 12.dp, end = 12.dp),
-                    RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = WalkWarningBg),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
+                Card(Modifier.align(Alignment.TopCenter).padding(top = 128.dp, start = 12.dp, end = 12.dp), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = WalkWarningBg), elevation = CardDefaults.cardElevation(4.dp)) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text(if (state.gpsState == GpsState.PROBABLE_DEVIATION) "Está afastado do Caminho" else "Possível desvio do Caminho", color = WalkWarning, fontWeight = FontWeight.ExtraBold)
                         Text("O progresso mantém-se no último ponto válido.", color = WalkWarning)
-                        Button(
-                            onClick = { onNavigateToCoordinate(projectedPoint.latitude, projectedPoint.longitude, "Último ponto conhecido no Caminho") },
-                            Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = WalkGreen)
-                        ) {
-                            Icon(Icons.Filled.ArrowForward, null, Modifier.size(17.dp))
-                            Spacer(Modifier.width(5.dp))
-                            Text("REGRESSAR AO CAMINHO", fontWeight = FontWeight.ExtraBold)
+                        Button(onClick = { onNavigateToCoordinate(projectedPoint.latitude, projectedPoint.longitude, "Último ponto conhecido no Caminho") }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = WalkGreen)) {
+                            Icon(Icons.Filled.ArrowForward, null, modifier = Modifier.size(17.dp)); Spacer(Modifier.width(5.dp)); Text("REGRESSAR AO CAMINHO", fontWeight = FontWeight.ExtraBold)
                         }
                     }
                 }
             }
 
-            Card(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(8.dp)
-            ) {
+            Card(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp), shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 16.dp, bottomEnd = 16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(8.dp)) {
                 Column(Modifier.fillMaxWidth().height(if (isTestRoute) 285.dp else 238.dp).padding(horizontal = 14.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     Box(Modifier.align(Alignment.CenterHorizontally).width(42.dp).height(4.dp).background(Color(0xFFD0D4D1), RoundedCornerShape(4.dp)))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -163,31 +108,17 @@ internal fun V1ActiveExperienceScreenV3(
                             Text("Caminhada", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
                             Text(if (state.isPaused) "CAMINHADA PAUSADA" else gpsLabelV3(state.gpsState), color = if (state.isPaused) WalkWarning else WalkGreen, fontWeight = FontWeight.ExtraBold)
                         }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("${(progress * 100).toInt()}%", color = WalkGreen, fontWeight = FontWeight.ExtraBold)
-                            Text("Progresso", color = WalkMuted)
-                        }
+                        Column(horizontalAlignment = Alignment.End) { Text("${(progress * 100).toInt()}%", color = WalkGreen, fontWeight = FontWeight.ExtraBold); Text("Progresso", color = WalkMuted) }
                     }
-                    LinearProgressIndicator(progress = { progress.toFloat() }, Modifier.fillMaxWidth().height(5.dp), color = WalkGreen, trackColor = Color(0xFFE2E7E3))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MetricCard(formatKm(currentKm), "Percorridos", Modifier.weight(1f))
-                        MetricCard(formatKm(remainingKm), "Para o fim", Modifier.weight(1f))
-                    }
+                    LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.fillMaxWidth().height(5.dp), color = WalkGreen, trackColor = Color(0xFFE2E7E3))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { MetricCard(formatKm(currentKm), "Percorridos", Modifier.weight(1f)); MetricCard(formatKm(remainingKm), "Para o fim", Modifier.weight(1f)) }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.LocationOn, null, tint = WalkBlue, Modifier.size(20.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Próximo apoio", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
-                            Text(state.nextApoi?.name ?: "Sem apoio publicado neste contexto", color = WalkMuted, maxLines = 1)
-                        }
+                        Icon(Icons.Filled.LocationOn, null, tint = WalkBlue, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(6.dp))
+                        Column(Modifier.weight(1f)) { Text("Próximo apoio", color = WalkBlue, fontWeight = FontWeight.ExtraBold); Text(state.nextApoi?.name ?: "Sem apoio publicado neste contexto", color = WalkMuted, maxLines = 1) }
                         state.nextApoiDistanceKm?.let { Text(formatKm(it), color = WalkBlue, fontWeight = FontWeight.ExtraBold) }
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onTogglePause, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
-                            Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, Modifier.size(18.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(if (state.isPaused) "RETOMAR" else "PAUSAR", fontWeight = FontWeight.Bold)
-                        }
+                        OutlinedButton(onClick = onTogglePause, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) { Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(if (state.isPaused) "RETOMAR" else "PAUSAR", fontWeight = FontWeight.Bold) }
                         Button(onClick = onOpenNext10Km, Modifier.weight(1f), shape = RoundedCornerShape(11.dp), colors = ButtonDefaults.buttonColors(containerColor = WalkGreen)) { Text("PRÓXIMOS 10 KM", fontWeight = FontWeight.ExtraBold) }
                     }
                     if (isTestRoute) {
@@ -207,26 +138,17 @@ internal fun V1ActiveExperienceScreenV3(
 
 @Composable
 private fun NavItem(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, onClick: () -> Unit) {
-    NavigationBarItem(selected = selected, onClick = onClick, icon = { Icon(icon, label, Modifier.size(21.dp)) }, label = { Text(label, maxLines = 1) })
+    NavigationBarItem(selected = selected, onClick = onClick, icon = { Icon(icon, label, modifier = Modifier.size(21.dp)) }, label = { Text(label, maxLines = 1) })
 }
 
 @Composable
 private fun MetricCard(value: String, label: String, modifier: Modifier) {
-    Card(modifier, RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-            Text(value, color = WalkBlue, fontWeight = FontWeight.ExtraBold)
-            Text(label, color = WalkMuted)
-        }
-    }
+    Card(modifier, RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) { Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { Text(value, color = WalkBlue, fontWeight = FontWeight.ExtraBold); Text(label, color = WalkMuted) } }
 }
 
 @Composable
 private fun IconButtonCard(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    Button(onClick = onClick, shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = WalkBlue), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
-        Icon(icon, label, Modifier.size(18.dp))
-        Spacer(Modifier.width(4.dp))
-        Text(label, fontWeight = FontWeight.Bold)
-    }
+    Button(onClick = onClick, shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = WalkBlue), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp)) { Icon(icon, label, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(label, fontWeight = FontWeight.Bold) }
 }
 
 private fun formatKm(value: Double): String = String.format(Locale.US, "%.1f km", value.coerceAtLeast(0.0))
