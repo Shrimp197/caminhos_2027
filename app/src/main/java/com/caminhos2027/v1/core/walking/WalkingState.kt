@@ -13,8 +13,6 @@ import com.caminhos2027.v1.core.route.WalkingProgress
 data class WalkingState(
     val walk: Walk,
     val routePosition: RoutePosition?,
-    /** Latest valid physical GPS fix. It can be off-route; it never defines route progress by itself. */
-    val currentPhysicalPoint: com.caminhos2027.v1.core.model.GeoPoint? = null,
     val gpsState: GpsState,
     val progress: WalkingProgress?,
     val nextApoi: Apoi?,
@@ -29,5 +27,7 @@ data class WalkingState(
     /** Start of the current pause, when the session is paused. */
     val pausedAt: Instant? = null,
     /** Total completed pause duration in seconds. */
-    val pausedDurationSeconds: Long = 0L
+    val pausedDurationSeconds: Long = 0L,
+    /** Latest valid physical GPS fix. It can be off-route; it never defines route progress by itself. */
+    val currentPhysicalPoint: com.caminhos2027.v1.core.model.GeoPoint? = null
 )
