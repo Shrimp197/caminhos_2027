@@ -58,8 +58,8 @@ class AndroidWalkingStateRepository(context: Context) : WalkingStateRepository {
                 confidence = PositionConfidence.valueOf(it.getString("confidence"))
             )
         }
-        val lastObservedAt = json.optString("lastObservedAt", null)?.let(Instant::parse)
-        val pausedAt = json.optString("pausedAt", null)?.let(Instant::parse)
+        val lastObservedAt = json.optString("lastObservedAt").takeIf { it.isNotBlank() }?.let(Instant::parse)
+        val pausedAt = json.optString("pausedAt").takeIf { it.isNotBlank() }?.let(Instant::parse)
         val pausedDurationSeconds = json.optLong("pausedDurationSeconds", 0L).coerceAtLeast(0L)
         return WalkingCheckpoint(
             routePosition = position,
