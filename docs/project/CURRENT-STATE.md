@@ -10,20 +10,21 @@
 - Pull Request: #8
 - PR title: V1 route import — official geometry provenance and runtime policy
 - PR state: open, draft
-- Current HEAD (verificado): `8c4d6d8d2bddd345240fc68aa33238960d3f03d2`
+- Current HEAD do último estado verificado: `cd44acb6e738bef347eaca5940cd25a8d95cb311`
 - Base SHA do PR: `c5222c1fb3052ea22ccf4b25701257a84f55f704`
-- Último commit verificado: Add files via upload — Visual reference for V1 — 10 screens.
+- Última implementação validada: `cd44acb6e738bef347eaca5940cd25a8d95cb311` — correção da inicialização offline do mapa.
 - Última alteração verificada: `docs/visual-reference/referencia.jpeg`
 
-## CI no HEAD atual
+## CI da implementação validada
 
-No HEAD `8c4d6d8d2bddd345240fc68aa33238960d3f03d2`:
+Na implementação `cd44acb6e738bef347eaca5940cd25a8d95cb311`:
 
-- V1 Route Import Validation: concluído com sucesso (run 1568).
-- V1 Route Source Provenance: concluído com sucesso (run 2133).
-- V1 Route Import Build: concluído com falha (run 1581).
+- V1 Route Import Validation: sucesso (run 1590).
+- V1 Route Source Provenance: sucesso (run 2155).
+- V1 Route Import Build: sucesso (run 1603).
+- O build passou por testes JVM, build/assinatura do APK, emulador Android e E2E.
 
-A falha do Build é um bloqueador técnico corrente até ser investigada e resolvida; não assumir a causa sem inspeção dos jobs/logs.
+A evidência visual do build inclui `preparacao.png` e `navegacao.png`. A última mostra cartografia renderizada depois da reconstrução da caminhada sem rede, confirmando a correção observada no mapa offline.
 
 ## Produto atualmente documentado no PR
 
@@ -42,16 +43,18 @@ A falha do Build é um bloqueador técnico corrente até ser investigada e resol
 ## Estado de validação
 
 - Visual reference adicionada em `docs/visual-reference/referencia.jpeg`.
-- Auditoria visual das 10 telas ainda não concluída.
-- Persistência, offline, GPS real e restante aceitação devem ser reconfirmados com evidência atual antes da conclusão da V1.
+- Preparação e caminhada/mapa já têm auditoria visual baseada em screenshots reais do CI.
+- O problema do mapa offline foi identificado e corrigido; a reconstrução sem rede agora mostra cartografia.
+- Persistência e E2E do fluxo principal passaram no último build.
+- Offline tem evidência positiva no cenário de CI, mas a validação em condições reais continua necessária.
 - **Teste físico ainda não realizado.**
 
 ## Bloqueadores / próximos trabalhos conhecidos
 
-1. Investigar e corrigir a falha do workflow V1 Route Import Build run 1581 no HEAD atual.
-2. Fazer a auditoria visual real da referência de 10 telas contra a implementação atual.
-3. Revalidar persistência e regressões do fluxo de caminhada após as últimas alterações.
-4. Revalidar offline com evidência adequada.
+1. Completar a auditoria visual das 10 superfícies com screenshots representativos.
+2. Melhorar as principais diferenças visuais encontradas, sem inventar funcionalidades ou dados.
+3. Revalidar regressões de persistência e caminhada após as próximas mudanças de UI.
+4. Manter/regredir o teste offline como critério funcional.
 5. Fazer validação física em Android real, incluindo GPS, background e comportamento/bateria.
 6. Só então avaliar a passagem para release candidate.
 
