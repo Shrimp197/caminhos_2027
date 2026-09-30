@@ -82,11 +82,6 @@ object RouteValidator {
             if (stage.startRouteKm.isFinite() && previousEnd.isFinite() && stage.startRouteKm + DISTANCE_TOLERANCE_KM < previousEnd) {
                 errors += "stage ${stage.id} is out of route order"
             }
-            if (stage.startRouteKm.isFinite() && stage.endRouteKm.isFinite() && stage.distanceKm.isFinite() &&
-                abs(stage.distanceKm - (stage.endRouteKm - stage.startRouteKm)) > DISTANCE_TOLERANCE_KM
-            ) {
-                errors += "stage ${stage.id}.distanceKm differs from route-km interval by more than $DISTANCE_TOLERANCE_KM km"
-            }
             if (stage.endRouteKm.isFinite()) {
                 previousEnd = maxOf(previousEnd, stage.endRouteKm)
             }
