@@ -66,6 +66,7 @@ import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.ApoiCategory
 import com.caminhos2027.v1.core.model.AudioMode
 import com.caminhos2027.v1.core.model.MapOrientation
+import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.WalkingPreparationConfig
 
@@ -77,13 +78,13 @@ private val RefMuted = Color(0xFF68736D)
 private val RefGold = Color(0xFFC28A16)
 
 @Composable
-internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRouteOption>, selectedRouteId: String, onSelectRoute: (String) -> Unit, onConfirm: (Double, Double, WalkingPreparationConfig) -> Unit, onStart: () -> Unit, onBack: () -> Unit) {
+internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRouteOption>, selectedRouteId: String, plannedWalk: Walk?, startRequested: Boolean, pendingStartDistanceMeters: Double?, onSelectRoute: (String) -> Unit, onConfirm: (Double, Double, WalkingPreparationConfig) -> Unit, onStart: () -> Unit, onCancelStart: () -> Unit, onNavigateToCoordinate: (Double, Double, String) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("v1_preparation_ui", Context.MODE_PRIVATE) }
-    var startKm by rememberSaveable(selectedRouteId) { mutableStateOf(0.0) }
-    var destinationKm by rememberSaveable(selectedRouteId, route.totalDistanceKm) { mutableStateOf(route.totalDistanceKm) }
-    var config by remember(selectedRouteId) { mutableStateOf(WalkingPreparationConfig()) }
-    var notes by rememberSaveable(selectedRouteId) { mutableStateOf("") }
+    var startKm by rememberSaveable(selectedRouteId, plannedWalk?.id) { mutableStateOf(plannedWalk?.plannedStartKm ?: 0.0) }
+    var destinationKm by rememberSaveable(selectedRouteId, plannedWalk?.id, route.totalDistanceKm) { mutableStateOf(plannedWalk?.plannedDestinationKm ?: route.totalDistanceKm) }
+    var config by remember(selectedRouteId, plannedWalk?.id) { mutableStateOf(plannedWalk?.preparation ?: WalkingPreparationConfig()) }
+    var notes by rememberSaveable(selectedRouteId, plannedWalk?.id) { mutableStateOf(plannedWalk?.preparation?.notes?.firstOrNull().orEmpty()) }
     var dialog by rememberSaveable { mutableStateOf(if (prefs.getBoolean("route_selector_seen", false)) null else "route") }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -123,8 +124,38 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { PrepTile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f)) { dialog = "range" }; PrepTile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f)) { dialog = "audio" }; PrepTile(Icons.Filled.Map, "Orientação", Modifier.weight(1f)) { dialog = "orientation" } }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { PrepTile(Icons.Filled.PauseCircle, "Pausas", Modifier.weight(1f)) { dialog = "breaks" }; PrepTile(Icons.Filled.Place, "Apoios", Modifier.weight(1f)) { dialog = "supports" }; PrepTile(Icons.Filled.Notes, "Notas", Modifier.weight(1f)) { dialog = "notes" } }
-            Button(onClick = { if (savePlan()) onStart() }, Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = RefGreen)) { Icon(Icons.Filled.DirectionsWalk, null, modifier = Modifier.size(19.dp)); Spacer(Modifier.width(6.dp)); Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold) }
-            TextButton(onClick = { savePlan() }, Modifier.fillMaxWidth().height(34.dp)) { Text("GUARDAR PLANO", color = RefBlue, fontWeight = FontWeight.SemiBold) }
+            if (plannedWalk == null) {
+                Button(onClick = { if (savePlan()) onStart() }, Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = RefGreen)) { Icon(Icons.Filled.DirectionsWalk, null, modifier = Modifier.size(19.dp)); Spacer(Modifier.width(6.dp)); Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold) }
+                TextButton(onClick = { savePlan() }, Modifier.fillMaxWidth().height(34.dp)) { Text("GUARDAR PLANO", color = RefBlue, fontWeight = FontWeight.SemiBold) }
+            } else {
+                Card(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, RefBorder)) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text("Plano guardado", color = RefGreen, fontWeight = FontWeight.ExtraBold)
+                        Text("${plannedWalk.plannedStartKm?.let { fmtKm(it) } ?: fmtKm(startKm)} km → ${plannedWalk.plannedDestinationKm?.let { fmtKm(it) } ?: fmtKm(destinationKm)} km", color = RefBlue, fontWeight = FontWeight.ExtraBold)
+                        Text("Guardado como PLANNED · a caminhada ainda não começou.", color = RefMuted, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                        Text("Áudio · ${audioLabelV4(plannedWalk.preparation.audioMode)}", color = RefBlue, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                        Text("Orientação · ${orientationLabelV4(plannedWalk.preparation.mapOrientation)}", color = RefBlue, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                        Text("Apoios · ${plannedWalk.preparation.visibleApoiCategories.size} tipo(s) selecionado(s)", color = RefBlue, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                        Text("Notas · ${plannedWalk.preparation.notes.size} guardada(s)", color = RefBlue, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                    }
+                }
+                if (startRequested) {
+                    Card(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(if ((pendingStartDistanceMeters ?: 0.0) > 0.0) "Está fora do percurso" else "A procurar GPS…", color = if ((pendingStartDistanceMeters ?: 0.0) > 0.0) Color(0xFF9A5A00) else RefBlue, fontWeight = FontWeight.ExtraBold)
+                            pendingStartDistanceMeters?.let { Text("Distância ao percurso: ${fmtMetersV4(it)}", color = RefMuted) }
+                            Text("A caminhada ainda não começou. Vamos levá-lo até ao início planeado; só começa quando o GPS confirmar que chegou ao percurso.", color = RefMuted, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                            Button(onClick = {
+                                val target = pointAtRouteKmForNavigation(route, plannedWalk.plannedStartKm ?: startKm)
+                                onNavigateToCoordinate(target.latitude, target.longitude, "Início da caminhada · ${route.officialName}")
+                            }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = RefGreen), shape = RoundedCornerShape(11.dp)) { Text("NAVEGAR ATÉ AO INÍCIO", fontWeight = FontWeight.ExtraBold) }
+                            TextButton(onClick = onCancelStart, Modifier.fillMaxWidth()) { Text("CANCELAR INÍCIO", color = RefBlue, fontWeight = FontWeight.SemiBold) }
+                        }
+                    }
+                } else {
+                    Button(onClick = onStart, Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = RefGreen)) { Icon(Icons.Filled.DirectionsWalk, null, modifier = Modifier.size(19.dp)); Spacer(Modifier.width(6.dp)); Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold) }
+                }
+            }
             error?.let { Text(it, color = Color(0xFF9A2F2F), fontWeight = FontWeight.SemiBold) }
         }
     }
@@ -156,3 +187,18 @@ private fun PrepTile(icon: androidx.compose.ui.graphics.vector.ImageVector, labe
 private fun <T> ChoiceDialog(title: String, choices: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit, onClose: () -> Unit) {
     AlertDialog(onDismissRequest = onClose, title = { Text(title) }, text = { Column(verticalArrangement = Arrangement.spacedBy(7.dp)) { choices.forEach { (value, label) -> Button(onClick = { onSelect(value) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = if (value == selected) RefGreen else RefBlue)) { Text(label) } } } }, confirmButton = { TextButton(onClick = onClose) { Text("APLICAR") } })
 }
+
+
+private fun audioLabelV4(mode: AudioMode): String = when (mode) {
+    AudioMode.NORMAL -> "normal"
+    AudioMode.IMMERSIVE -> "imersivo"
+    AudioMode.SILENT -> "sem áudio"
+}
+
+private fun orientationLabelV4(orientation: MapOrientation): String = when (orientation) {
+    MapOrientation.NORTH -> "norte"
+    MapOrientation.WALK_DIRECTION -> "direção da caminhada"
+}
+
+private fun fmtKm(value: Double): String = String.format(java.util.Locale("pt", "PT"), "%.2f km", value.coerceAtLeast(0.0))
+private fun fmtMetersV4(value: Double): String = if (value < 1000.0) String.format(java.util.Locale("pt", "PT"), "%.0f m", value) else String.format(java.util.Locale("pt", "PT"), "%.1f km", value / 1000.0)
