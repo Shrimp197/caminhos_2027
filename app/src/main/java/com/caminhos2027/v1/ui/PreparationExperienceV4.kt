@@ -1,5 +1,6 @@
 package com.caminhos2027.v1.ui
 
+import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -76,11 +78,13 @@ private val RefGold = Color(0xFFC28A16)
 
 @Composable
 internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRouteOption>, selectedRouteId: String, onSelectRoute: (String) -> Unit, onConfirm: (Double, Double, WalkingPreparationConfig) -> Unit, onStart: () -> Unit, onBack: () -> Unit) {
+    val context = LocalContext.current
+    val routeUiPrefs = remember { context.getSharedPreferences("v1_preparation_ui", Context.MODE_PRIVATE) }
     var startKm by rememberSaveable(selectedRouteId) { mutableStateOf(0.0) }
     var destinationKm by rememberSaveable(selectedRouteId, route.totalDistanceKm) { mutableStateOf(route.totalDistanceKm) }
     var config by remember(selectedRouteId) { mutableStateOf(WalkingPreparationConfig()) }
     var notes by rememberSaveable(selectedRouteId) { mutableStateOf("") }
-    var dialog by rememberSaveable { mutableStateOf<String?>(null) }
+    var dialog by rememberSaveable { mutableStateOf(if (routeUiPrefs.getBoolean("route_selector_seen", false)) null else "route") }
     var error by remember { mutableStateOf<String?>(null) }
     val savePlan: () -> Boolean = { val valid = startKm >= 0.0 && destinationKm <= route.totalDistanceKm && startKm < destinationKm; if (valid) { onConfirm(startKm, destinationKm, config.copy(notes = notes.trim().takeIf { it.isNotBlank() }?.let { listOf(it) } ?: emptyList())); error = null } else error = "O destino tem de ficar depois do início e dentro do percurso."; valid }
 
@@ -98,7 +102,7 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
     }
 
     when (dialog) {
-        "route" -> AlertDialog(onDismissRequest = { dialog = null }, title = { Text("Selecionar percurso") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { routeOptions.forEach { option -> Card(Modifier.fillMaxWidth().clickable { onSelectRoute(option.id); dialog = null }, RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = if (option.id == selectedRouteId) Color(0xFFE8F5ED) else Color.White), border = BorderStroke(1.dp, RefBorder)) { Column(Modifier.padding(12.dp)) { Text(option.title, color = RefBlue, fontWeight = FontWeight.ExtraBold); Text(option.description, color = RefMuted); if (option.testOnly) Text("AMBIENTE DE TESTE", color = Color(0xFF9A5A00), fontWeight = FontWeight.Bold) } } } } }, confirmButton = { TextButton(onClick = { dialog = null }) { Text("FECHAR") } })
+        "route" -> AlertDialog(onDismissRequest = { dialog = null }, title = { Text("Selecionar percurso") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { routeOptions.forEach { option -> Card(Modifier.fillMaxWidth().clickable { onSelectRoute(option.id); routeUiPrefs.edit().putBoolean("route_selector_seen", true).apply(); dialog = null }, RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = if (option.id == selectedRouteId) Color(0xFFE8F5ED) else Color.White), border = BorderStroke(1.dp, RefBorder)) { Column(Modifier.padding(12.dp)) { Text(option.title, color = RefBlue, fontWeight = FontWeight.ExtraBold); Text(option.description, color = RefMuted); if (option.testOnly) Text("AMBIENTE DE TESTE", color = Color(0xFF9A5A00), fontWeight = FontWeight.Bold) } } } } }, confirmButton = { TextButton(onClick = { dialog = null }) { Text("FECHAR") } })
         "range" -> { var startText by remember(startKm) { mutableStateOf(startKm.toString()) }; var destinationText by remember(destinationKm) { mutableStateOf(destinationKm.toString()) }; AlertDialog(onDismissRequest = { dialog = null }, title = { Text("Início e fim") }, text = { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedTextField(startText, { startText = it }, label = { Text("Início km") }, modifier = Modifier.weight(1f), singleLine = true); OutlinedTextField(destinationText, { destinationText = it }, label = { Text("Destino km") }, modifier = Modifier.weight(1f), singleLine = true) } }, confirmButton = { TextButton(onClick = { startText.replace(',', '.').toDoubleOrNull()?.let { startKm = it }; destinationText.replace(',', '.').toDoubleOrNull()?.let { destinationKm = it }; dialog = null }) { Text("APLICAR") } }, dismissButton = { TextButton(onClick = { dialog = null }) { Text("CANCELAR") } }) }
         "audio" -> ChoiceDialog("Áudio", listOf(AudioMode.NORMAL to "ÁUDIO NORMAL", AudioMode.IMMERSIVE to "ÁUDIO IMERSIVO", AudioMode.SILENT to "SEM ÁUDIO"), config.audioMode, { config = config.copy(audioMode = it) }, { dialog = null })
         "orientation" -> ChoiceDialog("Orientação", listOf(MapOrientation.NORTH to "NORTE", MapOrientation.WALK_DIRECTION to "DIREÇÃO DA CAMINHADA"), config.mapOrientation, { config = config.copy(mapOrientation = it) }, { dialog = null })
