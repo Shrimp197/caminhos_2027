@@ -2,6 +2,7 @@ package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.apoi.NextApoiFinder
 import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
@@ -21,7 +22,8 @@ object WalkingStateBuilder {
         offline: Boolean = false,
         paused: Boolean = false,
         pausedAt: java.time.Instant? = null,
-        pausedDurationSeconds: Long = 0L
+        pausedDurationSeconds: Long = 0L,
+        currentPhysicalPoint: GeoPoint? = null
     ): WalkingState {
         val progress = routePosition?.let {
             WalkingProgressCalculator.calculate(route, walk, it.routeKm)
@@ -46,7 +48,8 @@ object WalkingStateBuilder {
             isOffline = offline,
             isPaused = paused,
             pausedAt = pausedAt,
-            pausedDurationSeconds = pausedDurationSeconds.coerceAtLeast(0L)
+            pausedDurationSeconds = pausedDurationSeconds.coerceAtLeast(0L),
+            currentPhysicalPoint = currentPhysicalPoint
         )
     }
     private fun pauseRecommendation(walk: Walk, currentRouteKm: Double): String? {
