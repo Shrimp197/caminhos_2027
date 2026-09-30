@@ -173,7 +173,7 @@ class AndroidWalkingTrackingService : Service() {
         val route = app.publishedRoute()
         if (AndroidRouteCatalog.isTestRoute(route.id)) {
             val resumedKm = walkingState?.routePosition?.routeKm
-            val startIndex = resumedKm?.let { GpxSimulationStartIndex.nextPointIndexAfterKm(route, it) }
+            val startIndex = resumedKm?.let { GpxSimulationStartIndex.nearestPointIndex(route, it) }
                 ?: GpxSimulationStartIndex.nearestPointIndex(
                     route,
                     app.restorePreparedWalk()?.walk?.plannedStartKm ?: 0.0
