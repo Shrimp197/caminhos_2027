@@ -3,7 +3,6 @@ package com.caminhos2027.v1.core.data
 import android.content.Context
 import com.caminhos2027.BuildConfig
 import com.caminhos2027.v1.core.model.Route
-import com.caminhos2027.v1.core.model.WalkStatus
 import com.caminhos2027.v1.core.walking.AndroidWalkRepository
 
 data class AndroidRouteOption(
