@@ -318,4 +318,4 @@ private fun formatKm(value: Double): String = String.format(Locale.US, "%.1f km"
 
 private fun elapsedLabelV3(startedAt: Instant?): String { if (startedAt == null) return "--:--"; val elapsed = Duration.between(startedAt, Instant.now()).coerceAtLeast(Duration.ZERO); val hours = elapsed.toHours(); val minutes = elapsed.toMinutesPart(); val seconds = elapsed.toSecondsPart(); return if (hours > 0) String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, seconds) else String.format(Locale.US, "%02d:%02d", minutes, seconds) }
 
-private fun gpsLabelV3(state: GpsState): String = when (state) { GpsState.ACQUIRING -> "A obter sinal GPS"; GpsState.ON_ROUTE -> "GPS · no Caminho"; GpsState.NO_SIGNAL -> "Sem sinal GPS · última posição mantida"; GpsState.POSSIBLE_DEVIATION -> "Possível desvio"; GpsState.PROBABLE_DEVIATION -> "Desvio provável" }
+private fun gpsLabelV3(state: GpsState): String = when (state) { GpsState.ACQUIRING -> "A procurar uma posição GPS precisa"; GpsState.ON_ROUTE -> "GPS no percurso"; GpsState.NO_SIGNAL -> "GPS sem sinal · última posição mantida"; GpsState.POSSIBLE_DEVIATION -> "Possível desvio"; GpsState.PROBABLE_DEVIATION -> "Desvio provável" }
