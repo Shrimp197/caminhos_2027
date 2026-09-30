@@ -13,6 +13,8 @@ import com.caminhos2027.v1.core.route.WalkingProgress
 data class WalkingState(
     val walk: Walk,
     val routePosition: RoutePosition?,
+    /** Latest valid physical GPS fix. It can be off-route; it never defines route progress by itself. */
+    val currentPhysicalPoint: com.caminhos2027.v1.core.model.GeoPoint? = null,
     val gpsState: GpsState,
     val progress: WalkingProgress?,
     val nextApoi: Apoi?,
