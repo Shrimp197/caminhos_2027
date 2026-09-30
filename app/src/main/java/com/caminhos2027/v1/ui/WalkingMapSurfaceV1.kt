@@ -165,7 +165,7 @@ internal fun RealWalkingMap(
                     .use { it.readText() }
             }.getOrNull()
             if (localStyle != null) {
-                loaded.setStyle(Style.Builder.fromJson(localStyle)) { styleReady = true }
+                loaded.setStyle(Style.Builder().fromJson(localStyle)) { styleReady = true }
             } else {
                 loaded.setStyle(WALKING_MAP_STYLE_URL) { styleReady = true }
             }
