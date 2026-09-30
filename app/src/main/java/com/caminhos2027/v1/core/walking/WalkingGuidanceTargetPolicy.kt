@@ -34,14 +34,17 @@ object WalkingGuidanceTargetPolicy {
         val points = route.geometry.points
         require(points.isNotEmpty()) { "Route geometry must contain at least one point" }
         if (points.size == 1) return points.first()
-        val target = routeKm.coerceIn(0.0, route.totalDistanceKm)
+        val targetRouteKm = routeKm.coerceIn(0.0, route.totalDistanceKm)
+        val geometryTotalKm = points.zipWithNext().sumOf { (a, b) -> distanceKm(a, b) }
+        if (geometryTotalKm <= 0.0 || route.totalDistanceKm <= 0.0) return points.first()
+        val targetGeometryKm = targetRouteKm / route.totalDistanceKm * geometryTotalKm
         var accumulatedKm = 0.0
         for (index in 1 until points.size) {
             val a = points[index - 1]
             val b = points[index]
             val segment = distanceKm(a, b)
-            if (accumulatedKm + segment >= target) {
-                val fraction = if (segment <= 0.0) 0.0 else ((target - accumulatedKm) / segment).coerceIn(0.0, 1.0)
+            if (accumulatedKm + segment >= targetGeometryKm) {
+                val fraction = if (segment <= 0.0) 0.0 else ((targetGeometryKm - accumulatedKm) / segment).coerceIn(0.0, 1.0)
                 return GeoPoint(
                     latitude = a.latitude + (b.latitude - a.latitude) * fraction,
                     longitude = a.longitude + (b.longitude - a.longitude) * fraction
