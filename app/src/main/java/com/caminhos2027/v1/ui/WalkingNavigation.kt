@@ -15,7 +15,7 @@ import kotlin.math.sin
 internal fun pointAtRouteKmForNavigation(route: Route, routeKm: Double): GeoPoint =
     WalkingGuidanceTargetPolicy.pointAtRouteKm(route, routeKm)
 
-internal fun openWalkingNavigation(context: Context, target: GeoPoint, label: String) {
+internal fun openWalkingNavigation(context: Context, target: GeoPoint, label: String): Boolean {
     val googleUri = Uri.parse("google.navigation:q=${target.latitude},${target.longitude}&mode=w")
     val googleIntent = Intent(Intent.ACTION_VIEW, googleUri).apply {
         setPackage("com.google.android.apps.maps")
@@ -23,7 +23,7 @@ internal fun openWalkingNavigation(context: Context, target: GeoPoint, label: St
     }
     try {
         context.startActivity(googleIntent)
-        return
+        return true
     } catch (_: ActivityNotFoundException) {
         // Fall through to any installed map application.
     }
@@ -31,6 +31,9 @@ internal fun openWalkingNavigation(context: Context, target: GeoPoint, label: St
         Intent.ACTION_VIEW,
         Uri.parse("geo:${target.latitude},${target.longitude}?q=${target.latitude},${target.longitude}(${Uri.encode(label)})")
     ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-    runCatching { context.startActivity(geoIntent) }
+    return runCatching {
+        context.startActivity(geoIntent)
+        true
+    }.getOrDefault(false)
 }
 
