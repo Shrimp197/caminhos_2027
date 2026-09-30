@@ -82,12 +82,44 @@ object AndroidRouteCatalog {
         return RouteStageAssetLoader(context).enrich(route)
     }
 
-    fun preferredPersistedRouteId(context: Context): String? =
-        AndroidWalkRepository(context.applicationContext)
-            .list()
-            .firstOrNull {
-                (it.status == WalkStatus.ACTIVE || it.status == WalkStatus.PLANNED) &&
-                    (it.routeId == CENTENARIO_ID || isTestRoute(it.routeId))
-            }
+    fun persistSelectedRouteId(context: Context, routeId: String) {
+        require(routeId == CENTENARIO_ID || isTestRoute(routeId)) {
+            "Cannot persist an unknown or unavailable V1 route"
+        }
+        context.applicationContext
+            .getSharedPreferences(ROUTE_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(SELECTED_ROUTE_KEY, routeId)
+            .apply()
+    }
+
+    /**
+     * Restores a route without silently switching between unrelated prepared plans.
+     * An active walk always wins; otherwise the last route the user explicitly selected wins.
+     * Older installations without the selection preference fall back to their newest planned route.
+     */
+    fun preferredPersistedRouteId(context: Context): String? {
+        val applicationContext = context.applicationContext
+        val repository = AndroidWalkRepository(applicationContext)
+        val valid = { routeId: String -> routeId == CENTENARIO_ID || isTestRoute(routeId) }
+        val activeRoute = repository.list()
+            .asReversed()
+            .firstOrNull { it.status == WalkStatus.ACTIVE && valid(it.routeId) }
             ?.routeId
+        if (activeRoute != null) return activeRoute
+
+        val selected = applicationContext
+            .getSharedPreferences(ROUTE_PREFS, Context.MODE_PRIVATE)
+            .getString(SELECTED_ROUTE_KEY, null)
+            ?.takeIf(valid)
+        if (selected != null) return selected
+
+        return repository.list()
+            .asReversed()
+            .firstOrNull { it.status == WalkStatus.PLANNED && valid(it.routeId) }
+            ?.routeId
+    }
+
+    private const val ROUTE_PREFS = "walking_v1_route_selection"
+    private const val SELECTED_ROUTE_KEY = "selected_route_id"
 }
