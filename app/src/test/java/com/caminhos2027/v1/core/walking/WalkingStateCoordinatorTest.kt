@@ -135,8 +135,8 @@ class WalkingStateCoordinatorTest {
 
         val reliable = coordinator.accept(gps(40.00300, "2026-09-01T12:30:00Z"))
         val before = reliable.routePosition!!.routeKm
-        val offRoute1 = coordinator.accept(RawGpsPosition(40.00300, -7.99920, 5.0, Instant.parse("2026-09-01T12:30:10Z")))
-        val offRoute2 = coordinator.accept(RawGpsPosition(40.00300, -7.99880, 5.0, Instant.parse("2026-09-01T12:30:20Z")))
+        val offRoute1 = coordinator.accept(RawGpsPosition(40.00300, -7.99920, 5.0, Instant.parse("2026-09-01T12:31:00Z")))
+        val offRoute2 = coordinator.accept(RawGpsPosition(40.00300, -7.99880, 5.0, Instant.parse("2026-09-01T12:32:00Z")))
 
         assertEquals(before, offRoute1.routePosition!!.routeKm, 0.0001)
         assertEquals(before, offRoute2.routePosition!!.routeKm, 0.0001)
