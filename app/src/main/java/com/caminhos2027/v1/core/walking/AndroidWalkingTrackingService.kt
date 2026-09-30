@@ -274,9 +274,14 @@ class AndroidWalkingTrackingService : Service() {
             return
         }
         if (walkingState != null) {
-            val currentRoutePosition = RouteLocationEngine.locate(app.publishedRoute(), position)
+            val route = app.publishedRoute()
+            val currentRoutePosition = RouteLocationEngine.locate(route, position)
             val possibleDeviationMeters = com.caminhos2027.v1.core.route.GpsTrackingPolicy().possibleDeviationMeters
-            val lastKnownOnRoutePoint = walkingState?.routePosition?.projectedPoint
+            val lastKnownRoutePosition = walkingState?.routePosition
+            val lastKnownOnRoutePoint = lastKnownRoutePosition?.projectedPoint
+                ?: lastKnownRoutePosition?.let {
+                    WalkingGuidanceTargetPolicy.pointAtRouteKm(route, it.routeKm)
+                }
             val guidance = WalkingGuidanceTargetPolicy.forActiveWalk(
                 currentDistanceToRouteMeters = currentRoutePosition.distanceToRouteMeters,
                 possibleDeviationMeters = possibleDeviationMeters,
