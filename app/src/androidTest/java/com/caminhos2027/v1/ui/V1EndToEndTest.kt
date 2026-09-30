@@ -192,14 +192,16 @@ class V1EndToEndTest {
         assertTrue("Immersive audio option did not appear", waitForVisibleText("ÁUDIO IMERSIVO", 30_000))
         clickVisibleText("ÁUDIO IMERSIVO")
         clickVisibleText("APLICAR")
-        assertTrue("Audio configuration did not close", waitForVisibleText("Pausas", 30_000))
+        assertTrue("Audio configuration did not close", waitForTextToDisappear("ÁUDIO IMERSIVO", 10_000))
+        assertTrue("Audio configuration did not return to preparation", waitForVisibleText("Pausas", 30_000))
 
         clickVisibleText("Orientação")
         assertTrue("Orientation configuration did not appear", waitForVisibleText("Orientação", 30_000))
         assertTrue("Walking-direction orientation option did not appear", waitForVisibleText("DIREÇÃO DA CAMINHADA", 30_000))
         clickVisibleText("DIREÇÃO DA CAMINHADA")
         clickVisibleText("APLICAR")
-        assertTrue("Orientation configuration did not close", waitForVisibleText("Pausas", 30_000))
+        assertTrue("Orientation configuration did not close", waitForTextToDisappear("DIREÇÃO DA CAMINHADA", 10_000))
+        assertTrue("Orientation configuration did not return to preparation", waitForVisibleText("Pausas", 30_000))
 
         clickVisibleText("Apoios")
         assertTrue("Apoios configuration did not appear", waitForVisibleText("Apoios", 30_000))
@@ -305,6 +307,16 @@ class V1EndToEndTest {
         } catch (_: StaleObjectException) {
             null
         }
+    }
+
+    private fun waitForTextToDisappear(text: String, timeoutMs: Long): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (findVisibleTextOrDescription(text) == null) return true
+            device.waitForIdle()
+            Thread.sleep(100)
+        }
+        return findVisibleTextOrDescription(text) == null
     }
 
     private fun waitForVisibleTextValueDifferent(prefix: String, previousValue: String?, timeoutMs: Long): Boolean {
