@@ -27,8 +27,9 @@ internal fun V1ApplicationScreenV1(
     onBackToApoiBrowser: () -> Unit, onInfo: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val effectiveRoute = if (preparedWalk != null && preparedWalk.routeId != route.id) {
-        AndroidRouteCatalog.loadRoute(context, preparedWalk.routeId)
+    val activeRouteId = state?.walk?.routeId ?: preparedWalk?.routeId
+    val effectiveRoute = if (activeRouteId != null && activeRouteId != route.id) {
+        AndroidRouteCatalog.loadRoute(context, activeRouteId)
     } else route
 
     when {
