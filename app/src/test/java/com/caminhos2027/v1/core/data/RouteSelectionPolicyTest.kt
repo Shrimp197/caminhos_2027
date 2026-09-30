@@ -37,11 +37,11 @@ class RouteSelectionPolicyTest {
     }
 
     @Test
-    fun unavailableSelectedRouteIsIgnored() {
+    fun unavailableSelectedRouteDoesNotSelectAnotherPlanSilently() {
         val walks = listOf(
             walk("centenario-plan", "centenario", WalkStatus.PLANNED),
             walk("sr-plan", "sr", WalkStatus.PLANNED)
         )
-        assertEquals("sr", RouteSelectionPolicy.preferredRouteId(walks, "unknown") { it in setOf("centenario", "sr") })
+        assertEquals(null, RouteSelectionPolicy.preferredRouteId(walks, "unknown") { it in setOf("centenario", "sr") })
     }
 }
