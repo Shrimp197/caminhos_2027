@@ -259,6 +259,23 @@ internal fun V1ActiveExperienceScreenV3(
                         state.nextApoiDistanceKm?.let { Text(formatKm(it), color = WalkBlue, fontWeight = FontWeight.ExtraBold) }
                     }
 
+                        if (isTestRoute) {
+                            Card(Modifier.fillMaxWidth(), RoundedCornerShape(11.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F6F4))) {
+                                Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                                    Text("QA · percurso de teste", color = WalkWarning, fontWeight = FontWeight.Bold)
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                        OutlinedButton(onClick = onQaAdvance, Modifier.weight(1f)) { Text("AVANÇAR GPS") }
+                                        OutlinedButton(onClick = { onQaToggleGps(false) }, Modifier.weight(1f)) { Text("PERDER GPS") }
+                                    }
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                        OutlinedButton(onClick = { onQaToggleGps(true) }, Modifier.weight(1f)) { Text("RECUPERAR GPS") }
+                                        OutlinedButton(onClick = onQaDeviation, Modifier.weight(1f)) { Text("SIMULAR DESVIO") }
+                                    }
+                                }
+                            }
+                        }
+
+
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = onTogglePause, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
                             Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp))
@@ -277,22 +294,6 @@ internal fun V1ActiveExperienceScreenV3(
                             }
                             OutlinedButton(onClick = onOpenDecision, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
                                 Text("OPÇÕES", fontWeight = FontWeight.Bold)
-                            }
-                        }
-
-                        if (isTestRoute) {
-                            Card(Modifier.fillMaxWidth(), RoundedCornerShape(11.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F6F4))) {
-                                Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                    Text("QA · percurso de teste", color = WalkWarning, fontWeight = FontWeight.Bold)
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                                        OutlinedButton(onClick = onQaAdvance, Modifier.weight(1f)) { Text("AVANÇAR GPS") }
-                                        OutlinedButton(onClick = { onQaToggleGps(false) }, Modifier.weight(1f)) { Text("PERDER GPS") }
-                                    }
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                                        OutlinedButton(onClick = { onQaToggleGps(true) }, Modifier.weight(1f)) { Text("RECUPERAR GPS") }
-                                        OutlinedButton(onClick = onQaDeviation, Modifier.weight(1f)) { Text("SIMULAR DESVIO") }
-                                    }
-                                }
                             }
                         }
 
