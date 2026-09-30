@@ -141,6 +141,8 @@ class WalkingStateCoordinatorTest {
         assertEquals(before, offRoute1.routePosition!!.routeKm, 0.0001)
         assertEquals(before, offRoute2.routePosition!!.routeKm, 0.0001)
         assertTrue(offRoute2.gpsState == GpsState.POSSIBLE_DEVIATION || offRoute2.gpsState == GpsState.PROBABLE_DEVIATION)
+        assertEquals(40.00300, offRoute2.currentPhysicalPoint!!.latitude, 0.00001)
+        assertEquals(-7.99880, offRoute2.currentPhysicalPoint!!.longitude, 0.00001)
     }
     @Test
     fun `start position outside possible-deviation threshold is provisional`() {
