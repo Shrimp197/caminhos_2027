@@ -97,7 +97,10 @@ internal fun V1ActiveExperienceScreenV3(
     val currentKm = state.routePosition?.routeKm ?: state.progress?.currentRouteKm ?: 0.0
     val remainingKm = state.progress?.remainingKm ?: 0.0
     val progress = (state.progress?.progressRatio ?: 0.0).coerceIn(0.0, 1.0)
-    val projectedPoint = state.routePosition?.projectedPoint
+    val routePositionPoint = state.routePosition?.projectedPoint
+    val currentPhysicalPoint = state.currentPhysicalPoint
+    val lastKnownOnRoutePoint = routePositionPoint
+        ?: pointAtRouteKmForMap(route.geometry.points, currentKm, route.totalDistanceKm)
     val isOffRoute = state.gpsState == GpsState.POSSIBLE_DEVIATION || state.gpsState == GpsState.PROBABLE_DEVIATION
     val isTestRoute = BuildConfig.DEBUG && AndroidRouteCatalog.isTestRoute(state.walk.routeId)
     val elapsedLabel = elapsedLabelV3(state.walk.startedAt)
@@ -112,7 +115,8 @@ internal fun V1ActiveExperienceScreenV3(
                 modifier = Modifier.fillMaxSize(),
                 routeId = route.id,
                 geometry = route.geometry.points,
-                projectedPoint = projectedPoint,
+                projectedPoint = routePositionPoint,
+                currentPhysicalPoint = currentPhysicalPoint,
                 currentKm = currentKm,
                 totalKm = route.totalDistanceKm,
                 gpsState = state.gpsState,
@@ -148,7 +152,7 @@ internal fun V1ActiveExperienceScreenV3(
                 IconButtonCard(Icons.Filled.Stop, "Parar", onStop)
             }
 
-            if (isOffRoute && projectedPoint != null) {
+            if (isOffRoute && lastKnownOnRoutePoint != null) {
                 Card(
                     Modifier.align(Alignment.TopCenter).padding(top = 128.dp, start = 12.dp, end = 12.dp),
                     RoundedCornerShape(16.dp),
@@ -165,8 +169,8 @@ internal fun V1ActiveExperienceScreenV3(
                         Button(
                             onClick = {
                                 onNavigateToCoordinate(
-                                    projectedPoint.latitude,
-                                    projectedPoint.longitude,
+                                    lastKnownOnRoutePoint.latitude,
+                                    lastKnownOnRoutePoint.longitude,
                                     "Último ponto conhecido no Caminho"
                                 )
                             },
