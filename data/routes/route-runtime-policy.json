@@ -5,10 +5,10 @@
   "geometry_distance_km": 214.77816498997424,
   "distance_semantics": {
     "published": "ACF published/reference distance; preserved as editorial route fact",
-    "geometry": "Summed Haversine length of the validated official GPX; used for route projection and GPS endpoint"
+    "geometry": "Summed Haversine length of the validated official GPX; used to locate the physical position on the route, with route-km normalized to the published distance"
   },
   "endpoint_policy": "navigation_uses_official_gpx_endpoint",
-  "display_policy": "never_silently_substitute_geometry_for_published_distance",
+  "display_policy": "never_silently_substitute_geometry_for_published_distance; route-km uses the published scale while geometry preserves the physical path and endpoint",
   "source": {
     "organization": "Associação Caminhos de Fátima",
     "source_url": "https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx",
