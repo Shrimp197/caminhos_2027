@@ -117,7 +117,7 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xE6000000)))))
                     Column(Modifier.align(Alignment.BottomStart).padding(13.dp).padding(end = 118.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-                        Text("${if (route.id == "caminho-do-centenario") "212" else route.totalDistanceKm.toInt()} km · ${if (route.id == "caminho-do-centenario") "Porto → Fátima" else "Percurso selecionado"}", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("${if (route.id == "caminho-do-centenario") "211,9" else String.format(java.util.Locale("pt", "PT"), "%.1f", route.totalDistanceKm)} km · ${if (route.id == "caminho-do-centenario") "Porto → Fátima" else "Percurso selecionado"}", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                     Button(onClick = { dialog = "route" }, Modifier.align(Alignment.BottomEnd).padding(10.dp).height(42.dp), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = RefGreen), contentPadding = PaddingValues(horizontal = 14.dp)) { Text("PREPARAR", fontWeight = FontWeight.ExtraBold) }
                 }
@@ -137,6 +137,7 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
                         Text("Orientação · ${orientationLabelV4(plannedWalk.preparation.mapOrientation)}", color = RefBlue, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
                         Text("Apoios · ${plannedWalk.preparation.visibleApoiCategories.size} tipo(s) selecionado(s)", color = RefBlue, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
                         Text("Notas · ${plannedWalk.preparation.notes.size} guardada(s)", color = RefBlue, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                        OutlinedButton(onClick = { savePlan() }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text("GUARDAR ALTERAÇÕES", fontWeight = FontWeight.Bold) }
                     }
                 }
                 if (startRequested) {
