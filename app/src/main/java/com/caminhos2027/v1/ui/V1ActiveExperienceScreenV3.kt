@@ -135,6 +135,7 @@ internal fun V1ActiveExperienceScreenV3(
                 Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                     Text("Caminhada atual", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
                     Text(route.officialName, color = WalkMuted, fontWeight = FontWeight.SemiBold)
+                    Text("Tempo · $elapsedLabel", color = WalkMuted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
                 }
             }
 
