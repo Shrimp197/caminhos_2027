@@ -83,7 +83,7 @@ class V1EndToEndTest {
             12
         )
         device.waitForIdle()
-        assertTrue("Real map context was lost after a pan gesture", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 30_000))
+        assertTrue("Real map context was lost after a pan gesture", waitForVisibleText("Caminhada atual", 30_000))
 
         // Recreate the Activity without network access. The downloaded region must be discoverable
         // again from persisted MapLibre offline state.
@@ -153,7 +153,7 @@ class V1EndToEndTest {
         assertTrue("APOI browser did not return", waitForAnyVisibleText("Próximos 10 km", "Procurar", timeoutMs = 30_000))
         device.pressBack()
         device.waitForIdle()
-        assertTrue("Walking screen did not return", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 30_000))
+        assertTrue("Walking screen did not return", waitForVisibleText("Caminhada atual", 30_000))
         expandWalkingSheet()
         scrollWalkingSheetUntilVisible("OPÇÕES")
         clickVisibleText("OPÇÕES")
@@ -161,7 +161,7 @@ class V1EndToEndTest {
         assertTrue("Stop action did not appear", waitForVisibleText("PARAR AGORA", 30_000))
         assertTrue("Continue action did not appear", waitForVisibleText("CONTINUAR CAMINHADA", 30_000))
         clickVisibleText("CONTINUAR CAMINHADA")
-        assertTrue("Continue action did not return to walking", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 30_000))
+        assertTrue("Continue action did not return to walking", waitForVisibleText("Caminhada atual", 30_000))
         expandWalkingSheet()
         scrollWalkingSheetUntilVisible("OPÇÕES")
         clickVisibleText("OPÇÕES")
@@ -171,7 +171,7 @@ class V1EndToEndTest {
         prepareSrPlan()
         assertTrue("Second cycle saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
         clickVisibleText("INICIAR CAMINHADA")
-        assertTrue("Second walking cycle did not start", waitForVisibleText("MAPA · CARTOGRAFIA REAL", 30_000))
+        assertTrue("Second walking cycle did not start", waitForVisibleText("Caminhada atual", 30_000))
         expandWalkingSheet()
         scrollWalkingSheetUntilVisible("OPÇÕES")
         clickVisibleText("OPÇÕES")
