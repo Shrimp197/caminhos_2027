@@ -493,15 +493,17 @@ private fun gpsColorForMap(state: GpsState): Color = when (state) {
 private fun pointAtRouteKmForMap(points: List<GeoPoint>, routeKm: Double, totalKm: Double): GeoPoint? {
     if (points.isEmpty()) return null
     if (points.size == 1) return points.first()
-    val target = routeKm.coerceIn(0.0, totalKm.coerceAtLeast(0.0))
-    if (target <= 0.0) return points.first()
+    val targetRouteKm = routeKm.coerceIn(0.0, totalKm.coerceAtLeast(0.0))
+    val geometryTotalKm = points.zipWithNext().sumOf { (a, b) -> distanceKm(a, b) }
+    if (geometryTotalKm <= 0.0 || totalKm <= 0.0) return points.first()
+    val targetGeometryKm = targetRouteKm / totalKm * geometryTotalKm
     var accumulated = 0.0
     for (i in 1 until points.size) {
         val a = points[i - 1]
         val b = points[i]
         val segment = distanceKm(a, b)
-        if (accumulated + segment >= target) {
-            val fraction = if (segment <= 0.0) 0.0 else ((target - accumulated) / segment).coerceIn(0.0, 1.0)
+        if (accumulated + segment >= targetGeometryKm) {
+            val fraction = if (segment <= 0.0) 0.0 else ((targetGeometryKm - accumulated) / segment).coerceIn(0.0, 1.0)
             return GeoPoint(
                 latitude = a.latitude + (b.latitude - a.latitude) * fraction,
                 longitude = a.longitude + (b.longitude - a.longitude) * fraction
