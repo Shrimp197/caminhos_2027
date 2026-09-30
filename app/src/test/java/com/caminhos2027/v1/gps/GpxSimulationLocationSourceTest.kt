@@ -79,6 +79,26 @@ class GpxSimulationLocationSourceTest {
     }
 
     @Test
+    fun supportsAVisibleAdvanceDistanceForWalkingUi() {
+        val points = listOf(
+            GeoPoint(41.1000, -8.5800),
+            GeoPoint(41.1010, -8.5800),
+            GeoPoint(41.1020, -8.5800)
+        )
+        val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
+        val source = GpxSimulationLocationSource(
+            points = points,
+            onPosition = emitted::add
+        )
+
+        source.start()
+        source.advance(minimumMeters = 150.0)
+
+        assertEquals(points[2].latitude, emitted.last().latitude)
+        assertTrue(distanceMeters(emitted.first(), emitted.last()) >= 150.0)
+    }
+
+    @Test
     fun stopPreventsFurtherSimulation() {
         val emitted = mutableListOf<com.caminhos2027.v1.core.model.RawGpsPosition>()
         val source = GpxSimulationLocationSource(
