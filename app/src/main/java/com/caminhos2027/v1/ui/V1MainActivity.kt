@@ -576,7 +576,14 @@ class V1MainActivity : ComponentActivity() {
         getSharedPreferences("peregrino_preferences", MODE_PRIVATE).getBoolean("pilgrim_mode", false)
 
     private fun navigateToCoordinate(latitude: Double, longitude: Double, label: String) {
-        openWalkingNavigation(this, com.caminhos2027.v1.core.model.GeoPoint(latitude, longitude), label)
+        val opened = openWalkingNavigation(
+            this,
+            com.caminhos2027.v1.core.model.GeoPoint(latitude, longitude),
+            label
+        )
+        if (!opened) {
+            showInfo("Não foi possível abrir uma aplicação de navegação neste dispositivo.")
+        }
     }
 
     private fun navigate(destination: WalkingSurface) {
