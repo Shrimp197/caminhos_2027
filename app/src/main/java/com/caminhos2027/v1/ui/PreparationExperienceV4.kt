@@ -143,8 +143,8 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
                 if (startRequested) {
                     Card(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(if ((pendingStartDistanceMeters ?: 0.0) > 0.0) "Está fora do percurso" else "A procurar GPS…", color = if ((pendingStartDistanceMeters ?: 0.0) > 0.0) Color(0xFF9A5A00) else RefBlue, fontWeight = FontWeight.ExtraBold)
-                            pendingStartDistanceMeters?.let { Text("Distância ao percurso: ${fmtMetersV4(it)}", color = RefMuted) }
+                            Text(if ((pendingStartDistanceMeters ?: 0.0) > 100.0) "A orientar para o início" else "A procurar uma posição GPS precisa…", color = if ((pendingStartDistanceMeters ?: 0.0) > 100.0) Color(0xFF9A5A00) else RefBlue, fontWeight = FontWeight.ExtraBold)
+                            pendingStartDistanceMeters?.let { Text("Distância ao início planeado: ${fmtMetersV4(it)}", color = RefMuted) }
                             Text("A caminhada ainda não começou. Vamos levá-lo até ao início planeado; só começa quando o GPS confirmar que chegou ao percurso.", color = RefMuted, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
                             Button(onClick = {
                                 val target = pointAtRouteKmForNavigation(route, plannedWalk.plannedStartKm ?: startKm)
