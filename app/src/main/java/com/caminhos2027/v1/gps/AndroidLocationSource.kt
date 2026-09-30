@@ -50,15 +50,11 @@ class AndroidLocationSource(
         }
 
         override fun onProviderEnabled(provider: String) {
-            if (provider == LocationManager.GPS_PROVIDER) {
-                refreshAvailability()
-            }
+            if (provider == LocationManager.GPS_PROVIDER) refreshAvailability()
         }
 
         override fun onProviderDisabled(provider: String) {
-            if (provider == LocationManager.GPS_PROVIDER) {
-                refreshAvailability()
-            }
+            if (provider == LocationManager.GPS_PROVIDER) refreshAvailability()
         }
 
         @Deprecated("Required for LocationListener compatibility")
@@ -70,6 +66,10 @@ class AndroidLocationSource(
         if (started) return
         started = true
         refreshAvailability()
+        // Guidance must be available before the first fresh fix when the device already has a
+        // recent position. This is only used as a navigation hint; it never starts a walk or
+        // promotes stale data into WalkingState.
+        emitLastKnownPositionForGuidance()
         mainHandler.post(availabilityMonitor)
     }
 
@@ -119,8 +119,7 @@ class AndroidLocationSource(
     private fun emitLastKnownPositionForGuidance() {
         val callback = onLastKnownPosition ?: return
         if (!hasLocationService() || !hasGpsProvider()) return
-        val location = runCatching { locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) }.getOrNull()
-            ?: return
+        val location = runCatching { locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) }.getOrNull() ?: return
         if (location.time <= 0L || System.currentTimeMillis() - location.time > LAST_KNOWN_MAX_AGE_MS) return
         callback(
             RawGpsPosition(
@@ -132,15 +131,9 @@ class AndroidLocationSource(
         )
     }
 
-    private fun hasGpsProvider(): Boolean =
-        locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+    private fun hasGpsProvider(): Boolean = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
 
-    private fun hasLocationService(): Boolean =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            locationManager.isLocationEnabled
-        } else {
-            hasGpsProvider()
-        }
+    private fun hasLocationService(): Boolean = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) locationManager.isLocationEnabled else hasGpsProvider()
 
     private companion object {
         const val TAG = "AndroidLocationSource"
