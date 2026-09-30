@@ -237,6 +237,22 @@ internal fun V1ActiveExperienceScreenV3(
                         }
                     }
 
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = onTogglePause, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
+                            Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA", fontWeight = FontWeight.Bold)
+                        }
+                        Button(onClick = onOpenNext10Km, Modifier.weight(1f), shape = RoundedCornerShape(11.dp), colors = ButtonDefaults.buttonColors(containerColor = WalkGreen)) {
+                            Text("PRÓXIMOS 10 KM", fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+
+                    Column(
+                        Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(7.dp)
+                    ) {
+
                     LinearProgressIndicator(
                         progress = { progress.toFloat() },
                         modifier = Modifier.fillMaxWidth().height(5.dp),
@@ -284,21 +300,9 @@ internal fun V1ActiveExperienceScreenV3(
                         }
 
 
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onTogglePause, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
-                            Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA", fontWeight = FontWeight.Bold)
-                        }
-                        Button(onClick = onOpenNext10Km, Modifier.weight(1f), shape = RoundedCornerShape(11.dp), colors = ButtonDefaults.buttonColors(containerColor = WalkGreen)) {
-                            Text("PRÓXIMOS 10 KM", fontWeight = FontWeight.ExtraBold)
-                        }
-                    }
 
-                    Column(
-                        Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(7.dp)
-                    ) {
+
+
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(onClick = onOpenApoi, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
                                 Text("VER APOIOS", fontWeight = FontWeight.Bold)
