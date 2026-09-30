@@ -93,7 +93,7 @@ internal fun RealWalkingMap(
     var currentMarker by remember { mutableStateOf<org.maplibre.android.annotations.Marker?>(null) }
     var nextApoiMarker by remember { mutableStateOf<org.maplibre.android.annotations.Marker?>(null) }
     val points = remember(geometry) { geometry.filter { it.latitude.isFinite() && it.longitude.isFinite() } }
-    val mapPoints = remember(points) { simplifyForMap(points, 400) }
+    val mapPoints = remember(points) { points }
     val routePoint = projectedPoint ?: pointAtRouteKmForMap(points, currentKm, totalKm)
     val currentPoint = currentPhysicalPoint ?: routePoint
 
@@ -443,17 +443,6 @@ internal fun downloadOfflineRegion(
             override fun onError(error: String) { onError(error) }
         }
     )
-}
-
-private fun simplifyForMap(points: List<GeoPoint>, maxPoints: Int): List<GeoPoint> {
-    if (points.size <= maxPoints) return points
-    require(maxPoints >= 2)
-    val stride = (points.size - 1).toDouble() / (maxPoints - 1).toDouble()
-    return buildList(maxPoints) {
-        for (index in 0 until maxPoints) {
-            add(points[(index * stride).toInt().coerceIn(0, points.lastIndex)])
-        }
-    }.distinct()
 }
 
 private fun offlineMetadata(routeId: String): String =
