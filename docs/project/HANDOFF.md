@@ -168,3 +168,56 @@ Antes de terminar uma sessão relevante:
 - `DECISIONS.md` — decisões preservadas.
 - `ACCEPTANCE-CHECKLIST.md` — definição de pronto.
 - `../visual-reference/referencia.jpeg` — referência visual V1.
+
+
+## Comunicação com o utilizador
+
+O utilizador é o utilizador final da aplicação e não deve ser obrigado a compreender código, arquitetura ou ferramentas de desenvolvimento.
+
+Regras de comunicação:
+- Responder de forma curta, clara e em linguagem comum.
+- Evitar jargão técnico; quando um termo técnico for inevitável, explicar o significado em poucas palavras.
+- Não pedir ao utilizador para tomar decisões técnicas que o agente consiga tomar com segurança.
+- Não interromper o trabalho apenas para pedir confirmação de passos normais de implementação.
+- Quando houver várias opções técnicas equivalentes, escolher autonomamente a opção mais simples, reversível e alinhada com as decisões do projeto.
+- Só interromper para o utilizador quando existir uma decisão real de produto/experiência, uma ação que só o utilizador pode executar, uma credencial/acesso em falta, ou um teste físico/hardware necessário.
+- Quando o utilizador tiver de intervir, explicar apenas o que ele precisa de fazer, sem exigir conhecimento técnico.
+- Durante trabalho prolongado, comunicar apenas progresso material: o que foi encontrado, quando um bloqueador importante foi resolvido, ou quando é necessária intervenção humana.
+- No final de uma tarefa, dar um resumo curto: resultado, evidência principal e próximo passo.
+- Nunca usar respostas longas para compensar trabalho que poderia ter sido executado pelo agente.
+
+## Regra de progresso contínuo
+
+Enquanto houver trabalho autónomo útil e seguro disponível, continuar sem pedir confirmação.
+
+Perante um bloqueador:
+1. investigar a causa;
+2. tentar alternativas seguras dentro do âmbito;
+3. concluir tudo o que não depende do bloqueador;
+4. registar claramente o que ficou pendente;
+5. só então pedir a intervenção humana, se indispensável.
+
+Não terminar uma sessão apenas porque um caminho técnico falhou quando existir outro caminho razoável para avançar.
+
+## Regra de maximização de produtividade
+
+- Executar em paralelo verificações independentes quando isso reduzir tempo sem aumentar risco.
+- Reutilizar evidência já recolhida em vez de repetir trabalho.
+- Depois de cada alteração, validar o efeito e procurar regressões próximas.
+- Priorizar o caminho que aumenta mais rapidamente a evidência de aceitação da V1.
+- Não criar trabalho ornamental ou novas funcionalidades fora do objetivo apenas para manter atividade.
+- Preferir correções completas de causa a paliativos temporários.
+- Manter o repositório sempre num estado retomável.
+
+## Regra de sucesso
+
+O objetivo de cada ciclo não é apenas produzir alterações de código. É aumentar de forma verificável o estado de aceitação da V1.
+
+Considerar o ciclo concluído apenas quando:
+- o problema ou objetivo do ciclo estiver resolvido, ou o bloqueador estiver claramente identificado;
+- os testes/validações aplicáveis tiverem sido executados;
+- regressões relevantes tiverem sido verificadas;
+- a documentação operacional estiver atualizada;
+- a próxima ação estiver clara.
+
+Nunca declarar sucesso com base apenas em intenção, código escrito ou ausência de erros aparentes.
