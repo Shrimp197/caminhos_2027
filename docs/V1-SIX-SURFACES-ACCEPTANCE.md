@@ -19,6 +19,15 @@ Obrigatório:
 
 Aceitação SR/HF: o utilizador consegue preparar e guardar um intervalo do percurso e regressar ao plano sem criar uma caminhada ativa.
 
+### Navegação até ao percurso
+
+O botão de início nunca deve obrigar o utilizador a estar fisicamente sobre o traçado para iniciar a orientação.
+
+- se a caminhada ainda não começou (`PLANNED`), a orientação deve usar a posição GPS atual do utilizador como origem e encaminhá-lo para o início planeado do intervalo;
+- se já existe uma caminhada ativa e o utilizador se encontra fora do traçado, a orientação deve usar a posição GPS atual como origem e encaminhá-lo para o último ponto fiável conhecido no percurso;
+- a aplicação não deve substituir a posição atual por um ponto artificial do percurso;
+- a chegada ao alvo de reentrada não altera por si só o progresso: o progresso continua a ser derivado do pipeline GPS comum quando a posição passa a ser aceite no percurso.
+
 ## 2. Caminhada ativa — mapa
 
 Objetivo: responder imediatamente a "Onde estou?".
@@ -98,6 +107,23 @@ Obrigatório:
 - etapa oficial mostrada apenas como referência quando disponível;
 - progresso não pode ser alterado por uma observação GPS implausível.
 
+## Referência visual — dez momentos
+
+A imagem de referência fornecida pelo produto representa dez momentos da experiência e é usada como referência de aceitação visual:
+
+1. ecrã inicial / preparação;
+2. ecrã de caminhada / mapa;
+3. bottom sheet inteligente;
+4. próximos 10 km;
+5. apoios — lista / cartões;
+6. progresso da caminhada;
+7. diário do peregrino;
+8. SOS / acesso rápido;
+9. smartwatch / notificações e orientação;
+10. modo peregrino / maior contraste.
+
+A implementação deve manter a mesma linguagem de produto entre estes momentos: mapa como contexto da caminhada, cartões claros, ações primárias evidentes, verde para ações positivas, azul para informação/navegação, cantos arredondados, densidade controlada e navegação inferior coerente quando a superfície pertence ao fluxo principal.
+
 ## Vertical slice de aceitação
 
 A sequência deve ser contínua:
@@ -150,7 +176,9 @@ O SR deve permitir validar:
 - publicação normal, com warning, histórica, encerrada e em revisão;
 - confiança e localização com diferentes níveis de certeza;
 - perda e recuperação controladas de GPS;
-- desvio e rejeição de saltos implausíveis.
+- desvio e rejeição de saltos implausíveis;
+- orientação para o início quando o utilizador ainda não iniciou a caminhada;
+- orientação de reentrada para o último ponto fiável do percurso quando uma caminhada ativa fica fora do traçado.
 
 ## HF — cenário de validação humana
 
