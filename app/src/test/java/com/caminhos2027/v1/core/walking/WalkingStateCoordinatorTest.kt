@@ -128,6 +128,21 @@ class WalkingStateCoordinatorTest {
     }
 
     @Test
+    fun `active deviation keeps the last reliable route position and progress`() {
+        val route = fixtureRoute()
+        val walk = Walk(id = "sr-walk", routeId = route.id, actualStartKm = 0.0)
+        val coordinator = WalkingStateCoordinator(route, walk, emptyList())
+
+        val reliable = coordinator.accept(gps(40.00300, "2026-09-01T12:30:00Z"))
+        val before = reliable.routePosition!!.routeKm
+        val offRoute1 = coordinator.accept(RawGpsPosition(40.00300, -7.99920, 5.0, Instant.parse("2026-09-01T12:30:10Z")))
+        val offRoute2 = coordinator.accept(RawGpsPosition(40.00300, -7.99880, 5.0, Instant.parse("2026-09-01T12:30:20Z")))
+
+        assertEquals(before, offRoute1.routePosition!!.routeKm, 0.0001)
+        assertEquals(before, offRoute2.routePosition!!.routeKm, 0.0001)
+        assertTrue(offRoute2.gpsState == GpsState.POSSIBLE_DEVIATION || offRoute2.gpsState == GpsState.PROBABLE_DEVIATION)
+    }
+    @Test
     fun `start position outside possible-deviation threshold is provisional`() {
         val route = fixtureRoute()
         val walk = Walk(id = "sr-walk", routeId = route.id)
