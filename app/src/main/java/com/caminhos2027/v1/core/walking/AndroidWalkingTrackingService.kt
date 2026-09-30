@@ -237,7 +237,7 @@ class AndroidWalkingTrackingService : Service() {
                 if (!startGuidanceIssued) {
                     val prepared = app.restorePreparedWalk()?.walk
                     val targetKm = prepared?.plannedStartKm ?: 0.0
-                    val target = pointAtRouteKm(route, targetKm)
+                    val target = WalkingGuidanceTargetPolicy.pointAtRouteKm(route, targetKm)
                     val guidance = WalkingGuidanceTargetPolicy.forPendingStart(
                         currentDistanceToRouteMeters = routePosition.distanceToRouteMeters,
                         possibleDeviationMeters = possibleDeviationMeters,
@@ -428,40 +428,6 @@ class AndroidWalkingTrackingService : Service() {
     }
 
     private fun formatNotificationDistance(value: Double): String = if (value < 1.0) "${(value * 1000.0).toInt()} m" else String.format(java.util.Locale("pt", "PT"), "%.1f km", value)
-
-    private fun pointAtRouteKm(route: com.caminhos2027.v1.core.model.Route, routeKm: Double): GeoPoint {
-        val points = route.geometry.points
-        if (points.isEmpty()) return GeoPoint(0.0, 0.0)
-        if (points.size == 1) return points.first()
-        val target = routeKm.coerceIn(0.0, route.totalDistanceKm)
-        var accumulated = 0.0
-        for (index in 1 until points.size) {
-            val a = points[index - 1]
-            val b = points[index]
-            val segment = distanceKm(a, b)
-            if (accumulated + segment >= target) {
-                val fraction = if (segment <= 0.0) 0.0 else ((target - accumulated) / segment).coerceIn(0.0, 1.0)
-                return GeoPoint(
-                    latitude = a.latitude + (b.latitude - a.latitude) * fraction,
-                    longitude = a.longitude + (b.longitude - a.longitude) * fraction
-                )
-            }
-            accumulated += segment
-        }
-        return points.last()
-    }
-
-    private fun distanceKm(a: GeoPoint, b: GeoPoint): Double {
-        val radius = 6371.0088
-        val lat1 = Math.toRadians(a.latitude)
-        val lat2 = Math.toRadians(b.latitude)
-        val dLat = lat2 - lat1
-        val dLon = Math.toRadians(b.longitude - a.longitude)
-        val s1 = kotlin.math.sin(dLat / 2.0)
-        val s2 = kotlin.math.sin(dLon / 2.0)
-        val h = s1 * s1 + kotlin.math.cos(lat1) * kotlin.math.cos(lat2) * s2 * s2
-        return 2.0 * radius * kotlin.math.asin(kotlin.math.sqrt(h.coerceIn(0.0, 1.0)))
-    }
 
     /**
      * QA controls can be invoked immediately after Activity/service binding, before the test
