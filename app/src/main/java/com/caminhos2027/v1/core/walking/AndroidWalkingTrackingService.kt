@@ -516,7 +516,7 @@ class AndroidWalkingTrackingService : Service() {
     private fun trackingClock(): Instant =
         if (useSimulationClock) simulationClock else Instant.now()
 
-
+    private fun reportError(message: String) {
         listeners.toList().forEach { it.onTrackingError(message) }
     }
 

@@ -15,6 +15,7 @@ import com.caminhos2027.v1.core.walking.WalkingAppStateController
 import com.caminhos2027.v1.core.walking.WalkingPreparationService
 import com.caminhos2027.v1.core.walking.WalkingSessionRuntime
 import com.caminhos2027.v1.core.walking.WalkingSessionService
+import java.time.Instant
 
 /**
  * Android composition boundary for V1.
