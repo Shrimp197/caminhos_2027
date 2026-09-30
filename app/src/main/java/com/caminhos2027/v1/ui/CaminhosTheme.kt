@@ -1,24 +1,30 @@
 package com.caminhos2027.v1.ui
 
+import android.app.Activity
+import android.os.Build
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.shape.RoundedCornerShape
 
-private val CaminhosGreen = Color(0xFF0B7549)
-private val CaminhosGreenDark = Color(0xFF075B38)
+private val CaminhosGreen = Color(0xFF159447)
+private val CaminhosGreenDark = Color(0xFF0E6E36)
 private val CaminhosGreenSoft = Color(0xFFE8F4ED)
-private val CaminhosGold = Color(0xFFB68124)
-private val CaminhosSand = Color(0xFFF7F5EF)
+private val CaminhosBlue = Color(0xFF164B63)
+private val CaminhosGold = Color(0xFFC28A16)
+private val CaminhosSand = Color(0xFFF7F7F4)
 private val CaminhosInk = Color(0xFF18211C)
-private val CaminhosMuted = Color(0xFF65706A)
-private val CaminhosLine = Color(0xFFE1E5DF)
+private val CaminhosMuted = Color(0xFF68736D)
+private val CaminhosLine = Color(0xFFDCE3DE)
 private val CaminhosDanger = Color(0xFFD92D20)
 private val CaminhosWarning = Color(0xFFA15C00)
 private val CaminhosWarningSoft = Color(0xFFFFF1D8)
@@ -47,16 +53,37 @@ private val CaminhosShapes = Shapes(
 
 @Composable
 internal fun CaminhosTheme(content: @Composable () -> Unit) {
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val activity = view.context as? Activity
+            activity?.window?.let { window ->
+                window.statusBarColor = Color.White.toArgb()
+                window.navigationBarColor = Color.White.toArgb()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    window.decorView.systemUiVisibility =
+                        window.decorView.systemUiVisibility or android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    window.decorView.systemUiVisibility =
+                        window.decorView.systemUiVisibility or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                }
+            }
+        }
+    }
+
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = CaminhosGreen,
             onPrimary = Color.White,
             primaryContainer = CaminhosGreenSoft,
             onPrimaryContainer = CaminhosGreenDark,
-            secondary = CaminhosGold,
+            secondary = CaminhosBlue,
             onSecondary = Color.White,
-            secondaryContainer = Color(0xFFF6ECD8),
-            onSecondaryContainer = Color(0xFF5B430F),
+            secondaryContainer = Color(0xFFE8F0F3),
+            onSecondaryContainer = Color(0xFF103B4E),
+            tertiary = CaminhosGold,
+            onTertiary = Color.White,
             background = CaminhosSand,
             onBackground = CaminhosInk,
             surface = Color.White,
@@ -78,6 +105,7 @@ internal object CaminhosVisual {
     val Green = CaminhosGreen
     val GreenDark = CaminhosGreenDark
     val GreenSoft = CaminhosGreenSoft
+    val Blue = CaminhosBlue
     val Gold = CaminhosGold
     val Sand = CaminhosSand
     val Ink = CaminhosInk
