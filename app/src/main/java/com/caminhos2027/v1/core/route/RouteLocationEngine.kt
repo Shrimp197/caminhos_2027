@@ -44,7 +44,12 @@ object RouteLocationEngine {
             "Route projection produced non-finite metrics"
         }
 
-        val stageId = StageLocator.currentStage(route, bestRouteKm)?.id
+        val routeKm = if (accumulatedKm > 0.0) {
+            (bestRouteKm * (route.totalDistanceKm / accumulatedKm)).coerceIn(0.0, route.totalDistanceKm)
+        } else {
+            0.0
+        }
+        val stageId = StageLocator.currentStage(route, routeKm)?.id
         val confidence = confidenceFor(
             distanceToRouteMeters = bestDistance,
             accuracyMeters = gps.accuracyMeters
@@ -52,7 +57,7 @@ object RouteLocationEngine {
 
         return RoutePosition(
             routeId = route.id,
-            routeKm = bestRouteKm,
+            routeKm = routeKm,
             distanceToRouteMeters = bestDistance,
             stageId = stageId,
             confidence = confidence,
