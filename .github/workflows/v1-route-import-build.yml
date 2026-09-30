@@ -144,7 +144,7 @@ jobs:
           retention-days: 7
       - name: Collect visual validation screenshots
         id: visual_screenshots
-        if: steps.emulator_setup.outcome == 'success'
+        if: always() && steps.emulator_setup.outcome == 'success'
         timeout-minutes: 2
         run: |
           set -euo pipefail
@@ -178,7 +178,7 @@ jobs:
               print(f"{path}: valid PNG {width}x{height}, {len(data)} bytes")
           PY
       - name: Upload visual validation screenshots
-        if: steps.visual_screenshots.outcome == 'success'
+        if: always() && steps.visual_screenshots.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: caminhos-v1-route-import-visual-validation
