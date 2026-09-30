@@ -112,4 +112,16 @@ class GpxSimulationLocationSourceTest {
 
         assertEquals(1, emitted.size)
     }
+    private fun distanceMeters(a: com.caminhos2027.v1.core.model.RawGpsPosition, b: com.caminhos2027.v1.core.model.RawGpsPosition): Double {
+        val earthRadiusMeters = 6_371_008.8
+        val lat1 = Math.toRadians(a.latitude)
+        val lat2 = Math.toRadians(b.latitude)
+        val deltaLat = lat2 - lat1
+        val deltaLon = Math.toRadians(b.longitude - a.longitude)
+        val sinLat = kotlin.math.sin(deltaLat / 2.0)
+        val sinLon = kotlin.math.sin(deltaLon / 2.0)
+        val h = (sinLat * sinLat + kotlin.math.cos(lat1) * kotlin.math.cos(lat2) * sinLon * sinLon).coerceIn(0.0, 1.0)
+        return 2.0 * earthRadiusMeters * kotlin.math.atan2(kotlin.math.sqrt(h), kotlin.math.sqrt(1.0 - h))
+    }
+
 }
