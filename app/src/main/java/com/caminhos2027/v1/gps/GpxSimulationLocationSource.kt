@@ -156,5 +156,6 @@ class GpxSimulationLocationSource(
         const val MIN_ADVANCE_METERS = 10.0
         const val MAX_SIMULATED_SPEED_KMH = 8.0
         const val MIN_ADVANCE_MILLIS = 100L
+        const val MIN_RECOVERY_MILLIS = 1_000L
     }
 }
