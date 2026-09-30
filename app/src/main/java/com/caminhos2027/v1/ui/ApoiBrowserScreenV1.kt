@@ -134,6 +134,9 @@ private fun ApoiBrowserCard(item: ApoiAhead, onSelected: (ApoiAhead) -> Unit) {
                     color = ApoioMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
+                Text(costLabelBrowser(item.apoi), color = ApoioBlue, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
+                reservationLabelBrowser(item.apoi)?.let { Text(it, color = ApoioMuted, style = MaterialTheme.typography.bodySmall) }
+                Text(availabilityLabelBrowser(item.apoi), color = availabilityColorBrowser(item.apoi), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
                 if (item.apoi.publication.status == PublicationStatus.PUBLISHED_WITH_WARNING) {
                     Text("⚠ Informação com ressalva", color = Color(0xFF9A5A00), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
                 }
@@ -163,3 +166,42 @@ private fun categoryLabel(category: ApoiCategory): String = when (category) {
 }
 
 private fun formatKm(value: Double): String = String.format(Locale("pt", "PT"), "%.1f", value)
+
+private fun costLabelBrowser(apoi: com.caminhos2027.v1.core.model.Apoi): String = when (apoi.cost.model) {
+    com.caminhos2027.v1.core.model.ApoiCostModel.FREE -> "Custo · gratuito"
+    com.caminhos2027.v1.core.model.ApoiCostModel.OPTIONAL_CONTRIBUTION -> "Custo · contribuição opcional"
+    com.caminhos2027.v1.core.model.ApoiCostModel.PAID -> {
+        val amount = apoi.cost.amount
+        val currency = apoi.cost.currency.orEmpty()
+        if (amount != null && currency.isNotBlank()) "Custo · pago · " + String.format(Locale("pt", "PT"), "%.2f", amount) + " " + currency
+        else "Custo · pago"
+    }
+    com.caminhos2027.v1.core.model.ApoiCostModel.UNKNOWN -> "Custo · por confirmar"
+}
+
+private fun reservationLabelBrowser(apoi: com.caminhos2027.v1.core.model.Apoi): String? = when (apoi.reservation.policy) {
+    com.caminhos2027.v1.core.model.ApoiReservationPolicy.NOT_REQUIRED -> "Reserva · não necessária"
+    com.caminhos2027.v1.core.model.ApoiReservationPolicy.RECOMMENDED -> "Reserva · recomendada"
+    com.caminhos2027.v1.core.model.ApoiReservationPolicy.REQUIRED -> "Reserva · necessária"
+    com.caminhos2027.v1.core.model.ApoiReservationPolicy.UNKNOWN -> null
+}
+
+private fun availabilityLabelBrowser(apoi: com.caminhos2027.v1.core.model.Apoi): String = when (apoi.availability.status) {
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.CURRENT -> "Disponibilidade · indicada como atual"
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.RECURRING -> "Disponibilidade · recorrente"
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.FUTURE_CONFIRMED -> "Disponibilidade · futura confirmada"
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.AWAITING_CONFIRMATION -> "Disponibilidade · aguarda confirmação"
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.HISTORICAL -> "Disponibilidade · histórica"
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.EXPIRED -> "Disponibilidade · expirada"
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.CLOSED -> "Disponibilidade · encerrada"
+}
+
+private fun availabilityColorBrowser(apoi: com.caminhos2027.v1.core.model.Apoi): Color = when (apoi.availability.status) {
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.CURRENT,
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.RECURRING,
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.FUTURE_CONFIRMED -> ApoioGreen
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.AWAITING_CONFIRMATION -> Color(0xFF9A5A00)
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.HISTORICAL,
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.EXPIRED,
+    com.caminhos2027.v1.core.model.ApoiAvailabilityStatus.CLOSED -> Color(0xFF9A2F2F)
+}
