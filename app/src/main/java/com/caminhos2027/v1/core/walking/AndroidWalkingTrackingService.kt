@@ -121,7 +121,6 @@ class AndroidWalkingTrackingService : Service() {
             return START_NOT_STICKY
         }
 
-        promoteToForeground()
         Log.i(TAG, "onStartCommand action=" + intent?.action + ", restoredState=" + (walkingState?.isPaused ?: "null"))
         when (intent?.action) {
             ACTION_PAUSE -> pause()
@@ -158,6 +157,7 @@ class AndroidWalkingTrackingService : Service() {
         }
         pendingStartDistanceMeters = null
         startGuidanceIssued = false
+        promoteToForeground()
         startLocationSource()
         notifyState()
     }
@@ -399,8 +399,8 @@ class AndroidWalkingTrackingService : Service() {
         }
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_location)
-            .setContentTitle("Caminhada em curso")
-            .setContentText("A localização está a ser acompanhada.")
+            .setContentTitle(if (pendingStart) "A chegar ao início da caminhada" else "Caminhada em curso")
+            .setContentText(if (pendingStart) "A localização está a ser acompanhada até ao início planeado." else "A localização está a ser acompanhada durante a caminhada.")
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setContentIntent(pendingIntent)
