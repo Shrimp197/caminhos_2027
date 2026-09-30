@@ -188,7 +188,7 @@ internal fun V1ActiveExperienceScreenV3(
                 elevation = CardDefaults.cardElevation(8.dp)
             ) {
                 Column(
-                    Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 9.dp),
+                    Modifier.fillMaxWidth().fillMaxHeight().padding(horizontal = 14.dp, vertical = 9.dp),
                     verticalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
                     Box(
@@ -295,7 +295,10 @@ internal fun V1ActiveExperienceScreenV3(
                         }
                     }
 
-                    if (expanded) {
+                    Column(
+                        Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(7.dp)
+                    ) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(onClick = onOpenApoi, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
                                 Text("VER APOIOS", fontWeight = FontWeight.Bold)
@@ -306,6 +309,7 @@ internal fun V1ActiveExperienceScreenV3(
                         }
 
                         Text("Tempo · $elapsedLabel", color = WalkMuted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                    }
                     }
                 }
             }
