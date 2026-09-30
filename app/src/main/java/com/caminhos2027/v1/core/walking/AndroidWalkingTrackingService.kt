@@ -58,11 +58,7 @@ class AndroidWalkingTrackingService : Service() {
             postWhenSimulationReady(action = { source ->
                 Log.i(TAG, "QA GPS availability: requested=" + available + ", beforeAvailableSourceStarted=" + source.isStarted + ", index=" + source.currentIndex)
                 source.setAvailable(available)
-                // Recovery QA must exercise the same raw-position path as real GPS.
-                // Provider availability alone is not a GPS fix; force one fresh raw fix.
-                if (available) {
-                    source.emitRecoveryFix()
-                }
+                // The simulation source emits one fresh raw fix when availability returns.
             })
         }
         fun qaSimulateDeviation() {
