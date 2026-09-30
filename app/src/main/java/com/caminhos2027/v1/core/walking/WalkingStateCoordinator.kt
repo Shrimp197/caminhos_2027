@@ -1,6 +1,7 @@
 package com.caminhos2027.v1.core.walking
 
 import com.caminhos2027.v1.core.model.Apoi
+import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.RoutePosition
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
@@ -23,13 +24,15 @@ class WalkingStateCoordinator(
     private var walk: Walk = initialWalk
     private var lastReliableRouteKm: Double? = null
     private var lastFreshReliableObservedAt: Instant? = null
+    private var latestPhysicalPoint: GeoPoint? = null
 
     var state: WalkingState = WalkingStateBuilder.build(
         route = route,
         walk = walk,
         gpsState = GpsState.NO_SIGNAL,
         routePosition = null,
-        publishedApoi = this.publishedApoi
+        publishedApoi = this.publishedApoi,
+        currentPhysicalPoint = null
     )
         private set
 
@@ -53,6 +56,7 @@ class WalkingStateCoordinator(
         // visual anchor. Do not use it as the GPS continuity baseline or persisted observation.
         val reliable = position.distanceToRouteMeters < policy.possibleDeviationMeters
         locationPipeline.seedRoutePosition(position, now, reliable = reliable)
+        latestPhysicalPoint = position.projectedPoint
         lastReliableRouteKm = position.routeKm.takeIf { reliable }
         lastFreshReliableObservedAt = now.takeIf { reliable }
         state = WalkingStateBuilder.build(
@@ -65,7 +69,8 @@ class WalkingStateCoordinator(
             offline = state.isOffline,
             paused = false,
             pausedAt = null,
-            pausedDurationSeconds = 0L
+            pausedDurationSeconds = 0L,
+            currentPhysicalPoint = latestPhysicalPoint
         )
         return state
     }
@@ -83,6 +88,7 @@ class WalkingStateCoordinator(
             Duration.between(timestamp, now) < Duration.ofSeconds(policy.noSignalAfterSeconds.toLong())
         lastReliableRouteKm = null
         lastFreshReliableObservedAt = null
+        latestPhysicalPoint = validPosition?.projectedPoint
 
         if (usableBaseline) {
             locationPipeline.seedRoutePosition(
@@ -106,7 +112,8 @@ class WalkingStateCoordinator(
             offline = checkpoint.isOffline,
             paused = checkpoint.isPaused,
             pausedAt = checkpoint.pausedAt?.takeIf { !it.isAfter(now) },
-            pausedDurationSeconds = checkpoint.pausedDurationSeconds
+            pausedDurationSeconds = checkpoint.pausedDurationSeconds,
+            currentPhysicalPoint = latestPhysicalPoint
         )
         return state
     }
@@ -116,6 +123,9 @@ class WalkingStateCoordinator(
         val previousReliableRouteKm = lastReliableRouteKm
         val previousFreshObservedAt = lastFreshReliableObservedAt
         val tracking = locationPipeline.accept(position)
+        if (tracking.lastObservation?.capturedAt == position.capturedAt) {
+            latestPhysicalPoint = GeoPoint(position.latitude, position.longitude)
+        }
         val currentReliableObservation = tracking.lastReliableObservation
         val currentReliableRouteKm = currentReliableObservation?.routePosition?.routeKm
         // A fresh movement cue requires a genuinely new reliable observation. Rejected or
@@ -138,7 +148,8 @@ class WalkingStateCoordinator(
             gpsState = tracking.state,
             routePosition = currentReliableObservation?.routePosition ?: state.routePosition,
             movementCue = movementCue,
-            offline = state.isOffline
+            offline = state.isOffline,
+            currentPhysicalPoint = latestPhysicalPoint
         )
     }
 
@@ -194,7 +205,8 @@ class WalkingStateCoordinator(
         offline: Boolean,
         paused: Boolean = state.isPaused,
         pausedAt: Instant? = state.pausedAt,
-        pausedDurationSeconds: Long = state.pausedDurationSeconds
+        pausedDurationSeconds: Long = state.pausedDurationSeconds,
+        currentPhysicalPoint: GeoPoint? = latestPhysicalPoint
     ): WalkingState {
         state = WalkingStateBuilder.build(
             route = route,
@@ -206,7 +218,8 @@ class WalkingStateCoordinator(
             offline = offline,
             paused = paused,
             pausedAt = pausedAt,
-            pausedDurationSeconds = pausedDurationSeconds
+            pausedDurationSeconds = pausedDurationSeconds,
+            currentPhysicalPoint = currentPhysicalPoint
         )
         return state
     }
