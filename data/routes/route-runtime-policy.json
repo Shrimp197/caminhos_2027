@@ -8,10 +8,11 @@
     "geometry": "Summed Haversine length of the validated official GPX; used to locate the physical position on the route, with route-km normalized to the published distance"
   },
   "endpoint_policy": "navigation_uses_official_gpx_endpoint",
-  "display_policy": "never_silently_substitute_geometry_for_published_distance; route-km uses the published scale while geometry preserves the physical path and endpoint",
+  "display_policy": "never_silently_substitute_geometry_for_published_distance",
   "source": {
     "organization": "Associação Caminhos de Fátima",
     "source_url": "https://caminhosdefatima.com/wp-content/uploads/2024/10/Caminho_do_centenario.gpx",
     "sha256": "1159c88bc316f0b73257e2c4d89cf3911ddf2191106609de43763a0bf2999266"
-  }
+  },
+  "route_km_policy": "Use published route distance as the progress/navigation scale; use the official geometry only to map physical GPS positions and navigation targets onto that scale."
 }
