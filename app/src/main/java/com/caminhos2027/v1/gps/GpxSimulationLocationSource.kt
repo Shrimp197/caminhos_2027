@@ -10,7 +10,8 @@ import java.time.Instant
  * with real GPS through the same callback path in the activity.
  *
  * Availability and deliberate deviation controls exist only to make the real GPS state machine
- * exercisable without requiring a physical signal failure during every QA run.
+ * exercisable without requiring a physical signal failure during every QA run. QA movement also
+ * advances its injected clock so evaluator time and simulated position remain coherent.
  */
 class GpxSimulationLocationSource(
     points: List<GeoPoint>,
