@@ -211,17 +211,15 @@ class AndroidWalkingTrackingService : Service() {
         if (AndroidRouteCatalog.isTestRoute(route.id)) return
         val routePosition = RouteLocationEngine.locate(route, position)
         val policy = com.caminhos2027.v1.core.route.GpsTrackingPolicy()
-        if (routePosition.distanceToRouteMeters < policy.possibleDeviationMeters) return
         val prepared = app.restorePreparedWalk()?.walk ?: return
-        val target = WalkingGuidanceTargetPolicy.pointAtRouteKm(
-            route,
-            prepared.plannedStartKm ?: 0.0
-        )
+        val target = WalkingGuidanceTargetPolicy.pointAtRouteKm(route, prepared.plannedStartKm ?: 0.0)
+        val distanceToStartMeters = distanceMeters(position.latitude, position.longitude, target.latitude, target.longitude)
+        if (distanceToStartMeters <= policy.startArrivalToleranceMeters) return
         startGuidanceIssued = true
         listeners.toList().forEach {
             it.onStartGuidanceNeeded(
                 target,
-                "Ir para o início da caminhada · ${route.officialName}"
+                "Ir para o início da caminhada · " + route.officialName
             )
         }
     }
@@ -231,24 +229,25 @@ class AndroidWalkingTrackingService : Service() {
         if (pendingStart && walkingState == null) {
             val route = app.publishedRoute()
             val routePosition = RouteLocationEngine.locate(route, position)
-            pendingStartDistanceMeters = routePosition.distanceToRouteMeters.takeIf { it.isFinite() }
-            val possibleDeviationMeters = com.caminhos2027.v1.core.route.GpsTrackingPolicy().possibleDeviationMeters
-            if (routePosition.distanceToRouteMeters >= possibleDeviationMeters) {
-                if (!startGuidanceIssued) {
-                    val prepared = app.restorePreparedWalk()?.walk
-                    val targetKm = prepared?.plannedStartKm ?: 0.0
-                    val target = WalkingGuidanceTargetPolicy.pointAtRouteKm(route, targetKm)
+            val prepared = app.restorePreparedWalk()?.walk
+            val targetKm = prepared?.plannedStartKm ?: 0.0
+            val target = WalkingGuidanceTargetPolicy.pointAtRouteKm(route, targetKm)
+            val policy = com.caminhos2027.v1.core.route.GpsTrackingPolicy()
+            val distanceToStartMeters = distanceMeters(position.latitude, position.longitude, target.latitude, target.longitude)
+            pendingStartDistanceMeters = distanceToStartMeters.takeIf { it.isFinite() }
+            val isOnRoute = routePosition.distanceToRouteMeters < policy.possibleDeviationMeters
+            val isAtPlannedStart = distanceToStartMeters <= policy.startArrivalToleranceMeters
+            if (!isOnRoute || !isAtPlannedStart) {
+                if (!startGuidanceIssued && !AndroidRouteCatalog.isTestRoute(route.id)) {
                     val guidance = WalkingGuidanceTargetPolicy.forPendingStart(
-                        currentDistanceToRouteMeters = routePosition.distanceToRouteMeters,
-                        possibleDeviationMeters = possibleDeviationMeters,
+                        currentDistanceToRouteMeters = if (isAtPlannedStart) routePosition.distanceToRouteMeters else policy.possibleDeviationMeters,
+                        possibleDeviationMeters = policy.possibleDeviationMeters,
                         plannedStart = target,
                         routeName = route.officialName
                     )
                     if (guidance != null) {
                         startGuidanceIssued = true
-                        if (!AndroidRouteCatalog.isTestRoute(route.id)) {
-                            listeners.toList().forEach { it.onStartGuidanceNeeded(guidance.point, guidance.label) }
-                        }
+                        listeners.toList().forEach { it.onStartGuidanceNeeded(guidance.point, guidance.label) }
                     }
                 }
                 notifyState()
@@ -422,6 +421,18 @@ class AndroidWalkingTrackingService : Service() {
 
     private fun hasLocationPermission(): Boolean =
         checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    private fun distanceMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val earthRadiusM = 6_371_008.8
+        val p1 = Math.toRadians(lat1)
+        val p2 = Math.toRadians(lat2)
+        val dLat = p2 - p1
+        val dLon = Math.toRadians(lon2 - lon1)
+        val sinLat = kotlin.math.sin(dLat / 2.0)
+        val sinLon = kotlin.math.sin(dLon / 2.0)
+        val h = (sinLat * sinLat + kotlin.math.cos(p1) * kotlin.math.cos(p2) * sinLon * sinLon).coerceIn(0.0, 1.0)
+        return 2.0 * earthRadiusM * kotlin.math.atan2(kotlin.math.sqrt(h), kotlin.math.sqrt(1.0 - h))
+    }
 
     private fun notifyState() {
         listeners.toList().forEach { it.onTrackingStateChanged(walkingState, pendingStart, pendingStartDistanceMeters) }
