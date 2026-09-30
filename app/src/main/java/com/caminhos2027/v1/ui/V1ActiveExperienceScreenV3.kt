@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.data.AndroidRouteCatalog
+import com.caminhos2027.v1.core.data.AndroidRouteOption
 import com.caminhos2027.v1.core.model.Route
 import com.caminhos2027.v1.core.route.GpsState
 import com.caminhos2027.v1.core.walking.WalkingState
