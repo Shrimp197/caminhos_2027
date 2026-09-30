@@ -139,6 +139,7 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
                         Text("Orientação · ${orientationLabelV4(plannedWalk.preparation.mapOrientation)}", color = RefBlue, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
                         Text("Apoios · ${plannedWalk.preparation.visibleApoiCategories.size} tipo(s) selecionado(s)", color = RefBlue, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
                         Text("Notas · ${plannedWalk.preparation.notes.size} guardada(s)", color = RefBlue, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                        Text(if (plannedWalk.preparation.intelligentBreaksEnabled) "Pausas · inteligentes ativas" else "Pausas · inteligentes desativadas", color = RefBlue, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
                         OutlinedButton(onClick = { savePlan() }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text("GUARDAR ALTERAÇÕES", fontWeight = FontWeight.Bold) }
                     }
                 }
