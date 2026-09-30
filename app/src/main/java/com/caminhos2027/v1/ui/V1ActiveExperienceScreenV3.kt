@@ -248,6 +248,14 @@ internal fun V1ActiveExperienceScreenV3(
                         MetricCard(formatKm(currentKm), "Percorridos", Modifier.weight(1f))
                         MetricCard(formatKm(remainingKm), "Para o fim", Modifier.weight(1f))
                     }
+                    Text(
+                        "Km no percurso: " + formatKm(currentKm),
+                        color = WalkMuted,
+                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.semantics {
+                            contentDescription = "Km no percurso: " + formatKm(currentKm)
+                        }
+                    )
 
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.LocationOn, null, tint = WalkBlue, modifier = Modifier.size(20.dp))
@@ -298,7 +306,6 @@ internal fun V1ActiveExperienceScreenV3(
                         }
 
                         Text("Tempo · $elapsedLabel", color = WalkMuted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
-                        Text("Km no percurso: ${formatKm(currentKm)}", color = WalkMuted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
                     }
                 }
             }
