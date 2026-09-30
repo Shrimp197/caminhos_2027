@@ -279,7 +279,7 @@ class V1MainActivity : ComponentActivity() {
         walkingState = null
         startRequested = false
         pendingStartDistanceMeters = null
-        surface = if (preparedWalk == null) WalkingSurface.PREPARATION else WalkingSurface.ACTIVE
+        surface = WalkingSurface.PREPARATION
     }
 
     private fun openPreparation() {
@@ -304,7 +304,7 @@ class V1MainActivity : ComponentActivity() {
         preparation: WalkingPreparationConfig
     ) {
         val prepared = appContainer.preparationController.save(
-            walkId = "walk-${System.currentTimeMillis()}",
+            walkId = preparedWalk?.id ?: "walk-${System.currentTimeMillis()}",
             startRouteKm = startRouteKm,
             destinationRouteKm = destinationRouteKm,
             preparation = preparation
@@ -313,7 +313,7 @@ class V1MainActivity : ComponentActivity() {
         walkingState = null
         startRequested = false
         pendingStartDistanceMeters = null
-        surface = WalkingSurface.ACTIVE
+        surface = WalkingSurface.PREPARATION
     }
 
     private fun requestStartPreparedWalk() {
