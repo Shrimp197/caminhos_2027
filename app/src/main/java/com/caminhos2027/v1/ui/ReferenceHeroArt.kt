@@ -3,6 +3,8 @@ package com.caminhos2027.v1.ui
 import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.caminhos2027.R
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -38,6 +40,11 @@ internal fun ReferenceHeroArt(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-        }
+        } ?: Image(
+            painter = painterResource(R.drawable.caminho_centenario_hero_vector),
+            contentDescription = "Caminho do Centenário",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
     }
 }
