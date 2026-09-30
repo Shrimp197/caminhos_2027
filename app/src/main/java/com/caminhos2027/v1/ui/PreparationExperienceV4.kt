@@ -47,7 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -97,14 +97,14 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
     Scaffold(containerColor = RefBg, bottomBar = {
         NavigationBar(modifier = Modifier.navigationBarsPadding(), containerColor = Color.White, tonalElevation = 0.dp) {
             listOf("Resumo" to Icons.Filled.Map, "Mapa" to Icons.Filled.Map, "Apoios" to Icons.Filled.Place, "Diário" to Icons.Filled.Notes, "Mais" to Icons.Filled.Menu).forEachIndexed { index, item ->
-                NavigationBarItem(selected = index == 0, onClick = { if (index == 4) onBack() }, icon = { Icon(item.second, item.first, Modifier.size(21.dp)) }, label = { Text(item.first, maxLines = 1) })
+                NavigationBarItem(selected = index == 0, onClick = { if (index == 4) onBack() }, icon = { Icon(item.second, item.first, modifier = Modifier.size(21.dp)) }, label = { Text(item.first, maxLines = 1) })
             }
         }
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp).semantics { contentDescription = "PREPARAÇÃO — HOME" }, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth().height(42.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack, Modifier.size(40.dp)) { Icon(Icons.Filled.Menu, "Menu", tint = RefBlue) }
-                Icon(Icons.Filled.DirectionsWalk, null, tint = RefGold, Modifier.size(28.dp))
+                Icon(Icons.Filled.DirectionsWalk, null, tint = RefGold, modifier = Modifier.size(28.dp))
                 Column(Modifier.padding(start = 7.dp)) { Text("CAMINHOS", color = RefBlue, fontWeight = FontWeight.ExtraBold); Text("DO PEREGRINO", color = RefBlue, fontWeight = FontWeight.ExtraBold) }
             }
             Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = RefBlue, fontWeight = FontWeight.ExtraBold)
@@ -130,7 +130,7 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
                 PrepTile(Icons.Filled.Notes, "Notas", Modifier.weight(1f)) { dialog = "notes" }
             }
             Button(onClick = { if (savePlan()) onStart() }, Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = RefGreen)) {
-                Icon(Icons.Filled.DirectionsWalk, null, Modifier.size(20.dp)); Spacer(Modifier.width(7.dp)); Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold)
+                Icon(Icons.Filled.DirectionsWalk, null, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(7.dp)); Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold)
             }
             TextButton(onClick = { savePlan() }, Modifier.fillMaxWidth()) { Text("Guardar plano sem iniciar", color = RefBlue, fontWeight = FontWeight.SemiBold) }
             error?.let { Text(it, color = Color(0xFF9A2F2F), fontWeight = FontWeight.SemiBold) }
@@ -146,7 +146,7 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
         }
         "audio" -> ChoiceDialog("Áudio", listOf(AudioMode.NORMAL to "Normal", AudioMode.IMMERSIVE to "Imersivo", AudioMode.SILENT to "Sem áudio"), config.audioMode, { config = config.copy(audioMode = it); dialog = null }, { dialog = null })
         "orientation" -> ChoiceDialog("Orientação do mapa", listOf(MapOrientation.NORTH to "Norte", MapOrientation.WALK_DIRECTION to "Direção da caminhada"), config.mapOrientation, { config = config.copy(mapOrientation = it); dialog = null }, { dialog = null })
-        "breaks" -> AlertDialog(onDismissRequest = { dialog = null }, title = { Text("Pausas") }, text = { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) { Text("Pausas inteligentes", color = RefBlue, fontWeight = FontWeight.Bold); Switch(config.intelligentBreaksEnabled, { config = config.copy(intelligentBreaksEnabled = it) }) } }, confirmButton = { TextButton(onClick = { dialog = null }) { Text("APLICAR") } })
+        "breaks" -> AlertDialog(onDismissRequest = { dialog = null }, title = { Text("Pausas") }, text = { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) { Text("Pausas inteligentes", color = RefBlue, fontWeight = FontWeight.Bold); Switch(checked = config.intelligentBreaksEnabled, onCheckedChange = { config = config.copy(intelligentBreaksEnabled = it) }) } }, confirmButton = { TextButton(onClick = { dialog = null }) { Text("APLICAR") } })
         "supports" -> AlertDialog(onDismissRequest = { dialog = null }, title = { Text("Apoios a mostrar") }, text = { val cats = listOf(ApoiCategory.AGUA, ApoiCategory.ALIMENTACAO, ApoiCategory.PERNOITA, ApoiCategory.DUCHES, ApoiCategory.CARREGAMENTO, ApoiCategory.EMERGENCIA); Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { cats.forEach { cat -> FilterChip(selected = cat in config.visibleApoiCategories, onClick = { config = config.copy(visibleApoiCategories = config.visibleApoiCategories.toMutableSet().apply { if (!add(cat)) remove(cat) }) }, label = { Text(cat.name.lowercase().replace('_', ' ')) }) } } }, confirmButton = { TextButton(onClick = { dialog = null }) { Text("APLICAR") } })
         "notes" -> {
             var noteText by remember(notes) { mutableStateOf(notes) }
@@ -158,7 +158,7 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
 @Composable
 private fun PrepTile(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, modifier: Modifier, onClick: () -> Unit) {
     Card(modifier.clickable(onClick = onClick).semantics { contentDescription = label; role = Role.Button }, RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, RefBorder), elevation = CardDefaults.cardElevation(1.dp)) {
-        Column(Modifier.fillMaxWidth().height(68.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(icon, null, tint = RefBlue, Modifier.size(21.dp)); Spacer(Modifier.height(4.dp)); Text(label, color = RefBlue, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) }
+        Column(Modifier.fillMaxWidth().height(68.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(icon, null, tint = RefBlue, modifier = Modifier.size(21.dp)); Spacer(Modifier.height(4.dp)); Text(label, color = RefBlue, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) }
     }
 }
 
