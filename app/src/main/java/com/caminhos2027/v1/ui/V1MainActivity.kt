@@ -292,6 +292,7 @@ class V1MainActivity : ComponentActivity() {
 
     private fun selectRoute(routeId: String) {
         if (walkingState != null || startRequested) return
+        AndroidRouteCatalog.persistSelectedRouteId(this, routeId)
         appContainer = AndroidV1AppContainer(this, routeId)
         selectedRouteId = routeId
         preparedWalk = appContainer.restorePreparedWalk()?.walk
