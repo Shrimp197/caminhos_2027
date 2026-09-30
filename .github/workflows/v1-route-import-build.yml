@@ -33,10 +33,15 @@ jobs:
       - name: Build V1 debug without legacy rewrite scripts
         timeout-minutes: 10
         run: gradle --no-daemon :app:assembleDebug
-      - name: Verify debug APK
+      - name: Verify signed debug APK
         run: |
-          test -s app/build/outputs/apk/debug/app-debug.apk
-          shasum -a 256 app/build/outputs/apk/debug/app-debug.apk
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose "$APK"
+          shasum -a 256 "$APK"
       - name: Add Android SDK tools to PATH
         run: |
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
