@@ -82,7 +82,10 @@ class V1MainActivity : ComponentActivity() {
         }
 
         override fun onTrackingError(message: String) {
-            runOnUiThread { pendingStartDistanceMeters = null }
+            runOnUiThread {
+                pendingStartDistanceMeters = null
+                showInfo(message)
+            }
         }
 
         override fun onStartGuidanceNeeded(target: com.caminhos2027.v1.core.model.GeoPoint, label: String) {
@@ -124,6 +127,7 @@ class V1MainActivity : ComponentActivity() {
 
     private val locationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
         if (hasLocationPermissionAfterResult(permissions)) startTrackingService()
+        else if (permissions.values.any { it }) showInfo("Para acompanhar a caminhada, permita o acesso à localização precisa.")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -250,11 +254,10 @@ class V1MainActivity : ComponentActivity() {
     }
 
     private fun hasLocationPermission(): Boolean =
-        checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     private fun hasLocationPermissionAfterResult(permissions: Map<String, Boolean>): Boolean =
-        permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
 
     private fun requestLocationPermission() {
         locationPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
@@ -380,7 +383,7 @@ class V1MainActivity : ComponentActivity() {
         pendingStartDistanceMeters = null
         cancelWalkingStateReconciliation()
         trackingBinder?.cancelPendingStart()
-        surface = WalkingSurface.ACTIVE
+        surface = WalkingSurface.PREPARATION
     }
 
     /**
