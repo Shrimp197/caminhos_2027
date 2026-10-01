@@ -168,7 +168,7 @@ class V1EndToEndTest {
         clickVisibleText("PARAR AGORA")
         assertTrue("Stop action did not return to preparation", waitForVisibleText("Selecionar percurso", 30_000))
 
-        prepareSrPlan()
+        prepareSecondSrPlan()
         assertTrue("Second cycle saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
         clickVisibleText("INICIAR CAMINHADA")
         assertTrue("Second walking cycle did not start", waitForVisibleText("Caminhada atual", 30_000))
@@ -177,6 +177,16 @@ class V1EndToEndTest {
         clickVisibleText("OPÇÕES")
         clickVisibleText("PARAR AGORA")
         assertTrue("Second walking cycle did not stop cleanly", waitForVisibleText("Selecionar percurso", 30_000))
+    }
+
+    private fun prepareSecondSrPlan() {
+        if (waitForVisibleTextOrDescription("Prepare a sua caminhada", 3_000)) {
+            clickVisibleText("PREPARAR")
+        }
+        assertTrue("Second-cycle route selection did not appear", waitForVisibleText("Selecionar percurso", 30_000))
+        assertTrue("Second-cycle SR route did not appear", waitForVisibleText("Trajeto SR", 30_000))
+        clickVisibleText("Trajeto SR")
+        assertTrue("Second-cycle preparation home did not return", waitForVisibleText("Pausas", 30_000))
     }
 
     private fun prepareSrPlan() {
