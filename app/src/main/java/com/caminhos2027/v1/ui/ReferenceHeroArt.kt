@@ -10,17 +10,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import com.caminhos2027.R
 
 /**
  * Approved offline hero artwork.
- * Decodes the bundled JPEG directly as a bitmap to avoid drawable painter type-resolution issues.
+ * The JPEG is bundled directly in assets and decoded from the raw asset bytes.
  */
 @Composable
 internal fun ReferenceHeroArt(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val bitmap = remember {
-        BitmapFactory.decodeResource(context.resources, R.drawable.caminho_centenario_photo)
+        runCatching {
+            context.assets.open("data/hero_centenario.jpg")
+                .use { BitmapFactory.decodeStream(it) }
+        }.getOrNull()
     }
     Box(modifier) {
         bitmap?.let {
