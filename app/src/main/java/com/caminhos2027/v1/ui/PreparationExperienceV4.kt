@@ -184,7 +184,7 @@ private fun BreaksDialog(config: WalkingPreparationConfig, onChange: (WalkingPre
 
 @Composable
 private fun PrepTile(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, modifier: Modifier, onClick: () -> Unit) {
-    Card(modifier.clickable(onClick = onClick).semantics { contentDescription = label; role = Role.Button }, RoundedCornerShape(13.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, RefBorder), elevation = CardDefaults.cardElevation(1.dp)) { Column(Modifier.fillMaxWidth().height(72.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(icon, null, tint = RefBlue, modifier = Modifier.size(23.dp)); Spacer(Modifier.height(4.dp)); Text(label, color = RefBlue, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) } }
+    Card(modifier.semantics(mergeDescendants = true) { contentDescription = label; role = Role.Button }.clickable(onClick = onClick), RoundedCornerShape(13.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, RefBorder), elevation = CardDefaults.cardElevation(1.dp)) { Column(Modifier.fillMaxWidth().height(72.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(icon, null, tint = RefBlue, modifier = Modifier.size(23.dp)); Spacer(Modifier.height(4.dp)); Text(label, color = RefBlue, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) } }
 }
 
 @Composable

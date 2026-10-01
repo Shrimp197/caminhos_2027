@@ -351,7 +351,13 @@ class V1EndToEndTest {
         assertTrue("Preparation tile not found: $label", node != null)
         val bounds = node!!.visibleBounds
         assertTrue("Preparation tile not visible: $label", !bounds.isEmpty)
-        node.click()
+        if (node!!.isClickable) {
+            node.click()
+        } else {
+            // Fallback only for accessibility wrappers that expose the label but not the
+            // descendant click action as a UiObject2 action.
+            device.click(bounds.centerX(), bounds.centerY())
+        }
         device.waitForIdle()
     }
 
