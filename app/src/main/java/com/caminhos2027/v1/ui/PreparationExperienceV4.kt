@@ -61,6 +61,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.caminhos2027.v1.core.data.AndroidRouteOption
@@ -100,34 +101,34 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
     Scaffold(containerColor = RefBg, bottomBar = {
         NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
             listOf("Resumo" to Icons.Filled.Map, "Mapa" to Icons.Filled.Map, "Apoios" to Icons.Filled.Place, "Diário" to Icons.Filled.Notes, "Mais" to Icons.Filled.Menu).forEachIndexed { index, item ->
-                NavigationBarItem(selected = index == 0, enabled = index == 4, onClick = { if (index == 4) onBack() }, icon = { Icon(item.second, item.first, modifier = Modifier.size(20.dp)) }, label = { Text(item.first, maxLines = 1) })
+                NavigationBarItem(selected = index == 0, enabled = index == 4, onClick = { if (index == 4) onBack() }, icon = { Icon(item.second, item.first, modifier = Modifier.size(20.dp)) }, label = { Text(item.first, maxLines = 1, fontSize = 11.sp) })
             }
         }
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp).semantics { contentDescription = "PREPARAÇÃO — HOME" }, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth().height(42.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().height(36.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack, Modifier.size(38.dp)) { Icon(Icons.Filled.Menu, "Menu", tint = RefBlue) }
-                Icon(Icons.Filled.DirectionsWalk, null, tint = RefGold, modifier = Modifier.size(29.dp))
-                Column(Modifier.padding(start = 7.dp)) { Text("CAMINHOS", color = RefBlue, fontWeight = FontWeight.ExtraBold); Text("DO PEREGRINO", color = RefBlue, fontWeight = FontWeight.ExtraBold) }
+                Icon(Icons.Filled.DirectionsWalk, null, tint = RefGold, modifier = Modifier.size(25.dp))
+                Column(Modifier.padding(start = 6.dp)) { Text("CAMINHOS", color = RefBlue, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp); Text("DO PEREGRINO", color = RefBlue, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp) }
             }
-            Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = RefBlue, fontWeight = FontWeight.ExtraBold)
-            Card(Modifier.fillMaxWidth().height(166.dp), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = RefBlue), border = BorderStroke(1.dp, RefBorder), elevation = CardDefaults.cardElevation(2.dp)) {
+            Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = RefBlue, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
+            Card(Modifier.fillMaxWidth().height(132.dp), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = RefBlue), border = BorderStroke(1.dp, RefBorder), elevation = CardDefaults.cardElevation(2.dp)) {
                 Box(Modifier.fillMaxSize()) {
                     if (route.id == "caminho-do-centenario") ReferenceHeroArt(Modifier.fillMaxSize())
                     else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(RefBlue, Color(0xFF2E6C56)))))
                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xE6000000)))))
                     Column(Modifier.align(Alignment.BottomStart).padding(13.dp).padding(end = 118.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-                        Text("${if (route.id == "caminho-do-centenario") "211,9" else String.format(java.util.Locale("pt", "PT"), "%.1f", route.totalDistanceKm)} km · ${if (route.id == "caminho-do-centenario") "Porto → Fátima" else "Percurso selecionado"}", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, maxLines = 1)
+                        Text("${if (route.id == "caminho-do-centenario") "211,9" else String.format(java.util.Locale("pt", "PT"), "%.1f", route.totalDistanceKm)} km · ${if (route.id == "caminho-do-centenario") "Porto → Fátima" else "Percurso selecionado"}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
-                    Button(onClick = { dialog = "route" }, Modifier.align(Alignment.BottomEnd).padding(10.dp).height(42.dp), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = RefGreen), contentPadding = PaddingValues(horizontal = 14.dp)) { Text("PREPARAR", fontWeight = FontWeight.ExtraBold) }
+                    Button(onClick = { dialog = "route" }, Modifier.align(Alignment.BottomEnd).padding(8.dp).height(38.dp), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = RefGreen), contentPadding = PaddingValues(horizontal = 12.dp)) { Text("PREPARAR", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp) }
                 }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { PrepTile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f)) { dialog = "range" }; PrepTile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f)) { dialog = "audio" }; PrepTile(Icons.Filled.Map, "Orientação", Modifier.weight(1f)) { dialog = "orientation" } }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) { PrepTile(Icons.Filled.LocationOn, "Início e fim", Modifier.weight(1f)) { dialog = "range" }; PrepTile(Icons.Filled.Headphones, "Áudio", Modifier.weight(1f)) { dialog = "audio" }; PrepTile(Icons.Filled.Map, "Orientação", Modifier.weight(1f)) { dialog = "orientation" } }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { PrepTile(Icons.Filled.PauseCircle, "Pausas", Modifier.weight(1f)) { dialog = "breaks" }; PrepTile(Icons.Filled.Place, "Apoios", Modifier.weight(1f)) { dialog = "supports" }; PrepTile(Icons.Filled.Notes, "Notas", Modifier.weight(1f)) { dialog = "notes" } }
             if (plannedWalk == null) {
-                Button(onClick = { if (savePlan()) onStart() }, Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = RefGreen)) { Icon(Icons.Filled.DirectionsWalk, null, modifier = Modifier.size(19.dp)); Spacer(Modifier.width(6.dp)); Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold) }
-                TextButton(onClick = { savePlan() }, Modifier.fillMaxWidth().height(34.dp)) { Text("GUARDAR PLANO", color = RefBlue, fontWeight = FontWeight.SemiBold) }
+                Button(onClick = { if (savePlan()) onStart() }, Modifier.fillMaxWidth().height(44.dp), shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = RefGreen)) { Icon(Icons.Filled.DirectionsWalk, null, modifier = Modifier.size(19.dp)); Spacer(Modifier.width(6.dp)); Text("INICIAR CAMINHADA", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp) }
+                TextButton(onClick = { savePlan() }, Modifier.fillMaxWidth().height(30.dp)) { Text("GUARDAR PLANO", color = RefBlue, fontWeight = FontWeight.SemiBold) }
             } else {
                 Card(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, RefBorder)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -184,7 +185,7 @@ private fun BreaksDialog(config: WalkingPreparationConfig, onChange: (WalkingPre
 
 @Composable
 private fun PrepTile(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, modifier: Modifier, onClick: () -> Unit) {
-    Card(modifier.semantics(mergeDescendants = true) { contentDescription = label; role = Role.Button }.clickable(onClick = onClick), RoundedCornerShape(13.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, RefBorder), elevation = CardDefaults.cardElevation(1.dp)) { Column(Modifier.fillMaxWidth().height(72.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(icon, null, tint = RefBlue, modifier = Modifier.size(23.dp)); Spacer(Modifier.height(4.dp)); Text(label, color = RefBlue, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) } }
+    Card(modifier.semantics(mergeDescendants = true) { contentDescription = label; role = Role.Button }.clickable(onClick = onClick), RoundedCornerShape(13.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, RefBorder), elevation = CardDefaults.cardElevation(1.dp)) { Column(Modifier.fillMaxWidth().height(62.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(icon, null, tint = RefBlue, modifier = Modifier.size(21.dp)); Spacer(Modifier.height(4.dp)); Text(label, color = RefBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp, textAlign = TextAlign.Center) } }
 }
 
 @Composable
