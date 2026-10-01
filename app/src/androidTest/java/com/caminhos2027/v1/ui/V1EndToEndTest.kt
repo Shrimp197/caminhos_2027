@@ -187,6 +187,8 @@ class V1EndToEndTest {
         assertTrue("Second-cycle SR route did not appear", waitForVisibleText("Trajeto SR", 30_000))
         clickVisibleText("Trajeto SR")
         assertTrue("Second-cycle preparation home did not return", waitForVisibleText("Pausas", 30_000))
+        clickVisibleText("GUARDAR PLANO")
+        assertTrue("Second-cycle plan was not saved", waitForVisibleText("Plano guardado", 30_000))
     }
 
     private fun prepareSrPlan() {
