@@ -178,13 +178,6 @@ internal fun V1ActiveExperienceScreenV3(
                     Modifier.fillMaxWidth().fillMaxHeight().padding(horizontal = 14.dp, vertical = 9.dp),
                     verticalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(8.dp)
-            ) {
-                Column(
-                    Modifier.fillMaxWidth().fillMaxHeight().padding(horizontal = 14.dp, vertical = 9.dp),
-                    verticalArrangement = Arrangement.spacedBy(7.dp)
-                ) {
                     Box(
                         Modifier
                             .align(Alignment.CenterHorizontally)
@@ -362,7 +355,6 @@ internal fun V1ActiveExperienceScreenV3(
                 }
             }
         }
-
 }
 
 @Composable
