@@ -197,8 +197,8 @@ class V1EndToEndTest {
 
         clickPreparationTile("Orientação")
         assertTrue("Orientation configuration did not appear", waitForVisibleText("Orientação", 30_000))
-        assertTrue("Walking-direction orientation option did not appear", waitForVisibleText("DIREÇÃO DA CAMINHADA", 30_000))
-        clickVisibleText("DIREÇÃO DA CAMINHADA")
+        assertTrue("Walking-direction orientation option did not appear", waitForVisibleTextOrDescription("DIREÇÃO DA CAMINHADA", 30_000))
+        clickVisibleTextOrDescription("DIREÇÃO DA CAMINHADA")
         clickVisibleText("APLICAR")
         assertTrue("Orientation configuration did not close", waitForTextToDisappear("DIREÇÃO DA CAMINHADA", 10_000))
         assertTrue("Orientation configuration did not return to preparation", waitForVisibleText("Pausas", 30_000))
