@@ -179,7 +179,7 @@ class V1EndToEndTest {
         prepareSecondSrPlan()
         assertTrue("Second cycle saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
         clickVisibleText("INICIAR CAMINHADA")
-        assertTrue("Second walking cycle did not start", waitForVisibleText("Caminhada atual", 30_000))
+        assertTrue("Second walking cycle did not start in compact mode", waitForVisibleText("Percorridos", 30_000))
         expandWalkingSheet()
         scrollWalkingSheetUntilVisible("OPÇÕES")
         clickVisibleText("OPÇÕES")
