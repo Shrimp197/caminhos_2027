@@ -62,8 +62,10 @@ class V1EndToEndTest {
         assertTrue("Persisted plan did not keep explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
         clickVisibleText("INICIAR CAMINHADA")
 
-        assertTrue("Walking screen did not appear", waitForVisibleText("Caminhada atual", 30_000))
-        assertTrue("Real map label did not appear", waitForVisibleText("Caminhada atual", 30_000))
+        assertTrue("Walking screen did not appear", waitForVisibleText("Percorridos", 30_000))
+        assertTrue("Map metric did not appear in compact mode", waitForVisibleText("Para o fim", 30_000))
+        expandWalkingSheet()
+        assertTrue("Walking sheet did not expand", waitForVisibleText("Caminhada atual", 30_000))
         assertTrue("Route progress did not appear", waitForVisibleText("Progresso", 30_000))
         assertTrue("Elapsed walking time did not appear", waitForVisibleTextOrDescription("Tempo", 30_000))
         assertTrue("QA controls did not appear for the test route", waitForVisibleText("QA · percurso de teste", 30_000))
@@ -83,7 +85,7 @@ class V1EndToEndTest {
             12
         )
         device.waitForIdle()
-        assertTrue("Real map context was lost after a pan gesture", waitForVisibleText("Caminhada atual", 30_000))
+        assertTrue("Real map context was lost after a pan gesture", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 30_000))
 
         // Recreate the Activity without network access. The downloaded region must be discoverable
         // again from persisted MapLibre offline state.
@@ -91,7 +93,9 @@ class V1EndToEndTest {
         Thread.sleep(2_000)
         scenario.close()
         scenario = ActivityScenario.launch(V1MainActivity::class.java)
-        assertTrue("Walking screen did not restore while offline", waitForVisibleText("Caminhada atual", 60_000))
+        assertTrue("Walking screen did not restore while offline", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 60_000))
+        expandWalkingSheet()
+        assertTrue("Walking sheet did not restore to an expandable state", waitForVisibleText("Caminhada atual", 30_000))
         assertTrue("Persisted offline map state was not restored", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 60_000))
         clickVisibleText("AVANÇAR GPS")
         assertTrue("Simulated GPS advance did not update the route position", waitForVisibleTextOrDescription("Km no percurso:", 30_000))
@@ -118,6 +122,8 @@ class V1EndToEndTest {
 
     @Test
     fun test3RestorePausedWalkResumeApoiDecisionAndStop() {
+        assertTrue("Paused walking screen did not appear in compact mode", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
         assertTrue("Paused walking session was not restored after external process death", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
         assertTrue("Persisted pause did not expose resume action", waitForVisibleTextOrDescription("RETOMAR CAMINHADA", 30_000))
         val persistedPausedPosition = visibleTextValue("Km no percurso:")
