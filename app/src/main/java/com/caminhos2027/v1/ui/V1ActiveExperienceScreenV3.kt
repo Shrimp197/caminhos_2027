@@ -178,6 +178,13 @@ internal fun V1ActiveExperienceScreenV3(
                     Modifier.fillMaxWidth().fillMaxHeight().padding(horizontal = 14.dp, vertical = 9.dp),
                     verticalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(8.dp)
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().fillMaxHeight().padding(horizontal = 14.dp, vertical = 9.dp),
+                    verticalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
                     Box(
                         Modifier
                             .align(Alignment.CenterHorizontally)
@@ -209,6 +216,7 @@ internal fun V1ActiveExperienceScreenV3(
                         Box(Modifier.width(42.dp).height(4.dp).background(Color(0xFFD0D4D1), RoundedCornerShape(4.dp)))
                     }
 
+
                     if (!expanded) {
                         Row(Modifier.fillMaxWidth().padding(bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.LocationOn, null, tint = WalkBlue, modifier = Modifier.size(22.dp))
@@ -217,87 +225,143 @@ internal fun V1ActiveExperienceScreenV3(
                                 Text("Próximo apoio", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
                                 Text(state.nextApoi?.name ?: "Sem apoio publicado neste contexto", color = WalkMuted, maxLines = 1)
                             }
-                            state.nextApoiDistanceKm?.let { Text(formatKm(it), color = WalkBlue, fontWeight = FontWeight.ExtraBold) } ?: Text("›", color = WalkMuted, fontWeight = FontWeight.ExtraBold)
+                            state.nextApoiDistanceKm?.let { Text(formatKm(it), color = WalkBlue, fontWeight = FontWeight.ExtraBold) }
+                                ?: Text("›", color = WalkMuted, fontWeight = FontWeight.ExtraBold)
                         }
                     } else {
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
-${x}
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Caminhada atual", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
+                            Text(
+                                if (state.isPaused) "CAMINHADA PAUSADA" else gpsLabelV3(state.gpsState),
+                                color = if (state.isPaused) WalkWarning else WalkGreen,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                "Tempo · $elapsedLabel",
+                                color = WalkMuted,
+                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("${(progress * 100).toInt()}%", color = WalkGreen, fontWeight = FontWeight.ExtraBold)
+                            Text("Progresso", color = WalkMuted)
+                        }
+                    }
+
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = onTogglePause, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
+                            Icon(if (state.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(if (state.isPaused) "RETOMAR CAMINHADA" else "PAUSAR CAMINHADA", fontWeight = FontWeight.Bold)
+                        }
+                        Button(onClick = onOpenNext10Km, Modifier.weight(1f), shape = RoundedCornerShape(11.dp), colors = ButtonDefaults.buttonColors(containerColor = WalkGreen)) {
+                            Text("PRÓXIMOS 10 KM", fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = onOpenSos,
+                            Modifier.weight(1f).height(42.dp).semantics { contentDescription = "SOS" },
+                            shape = RoundedCornerShape(11.dp)
+                        ) {
+                            Icon(Icons.Filled.ReportProblem, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("SOS", fontWeight = FontWeight.ExtraBold)
+                        }
+                        OutlinedButton(
+                            onClick = onStop,
+                            Modifier.weight(1f).height(42.dp).semantics { contentDescription = "Parar caminhada" },
+                            shape = RoundedCornerShape(11.dp)
+                        ) {
+                            Icon(Icons.Filled.Stop, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("PARAR", fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+
+                        if (isTestRoute) {
+                            Card(Modifier.fillMaxWidth(), RoundedCornerShape(11.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F6F4))) {
+                                Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("QA · percurso de teste", color = WalkWarning, fontWeight = FontWeight.Bold)
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        OutlinedButton(
+                                            onClick = onQaAdvance,
+                                            modifier = Modifier.weight(1f).height(38.dp).semantics { contentDescription = "AVANÇAR GPS" },
+                                            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp)
+                                        ) { Text("AVANÇAR GPS", fontSize = 9.sp, maxLines = 1, softWrap = false) }
+                                        OutlinedButton(
+                                            onClick = { onQaToggleGps(false) },
+                                            modifier = Modifier.weight(1f).height(38.dp).semantics { contentDescription = "PERDER GPS" },
+                                            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp)
+                                        ) { Text("PERDER GPS", fontSize = 9.sp, maxLines = 1, softWrap = false) }
+                                        OutlinedButton(
+                                            onClick = { onQaToggleGps(true) },
+                                            modifier = Modifier.weight(1f).height(38.dp).semantics { contentDescription = "RECUPERAR GPS" },
+                                            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp)
+                                        ) { Text("RECUPERAR GPS", fontSize = 9.sp, maxLines = 1, softWrap = false) }
+                                        OutlinedButton(
+                                            onClick = onQaDeviation,
+                                            modifier = Modifier.weight(1f).height(38.dp).semantics { contentDescription = "SIMULAR DESVIO" },
+                                            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp)
+                                        ) { Text("SIMULAR DESVIO", fontSize = 9.sp, maxLines = 1, softWrap = false) }
+                                    }
+                                }
+                            }
+                        }
+
+                    Column(
+                        Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(7.dp)
+                    ) {
+
+                    LinearProgressIndicator(
+                        progress = { progress.toFloat() },
+                        modifier = Modifier.fillMaxWidth().height(5.dp),
+                        color = WalkGreen,
+                        trackColor = Color(0xFFE2E7E3)
+                    )
+
+                    Text(
+                        "Km no percurso: " + formatKm(currentKm),
+                        color = WalkMuted,
+                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.semantics {
+                            contentDescription = "Km no percurso: " + formatKm(currentKm)
+                        }
+                    )
+
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.LocationOn, null, tint = WalkBlue, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Próximo apoio", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
+                            Text(state.nextApoi?.name ?: "Sem apoio publicado neste contexto", color = WalkMuted, maxLines = 1)
+                        }
+                        state.nextApoiDistanceKm?.let { Text(formatKm(it), color = WalkBlue, fontWeight = FontWeight.ExtraBold) }
+                    }
+
+
+
+
+
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = onOpenApoi, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
+                                Text("VER APOIOS", fontWeight = FontWeight.Bold)
+                            }
+                            OutlinedButton(onClick = onOpenDecision, Modifier.weight(1f), shape = RoundedCornerShape(11.dp)) {
+                                Text("OPÇÕES", fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                    }
+
+                    }
                     }
                 }
             }
+        }
 
 }
 
