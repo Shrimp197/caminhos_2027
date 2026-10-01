@@ -66,6 +66,8 @@ private data class OfflineUiState(
     val complete: Boolean = false,
     val active: Boolean = false,
     val percent: Int = 0,
+    val completedTiles: Long = 0L,
+    val requiredResources: Long = 0L,
     val message: String? = null
 )
 
@@ -112,11 +114,21 @@ internal fun RealWalkingMap(
                 val percent = if (status.requiredResourceCount > 0L) {
                     ((status.completedResourceCount.toDouble() / status.requiredResourceCount.toDouble()) * 100.0).toInt().coerceIn(0, 100)
                 } else 0
+                android.util.Log.i(
+                    "CaminhosMapOffline",
+                    "download status: complete=${status.isComplete}, tiles=${status.completedTileCount}, requiredResources=${status.requiredResourceCount}, resources=${status.completedResourceCount}, bytes=${status.completedResourceSize}"
+                )
                 offlineState = OfflineUiState(
-                    complete = status.isComplete,
+                    complete = status.isComplete && status.completedTileCount > 0L,
                     active = !status.isComplete,
                     percent = percent,
-                    message = if (status.isComplete) "Cartografia guardada para utilização sem rede na região do percurso." else null
+                    completedTiles = status.completedTileCount,
+                    requiredResources = status.requiredResourceCount,
+                    message = if (status.isComplete && status.completedTileCount <= 0L) {
+                        "Cartografia offline concluída sem tiles disponíveis."
+                    } else if (status.isComplete) {
+                        "Cartografia guardada para utilização sem rede na região do percurso."
+                    } else null
                 )
                 if (status.isComplete) offlineRegion?.setDownloadState(OfflineRegion.STATE_INACTIVE)
             },
@@ -291,6 +303,22 @@ internal fun RealWalkingMap(
             )
         }
 
+        if (BuildConfig.DEBUG && offlineState.completedTiles > 0L) {
+            Card(
+                modifier = Modifier.align(Alignment.TopStart).padding(top = 166.dp, start = 12.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.88f)),
+                elevation = CardDefaults.cardElevation(1.dp)
+            ) {
+                Text(
+                    "OFFLINE · ${offlineState.completedTiles} tiles",
+                    Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                    color = Color(0xFF4F5852),
+                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                )
+            }
+        }
+
         if (offlineState.complete) {
             Card(
                 modifier = Modifier.align(Alignment.TopStart).padding(top = 122.dp, start = 12.dp),
@@ -421,9 +449,11 @@ private fun OfflineRegionStatus.toUiState(): OfflineUiState {
         ((completedResourceCount.toDouble() / requiredResourceCount.toDouble()) * 100.0).toInt().coerceIn(0, 100)
     } else 0
     return OfflineUiState(
-        complete = isComplete,
+        complete = isComplete && completedTileCount > 0L,
         active = !isComplete && downloadState == OfflineRegion.STATE_ACTIVE,
-        percent = percent
+        percent = percent,
+        completedTiles = completedTileCount,
+        requiredResources = requiredResourceCount
     )
 }
 
