@@ -126,33 +126,12 @@ internal fun V1ActiveExperienceScreenV3(
                 nextApoi = state.nextApoi
             )
 
-            Card(
-                Modifier.align(Alignment.TopStart).padding(10.dp),
-                RoundedCornerShape(13.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(3.dp)
-            ) {
-                Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                    Text("Caminhada atual", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
-                    Text(route.officialName, color = WalkMuted, fontWeight = FontWeight.SemiBold)
-                    Text("Tempo · $elapsedLabel", color = WalkMuted, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
-                }
-            }
-
             Row(
-                Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 78.dp, start = 10.dp, end = 10.dp),
+                Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 12.dp, start = 10.dp, end = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 MetricCard(formatKm(currentKm), "Percorridos", Modifier.weight(1f))
                 MetricCard(formatKm(remainingKm), "Para o fim", Modifier.weight(1f))
-            }
-
-            Row(
-                Modifier.align(Alignment.TopEnd).padding(top = 88.dp, end = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                IconButtonCard(Icons.Filled.ReportProblem, "SOS", onOpenSos)
-                IconButtonCard(Icons.Filled.Stop, "Parar", onStop)
             }
 
             if (isOffRoute && lastKnownOnRoutePoint != null) {
@@ -261,6 +240,27 @@ internal fun V1ActiveExperienceScreenV3(
                         }
                     }
 
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = onOpenSos,
+                            Modifier.weight(1f).height(42.dp).semantics { contentDescription = "SOS" },
+                            shape = RoundedCornerShape(11.dp)
+                        ) {
+                            Icon(Icons.Filled.ReportProblem, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("SOS", fontWeight = FontWeight.ExtraBold)
+                        }
+                        OutlinedButton(
+                            onClick = onStop,
+                            Modifier.weight(1f).height(42.dp).semantics { contentDescription = "Parar caminhada" },
+                            shape = RoundedCornerShape(11.dp)
+                        ) {
+                            Icon(Icons.Filled.Stop, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("PARAR", fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+
                         if (isTestRoute) {
                             Card(Modifier.fillMaxWidth(), RoundedCornerShape(11.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F6F4))) {
                                 Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -303,10 +303,6 @@ internal fun V1ActiveExperienceScreenV3(
                         trackColor = Color(0xFFE2E7E3)
                     )
 
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MetricCard(formatKm(currentKm), "Percorridos", Modifier.weight(1f))
-                        MetricCard(formatKm(remainingKm), "Para o fim", Modifier.weight(1f))
-                    }
                     Text(
                         "Km no percurso: " + formatKm(currentKm),
                         color = WalkMuted,
