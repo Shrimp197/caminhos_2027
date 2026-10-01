@@ -51,6 +51,7 @@ import org.maplibre.android.offline.OfflineRegionError
 import org.maplibre.android.offline.OfflineRegionStatus
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
+import com.caminhos2027.BuildConfig
 import com.caminhos2027.v1.core.model.Apoi
 import com.caminhos2027.v1.core.model.GeoPoint
 import com.caminhos2027.v1.core.model.MapOrientation
