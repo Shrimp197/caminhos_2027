@@ -159,16 +159,6 @@ internal fun RealWalkingMap(
             loaded.uiSettings.isScrollGesturesEnabled = true
             loaded.uiSettings.isRotateGesturesEnabled = true
             loaded.uiSettings.isCompassEnabled = true
-            val localStyle = runCatching {
-                context.assets.open("data/map/openfreemap-liberty.json")
-                    .bufferedReader()
-                    .use { it.readText() }
-            }.getOrNull()
-            if (localStyle != null) {
-                loaded.setStyle(Style.Builder().fromJson(localStyle)) { styleReady = true }
-            } else {
-                loaded.setStyle(WALKING_MAP_STYLE_URL) { styleReady = true }
-            }
         }
     }
 
@@ -176,6 +166,23 @@ internal fun RealWalkingMap(
         inspectOfflineRegion(context, routeId) { region, state ->
             offlineRegion = region
             offlineState = state
+        }
+    }
+
+    LaunchedEffect(map, offlineRegion, offlineState.complete) {
+        val loaded = map ?: return@LaunchedEffect
+        if (offlineState.complete && offlineRegion != null) {
+            styleReady = false
+            runCatching {
+                loaded.setOfflineRegionDefinition(offlineRegion!!.definition) {
+                    styleReady = true
+                }
+            }.onFailure {
+                styleReady = false
+            }
+        } else if (offlineRegion == null && !offlineState.active) {
+            styleReady = false
+            loaded.setStyle(WALKING_MAP_STYLE_URL) { styleReady = true }
         }
     }
 
