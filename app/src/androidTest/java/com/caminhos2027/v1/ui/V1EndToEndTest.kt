@@ -302,10 +302,22 @@ class V1EndToEndTest {
     }
 
     private fun expandWalkingSheet() {
-        val x = device.displayWidth / 2
-        val startY = (device.displayHeight * 0.92).toInt()
-        val endY = (device.displayHeight * 0.38).toInt()
-        device.swipe(x, startY, x, endY, 12)
+        val expandedHandle = device.findObject(By.desc("Recolher painel de caminhada"))
+        if (expandedHandle != null && !expandedHandle.visibleBounds.isEmpty) {
+            return
+        }
+
+        val handle = device.wait(Until.findObject(By.desc("Expandir painel de caminhada")), 5_000)
+        assertTrue("Walking sheet expand handle did not appear", handle != null)
+        val bounds = handle!!.visibleBounds
+        assertTrue("Walking sheet expand handle has no visible bounds", !bounds.isEmpty)
+        device.swipe(
+            bounds.centerX(),
+            bounds.centerY(),
+            bounds.centerX(),
+            (device.displayHeight * 0.38).toInt(),
+            12
+        )
         device.waitForIdle()
     }
 
