@@ -279,7 +279,7 @@ internal fun RealWalkingMap(
 
     Box(Modifier.fillMaxSize()) {
         MapControls(
-            modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+            modifier = Modifier.align(Alignment.TopEnd).padding(top = 108.dp, end = 12.dp),
             onZoomIn = { map?.let { loaded -> loaded.cameraPosition.target?.let { target -> loaded.animateCamera(CameraUpdateFactory.newLatLngZoom(target, (loaded.cameraPosition.zoom + 1.0).coerceAtMost(17.0))) } } },
             onZoomOut = { map?.let { loaded -> loaded.cameraPosition.target?.let { target -> loaded.animateCamera(CameraUpdateFactory.newLatLngZoom(target, (loaded.cameraPosition.zoom - 1.0).coerceAtLeast(7.0))) } } },
             onLocate = {
@@ -388,7 +388,7 @@ private fun MapControls(
     onZoomOut: () -> Unit,
     onLocate: () -> Unit
 ) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(7.dp), horizontalAlignment = Alignment.End) {
         MapButton("+", "Aumentar zoom", onZoomIn)
         MapButton("−", "Diminuir zoom", onZoomOut)
         MapButton("⌖", "Recentrar na minha posição", onLocate)

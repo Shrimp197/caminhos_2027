@@ -127,11 +127,11 @@ internal fun V1ActiveExperienceScreenV3(
             )
 
             Row(
-                Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 12.dp, start = 10.dp, end = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 12.dp, start = 12.dp, end = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                MetricCard(formatKm(currentKm), "Percorridos", Modifier.weight(1f))
-                MetricCard(formatKm(remainingKm), "Para o fim", Modifier.weight(1f))
+                MetricCard(formatKm(currentKm), "Percorridos", Modifier.width(150.dp))
+                MetricCard(formatKm(remainingKm), "Para o fim", Modifier.width(150.dp))
             }
 
             if (isOffRoute && lastKnownOnRoutePoint != null) {
