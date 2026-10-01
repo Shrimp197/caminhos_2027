@@ -141,6 +141,8 @@ class V1EndToEndTest {
         assertTrue("Pause state did not appear", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
         scenario.close()
         scenario = ActivityScenario.launch(V1MainActivity::class.java)
+        assertTrue("Paused walking screen did not reappear in compact mode", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
         assertTrue("Paused walking state did not persist after activity recreation", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
         clickVisibleText("RETOMAR CAMINHADA")
         expandWalkingSheet()
