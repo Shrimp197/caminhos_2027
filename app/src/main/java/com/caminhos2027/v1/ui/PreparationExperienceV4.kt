@@ -106,10 +106,10 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
         }
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp).semantics { contentDescription = "PREPARAÇÃO — HOME" }, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth().height(36.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().height(46.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack, Modifier.size(38.dp)) { Icon(Icons.Filled.Menu, "Menu", tint = RefBlue) }
                 Icon(Icons.Filled.DirectionsWalk, null, tint = RefGold, modifier = Modifier.size(25.dp))
-                Column(Modifier.padding(start = 6.dp)) { Text("CAMINHOS", color = RefBlue, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp); Text("DO PEREGRINO", color = RefBlue, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp) }
+                Column(Modifier.padding(start = 6.dp)) { Text("CAMINHOS", color = RefBlue, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp); Text("DO PEREGRINO", color = RefBlue, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp) }
             }
             Text("Prepare a sua caminhada", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = RefBlue, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
             Card(Modifier.fillMaxWidth().height(132.dp), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = RefBlue), border = BorderStroke(1.dp, RefBorder), elevation = CardDefaults.cardElevation(2.dp)) {
