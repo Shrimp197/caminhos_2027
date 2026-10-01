@@ -211,7 +211,7 @@ internal fun V1ActiveExperienceScreenV3(
 
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("Caminhada", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
+                            Text("Caminhada atual", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
                             Text(
                                 if (state.isPaused) "CAMINHADA PAUSADA" else gpsLabelV3(state.gpsState),
                                 color = if (state.isPaused) WalkWarning else WalkGreen,
