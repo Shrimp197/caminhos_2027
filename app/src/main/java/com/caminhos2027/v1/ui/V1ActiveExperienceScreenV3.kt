@@ -127,11 +127,11 @@ internal fun V1ActiveExperienceScreenV3(
             )
 
             Row(
-                Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 12.dp, start = 12.dp, end = 12.dp),
+                Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 10.dp, start = 12.dp, end = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                MetricCard(formatKm(currentKm), "Percorridos", Modifier.width(150.dp))
-                MetricCard(formatKm(remainingKm), "Para o fim", Modifier.width(150.dp))
+                MetricCard(formatKm(currentKm), "Percorridos", Modifier.width(130.dp))
+                MetricCard(formatKm(remainingKm), "Para o fim", Modifier.width(130.dp))
             }
 
             if (isOffRoute && lastKnownOnRoutePoint != null) {
@@ -233,7 +233,8 @@ internal fun V1ActiveExperienceScreenV3(
                             Text(
                                 "Tempo · $elapsedLabel",
                                 color = WalkMuted,
-                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                 fontSize = 12.sp
                             )
                         }
                         Column(horizontalAlignment = Alignment.End) {
@@ -361,7 +362,7 @@ internal fun V1ActiveExperienceScreenV3(
 private fun NavItem(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, onClick: () -> Unit) { NavigationBarItem(selected = selected, onClick = onClick, icon = { Icon(icon, label, modifier = Modifier.size(21.dp)) }, label = { Text(label, maxLines = 1) }) }
 
 @Composable
-private fun MetricCard(value: String, label: String, modifier: Modifier) { Card(modifier, RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) { Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { Text(value, color = WalkBlue, fontWeight = FontWeight.ExtraBold); Text(label, color = WalkMuted) } } }
+private fun MetricCard(value: String, label: String, modifier: Modifier) { Card(modifier.height(78.dp), RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) { Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) { Text(value, color = WalkBlue, fontWeight = FontWeight.ExtraBold, fontSize = 26.sp); Text(label, color = WalkMuted, fontSize = 14.sp) } } }
 
 @Composable
 private fun IconButtonCard(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) { Button(onClick = onClick, shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = WalkBlue), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp)) { Icon(icon, label, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(label, fontWeight = FontWeight.Bold) } }
