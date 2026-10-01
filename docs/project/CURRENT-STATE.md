@@ -10,21 +10,21 @@
 - Pull Request: #8
 - PR title: V1 route import — official geometry provenance and runtime policy
 - PR state: open, draft
-- Current HEAD do último estado verificado: `cd44acb6e738bef347eaca5940cd25a8d95cb311`
+- Último HEAD funcional verificado: `36cb0b8af60f7ba267adb1f48212ec3bd8a2c81b`
 - Base SHA do PR: `c5222c1fb3052ea22ccf4b25701257a84f55f704`
-- Última implementação validada: `cd44acb6e738bef347eaca5940cd25a8d95cb311` — correção da inicialização offline do mapa.
-- Última alteração verificada: `docs/visual-reference/referencia.jpeg`
+- Última implementação funcional verificada: `36cb0b8af60f7ba267adb1f48212ec3bd8a2c81b` — documentação da correção do mapa offline.
+- O HEAD exato deve ser sempre confirmado no GitHub antes de trabalhar.
 
 ## CI da implementação validada
 
-Na implementação `cd44acb6e738bef347eaca5940cd25a8d95cb311`:
+Na implementação funcional verificada até ao commit `36cb0b8af60f7ba267adb1f48212ec3bd8a2c81b`:
 
 - V1 Route Import Validation: sucesso (run 1590).
 - V1 Route Source Provenance: sucesso (run 2155).
-- V1 Route Import Build: sucesso (run 1603).
+- V1 Route Import Build: sucesso (run 1604, segunda execução do job após uma falha intermitente inicial).
 - O build passou por testes JVM, build/assinatura do APK, emulador Android e E2E.
 
-A evidência visual do build inclui `preparacao.png` e `navegacao.png`. A última mostra cartografia renderizada depois da reconstrução da caminhada sem rede, confirmando a correção observada no mapa offline.
+A evidência visual do build inclui `preparacao.png` e `navegacao.png`. A captura `navegacao.png` mostra cartografia renderizada depois da reconstrução da caminhada sem rede. A primeira tentativa do mesmo build teve falhas E2E intermitentes; a repetição passou o fluxo completo, pelo que a evidência atual é a segunda execução.
 
 ## Produto atualmente documentado no PR
 
@@ -45,7 +45,7 @@ A evidência visual do build inclui `preparacao.png` e `navegacao.png`. A últim
 - Visual reference adicionada em `docs/visual-reference/referencia.jpeg`.
 - Preparação e caminhada/mapa já têm auditoria visual baseada em screenshots reais do CI.
 - O problema do mapa offline foi identificado e corrigido; a reconstrução sem rede agora mostra cartografia.
-- Persistência e E2E do fluxo principal passaram no último build.
+- Persistência e E2E do fluxo principal passaram na segunda execução do build 1604.
 - Offline tem evidência positiva no cenário de CI, mas a validação em condições reais continua necessária.
 - **Teste físico ainda não realizado.**
 
@@ -57,6 +57,8 @@ A evidência visual do build inclui `preparacao.png` e `navegacao.png`. A últim
 4. Manter/regredir o teste offline como critério funcional.
 5. Fazer validação física em Android real, incluindo GPS, background e comportamento/bateria.
 6. Só então avaliar a passagem para release candidate.
+
+> Nota: este ficheiro não é usado para decidir qual é o HEAD atual; o agente deve sempre verificar o GitHub. Este documento preserva o último estado funcional confirmado.
 
 ## Regra de manutenção deste ficheiro
 
