@@ -20,30 +20,67 @@ jobs:
           ref: v1-route-import
           fetch-depth: 0
 
-      - name: Install image conversion dependency
-        run: python3 -m pip install --user Pillow
+      - name: Install image conversion tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libjpeg-turbo-progs libvips-tools netpbm
+          python3 -m pip install --user Pillow
 
-      - name: Convert hero JPEG to PNG
+      - name: Convert hero JPEG to verified PNG
         run: |
           set -euo pipefail
-          mkdir -p app/src/main/res/drawable-nodpi
+          mkdir -p app/src/main/res/drawable-nodpi build/hero-candidates
           src="app/src/main/assets/data/hero_centenario.jpg"
-          dst="app/src/main/res/drawable-nodpi/hero_centenario.png"
-          ffmpeg -y -loglevel warning -err_detect ignore_err -i "$src" -frames:v 1 "$dst"
-          test -s "$dst"
+          candidates=(
+            "build/hero-candidates/ffmpeg.png"
+            "build/hero-candidates/vips.png"
+            "build/hero-candidates/magick.png"
+            "build/hero-candidates/djpeg.png"
+          )
+
+          ffmpeg -y -loglevel warning -err_detect ignore_err -i "$src" -frames:v 1 "${candidates[0]}" 2>/dev/null || true
+          vips copy "$src" "${candidates[1]}" 2>/dev/null || true
+          magick "$src" "${candidates[2]}" 2>/dev/null || true
+          djpeg -fast -pnm "$src" > build/hero-candidates/djpeg.ppm 2>/dev/null || true
+          if [ -s build/hero-candidates/djpeg.ppm ]; then
+            pnmtopng build/hero-candidates/djpeg.ppm > "${candidates[3]}" 2>/dev/null || true
+          fi
+
           python3 - <<'PY'
+          from pathlib import Path
           from PIL import Image, ImageStat
-          path = "app/src/main/res/drawable-nodpi/hero_centenario.png"
-          image = Image.open(path).convert("RGB")
-          stat = ImageStat.Stat(image)
-          extrema = image.getextrema()
-          mean = sum(stat.mean) / 3.0
-          spread = sum(hi - lo for lo, hi in extrema) / 3.0
-          print(f"converted hero: {image.size}, mean={mean:.1f}, spread={spread:.1f}, extrema={extrema}")
-          if mean < 10 or spread < 15 or max(hi for _, hi in extrema) < 30:
-              raise SystemExit("Generated hero image is blank or nearly blank")
+
+          candidates = [
+              Path("build/hero-candidates/ffmpeg.png"),
+              Path("build/hero-candidates/vips.png"),
+              Path("build/hero-candidates/magick.png"),
+              Path("build/hero-candidates/djpeg.png"),
+          ]
+          chosen = None
+          for path in candidates:
+              if not path.is_file() or path.stat().st_size == 0:
+                  continue
+              try:
+                  image = Image.open(path).convert("RGB")
+                  stat = ImageStat.Stat(image)
+                  extrema = image.getextrema()
+                  mean = sum(stat.mean) / 3.0
+                  spread = sum(hi - lo for lo, hi in extrema) / 3.0
+                  print(f"{path}: {image.size}, mean={mean:.1f}, spread={spread:.1f}, extrema={extrema}")
+                  if mean >= 10 and spread >= 15 and max(hi for _, hi in extrema) >= 30:
+                      chosen = path
+                      break
+              except Exception as exc:
+                  print(f"{path}: rejected ({exc})")
+          if chosen is None:
+              raise SystemExit("No decoder produced a non-blank valid hero image")
+          target = Path("app/src/main/res/drawable-nodpi/hero_centenario.png")
+          target.write_bytes(chosen.read_bytes())
+          print(f"selected {chosen} -> {target}")
           PY
-              - name: Commit generated PNG
+          test -s app/src/main/res/drawable-nodpi/hero_centenario.png
+
+      - name: Commit generated PNG
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
