@@ -67,7 +67,9 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm -f app/src/main/res/drawable-nodpi/hero_centenario.jpg
+          if [ -f app/src/main/res/drawable-nodpi/hero_centenario.jpg ]; then
+            git rm -f app/src/main/res/drawable-nodpi/hero_centenario.jpg
+          fi
           git add app/src/main/res/drawable-nodpi/hero_centenario.png
           git diff --cached --quiet && exit 0
           git commit -m "chore(ui): generate Android-compatible hero PNG"
