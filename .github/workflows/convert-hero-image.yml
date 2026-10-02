@@ -28,7 +28,8 @@ jobs:
           set -euo pipefail
           mkdir -p app/src/main/res/drawable-nodpi
           python3 - <<'PY'
-          from PIL import Image
+          from PIL import Image, ImageFile
+          ImageFile.LOAD_TRUNCATED_IMAGES = True
           src = "app/src/main/assets/data/hero_centenario.jpg"
           dst = "app/src/main/res/drawable-nodpi/hero_centenario.png"
           image = Image.open(src).convert("RGB")
