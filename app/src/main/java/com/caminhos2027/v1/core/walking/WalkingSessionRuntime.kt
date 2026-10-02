@@ -13,25 +13,35 @@ class WalkingSessionRuntime(
     private val route: Route,
     private val sessionService: WalkingSessionService,
     private val publishedApoi: List<Apoi>,
-    private val policy: GpsTrackingPolicy = GpsTrackingPolicy()
+    private val policy: GpsTrackingPolicy = GpsTrackingPolicy(),
+    private val clock: () -> Instant = Instant::now
 ) {
     private var coordinator: WalkingStateCoordinator? = null
 
     fun prepare(walk: Walk): Walk = sessionService.prepare(walk)
 
     fun start(walkId: String, position: RoutePosition, now: Instant = Instant.now()): WalkingState {
+        validateRoutePosition(position)
         val started = sessionService.start(walkId, position, now)
-        val nextCoordinator = WalkingStateCoordinator(route, started, publishedApoi, policy)
+        val nextCoordinator = WalkingStateCoordinator(route, started, publishedApoi, policy, clock)
+        val state = nextCoordinator.seedStartPosition(position, now)
+        sessionService.updatePosition(
+            walkId,
+            state,
+            observedAt = nextCoordinator.lastReliableObservedAt()
+        )
         coordinator = nextCoordinator
-        val state = nextCoordinator.seedStartPosition(position)
-        sessionService.updatePosition(walkId, state)
         return state
     }
 
     fun accept(position: RawGpsPosition): WalkingState {
         val active = requireNotNull(coordinator) { "Walking session has not been started" }
         val state = active.accept(position)
-        sessionService.updatePosition(state.walk.id, state)
+        sessionService.updatePosition(
+            state.walk.id,
+            state,
+            observedAt = active.lastReliableObservedAt()
+        )
         return state
     }
 
@@ -49,19 +59,71 @@ class WalkingSessionRuntime(
         return state
     }
 
+    fun pause(now: Instant = Instant.now()): WalkingState {
+        val active = requireNotNull(coordinator) { "Walking session has not been started" }
+        require(!active.state.isPaused) { "Walking session is already paused" }
+        val state = active.pause(now)
+        sessionService.updatePosition(state.walk.id, state)
+        return state
+    }
+
+    fun resumePaused(now: Instant = Instant.now()): WalkingState {
+        val active = requireNotNull(coordinator) { "Walking session has not been started" }
+        require(active.state.isPaused) { "Walking session is not paused" }
+        val state = active.resumePaused(now)
+        sessionService.updatePosition(state.walk.id, state)
+        return state
+    }
+
+    /** Returns the last persisted route position, including when the latest GPS state has no projection. */
+    fun lastKnownPosition(): RoutePosition? {
+        val active = coordinator ?: return null
+        return sessionService.resumeCheckpoint(active.state.walk.id)?.routePosition
+            ?: active.state.routePosition
+    }
+
     fun stop(position: RoutePosition, now: Instant = Instant.now()): Walk {
         val active = requireNotNull(coordinator) { "Walking session has not been started" }
+        validateRoutePosition(position)
         val stopped = sessionService.stop(active.state.walk.id, position, now)
         coordinator = null
         return stopped
     }
 
-    /** Rebuilds derived progress/APOI information from the persisted walk and checkpoint. */
-    fun resume(): WalkingState? {
-        val walk = sessionService.resume() ?: return null
-        val nextCoordinator = WalkingStateCoordinator(route, walk, publishedApoi, policy)
+    /** Returns the persisted active walk without creating or replacing an in-memory coordinator. */
+    fun activeWalk(): Walk? = sessionService.resume()
+
+    /**
+     * Rebuilds derived progress/APOI information from the persisted walk and checkpoint.
+     * A missing persisted active session invalidates any stale in-memory coordinator.
+     */
+    fun resume(now: Instant = Instant.now()): WalkingState? {
+        val walk = sessionService.resume()
+        if (walk == null) {
+            coordinator = null
+            return null
+        }
+        require(walk.routeId == route.id) {
+            "Active walking session route must match the published V1 route"
+        }
+
+        val nextCoordinator = WalkingStateCoordinator(route, walk, publishedApoi, policy, clock)
+        val checkpoint = sessionService.resumeCheckpoint(walk.id)
+        val state = checkpoint?.let { nextCoordinator.restoreCheckpoint(it, now) } ?: nextCoordinator.state
         coordinator = nextCoordinator
-        val checkpoint = sessionService.resumeCheckpoint(walk.id) ?: return nextCoordinator.state
-        return nextCoordinator.restoreCheckpoint(checkpoint)
+        return state
+    }
+
+    private fun validateRoutePosition(position: RoutePosition) {
+        require(position.routeId == route.id) { "Position route must match the published V1 route" }
+        require(position.routeKm.isFinite() && position.routeKm >= 0.0) {
+            "Position routeKm must be finite and >= 0"
+        }
+        require(position.routeKm <= route.totalDistanceKm) {
+            "Position routeKm must not exceed the published route length"
+        }
+        require(position.distanceToRouteMeters.isFinite() && position.distanceToRouteMeters >= 0.0) {
+            "Position distanceToRouteMeters must be finite and >= 0"
+        }
     }
 }

@@ -3,7 +3,7 @@ package com.caminhos2027.v1.core.data
 import android.content.Context
 import com.caminhos2027.v1.core.model.Apoi
 
-interface ApoiDataSource {
+fun interface ApoiDataSource {
     fun load(): List<Apoi>
 }
 

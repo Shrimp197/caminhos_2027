@@ -70,13 +70,20 @@ def validate(dataset_path: Path) -> list[str]:
         if not isinstance(item.get("name"), str) or not item["name"].strip():
             fail(errors, f"{prefix}.name must be non-empty")
 
-        if item.get("main_category") not in CATEGORIES:
+        publication = item.get("publication", {})
+        publication_status = publication.get("status") if isinstance(publication, dict) else None
+        publication_requires_services = publication_status in {"PUBLISHED", "PUBLISHED_WITH_WARNING"}
+
+        main_category = item.get("main_category")
+        if main_category not in CATEGORIES and not (main_category is None and not publication_requires_services):
             fail(errors, f"{prefix}.main_category is invalid")
 
         services = item.get("services")
-        if not isinstance(services, list) or not services:
-            fail(errors, f"{prefix}.services must be a non-empty list")
-        elif any(service not in CATEGORIES for service in services):
+        if publication_requires_services and (not isinstance(services, list) or not services):
+            fail(errors, f"{prefix}.services must be a non-empty list for published records")
+        elif services is not None and not isinstance(services, list):
+            fail(errors, f"{prefix}.services must be a list when present")
+        elif isinstance(services, list) and any(service not in CATEGORIES for service in services):
             fail(errors, f"{prefix}.services contains an invalid category")
 
         location = item.get("location", {})
@@ -114,13 +121,12 @@ def validate(dataset_path: Path) -> list[str]:
         if not isinstance(availability, dict) or availability.get("status") not in AVAILABILITY:
             fail(errors, f"{prefix}.availability.status is invalid")
 
-        publication = item.get("publication", {})
-        if not isinstance(publication, dict) or publication.get("status") not in PUBLICATION:
+        if not isinstance(publication, dict) or publication_status not in PUBLICATION:
             fail(errors, f"{prefix}.publication.status is invalid")
 
-        if data.get("environment") == "production" and publication.get("status") in {"CANDIDATE", "REVIEW"}:
+        if data.get("environment") == "production" and publication_status in {"CANDIDATE", "REVIEW"}:
             fail(errors, f"{prefix} cannot be candidate/review in production")
-        if publication.get("status") == "PUBLISHED" and availability.get("status") in {"HISTORICAL", "EXPIRED", "CLOSED", "AWAITING_CONFIRMATION"}:
+        if publication_status == "PUBLISHED" and availability.get("status") in {"HISTORICAL", "EXPIRED", "CLOSED", "AWAITING_CONFIRMATION"}:
             fail(errors, f"{prefix} cannot be normally published with non-current/confirmed availability")
 
     return errors

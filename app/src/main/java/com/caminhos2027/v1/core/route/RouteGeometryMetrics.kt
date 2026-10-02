@@ -12,8 +12,15 @@ import kotlin.math.sqrt
 object RouteGeometryMetrics {
     private const val EARTH_RADIUS_KM = 6371.0088
 
-    fun lengthKm(geometry: RouteGeometry): Double =
-        geometry.points.zipWithNext().sumOf { (a, b) -> distanceKm(a, b) }
+    fun lengthKm(geometry: RouteGeometry): Double {
+        require(geometry.points.all { it.latitude.isFinite() && it.longitude.isFinite() }) {
+            "Route geometry coordinates must be finite"
+        }
+        require(geometry.points.all { it.latitude in -90.0..90.0 && it.longitude in -180.0..180.0 }) {
+            "Route geometry coordinates must be within Earth bounds"
+        }
+        return geometry.points.zipWithNext().sumOf { (a, b) -> distanceKm(a, b) }
+    }
 
     private fun distanceKm(a: GeoPoint, b: GeoPoint): Double {
         val lat1 = Math.toRadians(a.latitude)
@@ -22,7 +29,7 @@ object RouteGeometryMetrics {
         val dLon = Math.toRadians(b.longitude - a.longitude)
         val sinLat = sin(dLat / 2.0)
         val sinLon = sin(dLon / 2.0)
-        val h = sinLat.pow(2) + cos(lat1) * cos(lat2) * sinLon.pow(2)
+        val h = (sinLat.pow(2) + cos(lat1) * cos(lat2) * sinLon.pow(2)).coerceIn(0.0, 1.0)
         return 2.0 * EARTH_RADIUS_KM * atan2(sqrt(h), sqrt(1.0 - h))
     }
 }

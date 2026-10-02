@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0",
+  "description": "Official stage reference data for routes. Additional routes can be added without changing the application model.",
+  "routes": [
+    {
+      "route_id": "caminho-do-centenario",
+      "display_name": "Porto – Fátima",
+      "source": "https://caminhosdefatima.com/caminho-do-centenario/",
+      "source_note": "Stage descriptions and approximate distances recorded from the online Camino reference supplied for the V1 preparation experience.",
+      "stages": [
+        {
+          "id": "centenario-01",
+          "number": 1,
+          "name": "Vila Nova de Gaia (Jardim do Morro) → São João da Madeira",
+          "distance_km": 32.0,
+          "start_name": "Vila Nova de Gaia (Jardim do Morro)",
+          "end_name": "São João da Madeira",
+          "description": "Saída do Grande Porto rumo ao sul, atravessando áreas urbanas e rurais de Santa Maria da Feira até entrar em São João da Madeira.",
+          "overnight": "Albergue de Peregrinos de São João da Madeira, pensões locais ou contacto com os Bombeiros Voluntários locais."
+        },
+        {
+          "id": "centenario-02",
+          "number": 2,
+          "name": "São João da Madeira → Albergaria-a-Velha",
+          "distance_km": 28.0,
+          "start_name": "São João da Madeira",
+          "end_name": "Albergaria-a-Velha",
+          "description": "Passagem por Oliveira de Azeméis, cruzando pontes medievais e caminhos florestais agradáveis.",
+          "overnight": "Albergue de Peregrinos de Albergaria-a-Velha."
+        },
+        {
+          "id": "centenario-03",
+          "number": 3,
+          "name": "Albergaria-a-Velha → Mealhada",
+          "distance_km": 33.0,
+          "start_name": "Albergaria-a-Velha",
+          "end_name": "Mealhada",
+          "description": "Etapa plana passando por Águeda e Anadia, atravessando zonas de vinhas típicas da Bairrada.",
+          "overnight": "Albergue de Peregrinos da Mealhada ou residenciais locais."
+        },
+        {
+          "id": "centenario-04",
+          "number": 4,
+          "name": "Mealhada → Coimbra",
+          "distance_km": 24.0,
+          "start_name": "Mealhada",
+          "end_name": "Coimbra",
+          "description": "Aproximação à cidade universitária, terminando com a subida/descida em direção ao Mondego.",
+          "overnight": "Albergue de Santa Clara (Coimbra), pousadas de juventude ou alojamentos locais."
+        },
+        {
+          "id": "centenario-05",
+          "number": 5,
+          "name": "Coimbra → Soure",
+          "distance_km": 28.0,
+          "start_name": "Coimbra",
+          "end_name": "Soure",
+          "description": "Passagem por Condeixa-a-Nova (perto das Ruínas de Conímbriga), seguindo por caminhos rurais tranquilos até Soure.",
+          "overnight": "Albergue de Peregrinos de Soure."
+        },
+        {
+          "id": "centenario-06",
+          "number": 6,
+          "name": "Soure → Pombal",
+          "distance_km": 22.0,
+          "start_name": "Soure",
+          "end_name": "Pombal",
+          "description": "Caminhada mais curta e com paisagem maioritariamente agrícola, ideal para descansar as pernas para a fase final.",
+          "overnight": "Albergue de Peregrinos de Pombal ou residenciais no centro da cidade."
+        },
+        {
+          "id": "centenario-07",
+          "number": 7,
+          "name": "Pombal → Leiria",
+          "distance_km": 24.0,
+          "start_name": "Pombal",
+          "end_name": "Leiria",
+          "description": "Transição para o distrito de Leiria por caminhos secundários e florestais que evitam a IC2.",
+          "overnight": "Pousada de Juventude de Leiria ou alojamento local."
+        },
+        {
+          "id": "centenario-08",
+          "number": 8,
+          "name": "Leiria → Santuário de Fátima",
+          "distance_km": 21.0,
+          "start_name": "Leiria",
+          "end_name": "Santuário de Fátima",
+          "description": "A etapa final e mais espiritual. Uma subida contínua mas segura por estradas secundárias até entrar na Cova da Iria.",
+          "overnight": "Hotéis, pensões ou o Albergue do Santuário de Fátima (para peregrinos credenciados)."
+        }
+      ]
+    }
+  ]
+}

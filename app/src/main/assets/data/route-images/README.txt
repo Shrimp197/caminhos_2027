@@ -1,0 +1,1 @@
+Route artwork assets are visual presentation only. Official route geometry and distance remain sourced separately from the validated route dataset.

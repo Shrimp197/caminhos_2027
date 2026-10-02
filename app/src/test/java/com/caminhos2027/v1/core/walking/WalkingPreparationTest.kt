@@ -25,9 +25,14 @@ class WalkingPreparationTest {
         )
     )
 
-    private fun apoi(id: String, km: Double, status: PublicationStatus = PublicationStatus.PUBLISHED) = Apoi(
+    private fun apoi(
+        id: String,
+        km: Double,
+        status: PublicationStatus = PublicationStatus.PUBLISHED,
+        routeId: String = "route"
+    ) = Apoi(
         id, id, null, ApoiCategory.AGUA, setOf(ApoiCategory.AGUA),
-        ApoiLocation(null, null, LocationPrecision.UNKNOWN, null, null, null, "route", km, null, null, RouteRelation.ON_ROUTE),
+        ApoiLocation(null, null, LocationPrecision.UNKNOWN, null, null, null, routeId, km, null, null, RouteRelation.ON_ROUTE),
         ApoiPublication(status, null)
     )
 
@@ -43,12 +48,51 @@ class WalkingPreparationTest {
     }
 
     @Test
-    fun preparationExcludesNonPublishedApoi() {
+    fun preparationIncludesPublishedWithWarningButNotHistoricalOrOtherRoutes() {
         val walk = WalkingPlanFactory.create(route, "walk", 2.0, 8.0)
         val preparation = WalkingPreparationBuilder.build(
-            route, walk, listOf(apoi("a1", 3.0, PublicationStatus.HISTORICAL))
+            route,
+            walk,
+            listOf(
+                apoi("warning", 4.0, PublicationStatus.PUBLISHED_WITH_WARNING),
+                apoi("historical", 5.0, PublicationStatus.HISTORICAL),
+                apoi("other-route", 6.0, PublicationStatus.PUBLISHED, routeId = "other")
+            )
         )
 
-        assertEquals(emptyList<Apoi>(), preparation.relevantApoi)
+        assertEquals(listOf("warning"), preparation.relevantApoi.map { it.id })
+    }
+
+    @Test
+    fun preparationIncludesApoiExactlyAtStartAndDestinationBoundaries() {
+        val walk = WalkingPlanFactory.create(route, "walk", 2.0, 8.0)
+        val preparation = WalkingPreparationBuilder.build(
+            route,
+            walk,
+            listOf(apoi("at-start", 2.0), apoi("inside", 5.0), apoi("at-destination", 8.0))
+        )
+
+        assertEquals(listOf("at-start", "inside", "at-destination"), preparation.relevantApoi.map { it.id })
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun preparationRejectsWalkFromAnotherRoute() {
+        val otherRoute = route.copy(id = "other")
+        val walk = WalkingPlanFactory.create(otherRoute, "walk", 2.0, 8.0)
+
+        WalkingPreparationBuilder.build(route, walk, emptyList())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun preparationRejectsDestinationBeforeStart() {
+        val invalidWalk = com.caminhos2027.v1.core.model.Walk(
+            id = "invalid",
+            routeId = route.id,
+            plannedStartKm = 8.0,
+            plannedDestinationKm = 2.0,
+            stageIds = emptyList()
+        )
+
+        WalkingPreparationBuilder.build(route, invalidWalk, emptyList())
     }
 }

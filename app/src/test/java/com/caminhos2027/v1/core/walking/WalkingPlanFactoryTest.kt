@@ -47,6 +47,30 @@ class WalkingPlanFactoryTest {
         assertEquals(listOf("stage-2"), walk.stageIds)
     }
 
+    @Test
+    fun routeEndpointsAreValidPlanBoundaries() {
+        val walk = WalkingPlanFactory.create(route, "walk-endpoints", 0.0, 10.0)
+
+        assertEquals(0.0, walk.plannedStartKm!!, 0.0)
+        assertEquals(10.0, walk.plannedDestinationKm!!, 0.0)
+        assertEquals(listOf("stage-1", "stage-2", "stage-3"), walk.stageIds)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsBlankWalkId() {
+        WalkingPlanFactory.create(route, "   ", 2.0, 8.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsNonFiniteStart() {
+        WalkingPlanFactory.create(route, "walk-nan-start", Double.NaN, 8.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsInfiniteDestination() {
+        WalkingPlanFactory.create(route, "walk-infinite-destination", 2.0, Double.POSITIVE_INFINITY)
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun rejectsDestinationBeforeStart() {
         WalkingPlanFactory.create(route, "walk-3", 6.0, 5.0)
