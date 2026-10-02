@@ -27,19 +27,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '8.11.1'
-      - name: Convert hero JPEG to Android-compatible PNG
-        run: |
-          set -euo pipefail
-          mkdir -p build/hero-image
-          convert app/src/main/assets/data/hero_centenario.jpg -colorspace sRGB -strip PNG32:build/hero-image/hero_centenario.png
-
-      - name: Upload converted hero PNG
-        uses: actions/upload-artifact@v4
-        with:
-          name: hero-image-converted
-          path: build/hero-image/hero_centenario.png
-          if-no-files-found: error
-
       - name: Run route import and geometry tests
         timeout-minutes: 10
         run: gradle --no-daemon :app:testDebugUnitTest
