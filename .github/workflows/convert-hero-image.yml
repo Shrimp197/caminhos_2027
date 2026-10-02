@@ -27,17 +27,23 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p app/src/main/res/drawable-nodpi
+          src="app/src/main/assets/data/hero_centenario.jpg"
+          dst="app/src/main/res/drawable-nodpi/hero_centenario.png"
+          ffmpeg -y -loglevel warning -err_detect ignore_err -i "$src" -frames:v 1 "$dst"
+          test -s "$dst"
           python3 - <<'PY'
-          from PIL import Image, ImageFile
-          ImageFile.LOAD_TRUNCATED_IMAGES = True
-          src = "app/src/main/assets/data/hero_centenario.jpg"
-          dst = "app/src/main/res/drawable-nodpi/hero_centenario.png"
-          image = Image.open(src).convert("RGB")
-          image.save(dst, "PNG", optimize=True)
-          print(f"converted {src} -> {dst}: {image.size}")
+          from PIL import Image, ImageStat
+          path = "app/src/main/res/drawable-nodpi/hero_centenario.png"
+          image = Image.open(path).convert("RGB")
+          stat = ImageStat.Stat(image)
+          extrema = image.getextrema()
+          mean = sum(stat.mean) / 3.0
+          spread = sum(hi - lo for lo, hi in extrema) / 3.0
+          print(f"converted hero: {image.size}, mean={mean:.1f}, spread={spread:.1f}, extrema={extrema}")
+          if mean < 10 or spread < 15 or max(hi for _, hi in extrema) < 30:
+              raise SystemExit("Generated hero image is blank or nearly blank")
           PY
-
-      - name: Commit generated PNG
+              - name: Commit generated PNG
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
