@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import com.caminhos2027.R
 
 /**
  * Approved offline hero artwork.
@@ -20,8 +21,7 @@ internal fun ReferenceHeroArt(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val bitmap = remember {
         runCatching {
-            context.assets.open("data/hero_centenario.jpg")
-                .use { BitmapFactory.decodeStream(it) }
+            BitmapFactory.decodeResource(context.resources, R.drawable.hero_centenario)
         }.getOrNull()
     }
     Box(modifier) {
