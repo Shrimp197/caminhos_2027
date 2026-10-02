@@ -116,7 +116,7 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
                 Box(Modifier.fillMaxSize()) {
                     if (route.id == "caminho-do-centenario") ReferenceHeroArt(Modifier.fillMaxSize())
                     else Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(RefBlue, Color(0xFF2E6C56)))))
-                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xE6000000)))))
+                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xA8000000)))))
                     Column(Modifier.align(Alignment.BottomStart).padding(13.dp).padding(end = 118.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(route.officialName, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, maxLines = 1)
                         Text("${if (route.id == "caminho-do-centenario") "211,9" else String.format(java.util.Locale("pt", "PT"), "%.1f", route.totalDistanceKm)} km · ${if (route.id == "caminho-do-centenario") "Porto → Fátima" else "Percurso selecionado"}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
