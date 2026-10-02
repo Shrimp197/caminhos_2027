@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - ".github/workflows/convert-hero-image.yml"
+      - "app/src/main/assets/data/hero_centenario.jpg"
   workflow_dispatch:
 
 permissions:
