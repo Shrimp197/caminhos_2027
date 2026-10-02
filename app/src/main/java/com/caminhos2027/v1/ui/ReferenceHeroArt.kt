@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import com.caminhos2027.R
 
 /**
  * Approved offline hero artwork.
@@ -33,5 +35,10 @@ internal fun ReferenceHeroArt(modifier: Modifier = Modifier) {
             modifier = modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-    }
+    } ?: Image(
+        painter = painterResource(R.drawable.hero_centenario),
+        contentDescription = "Caminho do Centenário",
+        modifier = modifier.fillMaxSize(),
+        contentScale = ContentScale.Crop
+    )
 }

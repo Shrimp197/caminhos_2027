@@ -207,6 +207,7 @@ class V1EndToEndTest {
         assertTrue("SR test route did not appear", waitForVisibleText("Trajeto SR", 30_000))
         clickVisibleText("Trajeto SR")
         assertTrue("Preparation home did not return after route selection", waitForVisibleText("Pausas", 30_000))
+        assertTrue("Centenário hero artwork did not render", waitForVisibleTextOrDescription("Caminho do Centenário", 30_000))
         clickPreparationTile("Áudio")
         assertTrue("Audio configuration did not appear", waitForVisibleText("Áudio", 30_000))
         assertTrue("Immersive audio option did not appear", waitForVisibleText("ÁUDIO IMERSIVO", 30_000))
