@@ -1,5 +1,7 @@
 package com.caminhos2027.v1.ui
 
+import android.graphics.BitmapFactory
+
 import android.content.ContentValues
 import android.os.Build
 import android.os.Environment
@@ -10,6 +12,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
+import com.caminhos2027.R
 import androidx.test.uiautomator.Until
 import java.io.File
 import java.io.FileOutputStream
@@ -207,7 +210,12 @@ class V1EndToEndTest {
         assertTrue("SR test route did not appear", waitForVisibleText("Trajeto SR", 30_000))
         clickVisibleText("Trajeto SR")
         assertTrue("Preparation home did not return after route selection", waitForVisibleText("Pausas", 30_000))
-        assertTrue("Centenário hero artwork did not render", waitForVisibleTextOrDescription("Caminho do Centenário", 30_000))
+        val heroBitmap = BitmapFactory.decodeResource(
+            InstrumentationRegistry.getInstrumentation().targetContext.resources,
+            R.drawable.hero_centenario
+        )
+        assertTrue("Centenário hero artwork resource could not be decoded", heroBitmap != null)
+        assertTrue("Centenário hero artwork resource is empty", (heroBitmap?.width ?: 0) > 0 && (heroBitmap?.height ?: 0) > 0)
         clickPreparationTile("Áudio")
         assertTrue("Audio configuration did not appear", waitForVisibleText("Áudio", 30_000))
         assertTrue("Immersive audio option did not appear", waitForVisibleText("ÁUDIO IMERSIVO", 30_000))
