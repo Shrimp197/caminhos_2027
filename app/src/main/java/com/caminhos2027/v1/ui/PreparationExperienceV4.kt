@@ -28,7 +28,7 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.AlertDialog
@@ -102,7 +102,7 @@ internal fun PreparationExperienceV4(route: Route, routeOptions: List<AndroidRou
 
     Scaffold(containerColor = RefBg, bottomBar = {
         NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
-            listOf("Resumo" to Icons.Filled.Home, "Mapa" to Icons.Filled.Map, "Apoios" to Icons.Filled.Place, "Diário" to Icons.Filled.Notes, "Mais" to Icons.Filled.MoreHoriz).forEachIndexed { index, item ->
+            listOf("Resumo" to Icons.Filled.Home, "Mapa" to Icons.Filled.Map, "Apoios" to Icons.Filled.Place, "Diário" to Icons.Filled.MenuBook, "Mais" to Icons.Filled.MoreHoriz).forEachIndexed { index, item ->
                 NavigationBarItem(selected = false, enabled = true, onClick = { if (index == 4) onBack() }, icon = { Icon(item.second, item.first, modifier = Modifier.size(20.dp)) }, label = { Text(item.first, maxLines = 1, fontSize = 11.sp) })
             }
         }
