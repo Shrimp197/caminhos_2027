@@ -59,7 +59,6 @@ import com.caminhos2027.v1.core.route.GpsState
 import kotlin.math.cos
 
 internal const val WALKING_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
-private const val WALKING_MAP_STYLE_ASSET_URI = "asset://data/map/openfreemap-liberty.json"
 private const val OFFLINE_METADATA = "{\"routeId\":\"caminho-do-centenario\",\"kind\":\"walking-route-map\"}"
 private const val OFFLINE_MIN_ZOOM = 9.0
 private const val OFFLINE_MAX_ZOOM = 15.0
@@ -469,7 +468,7 @@ internal fun downloadOfflineRegion(
 ) {
     val line = LineString.fromLngLats(points.map { Point.fromLngLat(it.longitude, it.latitude) })
     val definition = OfflineGeometryRegionDefinition(
-        WALKING_MAP_STYLE_ASSET_URI,
+        WALKING_MAP_STYLE_URL,
         line,
         OFFLINE_MIN_ZOOM,
         OFFLINE_MAX_ZOOM,
