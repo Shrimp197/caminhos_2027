@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.AlertDialog
