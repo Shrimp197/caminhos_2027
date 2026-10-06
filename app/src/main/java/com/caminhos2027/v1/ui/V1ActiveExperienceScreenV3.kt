@@ -211,7 +211,7 @@ internal fun V1ActiveExperienceScreenV3(
 
 
                     if (!expanded) {
-                        Row(Modifier.fillMaxWidth().padding(horizontal = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().padding(start = 2.dp, end = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.LocationOn, null, tint = WalkBlue, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.width(7.dp))
                             Column(Modifier.weight(1f)) {
