@@ -102,6 +102,12 @@ class V1EndToEndTest {
         assertTrue("Persisted offline map state was not restored", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 60_000))
         clickVisibleText("AVANÇAR GPS")
         assertTrue("Simulated GPS advance did not update the route position", waitForVisibleTextOrDescription("Km no percurso:", 30_000))
+        // Capture the compact walking state, which corresponds to the map-first reference screen.
+        capture("caminhos-navegacao-compacta.png")
+        expandWalkingSheet()
+        assertTrue("Walking sheet did not expand for visual validation", waitForVisibleText("Caminhada atual", 30_000))
+        // Keep the expanded sheet capture for the bottom-sheet reference screen.
+        capture("caminhos-navegacao-expandida.png")
         clickVisibleText("PERDER GPS")
         assertTrue("GPS loss state did not appear", waitForVisibleText("GPS sem sinal", 30_000))
         clickVisibleText("RECUPERAR GPS")
