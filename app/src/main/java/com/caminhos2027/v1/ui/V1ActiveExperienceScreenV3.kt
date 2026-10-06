@@ -211,15 +211,21 @@ internal fun V1ActiveExperienceScreenV3(
 
 
                     if (!expanded) {
-                        Row(Modifier.fillMaxWidth().padding(bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.LocationOn, null, tint = WalkBlue, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.width(7.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("Próximo apoio", color = WalkBlue, fontWeight = FontWeight.ExtraBold)
-                                Text(state.nextApoi?.name ?: "Sem apoio publicado neste contexto", color = WalkMuted, maxLines = 1)
+                                state.nextApoiDistanceKm?.let {
+                                    Text("Próximo apoio em " + formatSupportDistance(it), color = WalkBlue, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                                } ?: Text("Próximo apoio", color = WalkBlue, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                                Text(
+                                    state.nextApoi?.name ?: "Sem apoio publicado neste contexto",
+                                    color = WalkMuted,
+                                    maxLines = 1,
+                                    fontSize = 14.sp
+                                )
                             }
-                            state.nextApoiDistanceKm?.let { Text(formatKm(it), color = WalkBlue, fontWeight = FontWeight.ExtraBold) }
-                                ?: Text("›", color = WalkMuted, fontWeight = FontWeight.ExtraBold)
+                            Text("›", color = WalkMuted, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
                         }
                     } else {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -366,6 +372,12 @@ private fun MetricCard(value: String, label: String, modifier: Modifier) { Card(
 
 @Composable
 private fun IconButtonCard(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) { Button(onClick = onClick, shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = WalkBlue), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp)) { Icon(icon, label, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(label, fontWeight = FontWeight.Bold) } }
+
+private fun formatSupportDistance(valueKm: Double): String {
+    val meters = (valueKm.coerceAtLeast(0.0) * 1000.0)
+    return if (meters < 1000.0) String.format(Locale.US, "%.0f m", meters)
+    else String.format(Locale.US, "%.1f km", valueKm.coerceAtLeast(0.0))
+}
 
 private fun formatKm(value: Double): String = String.format(Locale.US, "%.1f km", value.coerceAtLeast(0.0))
 
