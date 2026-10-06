@@ -102,11 +102,11 @@ class V1EndToEndTest {
         assertTrue("Persisted offline map state was not restored", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 60_000))
         clickVisibleText("AVANÇAR GPS")
         assertTrue("Simulated GPS advance did not update the route position", waitForVisibleTextOrDescription("Km no percurso:", 30_000))
-        // Capture the compact walking state, which corresponds to the map-first reference screen.
+        // Capture both map-first and bottom-sheet states separately.
+        collapseWalkingSheet()
         capture("caminhos-navegacao-compacta.png")
         expandWalkingSheet()
         assertTrue("Walking sheet did not expand for visual validation", waitForVisibleText("Caminhada atual", 30_000))
-        // Keep the expanded sheet capture for the bottom-sheet reference screen.
         capture("caminhos-navegacao-expandida.png")
         clickVisibleText("PERDER GPS")
         assertTrue("GPS loss state did not appear", waitForVisibleText("GPS sem sinal", 30_000))
@@ -316,6 +316,22 @@ class V1EndToEndTest {
             device.waitForIdle()
         }
         assertTrue("Walking sheet control did not become visible: $text", findVisibleTextOrDescription(text) != null)
+    }
+
+    private fun collapseWalkingSheet() {
+        val handle = device.wait(Until.findObject(By.desc("Recolher painel de caminhada")), 5_000)
+        assertTrue("Walking sheet collapse handle did not appear", handle != null)
+        val bounds = handle!!.visibleBounds
+        assertTrue("Walking sheet collapse handle has no visible bounds", !bounds.isEmpty)
+        device.swipe(
+            bounds.centerX(),
+            bounds.centerY(),
+            bounds.centerX(),
+            (device.displayHeight * 0.88).toInt(),
+            12
+        )
+        device.waitForIdle()
+        assertTrue("Walking sheet did not collapse", waitForVisibleText("Percorridos", 15_000))
     }
 
     private fun expandWalkingSheet() {

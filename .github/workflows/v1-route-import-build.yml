@@ -150,11 +150,15 @@ jobs:
           set -euo pipefail
           mkdir -p build/visual-validation
           REMOTE_DIR="/sdcard/Download/caminhos-v1"
-          adb shell ls -l "$REMOTE_DIR/caminhos-preparacao.png" "$REMOTE_DIR/caminhos-navegacao.png"
+          adb shell ls -l "$REMOTE_DIR/caminhos-preparacao.png" "$REMOTE_DIR/caminhos-navegacao.png" "$REMOTE_DIR/caminhos-navegacao-compacta.png" "$REMOTE_DIR/caminhos-navegacao-expandida.png"
           adb pull "$REMOTE_DIR/caminhos-preparacao.png" build/visual-validation/preparacao.png
           adb pull "$REMOTE_DIR/caminhos-navegacao.png" build/visual-validation/navegacao.png
+          adb pull "$REMOTE_DIR/caminhos-navegacao-compacta.png" build/visual-validation/navegacao-compacta.png
+          adb pull "$REMOTE_DIR/caminhos-navegacao-expandida.png" build/visual-validation/navegacao-expandida.png
           test -s build/visual-validation/preparacao.png
           test -s build/visual-validation/navegacao.png
+          test -s build/visual-validation/navegacao-compacta.png
+          test -s build/visual-validation/navegacao-expandida.png
           python3 - <<'PY'
           from pathlib import Path
           import struct
