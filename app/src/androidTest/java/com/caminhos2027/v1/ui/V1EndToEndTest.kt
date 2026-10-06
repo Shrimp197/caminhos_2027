@@ -180,6 +180,7 @@ class V1EndToEndTest {
         assertTrue("Continue action did not appear", waitForVisibleText("CONTINUAR CAMINHADA", 30_000))
         clickVisibleText("CONTINUAR CAMINHADA")
         assertTrue("Continue action did not return to walking in compact mode", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
 
         clickVisibleText("PRÓXIMOS 10 KM")
         assertTrue("Next 10 km surface did not appear", waitForVisibleText("Próximos 10 km", 30_000))
@@ -194,6 +195,7 @@ class V1EndToEndTest {
         device.pressBack()
         device.waitForIdle()
         assertTrue("Map did not return from SOS", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
 
         clickVisibleText("Diário")
         assertTrue("Diary surface did not appear", waitForVisibleText("Diário", 30_000))
