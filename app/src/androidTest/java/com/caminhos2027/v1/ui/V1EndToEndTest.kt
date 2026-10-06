@@ -321,17 +321,13 @@ class V1EndToEndTest {
     private fun collapseWalkingSheet() {
         val handle = device.wait(Until.findObject(By.desc("Recolher painel de caminhada")), 5_000)
         assertTrue("Walking sheet collapse handle did not appear", handle != null)
-        val bounds = handle!!.visibleBounds
-        assertTrue("Walking sheet collapse handle has no visible bounds", !bounds.isEmpty)
-        device.swipe(
-            bounds.centerX(),
-            bounds.centerY(),
-            bounds.centerX(),
-            (device.displayHeight * 0.88).toInt(),
-            12
-        )
+        assertTrue("Walking sheet collapse handle has no visible bounds", !handle!!.visibleBounds.isEmpty)
+        handle.click()
         device.waitForIdle()
-        assertTrue("Walking sheet did not collapse", waitForVisibleText("Percorridos", 15_000))
+        assertTrue(
+            "Walking sheet did not collapse",
+            device.wait(Until.findObject(By.desc("Expandir painel de caminhada")), 15_000) != null
+        )
     }
 
     private fun expandWalkingSheet() {
@@ -342,16 +338,10 @@ class V1EndToEndTest {
 
         val handle = device.wait(Until.findObject(By.desc("Expandir painel de caminhada")), 5_000)
         assertTrue("Walking sheet expand handle did not appear", handle != null)
-        val bounds = handle!!.visibleBounds
-        assertTrue("Walking sheet expand handle has no visible bounds", !bounds.isEmpty)
-        device.swipe(
-            bounds.centerX(),
-            bounds.centerY(),
-            bounds.centerX(),
-            (device.displayHeight * 0.38).toInt(),
-            12
-        )
+        assertTrue("Walking sheet expand handle has no visible bounds", !handle!!.visibleBounds.isEmpty)
+        handle.click()
         device.waitForIdle()
+        assertTrue("Walking sheet did not expand", waitForVisibleText("Caminhada atual", 15_000))
     }
 
     private fun setVisibleTextField(value: String) {
