@@ -15,6 +15,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Hotel
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -122,7 +127,7 @@ private fun ApoiBrowserCard(item: ApoiAhead, onSelected: (ApoiAhead) -> Unit) {
                 Modifier.size(46.dp).background(categoryColor(category), RoundedCornerShape(13.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Filled.Place, null, tint = Color.White, modifier = Modifier.size(25.dp))
+                Icon(categoryIcon(category), null, tint = Color.White, modifier = Modifier.size(25.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -143,6 +148,15 @@ private fun ApoiBrowserCard(item: ApoiAhead, onSelected: (ApoiAhead) -> Unit) {
             }
         }
     }
+}
+
+private fun categoryIcon(category: ApoiCategory): androidx.compose.ui.graphics.vector.ImageVector = when (category) {
+    ApoiCategory.AGUA -> Icons.Filled.WaterDrop
+    ApoiCategory.ALIMENTACAO -> Icons.Filled.Restaurant
+    ApoiCategory.PERNOITA -> Icons.Filled.Hotel
+    ApoiCategory.EMERGENCIA -> Icons.Filled.LocalHospital
+    ApoiCategory.CARREGAMENTO -> Icons.Filled.Bolt
+    else -> Icons.Filled.Place
 }
 
 private fun categoryColor(category: ApoiCategory): Color = when (category) {

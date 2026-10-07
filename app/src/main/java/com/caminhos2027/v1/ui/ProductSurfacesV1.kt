@@ -39,6 +39,11 @@ import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Hotel
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -185,9 +190,9 @@ internal fun Next10KmSurfaceV1(state: WalkingState?, results: List<com.caminhos2
                         }
                         Card(Modifier.fillMaxWidth().weight(1f), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(fmtDistance(item.distanceKm), color = NavGreen, fontWeight = FontWeight.ExtraBold)
+                                Row(verticalAlignment = Alignment.CenterVertically) { Icon(categoryIconProduct(item.apoi.mainCategory), null, tint = categoryColorProduct(item.apoi.mainCategory), modifier = Modifier.size(22.dp)); Spacer(Modifier.width(7.dp)); Text(fmtDistance(item.distanceKm), color = categoryColorProduct(item.apoi.mainCategory), fontWeight = FontWeight.ExtraBold) }
                                 Text(item.apoi.name, fontWeight = FontWeight.Bold)
-                                Text(categoryTitle(item.apoi.mainCategory), color = NavMuted)
+                                Row(verticalAlignment = Alignment.CenterVertically) { Text(categoryTitle(item.apoi.mainCategory), color = categoryColorProduct(item.apoi.mainCategory), fontWeight = FontWeight.SemiBold) }
                                 Text(item.apoi.cost.description ?: costLabel(item.apoi.cost.model), color = NavMuted, style = MaterialTheme.typography.bodySmall)
                             }
                         }
@@ -197,6 +202,24 @@ internal fun Next10KmSurfaceV1(state: WalkingState?, results: List<com.caminhos2
             OutlinedButton(onClick = onMap, Modifier.fillMaxWidth()) { Text("VOLTAR AO MAPA") }
         }
     }
+}
+
+private fun categoryIconProduct(category: com.caminhos2027.v1.core.model.ApoiCategory): androidx.compose.ui.graphics.vector.ImageVector = when (category) {
+    com.caminhos2027.v1.core.model.ApoiCategory.AGUA -> Icons.Filled.WaterDrop
+    com.caminhos2027.v1.core.model.ApoiCategory.ALIMENTACAO -> Icons.Filled.Restaurant
+    com.caminhos2027.v1.core.model.ApoiCategory.PERNOITA -> Icons.Filled.Hotel
+    com.caminhos2027.v1.core.model.ApoiCategory.EMERGENCIA -> Icons.Filled.LocalHospital
+    com.caminhos2027.v1.core.model.ApoiCategory.CARREGAMENTO -> Icons.Filled.Bolt
+    else -> Icons.Filled.Place
+}
+
+private fun categoryColorProduct(category: com.caminhos2027.v1.core.model.ApoiCategory): Color = when (category) {
+    com.caminhos2027.v1.core.model.ApoiCategory.AGUA -> Color(0xFF1687C9)
+    com.caminhos2027.v1.core.model.ApoiCategory.ALIMENTACAO -> Color(0xFFD77B18)
+    com.caminhos2027.v1.core.model.ApoiCategory.PERNOITA -> Color(0xFF7561C9)
+    com.caminhos2027.v1.core.model.ApoiCategory.EMERGENCIA -> Color(0xFFC33D35)
+    com.caminhos2027.v1.core.model.ApoiCategory.CARREGAMENTO -> Color(0xFF2B8C67)
+    else -> NavBlue
 }
 
 @Composable
