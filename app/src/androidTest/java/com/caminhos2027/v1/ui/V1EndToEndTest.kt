@@ -213,14 +213,14 @@ class V1EndToEndTest {
 
         clickVisibleText("Mais")
         assertTrue("More surface did not appear", waitForVisibleText("Mais", 30_000))
-        clickVisibleText("Smartwatch")
+        clickMoreAction("Smartwatch")
         assertTrue("Smartwatch surface did not appear", waitForVisibleText("Smartwatch", 30_000))
         capture("caminhos-smartwatch.png")
         device.pressBack()
         device.waitForIdle()
         assertTrue("More surface did not return after smartwatch", waitForVisibleText("Mais", 30_000))
 
-        clickVisibleText("Modo Peregrino")
+        clickMoreAction("Modo Peregrino")
         assertTrue("Pilgrim mode surface did not appear", waitForVisibleText("MODO PEREGRINO", 30_000))
         capture("caminhos-pilgrim-mode.png")
         clickVisibleTextOrDescription("Sair do Modo Peregrino")
@@ -461,6 +461,32 @@ class V1EndToEndTest {
             device.click(bounds.centerX(), bounds.centerY())
         }
         device.waitForIdle()
+    }
+
+    private fun clickMoreAction(title: String) {
+        repeat(10) {
+            val node = device.findObjects(By.descContains(title + "."))
+                .firstOrNull { runCatching { !it.visibleBounds.isEmpty }.getOrDefault(false) }
+            if (node != null) {
+                if (node.isClickable) node.click()
+                else {
+                    val bounds = node.visibleBounds
+                    assertTrue("More action has no usable bounds: $title", !bounds.isEmpty)
+                    device.click(bounds.centerX(), bounds.centerY())
+                }
+                device.waitForIdle()
+                return
+            }
+            device.swipe(
+                device.displayWidth / 2,
+                (device.displayHeight * 0.80).toInt(),
+                device.displayWidth / 2,
+                (device.displayHeight * 0.35).toInt(),
+                8
+            )
+            device.waitForIdle()
+        }
+        assertTrue("More action did not become visible: $title", findVisibleTextOrDescription(title) != null)
     }
 
     private fun clickVisibleTextOrDescription(text: String) {
