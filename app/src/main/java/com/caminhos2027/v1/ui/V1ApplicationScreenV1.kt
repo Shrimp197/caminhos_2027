@@ -53,7 +53,7 @@ internal fun V1ApplicationScreenV1(
         surface == WalkingSurface.NEXT_10_KM -> Next10KmSurfaceV1(state, appState.apoiBrowser?.results ?: emptyList(), onOpenMap, onNavigate)
         surface == WalkingSurface.DIARY -> DiarySurfaceV1(diaryEntries, state, diaryPhotoUri, onDiaryChoosePhoto, onDiaryClearPhoto, onDiaryAdd, onNavigate)
         surface == WalkingSurface.SOS -> SosSurfaceV1(state, appState.apoiBrowser?.results ?: emptyList(), onNavigate)
-        surface == WalkingSurface.SMARTWATCH -> SmartwatchSurfaceV1(onNavigate, onOpenMap)
+        surface == WalkingSurface.SMARTWATCH -> SmartwatchSurfaceV1(state, onNavigate, onOpenMap)
         surface == WalkingSurface.PILGRIM_MODE && state != null -> PilgrimModeSurfaceV1(state, onOpenApoi, onOpenSos, onExitPilgrimMode)
         surface == WalkingSurface.MORE -> MoreSurfaceV1(onPrepare, onOpenMap, onOpenApoi, onOpenDiary, { onInfo("Ajuda: prepare o percurso, guarde o plano, inicie quando tiver GPS válido e use Mapa, Apoios, Diário e Mais durante a caminhada.") }, { onInfo("Contacto: utilize a aplicação de comunicação disponível no dispositivo.") }, { onInfo("Caminhos do Peregrino · versão Android · dados publicados separados de QA.") }, onOpenSmartwatch, onOpenSos, onOpenPilgrimMode, onOpenSettings, onNavigate)
         surface == WalkingSurface.SETTINGS -> SettingsSurfaceV1(pilgrimModeOnStart, onTogglePilgrimModeOnStart, onOpenNotificationSettings, onNavigate)

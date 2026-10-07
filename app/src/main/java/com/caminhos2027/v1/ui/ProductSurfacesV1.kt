@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.LocalHospital
@@ -151,6 +152,23 @@ internal fun SummarySurfaceV1(state: WalkingState?, route: Route, onMap: () -> U
                         Text("${fmtKm((destination - current).coerceAtLeast(0.0))} km para o destino planeado", color = NavMuted)
                         LinearProgressIndicator(progress = { progress.toFloat() }, Modifier.fillMaxWidth().height(10.dp), color = NavGreen)
                         Text("${(progress * 100.0).toInt()}% do percurso planeado", color = NavGreen, fontWeight = FontWeight.Bold)
+                    }
+                }
+                val currentStage = route.stages.firstOrNull { stage ->
+                    current >= stage.startRouteKm && current < stage.endRouteKm
+                } ?: route.stages.lastOrNull { current >= it.startRouteKm }
+                currentStage?.let { stage ->
+                    Card(Modifier.fillMaxWidth(), RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF5F1))) {
+                        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                            Text("ETAPA ATUAL", color = NavBlue, fontWeight = FontWeight.ExtraBold)
+                            Text(stage.name, color = NavBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleLarge)
+                            Text(stage.distanceKm.toString().replace(".", ",") + " km · " + stage.startName + " → " + stage.endName, color = NavMuted)
+                            Text(
+                                if (current >= stage.endRouteKm) "Etapa concluída" else "Em curso",
+                                color = if (current >= stage.endRouteKm) NavMuted else NavGreen,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
                 state.nextApoi?.let { apoi ->
@@ -337,22 +355,46 @@ internal fun SosSurfaceV1(state: WalkingState?, emergencyApoi: List<com.caminhos
 }
 
 @Composable
-internal fun SmartwatchSurfaceV1(onNavigate: (WalkingSurface) -> Unit, onMap: () -> Unit) {
+internal fun SmartwatchSurfaceV1(state: WalkingState?, onNavigate: (WalkingSurface) -> Unit, onMap: () -> Unit) {
+    val currentKm = state?.routePosition?.routeKm ?: state?.progress?.currentRouteKm ?: 0.0
+    val remainingKm = state?.progress?.remainingKm ?: 0.0
+    val nextApoi = state?.nextApoi
+    val nextApoiDistance = state?.nextApoiDistanceKm
     Scaffold(containerColor = NavSurface, bottomBar = { BottomNavBarV1(WalkingSurface.SMARTWATCH, onNavigate) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("Smartwatch", color = NavBlue, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineSmall)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(174.dp)) {
+                    Box(Modifier.width(34.dp).height(62.dp).background(Color(0xFF1D1D1D), RoundedCornerShape(12.dp)))
+                    Box(Modifier.width(156.dp).height(176.dp).background(Color(0xFF111111), RoundedCornerShape(36.dp)).padding(10.dp)) {
+                        Column(Modifier.fillMaxSize().background(Color.Black, RoundedCornerShape(28.dp)).padding(14.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.DirectionsWalk, null, tint = NavGreen, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(5.dp))
+                                Text("CAMINHADA", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(fmtDistance(nextApoiDistance ?: remainingKm), color = Color(0xFF8DFF9A), fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineSmall)
+                                Text(nextApoi?.name ?: "Próximo APOI", color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2)
+                            }
+                            Text("Km " + fmtKm(currentKm), color = Color(0xFFB8B8B8), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    Box(Modifier.width(34.dp).height(62.dp).background(Color(0xFF1D1D1D), RoundedCornerShape(12.dp)))
+                }
+            }
             Card(Modifier.fillMaxWidth(), RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                     Icon(Icons.Filled.Notifications, null, tint = NavGreen, modifier = Modifier.size(32.dp))
-                    Text("Notificações de caminhada", fontWeight = FontWeight.ExtraBold)
-                    Text("A aplicação usa notificações Android reais para eventos úteis. Um relógio compatível pode refletir estas notificações através do sistema ou da respetiva aplicação.", color = NavMuted)
-                    Text("Isto não simula uma integração nativa.", color = NavGreen, fontWeight = FontWeight.Bold)
+                    Text("Pré-visualização das notificações", fontWeight = FontWeight.ExtraBold)
+                    Text("A aplicação usa notificações Android reais para eventos úteis. O relógio mostrado acima é apenas uma representação visual.", color = NavMuted)
+                    Text("Não é apresentada como integração nativa com Huawei ou Amazfit.", color = NavGreen, fontWeight = FontWeight.Bold)
                 }
             }
             Card(Modifier.fillMaxWidth(), RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3DF))) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     Text("Compatibilidade externa", color = Color(0xFF7A4A00), fontWeight = FontWeight.ExtraBold)
-                    Text("A integração SDK específica de Huawei Watch GT 2 e Amazfit Active 2 depende das respetivas plataformas e não é apresentada como nativa nesta aplicação.", color = Color(0xFF7A4A00))
+                    Text("A integração específica de Huawei Watch GT 2 e Amazfit Active 2 depende das respetivas plataformas e não está integrada nativamente nesta aplicação.", color = Color(0xFF7A4A00))
                 }
             }
             Button(onClick = onMap, Modifier.fillMaxWidth()) { Text("VOLTAR À CAMINHADA") }
