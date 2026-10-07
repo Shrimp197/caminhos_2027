@@ -464,12 +464,8 @@ class V1EndToEndTest {
     }
 
     private fun clickMoreAction(title: String) {
-        repeat(16) {
-            val descriptionNode = device.findObjects(By.descContains(title))
-                .firstOrNull { runCatching { !it.visibleBounds.isEmpty }.getOrDefault(false) }
-            val textNode = device.findObjects(By.textContains(title))
-                .firstOrNull { runCatching { !it.visibleBounds.isEmpty }.getOrDefault(false) }
-            val node = descriptionNode ?: textNode
+        repeat(30) {
+            val node = findVisibleTextOrDescription(title)
             if (node != null) {
                 if (node.isClickable) node.click()
                 else {
@@ -484,10 +480,11 @@ class V1EndToEndTest {
                 device.displayWidth / 2,
                 (device.displayHeight * 0.82).toInt(),
                 device.displayWidth / 2,
-                (device.displayHeight * 0.28).toInt(),
+                (device.displayHeight * 0.20).toInt(),
                 8
             )
             device.waitForIdle()
+            Thread.sleep(250)
         }
         assertTrue("More action did not become visible: $title", findVisibleTextOrDescription(title) != null)
     }
