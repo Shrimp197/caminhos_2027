@@ -6,6 +6,10 @@ Imagem de referência: `docs/visual-reference/referencia.jpeg`.
 
 A referência contém 10 superfícies e define a direção visual da V1. Não autoriza inventar dados, serviços, mapas, instruções ou integrações que o produto não suporte.
 
+## Evidência usada
+
+A auditoria foi concluída com screenshots reais produzidos pelo Android virtual no workflow `V1 Route Import Build`. A execução que fechou a auditoria foi o build 1685, no commit `817f50f374e4d3043e0417413a5ab4484a169880`, com 11 imagens de validação: preparação, 4 estados de caminhada/mapa e as restantes superfícies.
+
 ## As 10 superfícies
 
 1. Preparação
@@ -23,7 +27,7 @@ A referência contém 10 superfícies e define a direção visual da V1. Não au
 
 ### 1 — Preparação
 
-A implementação atual reproduz a estrutura principal da referência:
+A estrutura principal está alinhada com a referência:
 - cabeçalho;
 - título “Prepare a sua caminhada”;
 - cartão do Caminho do Centenário;
@@ -31,78 +35,102 @@ A implementação atual reproduz a estrutura principal da referência:
 - ação principal “INICIAR CAMINHADA”;
 - navegação inferior.
 
-Diferenças visuais observadas no screenshot validado:
-- a imagem de capa atual não tem a mesma aparência fotográfica da referência;
-- cabeçalho/marca é uma representação simplificada;
-- dimensões, espaçamentos e tipografia ainda não são uma reprodução exata.
-
-Estas diferenças são visuais; não devem ser resolvidas criando dados ou capacidades fictícias.
+A imagem de capa real já está presente e aproxima-se claramente da composição de referência. Continuam existindo diferenças de tipografia, espaçamento e alguns ícones, sem impacto funcional.
 
 ### 2 — Caminhada / mapa
 
-A implementação atual apresenta:
-- “Caminhada atual”;
-- tempo decorrido;
-- quilómetros percorridos e restantes;
+A experiência atual apresenta:
+- mapa cartográfico real;
+- traçado da rota;
+- quilómetros percorridos/restantes;
 - estado GPS;
-- progresso;
+- tempo decorrido;
 - bottom sheet redimensionável;
-- controlos do mapa;
-- contexto do próximo APOI;
-- indicação de mapa offline quando a região foi guardada.
+- próximo APOI;
+- estado offline.
 
-**Problema funcional identificado e corrigido:** no primeiro screenshot de validação, após guardar a cartografia e recriar a caminhada sem rede, a rota aparecia mas o fundo cartográfico não era renderizado. A aplicação dizia “MAPA OFFLINE · DISPONÍVEL”, mas o utilizador via essencialmente o traçado sobre um fundo vazio.
+Melhorias validadas:
+- o fundo cartográfico continua visível após reconstrução sem rede;
+- o mapa abre por defeito em modo compacto, deixando mais contexto cartográfico;
+- o traçado principal usa o azul da referência;
+- o painel expandido continua disponível por gesto.
 
-A causa foi a dependência do estilo remoto durante a reconstrução do mapa. O estilo Liberty passou a ficar dentro da aplicação, mantendo as mesmas fontes do OpenFreeMap. O build 1603 voltou a executar o cenário offline e o screenshot `navegacao.png` mostra agora a cartografia visível depois da reconstrução sem rede.
-
-Também se observa maior densidade visual que na referência, sobretudo no topo e no bottom sheet.
-
-Os controlos “QA · percurso de teste” são específicos do ambiente de teste e não devem aparecer em produção.
+Diferenças restantes:
+- a referência usa uma composição mais limpa do topo e menos informação de QA;
+- o bottom sheet expandido é mais denso do que a referência;
+- os controlos QA aparecem apenas no ambiente de teste e não pertencem à experiência de produção.
 
 ### 3 — Bottom sheet inteligente
 
-A implementação atual tem o conceito correto de manter o mapa como contexto e permitir expandir/recolher o painel. A fidelidade visual final ainda precisa de comparação de um estado representativo com a referência.
+A interação de expandir/recolher está presente e mantém o mapa como contexto. O estado compacto aproxima-se da referência principal de caminhada; o estado expandido é uma interpretação funcional da referência.
+
+A diferença principal é densidade: o produto mostra ações e estado técnico adicionais porque estes são reais e úteis para a V1.
 
 ### 4 — Próximos 10 km
 
-Existe uma superfície funcional específica e a distância é calculada ao longo do percurso. A referência visual usa cartões mais ricos e ícones/categorias mais evidentes. A comparação final depende de conteúdo elegível disponível para o cenário.
+A superfície está implementada e validada. Os resultados são ordenados por distância ao longo da rota e usam iconografia por categoria.
+
+A composição é mais simples do que a referência. Não são criados cartões, custos ou estados não suportados pelos dados.
 
 ### 5 — Apoios
 
-Existe uma superfície de consulta com filtros, pesquisa e detalhe. A referência usa cartões com categoria, distância e informação de custo/estado. Os dados de produção continuam sujeitos à regra de elegibilidade; não serão fabricados para completar o layout.
+A superfície está implementada com pesquisa, filtros, distância, categoria e detalhe. A iconografia foi alinhada com as categorias da referência.
+
+A referência apresenta cartões mais ricos e alguns estados de disponibilidade. Esses estados só podem ser mostrados quando suportados pelos dados de produção.
 
 ### 6 — Progresso
 
-Existe superfície de resumo/progresso ligada ao estado da caminhada. A composição atual é mais simples que o painel de progresso da referência. A comparação final detalhada fica pendente de screenshot dedicado.
+A superfície existe e está ligada ao estado real da caminhada, incluindo percurso, progresso e próximo APOI.
+
+A referência tem maior riqueza gráfica e informação de etapa. A aplicação já suporta o conceito de etapa quando os dados do percurso o disponibilizam, mas o cenário de QA usado para as screenshots não fornece todo o conteúdo visual da referência.
 
 ### 7 — Diário
 
-Existe criação de notas, associação à caminhada e fotografias persistidas. A composição atual é mais orientada a formulário que a referência. Não é considerado conformidade visual final.
+A superfície está implementada com criação de nota, associação à caminhada e fotografia.
+
+A screenshot de validação apresenta o estado vazio, por honestidade dos dados do cenário. A referência mostra entradas preenchidas; não serão fabricadas entradas apenas para reproduzir a imagem.
 
 ### 8 — SOS
 
-Existe superfície dedicada com chamada para 112, localização disponível, partilha da localização e contexto de apoios de emergência. A implementação é funcionalmente mais explícita sobre ações reais do Android do que a referência; visualmente é diferente da composição da imagem.
+A superfície está implementada com chamada real para 112, localização disponível e contexto de apoios de emergência.
+
+A composição é mais simples do que a referência. A diferença é aceitável enquanto as ações adicionais da referência não tiverem execução Android real correspondente.
 
 ### 9 — Smartwatch
 
-Existe superfície explicativa que limita corretamente a capacidade a notificações Android/plataformas externas. A referência contém uma representação visual do relógio e cartões de orientação; essa apresentação visual ainda não foi reproduzida.
+A superfície apresenta uma representação visual de smartwatch e notificações/orientação.
+
+A aplicação declara explicitamente que esta é uma pré-visualização e não uma integração nativa com Huawei/Amazfit. Esta limitação é intencional e correta.
 
 ### 10 — Modo Peregrino
 
-Existe uma superfície real de alto contraste ligada ao estado da caminhada, com progresso, distância e ações de APOI/SOS. Visualmente é uma interpretação própria e ainda não corresponde à composição da referência.
+A superfície está validada e mostra:
+- alto contraste;
+- quilómetros percorridos/restantes;
+- progresso;
+- próximo APOI;
+- acesso a APOI e SOS;
+- saída do modo.
 
-## Estado da auditoria
+A composição aproxima-se da referência, mantendo uma implementação real baseada no estado da caminhada.
 
-- Preparação: estrutura auditada; fidelidade visual ainda incompleta.
-- Caminhada/mapa: auditada; cartografia offline corrigida e comprovada no CI.
-- Bottom sheet: funcionalmente auditado; comparação visual detalhada pendente.
-- Próximos 10 km: funcionalidade existente; comparação visual final pendente.
-- Apoios: funcionalidade existente; comparação visual final pendente.
-- Progresso: funcionalidade existente; comparação visual final pendente.
-- Diário: funcionalidade existente; comparação visual final pendente.
-- SOS: funcionalidade existente; comparação visual final pendente.
-- Smartwatch: funcionalidade delimitada honestamente; fidelidade visual pendente.
-- Modo Peregrino: funcionalidade existente; fidelidade visual pendente.
+## Conclusão
+
+A auditoria visual da V1 foi concluída nas 10 superfícies.
+
+Não existe conformidade pixel-perfect com a imagem de referência e não é esse o critério de aceitação. O critério é:
+- manter a intenção visual e a hierarquia principais;
+- preservar comportamento real;
+- não inventar dados;
+- não apresentar capacidades inexistentes;
+- corrigir diferenças que prejudiquem a utilização.
+
+### Prioridades visuais futuras
+
+1. reduzir a densidade visual do bottom sheet expandido;
+2. aproximar tipografia/espaçamento da referência;
+3. enriquecer visualmente Progresso quando os dados de etapa reais estiverem disponíveis;
+4. rever composição de SOS e Diário sem inventar ações/conteúdo.
 
 ## Regra de validação
 
@@ -112,4 +140,4 @@ A auditoria deve sempre separar:
 - dados reais e elegíveis;
 - validação física em Android.
 
-Não declarar a V1 visualmente concluída apenas porque o CI passa.
+Não declarar a V1 concluída apenas porque o CI passa.

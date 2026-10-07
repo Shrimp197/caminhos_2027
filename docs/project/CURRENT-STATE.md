@@ -1,6 +1,6 @@
 # Caminhos 2027 — Current State
 
-> Estado inicial desta documentação de continuidade, sincronizado com o GitHub em 2026-09-30.
+> Estado operacional atualizado após a auditoria visual e validação CI de 2026-10-07.
 
 ## Identidade atual
 
@@ -10,56 +10,58 @@
 - Pull Request: #8
 - PR title: V1 route import — official geometry provenance and runtime policy
 - PR state: open, draft
-- Último HEAD funcional verificado: `98eeffc69aef9151b7d8e63b07b13ae0d0639d1a`
+- Último HEAD funcional verificado: `817f50f374e4d3043e0417413a5ab4484a169880`
 - Base SHA do PR: `c5222c1fb3052ea22ccf4b25701257a84f55f704`
-- Última implementação funcional verificada: `98eeffc69aef9151b7d8e63b07b13ae0d0639d1a` — correção visual dos ícones da barra inferior da preparação.
-- O HEAD exato deve ser sempre confirmado no GitHub antes de trabalhar.
+- Última implementação funcional verificada: `817f50f374e4d3043e0417413a5ab4484a169880` — caminhada abre compacta e o traçado usa o azul da referência.
 
 ## CI da implementação validada
 
-Na implementação funcional verificada até ao commit `98eeffc69aef9151b7d8e63b07b13ae0d0639d1a`:
+No HEAD `817f50f374e4d3043e0417413a5ab4484a169880`:
 
-- V1 Route Import Validation: sucesso (run 1590).
-- V1 Route Source Provenance: sucesso (run 2155).
-- V1 Route Import Build: sucesso (run 1669).
-- O build passou por testes JVM, build/assinatura do APK, emulador Android e E2E.
+- V1 Route Import Validation: sucesso (run 1672).
+- V1 Route Source Provenance: sucesso (run 2237).
+- V1 Route Import Build: sucesso (run 1685).
+- O build passou por testes JVM, compilação, APK debug assinado, emulador Android, E2E com process-death, validação visual e APK release.
 
-A evidência visual do build inclui `preparacao.png` e `navegacao.png`. A captura `navegacao.png` mostra cartografia renderizada depois da reconstrução da caminhada sem rede. Uma falha anterior no mesmo ramo foi causada por um seletor E2E dependente de texto; o seletor foi estabilizado e o build 1615 passou o fluxo completo.
+Artefactos validados:
+- APK debug validado;
+- APK release unsigned validado;
+- conjunto de 11 screenshots visuais.
 
-## Produto atualmente documentado no PR
+## Estado do produto
 
 - Cartografia nativa MapLibre no mapa de caminhada.
-- Traçado oficial, início, destino, posição do peregrino e próximo APOI no read model/mapa.
-- Cartografia OpenFreeMap/MapLibre com atribuição visível.
-- Mecanismo real de guardar cartografia offline por região, com disponibilidade apenas após conclusão.
-- Bottom sheet redimensionável por gesto sobre o mapa.
+- Traçado oficial, início, destino, posição do peregrino e próximo APOI.
+- OpenFreeMap/MapLibre com atribuição visível.
+- Mapa offline por região com estado de disponibilidade após conclusão.
+- Estilo cartográfico Liberty integrado localmente para permitir reconstrução offline sem depender da rede para carregar o estilo.
+- Bottom sheet redimensionável por gesto.
+- A caminhada abre por defeito em modo compacto/mapa-primeiro.
 - Orientação por bearing configurável.
-- E2E verifica cartografia real, não o mapa simulado.
-- APOI 2027 de produção permanece vazio enquanto não houver registos elegíveis/publicados.
-- SOS abre a função telefónica Android para 112 e apresenta a localização disponível.
-- Smartwatch permanece limitado a notificações Android/plataformas externas, sem alegar integração nativa.
-- Validação física em Android real continua pendente.
+- E2E verifica cartografia real e não um mapa simulado.
+- APOI 2027 de produção continua sem registos elegíveis/publicados.
+- SOS usa a função telefónica Android real para 112 e apresenta apenas localização disponível.
+- Smartwatch permanece limitado a uma pré-visualização/notificações externas, sem alegar integração nativa.
+- Modo Peregrino está ligado ao estado real da caminhada.
 
 ## Estado de validação
 
-- Visual reference adicionada em `docs/visual-reference/referencia.jpeg`.
-- Preparação e caminhada/mapa já têm auditoria visual baseada em screenshots reais do CI.
-- O problema do mapa offline foi identificado e corrigido; a reconstrução sem rede agora mostra cartografia.
-- Persistência e E2E do fluxo principal passaram no build 1669.
-- Offline tem evidência positiva no cenário de CI, mas a validação em condições reais continua necessária.
+- Auditoria visual das 10 superfícies concluída com screenshots reais.
+- Preparação alinhada estruturalmente com a referência.
+- Caminhada/mapa alinhada com a referência principal: mapa visível, estado compacto por defeito e traçado azul.
+- Persistência e E2E passam no build 1685.
+- Offline tem evidência positiva no Android virtual; validação em condições reais continua necessária.
+- APKs validáveis foram produzidos pelo CI.
 - **Teste físico ainda não realizado.**
 
-## Bloqueadores / próximos trabalhos conhecidos
+## Pendentes / próximos trabalhos
 
-1. Capturar screenshots representativos das 8 superfícies restantes da referência e concluir a auditoria visual.
-2. Melhorar as principais diferenças visuais encontradas, sem inventar funcionalidades ou dados.
-3. Revalidar regressões de persistência e caminhada após as próximas mudanças de UI.
-4. Manter/regredir o teste offline como critério funcional.
-5. Fazer validação física em Android real, incluindo GPS, background e comportamento/bateria.
-6. Só então avaliar a passagem para release candidate.
+1. Melhorias visuais finas do bottom sheet e tipografia/espaçamentos.
+2. Melhorar Progresso quando os dados reais de etapa justificarem maior riqueza visual.
+3. Rever SOS/Diário exclusivamente dentro das capacidades reais suportadas.
+4. Validação física em Android real: GPS, background, bateria, navegação externa e uso prolongado.
+5. Reavaliar o conjunto final para release candidate apenas depois da validação física e restantes critérios de aceitação.
 
-> Nota: este ficheiro não é usado para decidir qual é o HEAD atual; o agente deve sempre verificar o GitHub. Este documento preserva o último estado funcional confirmado.
+## Regra de manutenção
 
-## Regra de manutenção deste ficheiro
-
-Este ficheiro é operacional e deve ser atualizado pelo agente quando ocorrerem alterações relevantes, após verificação do HEAD e CI correspondentes. O estado documentado nunca substitui a verificação do GitHub. Se houver divergência, o estado real do GitHub prevalece e este ficheiro deve ser corrigido.
+Este ficheiro é operacional. O agente deve atualizá-lo após alterações relevantes e nunca o usar como substituto da verificação do GitHub. Se houver divergência, o estado real do GitHub prevalece.
