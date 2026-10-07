@@ -464,9 +464,12 @@ class V1EndToEndTest {
     }
 
     private fun clickMoreAction(title: String) {
-        repeat(10) {
-            val node = device.findObjects(By.descContains(title + "."))
+        repeat(16) {
+            val descriptionNode = device.findObjects(By.descContains(title))
                 .firstOrNull { runCatching { !it.visibleBounds.isEmpty }.getOrDefault(false) }
+            val textNode = device.findObjects(By.textContains(title))
+                .firstOrNull { runCatching { !it.visibleBounds.isEmpty }.getOrDefault(false) }
+            val node = descriptionNode ?: textNode
             if (node != null) {
                 if (node.isClickable) node.click()
                 else {
@@ -479,9 +482,9 @@ class V1EndToEndTest {
             }
             device.swipe(
                 device.displayWidth / 2,
-                (device.displayHeight * 0.80).toInt(),
+                (device.displayHeight * 0.82).toInt(),
                 device.displayWidth / 2,
-                (device.displayHeight * 0.35).toInt(),
+                (device.displayHeight * 0.28).toInt(),
                 8
             )
             device.waitForIdle()

@@ -150,26 +150,53 @@ jobs:
           set -euo pipefail
           mkdir -p build/visual-validation
           REMOTE_DIR="/sdcard/Download/caminhos-v1"
-          adb shell ls -l "$REMOTE_DIR/caminhos-preparacao.png" "$REMOTE_DIR/caminhos-navegacao.png" "$REMOTE_DIR/caminhos-navegacao-compacta.png" "$REMOTE_DIR/caminhos-navegacao-expandida.png"
+          adb shell ls -l \
+            "$REMOTE_DIR/caminhos-preparacao.png" \
+            "$REMOTE_DIR/caminhos-navegacao.png" \
+            "$REMOTE_DIR/caminhos-navegacao-compacta.png" \
+            "$REMOTE_DIR/caminhos-navegacao-expandida.png" \
+            "$REMOTE_DIR/caminhos-apoios.png" \
+            "$REMOTE_DIR/caminhos-proximos-10-km.png" \
+            "$REMOTE_DIR/caminhos-sos.png" \
+            "$REMOTE_DIR/caminhos-diario.png" \
+            "$REMOTE_DIR/caminhos-progresso.png" \
+            "$REMOTE_DIR/caminhos-smartwatch.png" \
+            "$REMOTE_DIR/caminhos-pilgrim-mode.png"
           adb pull "$REMOTE_DIR/caminhos-preparacao.png" build/visual-validation/preparacao.png
           adb pull "$REMOTE_DIR/caminhos-navegacao.png" build/visual-validation/navegacao.png
           adb pull "$REMOTE_DIR/caminhos-navegacao-compacta.png" build/visual-validation/navegacao-compacta.png
           adb pull "$REMOTE_DIR/caminhos-navegacao-expandida.png" build/visual-validation/navegacao-expandida.png
-          test -s build/visual-validation/preparacao.png
-          test -s build/visual-validation/navegacao.png
-          test -s build/visual-validation/navegacao-compacta.png
-          test -s build/visual-validation/navegacao-expandida.png
+          adb pull "$REMOTE_DIR/caminhos-apoios.png" build/visual-validation/apoios.png
+          adb pull "$REMOTE_DIR/caminhos-proximos-10-km.png" build/visual-validation/proximos-10-km.png
+          adb pull "$REMOTE_DIR/caminhos-sos.png" build/visual-validation/sos.png
+          adb pull "$REMOTE_DIR/caminhos-diario.png" build/visual-validation/diario.png
+          adb pull "$REMOTE_DIR/caminhos-progresso.png" build/visual-validation/progresso.png
+          adb pull "$REMOTE_DIR/caminhos-smartwatch.png" build/visual-validation/smartwatch.png
+          adb pull "$REMOTE_DIR/caminhos-pilgrim-mode.png" build/visual-validation/pilgrim-mode.png
+          for file in build/visual-validation/*.png; do test -s "$file"; done
           python3 - <<'PY'
           from pathlib import Path
           import struct
 
           signature = bytes([137, 80, 78, 71, 13, 10, 26, 10])
-          expected = {
+          expected = set(Path("build/visual-validation").glob("*.png"))
+          expected = {str(p) for p in expected}
+          expected_required = {
               "build/visual-validation/preparacao.png",
               "build/visual-validation/navegacao.png",
+              "build/visual-validation/navegacao-compacta.png",
+              "build/visual-validation/navegacao-expandida.png",
+              "build/visual-validation/apoios.png",
+              "build/visual-validation/proximos-10-km.png",
+              "build/visual-validation/sos.png",
+              "build/visual-validation/diario.png",
+              "build/visual-validation/progresso.png",
+              "build/visual-validation/smartwatch.png",
+              "build/visual-validation/pilgrim-mode.png",
           }
-
-          for path_text in expected:
+          if not expected_required.issubset(expected):
+              raise SystemExit("Missing required visual validation screenshot")
+          for path_text in sorted(expected_required):
               path = Path(path_text)
               data = path.read_bytes()
               if not data.startswith(signature):
