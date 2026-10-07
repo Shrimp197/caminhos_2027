@@ -2,11 +2,13 @@
 
 ## Acionamento
 
-Quando uma nova sessão receber:
+O protocolo é acionado pelo comando externo de retoma que identifica explicitamente este repositório:
 
-> Retomar Caminhos 2027.
+> Retomar Caminhos 2027 no GitHub: `Shrimp197/caminhos_2027`, branch `v1-route-import`.
 
-deve usar este ficheiro como protocolo operacional de retomada.
+Ao receber esse comando, aceder diretamente ao repositório indicado. Não procurar o projeto através de pesquisa pública nem pedir ao utilizador ficheiros/contexto que o próprio repositório já contém.
+
+Se o repositório/branch indicados no comando diferirem do estado atual documentado, verificar o GitHub e usar sempre o estado real.
 
 ## Identidade do projeto
 
