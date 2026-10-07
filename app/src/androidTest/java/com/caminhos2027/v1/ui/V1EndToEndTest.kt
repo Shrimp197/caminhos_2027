@@ -189,7 +189,8 @@ class V1EndToEndTest {
         device.waitForIdle()
         assertTrue("Map did not return from Next 10 km", waitForVisibleText("Percorridos", 30_000))
 
-        clickVisibleText("SOS")
+        assertTrue("SOS action did not become visible", waitForVisibleTextOrDescription("SOS", 10_000))
+        clickVisibleTextOrDescription("SOS")
         assertTrue("SOS surface did not appear", waitForVisibleText("EMERGÊNCIA", 30_000))
         capture("caminhos-sos.png")
         device.pressBack()
