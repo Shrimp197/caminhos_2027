@@ -202,16 +202,68 @@ internal fun Next10KmSurfaceV1(state: WalkingState?, results: List<com.caminhos2
                 results.isEmpty() -> EmptyProductCard("Não existem APOI publicados nos próximos 10 km para os dados de produção disponíveis.")
                 else -> results.forEachIndexed { index, item ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(36.dp)) {
-                            Box(Modifier.size(28.dp).background(NavGreen, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) { Text("${index + 1}", color = Color.White, fontWeight = FontWeight.ExtraBold) }
-                            if (index < results.lastIndex) Box(Modifier.width(2.dp).height(55.dp).background(Color(0xFFD6E4DB)))
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.width(52.dp).padding(top = 12.dp)
+                        ) {
+                            Text(
+                                fmtDistance(item.distanceKm),
+                                color = NavBlue,
+                                fontWeight = FontWeight.ExtraBold,
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            if (index < results.lastIndex) {
+                                Box(
+                                    Modifier
+                                        .padding(top = 7.dp)
+                                        .width(2.dp)
+                                        .height(62.dp)
+                                        .background(Color(0xFFD6E4DB))
+                                )
+                            }
                         }
-                        Card(Modifier.fillMaxWidth().weight(1f), RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) { Icon(categoryIconProduct(item.apoi.mainCategory), null, tint = categoryColorProduct(item.apoi.mainCategory), modifier = Modifier.size(22.dp)); Spacer(Modifier.width(7.dp)); Text(fmtDistance(item.distanceKm), color = categoryColorProduct(item.apoi.mainCategory), fontWeight = FontWeight.ExtraBold) }
-                                Text(item.apoi.name, fontWeight = FontWeight.Bold)
-                                Row(verticalAlignment = Alignment.CenterVertically) { Text(categoryTitle(item.apoi.mainCategory), color = categoryColorProduct(item.apoi.mainCategory), fontWeight = FontWeight.SemiBold) }
-                                Text(item.apoi.cost.description ?: costLabel(item.apoi.cost.model), color = NavMuted, style = MaterialTheme.typography.bodySmall)
+                        Card(
+                            Modifier.fillMaxWidth().weight(1f),
+                            RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(1.dp)
+                        ) {
+                            Row(
+                                Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    Modifier.size(42.dp).background(
+                                        categoryColorProduct(item.apoi.mainCategory).copy(alpha = 0.12f),
+                                        RoundedCornerShape(12.dp)
+                                    ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        categoryIconProduct(item.apoi.mainCategory),
+                                        null,
+                                        tint = categoryColorProduct(item.apoi.mainCategory),
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(10.dp))
+                                Column(
+                                    Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Text(
+                                        categoryTitle(item.apoi.mainCategory).uppercase(Locale("pt", "PT")),
+                                        color = categoryColorProduct(item.apoi.mainCategory),
+                                        fontWeight = FontWeight.ExtraBold,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                    Text(item.apoi.name, color = NavBlue, fontWeight = FontWeight.ExtraBold)
+                                    Text(
+                                        item.apoi.cost.description ?: costLabel(item.apoi.cost.model),
+                                        color = NavMuted,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
                         }
                     }
