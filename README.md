@@ -1,32 +1,26 @@
-# Caminho do Centenário — Android APK (protótipo 2026)
+# Caminhos de Fátima V1 — Caminho do Centenário
 
-Projeto Android preparado para compilação via GitHub Actions.
+Aplicação Android em evolução para peregrinos independentes dos Caminhos de Fátima.
 
-## O que já contém
-- percurso base do `caminho-do-centenario.kml`;
-- versão GeoJSON do track para o mapa;
-- dados de apoio 2026 do protótipo;
-- WebView Android com GPS/geolocalização;
-- interface móvel do protótipo;
-- GitHub Actions que gera `app-debug.apk`.
+A V1 mantém o princípio **“Orientar sem retirar autonomia”**: o aplicativo informa percurso, posição, progresso, APOIs, incerteza e opções disponíveis, sem impor um itinerário rígido.
 
-## Como usar no GitHub
-1. Copiar o conteúdo deste projeto para o repositório.
-2. Fazer commit para `main` (ou `master`).
-3. Abrir **Actions** no GitHub.
-4. Executar **Build Android APK**.
-5. Abrir o workflow concluído e descarregar o artifact **Caminho-do-Centenario-debug**.
-6. Dentro do artifact está o `app-debug.apk`.
+## Estado actual
 
-## Limitações desta versão
-- O mapa de fundo ainda usa tiles online quando disponíveis.
-- O track e os dados locais ficam incorporados no APK.
-- Os marcadores de apoio herdados do protótipo devem ser validados antes de uso real.
-- Esta é uma build de teste (debug), não uma release assinada para Play Store.
+O desenvolvimento activo está na branch `v1-route-import`.
 
-## Objetivo seguinte
-Testar no Android real: GPS, acompanhamento do track, afastamento e consumo de bateria; depois melhorar os mapas offline e substituir os dados 2026 pelos dados oficiais 2027.
+- Percurso oficial do Centenário integrado a partir do GPX oficial da Associação Caminhos de Fátima.
+- Distância publicada de referência: **211,87 km**.
+- Distância técnica da geometria é tratada separadamente.
+- Etapas oficiais são referência de planeamento; não limitam a caminhada real.
+- GPS bruto e posição projectada no percurso são entidades distintas.
+- Sessão de caminhada persistente com estados `PLANNED`, `ACTIVE`, `COMPLETED` e `CANCELLED`.
+- Perda de sinal mantém a última posição fiável; observações implausíveis não alteram progresso/posição fiável.
+- APOIs seguem o modelo de publicação/qualificação/confiança; o catálogo de produção permanece vazio até existir evidência 2027 qualificada.
+- SR/HF existem apenas no build debug para validação determinística da experiência.
+- Preparação V1 apresenta subseções de percurso, etapa/início/fim, áudio, orientação, pausas, APOIs e notas.
 
+## Validação
 
-## Correção da primeira build
-A primeira APK carregava o HTML via `file://`, o que impedia o `fetch()` dos ficheiros locais e deixava o mapa e botões sem inicialização. Esta versão usa uma origem HTTPS local (`appassets.androidplatform.net`) para servir os assets e permitir o carregamento do GeoJSON/JSON.
+A branch tem CI de Android e de proveniência da fonte oficial. A validação física em dispositivo Android continua necessária para o comportamento de GPS real.
+
+Consulte `PROJECT-STATE.md` para o estado técnico actual e `docs/QA-SR-HF-SCENARIO.md` para o cenário executável de SR/HF.

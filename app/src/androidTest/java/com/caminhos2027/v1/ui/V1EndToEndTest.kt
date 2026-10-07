@@ -1,0 +1,642 @@
+package com.caminhos2027.v1.ui
+
+import android.graphics.BitmapFactory
+
+import android.content.ContentValues
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import androidx.test.core.app.ActivityScenario
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.StaleObjectException
+import androidx.test.uiautomator.UiDevice
+import com.caminhos2027.R
+import androidx.test.uiautomator.Until
+import java.io.File
+import java.io.FileOutputStream
+import org.junit.After
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.FixMethodOrder
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.MethodSorters
+
+@RunWith(AndroidJUnit4::class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+class V1EndToEndTest {
+    private lateinit var device: UiDevice
+    private lateinit var scenario: ActivityScenario<V1MainActivity>
+
+    @Before
+    fun resetToV1() {
+        device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        device.executeShellCommand("pm grant com.caminhos2027 android.permission.ACCESS_FINE_LOCATION")
+        device.pressHome()
+        scenario = ActivityScenario.launch(V1MainActivity::class.java)
+    }
+
+    @After
+    fun closeActivity() {
+        scenario.close()
+        runCatching { device.executeShellCommand("cmd connectivity airplane-mode disable") }
+    }
+
+    @Test
+    fun test1PrepareAndPersistPlanCheckpoint() {
+        assertTrue("Route-selection preparation screen did not appear", waitForVisibleText("Selecionar percurso", 120_000))
+        assertTrue("Centenário route option missing", waitForVisibleText("Caminho do Centenário", 30_000))
+        clickVisibleText("Caminho do Centenário")
+        assertTrue("Preparation home did not appear after route selection", waitForVisibleText("Prepare a sua caminhada", 30_000))
+        capture("caminhos-preparacao.png")
+        prepareSrPlan()
+        assertTrue("Saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
+    }
+
+    @Test
+    fun test2RestorePlanStartAndPauseCheckpoint() {
+        assertTrue("Saved plan was not restored after external process death", waitForVisibleText("Plano guardado", 30_000))
+        assertTrue("Persisted plan lost the audio choice", waitForVisibleText("Áudio · imersivo", 30_000))
+        assertTrue("Persisted plan lost the orientation choice", waitForVisibleText("Orientação · direção da caminhada", 30_000))
+        assertTrue("Persisted plan lost the APOI choice", waitForVisibleText("Apoios · 1 tipo(s) selecionado(s)", 30_000))
+        assertTrue("Persisted plan lost the note count", waitForVisibleText("Notas · 1 guardada(s)", 30_000))
+        assertTrue("Persisted plan did not keep explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
+        clickVisibleText("INICIAR CAMINHADA")
+
+        assertTrue("Walking screen did not appear", waitForVisibleText("Percorridos", 30_000))
+        assertTrue("Map metric did not appear in compact mode", waitForVisibleText("Para o fim", 30_000))
+        expandWalkingSheet()
+        assertTrue("Walking sheet did not expand", waitForVisibleText("Caminhada atual", 30_000))
+        assertTrue("Route progress did not appear", waitForVisibleText("Progresso", 30_000))
+        assertTrue("Elapsed walking time did not appear", waitForVisibleTextOrDescription("Tempo", 30_000))
+        assertTrue("QA controls did not appear for the test route", waitForVisibleText("QA · percurso de teste", 30_000))
+
+        // The offline-map action stays above the walking sheet so it remains reachable in the active experience.
+        assertTrue("Offline map control did not appear after collapsing the walking sheet", waitForVisibleText("GUARDAR MAPA OFFLINE", 30_000))
+        clickVisibleText("GUARDAR MAPA OFFLINE")
+        assertTrue("Offline map download did not start", waitForAnyVisibleText("A preparar mapa offline", "MAPA OFFLINE · DISPONÍVEL", timeoutMs = 30_000))
+        assertTrue("Offline map was not reported complete", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 180_000))
+
+        // Pan the real map. The native MapLibre surface must remain responsive while the sheet is compact.
+        device.swipe(
+            (device.displayWidth * 0.30).toInt(),
+            (device.displayHeight * 0.30).toInt(),
+            (device.displayWidth * 0.72).toInt(),
+            (device.displayHeight * 0.34).toInt(),
+            12
+        )
+        device.waitForIdle()
+        assertTrue("Real map context was lost after a pan gesture", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 30_000))
+
+        // Recreate the Activity without network access. The downloaded region must be discoverable
+        // again from persisted MapLibre offline state.
+        device.executeShellCommand("cmd connectivity airplane-mode enable")
+        Thread.sleep(2_000)
+        scenario.close()
+        scenario = ActivityScenario.launch(V1MainActivity::class.java)
+        assertTrue("Walking screen did not restore while offline", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 60_000))
+        expandWalkingSheet()
+        assertTrue("Walking sheet did not restore to an expandable state", waitForVisibleText("Caminhada atual", 30_000))
+        assertTrue("Persisted offline map state was not restored", waitForVisibleText("MAPA OFFLINE · DISPONÍVEL", 60_000))
+        clickVisibleText("AVANÇAR GPS")
+        assertTrue("Simulated GPS advance did not update the route position", waitForVisibleTextOrDescription("Km no percurso:", 30_000))
+        // Capture both map-first and bottom-sheet states separately.
+        collapseWalkingSheet()
+        capture("caminhos-navegacao-compacta.png")
+        expandWalkingSheet()
+        assertTrue("Walking sheet did not expand for visual validation", waitForVisibleText("Caminhada atual", 30_000))
+        capture("caminhos-navegacao-expandida.png")
+        clickVisibleText("PERDER GPS")
+        assertTrue("GPS loss state did not appear", waitForVisibleText("GPS sem sinal", 30_000))
+        clickVisibleText("RECUPERAR GPS")
+        assertTrue("GPS recovery state did not appear", waitForVisibleText("GPS no percurso", 30_000))
+        clickVisibleText("SIMULAR DESVIO")
+        clickVisibleText("SIMULAR DESVIO")
+        assertTrue(
+            "Deviation state did not appear",
+            waitForAnyVisibleText("Possível desvio", "Provável desvio", timeoutMs = 30_000)
+        )
+        val positionBeforePause = visibleTextValue("Km no percurso:")
+        clickVisibleText("PAUSAR CAMINHADA")
+        assertTrue("Pause state did not appear", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
+        assertTrue("Resume action did not appear", waitForVisibleTextOrDescription("RETOMAR CAMINHADA", 30_000))
+        val positionWhilePaused = visibleTextValue("Km no percurso:")
+        assertTrue(
+            "Paused walk changed route position before external process death",
+            positionBeforePause != null && positionBeforePause == positionWhilePaused
+        )
+    }
+
+    @Test
+    fun test3RestorePausedWalkResumeApoiDecisionAndStop() {
+        assertTrue("Paused walking screen did not appear in compact mode", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
+        assertTrue("Paused walking session was not restored after external process death", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
+        assertTrue("Persisted pause did not expose resume action", waitForVisibleTextOrDescription("RETOMAR CAMINHADA", 30_000))
+        val persistedPausedPosition = visibleTextValue("Km no percurso:")
+        clickVisibleText("RETOMAR CAMINHADA")
+        expandWalkingSheet()
+        assertTrue("Walking session did not resume", waitForVisibleTextOrDescription("PAUSAR CAMINHADA", 30_000))
+        clickVisibleText("AVANÇAR GPS")
+        assertTrue(
+            "GPS did not advance after pause/resume",
+            waitForVisibleTextValueDifferent("Km no percurso:", persistedPausedPosition, 30_000)
+        )
+        capture("caminhos-navegacao.png")
+
+        clickVisibleText("PAUSAR CAMINHADA")
+        assertTrue("Pause state did not appear", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
+        scenario.close()
+        scenario = ActivityScenario.launch(V1MainActivity::class.java)
+        assertTrue("Paused walking screen did not reappear in compact mode", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
+        assertTrue("Paused walking state did not persist after activity recreation", waitForVisibleText("CAMINHADA PAUSADA", 30_000))
+        clickVisibleText("RETOMAR CAMINHADA")
+        expandWalkingSheet()
+        assertTrue("Walking session did not resume", waitForVisibleTextOrDescription("PAUSAR CAMINHADA", 30_000))
+
+        scrollWalkingSheetUntilVisible("VER APOIOS")
+        clickVisibleText("VER APOIOS")
+        assertTrue("Apoios screen did not appear", waitForVisibleText("Próximos 10 km", 30_000))
+        capture("caminhos-apoios.png")
+        assertTrue("Apoios search did not appear", waitForVisibleText("Procurar", 30_000))
+        assertTrue("Water filter did not appear", waitForVisibleText("Água", 30_000))
+        assertTrue("Expected water APOI did not appear", waitForVisibleText("Água SR — TESTE", 30_000))
+        clickVisibleText("Água SR — TESTE")
+        assertTrue("APOI detail did not appear", waitForVisibleText("Localização", 30_000))
+        assertTrue("APOI services did not appear", waitForVisibleText("Serviços", 30_000))
+        clickVisibleText("Voltar aos apoios")
+        assertTrue("APOI browser did not return", waitForAnyVisibleText("Próximos 10 km", "Procurar", timeoutMs = 30_000))
+        device.pressBack()
+        device.waitForIdle()
+        assertTrue("Walking screen did not return in compact mode", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
+        scrollWalkingSheetUntilVisible("OPÇÕES")
+        clickVisibleText("OPÇÕES")
+        assertTrue("Decision information did not appear", waitForVisibleText("Informação para decidir", 30_000))
+        assertTrue("Stop action did not appear", waitForVisibleText("PARAR AGORA", 30_000))
+        assertTrue("Continue action did not appear", waitForVisibleText("CONTINUAR CAMINHADA", 30_000))
+        clickVisibleText("CONTINUAR CAMINHADA")
+        assertTrue("Continue action did not return to walking in compact mode", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
+
+        clickVisibleText("PRÓXIMOS 10 KM")
+        assertTrue("Next 10 km surface did not appear", waitForVisibleText("Próximos 10 km", 30_000))
+        capture("caminhos-proximos-10-km.png")
+        device.pressBack()
+        device.waitForIdle()
+        assertTrue("Map did not return from Next 10 km", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
+
+        assertTrue("SOS action did not become visible", waitForVisibleTextOrDescription("SOS", 10_000))
+        clickVisibleTextOrDescription("SOS")
+        assertTrue("SOS surface did not appear", waitForVisibleText("EMERGÊNCIA", 30_000))
+        capture("caminhos-sos.png")
+        device.pressBack()
+        device.waitForIdle()
+        assertTrue("Map did not return from SOS", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
+
+        clickVisibleText("Diário")
+        assertTrue("Diary surface did not appear", waitForVisibleText("Diário", 30_000))
+        capture("caminhos-diario.png")
+        clickVisibleText("Mapa")
+        assertTrue("Map did not return from diary", waitForVisibleText("Percorridos", 30_000))
+
+        clickVisibleText("Resumo")
+        assertTrue("Summary surface did not appear", waitForVisibleText("Resumo", 30_000))
+        capture("caminhos-progresso.png")
+        clickVisibleText("ABRIR MAPA")
+        assertTrue("Map did not return from summary", waitForVisibleText("Percorridos", 30_000))
+
+        clickVisibleText("Mais")
+        assertTrue("More surface did not appear", waitForVisibleText("Mais", 30_000))
+        clickMoreAction("Smartwatch")
+        assertTrue("Smartwatch surface did not appear", waitForVisibleText("Smartwatch", 30_000))
+        capture("caminhos-smartwatch.png")
+        device.pressBack()
+        device.waitForIdle()
+        clickVisibleText("Mais")
+        assertTrue("More surface did not return after smartwatch", waitForVisibleText("Mais", 30_000))
+
+        clickMoreAction("Modo Peregrino")
+        assertTrue("Pilgrim mode surface did not appear", waitForVisibleTextOrDescription("MODO PEREGRINO — SUPERFÍCIE", 30_000))
+        capture("caminhos-pilgrim-mode.png")
+        clickVisibleTextOrDescription("Sair do Modo Peregrino")
+        clickVisibleText("Mais")
+        assertTrue("More surface did not return after pilgrim mode", waitForVisibleText("Mais", 30_000))
+        device.pressBack()
+        device.waitForIdle()
+        assertTrue("Map did not return after product-surface audit", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
+        scrollWalkingSheetUntilVisible("OPÇÕES")
+        clickVisibleText("OPÇÕES")
+        clickVisibleText("PARAR AGORA")
+        assertTrue("Stop action did not return to preparation", waitForVisibleText("Selecionar percurso", 30_000))
+
+        prepareSecondSrPlan()
+        assertTrue("Second cycle saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
+        clickVisibleText("INICIAR CAMINHADA")
+        assertTrue("Second walking cycle did not start in compact mode", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
+        scrollWalkingSheetUntilVisible("OPÇÕES")
+        clickVisibleText("OPÇÕES")
+        clickVisibleText("PARAR AGORA")
+        assertTrue("Second walking cycle did not stop cleanly", waitForVisibleText("Selecionar percurso", 30_000))
+    }
+
+    private fun prepareSecondSrPlan() {
+        if (waitForVisibleTextOrDescription("Prepare a sua caminhada", 3_000)) {
+            clickVisibleText("PREPARAR")
+        }
+        assertTrue("Second-cycle route selection did not appear", waitForVisibleText("Selecionar percurso", 30_000))
+        assertTrue("Second-cycle SR route did not appear", waitForVisibleText("Trajeto SR", 30_000))
+        clickVisibleText("Trajeto SR")
+        assertTrue("Second-cycle preparation home did not return", waitForVisibleText("Pausas", 30_000))
+        clickVisibleText("GUARDAR PLANO")
+        assertTrue("Second-cycle plan was not saved", waitForVisibleText("Plano guardado", 30_000))
+    }
+
+    private fun prepareSrPlan() {
+        if (waitForVisibleTextOrDescription("Prepare a sua caminhada", 1_500)) {
+            clickVisibleText("PREPARAR")
+        }
+        assertTrue("Route selection did not appear", waitForVisibleText("Selecionar percurso", 30_000))
+        assertTrue("SR test route did not appear", waitForVisibleText("Trajeto SR", 30_000))
+        clickVisibleText("Trajeto SR")
+        assertTrue("Preparation home did not return after route selection", waitForVisibleText("Pausas", 30_000))
+        val heroBitmap = BitmapFactory.decodeResource(
+            InstrumentationRegistry.getInstrumentation().targetContext.resources,
+            R.drawable.hero_centenario
+        )
+        assertTrue("Centenário hero artwork resource could not be decoded", heroBitmap != null)
+        assertTrue("Centenário hero artwork resource is empty", (heroBitmap?.width ?: 0) > 0 && (heroBitmap?.height ?: 0) > 0)
+        clickPreparationTile("Áudio")
+        assertTrue("Audio configuration did not appear", waitForVisibleText("Áudio", 30_000))
+        assertTrue("Immersive audio option did not appear", waitForVisibleText("ÁUDIO IMERSIVO", 30_000))
+        clickVisibleText("ÁUDIO IMERSIVO")
+        clickVisibleText("APLICAR")
+        assertTrue("Audio configuration did not close", waitForTextToDisappear("ÁUDIO IMERSIVO", 10_000))
+        assertTrue("Audio configuration did not return to preparation", waitForVisibleText("Pausas", 30_000))
+
+        clickPreparationTile("Orientação")
+        assertTrue("Orientation configuration did not appear", waitForVisibleText("Orientação", 30_000))
+        assertTrue("Walking-direction orientation option did not appear", waitForVisibleTextOrDescription("DIREÇÃO DA CAMINHADA", 30_000))
+        clickVisibleTextOrDescription("DIREÇÃO DA CAMINHADA")
+        clickVisibleText("APLICAR")
+        assertTrue("Orientation configuration did not close", waitForTextToDisappear("DIREÇÃO DA CAMINHADA", 10_000))
+        assertTrue("Orientation configuration did not return to preparation", waitForVisibleText("Pausas", 30_000))
+
+        clickPreparationTile("Apoios")
+        assertTrue("Apoios configuration did not appear", waitForVisibleText("Apoios", 30_000))
+        assertTrue("Water APOI category did not appear", waitForVisibleText("Água", 30_000))
+        clickVisibleText("Água")
+        clickVisibleText("APLICAR APOIOS")
+        assertTrue("APOIs configuration did not close", waitForVisibleTextOrDescription("PREPARAÇÃO — HOME", 30_000))
+
+        clickPreparationTile("Notas")
+        assertTrue("Notes screen did not appear", waitForVisibleText("Notas", 30_000))
+        assertTrue("Note input did not appear", waitForVisibleText("Nova nota", 30_000))
+        setVisibleTextField("Nota E2E persistida")
+        clickVisibleText("GUARDAR NOTA")
+        assertTrue("Saved note did not return to preparation", waitForVisibleTextOrDescription("PREPARAÇÃO — HOME", 30_000))
+        clickPreparationTile("Pausas")
+        assertTrue("Breaks screen did not appear", waitForAnyVisibleText("Pausas inteligentes", "Pausas", timeoutMs = 30_000))
+        assertTrue("Minute break option did not appear", waitForVisibleText("Parar a cada X minutos", 30_000))
+        assertTrue("Distance break option did not appear", waitForVisibleText("Parar a cada X km", 30_000))
+        clickVisibleText("APLICAR PAUSAS")
+        assertTrue("Preparation screen did not return after breaks", waitForAnyVisibleText("Orientação / Pausas", "Pausas", timeoutMs = 30_000))
+        clickVisibleText("GUARDAR PLANO")
+        assertTrue("Saved plan did not appear", waitForVisibleText("Plano guardado", 30_000))
+        assertTrue("Saved-plan explanation did not appear", waitForVisibleText("Guardar o plano não inicia a caminhada.", 30_000))
+        assertTrue("Saved plan did not show persisted audio choice", waitForVisibleText("Áudio · imersivo", 30_000))
+        assertTrue("Saved plan did not show persisted orientation choice", waitForVisibleText("Orientação · direção da caminhada", 30_000))
+        assertTrue("Saved plan did not show persisted APOI choice", waitForVisibleText("Apoios · 1 tipo(s) selecionado(s)", 30_000))
+        assertTrue("Saved plan did not show persisted note count", waitForVisibleText("Notas · 1 guardada(s)", 30_000))
+        assertTrue("Saved plan did not show persisted pause configuration", waitForVisibleText("Pausas · inteligentes ativas", 30_000))
+        assertTrue("Saved plan did not expose an explicit start action", waitForVisibleText("INICIAR CAMINHADA", 30_000))
+    }
+
+    private fun capture(name: String) {
+        val bitmap = requireNotNull(device.takeScreenshot()) { "UiDevice screenshot failed: $name" }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
+            val values = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/caminhos-v1/")
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+            val uri = requireNotNull(resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)) {
+                "Could not create shared screenshot: $name"
+            }
+            try {
+                resolver.openOutputStream(uri).use { output ->
+                    requireNotNull(output) { "Could not open screenshot output: $name" }
+                    assertTrue("Screenshot could not be encoded: $name", bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
+                }
+                values.clear()
+                values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+            } catch (error: Throwable) {
+                resolver.delete(uri, null, null)
+                throw error
+            }
+        } else {
+            val externalDir = requireNotNull(
+                InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir("v1-visual-validation")
+            )
+            require(externalDir.exists() || externalDir.mkdirs()) { "Visual validation directory could not be created" }
+            val file = File(externalDir, name)
+            FileOutputStream(file).use { output ->
+                assertTrue("Screenshot could not be encoded: $name", bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
+            }
+            assertTrue("Screenshot was not created or is empty: $name", file.isFile && file.length() > 0)
+        }
+    }
+
+    private fun scrollWalkingSheetUntilVisible(text: String) {
+        repeat(8) {
+            if (findVisibleTextOrDescription(text) != null) return
+            val x = device.displayWidth / 2
+            val startY = (device.displayHeight * 0.78).toInt()
+            val endY = (device.displayHeight * 0.42).toInt()
+            device.swipe(x, startY, x, endY, 10)
+            device.waitForIdle()
+        }
+        assertTrue("Walking sheet control did not become visible: $text", findVisibleTextOrDescription(text) != null)
+    }
+
+    private fun collapseWalkingSheet() {
+        val handle = device.wait(Until.findObject(By.desc("Recolher painel de caminhada")), 5_000)
+        assertTrue("Walking sheet collapse handle did not appear", handle != null)
+        assertTrue("Walking sheet collapse handle has no visible bounds", !handle!!.visibleBounds.isEmpty)
+        handle.click()
+        device.waitForIdle()
+        assertTrue(
+            "Walking sheet did not collapse",
+            device.wait(Until.findObject(By.desc("Expandir painel de caminhada")), 15_000) != null
+        )
+    }
+
+    private fun expandWalkingSheet() {
+        val expandedHandle = device.findObject(By.desc("Recolher painel de caminhada"))
+        if (expandedHandle != null && !expandedHandle.visibleBounds.isEmpty) {
+            return
+        }
+
+        val handle = device.wait(Until.findObject(By.desc("Expandir painel de caminhada")), 5_000)
+        assertTrue("Walking sheet expand handle did not appear", handle != null)
+        assertTrue("Walking sheet expand handle has no visible bounds", !handle!!.visibleBounds.isEmpty)
+        handle.click()
+        device.waitForIdle()
+        assertTrue("Walking sheet did not expand", waitForVisibleText("Caminhada atual", 15_000))
+    }
+
+    private fun setVisibleTextField(value: String) {
+        val field = device.wait(Until.findObject(By.clazz("android.widget.EditText")), 5_000)
+        assertTrue("Editable note field was not found", field != null)
+        field!!.click()
+        field.setText(value)
+        device.waitForIdle()
+    }
+
+    private fun visibleTextValue(prefix: String): String? {
+        val node = findVisibleTextOrDescription(prefix) ?: return null
+        return try {
+            node.text?.takeIf { it.isNotBlank() }
+                ?: node.contentDescription?.toString()?.takeIf { it.isNotBlank() }
+        } catch (_: StaleObjectException) {
+            null
+        }
+    }
+
+    private fun waitForTextToDisappear(text: String, timeoutMs: Long): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (findVisibleTextOrDescription(text) == null) return true
+            device.waitForIdle()
+            Thread.sleep(100)
+        }
+        return findVisibleTextOrDescription(text) == null
+    }
+
+    private fun waitForVisibleTextValueDifferent(prefix: String, previousValue: String?, timeoutMs: Long): Boolean {
+        if (previousValue == null) return false
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val currentValue = visibleTextValue(prefix)
+            if (currentValue != null && currentValue != previousValue) return true
+            device.waitForIdle()
+            Thread.sleep(150)
+        }
+        val currentValue = visibleTextValue(prefix)
+        return currentValue != null && currentValue != previousValue
+    }
+
+    private fun clickPreparationTile(label: String) {
+        val node = device.wait(Until.findObject(By.desc(label)), 5_000)
+            ?: run {
+                repeat(6) {
+                    if (device.findObject(By.desc(label)) != null) return@run device.findObject(By.desc(label))
+                    device.swipe(
+                        device.displayWidth / 2,
+                        (device.displayHeight * 0.80).toInt(),
+                        device.displayWidth / 2,
+                        (device.displayHeight * 0.30).toInt(),
+                        8
+                    )
+                    device.waitForIdle()
+                }
+                device.findObject(By.desc(label))
+            }
+        assertTrue("Preparation tile not found: $label", node != null)
+        val bounds = node!!.visibleBounds
+        assertTrue("Preparation tile not visible: $label", !bounds.isEmpty)
+        if (node!!.isClickable) {
+            node.click()
+        } else {
+            // Fallback only for accessibility wrappers that expose the label but not the
+            // descendant click action as a UiObject2 action.
+            device.click(bounds.centerX(), bounds.centerY())
+        }
+        device.waitForIdle()
+    }
+
+    private fun clickMoreAction(title: String) {
+        repeat(30) {
+            val node = findVisibleTextOrDescription(title)
+            if (node != null) {
+                if (node.isClickable) node.click()
+                else {
+                    val bounds = node.visibleBounds
+                    assertTrue("More action has no usable bounds: $title", !bounds.isEmpty)
+                    device.click(bounds.centerX(), bounds.centerY())
+                }
+                device.waitForIdle()
+                return
+            }
+            device.swipe(
+                device.displayWidth / 2,
+                (device.displayHeight * 0.82).toInt(),
+                device.displayWidth / 2,
+                (device.displayHeight * 0.20).toInt(),
+                8
+            )
+            device.waitForIdle()
+            Thread.sleep(250)
+        }
+        assertTrue("More action did not become visible: $title", findVisibleTextOrDescription(title) != null)
+    }
+
+    private fun clickVisibleTextOrDescription(text: String) {
+        val node = device.wait(Until.findObject(By.descContains(text)), 5_000)
+            ?: device.wait(Until.findObject(By.textContains(text)), 5_000)
+        assertTrue("Text or content description not found: $text", node != null)
+        try {
+            if (node!!.isClickable) node.click()
+            else {
+                val bounds = node.visibleBounds
+                assertTrue("Back control has no usable bounds: $text", !bounds.isEmpty)
+                device.click(bounds.centerX(), bounds.centerY())
+            }
+        } catch (_: StaleObjectException) {
+            val retry = findVisibleTextOrDescription(text)
+            assertTrue("Back control became stale before click: $text", retry != null)
+            val bounds = retry!!.visibleBounds
+            assertTrue("Retry back control has no usable bounds: $text", !bounds.isEmpty)
+            device.click(bounds.centerX(), bounds.centerY())
+        }
+        device.waitForIdle()
+    }
+
+    private fun clickVisibleText(text: String) {
+        device.waitForIdle()
+        repeat(12) {
+            val node = findVisibleTextOrDescription(text)
+            if (node != null) {
+                try {
+                    val bounds = node.visibleBounds
+                    if (bounds.isEmpty) {
+                        throw IllegalStateException("Visible node has no usable bounds: $text")
+                    }
+                    if (node.isClickable) {
+                        node.click()
+                    } else {
+                        device.click(bounds.centerX(), bounds.centerY())
+                    }
+                    device.waitForIdle()
+                    return
+                } catch (_: StaleObjectException) {
+                    // Re-query on the next iteration; Compose may replace the node between lookup and click.
+                }
+            }
+            val direction = if (it % 2 == 0) {
+                intArrayOf(
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.82).toInt(),
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.28).toInt()
+                )
+            } else {
+                intArrayOf(
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.28).toInt(),
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.82).toInt()
+                )
+            }
+            device.swipe(direction[0], direction[1], direction[2], direction[3], 8)
+            device.waitForIdle()
+        }
+        val node = device.wait(Until.findObject(By.textContains(text)), 5_000)
+            ?: device.wait(Until.findObject(By.descContains(text)), 5_000)
+        val visible = try {
+            node != null && !node.visibleBounds.isEmpty
+        } catch (_: StaleObjectException) {
+            false
+        }
+        assertTrue("Text or content description not found or not visible: $text", visible)
+        try {
+            if (node!!.isClickable) {
+                node.click()
+            } else {
+                val bounds = node.visibleBounds
+                assertTrue("Visible node has no usable bounds: $text", !bounds.isEmpty)
+                device.click(bounds.centerX(), bounds.centerY())
+            }
+        } catch (_: StaleObjectException) {
+            val retry = findVisibleTextOrDescription(text)
+            assertTrue("Text or content description became stale before click: $text", retry != null)
+            val bounds = retry!!.visibleBounds
+            assertTrue("Retry node has no usable bounds: $text", !bounds.isEmpty)
+            device.click(bounds.centerX(), bounds.centerY())
+        }
+        device.waitForIdle()
+    }
+
+    private fun findVisibleTextOrDescription(text: String): androidx.test.uiautomator.UiObject2? {
+        val descriptionNode = device.findObjects(By.descContains(text)).firstOrNull { node ->
+            runCatching { !node.visibleBounds.isEmpty }.getOrDefault(false)
+        }
+        if (descriptionNode != null) return descriptionNode
+        return device.findObjects(By.textContains(text)).firstOrNull { node ->
+            runCatching { !node.visibleBounds.isEmpty }.getOrDefault(false)
+        }
+    }
+
+    private fun waitForVisibleTextOrDescription(text: String, timeoutMs: Long): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val node = findVisibleTextOrDescription(text)
+            if (node != null) return true
+            device.waitForIdle()
+            Thread.sleep(150)
+        }
+        return findVisibleTextOrDescription(text) != null
+    }
+
+    private fun waitForVisibleText(text: String, timeoutMs: Long): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val node = device.findObject(By.textContains(text))
+            try {
+                if (node != null && !node.visibleBounds.isEmpty) return true
+            } catch (_: StaleObjectException) {
+                continue
+            }
+            val swipeUp = ((System.currentTimeMillis() / 150L) % 2L == 0L)
+            if (swipeUp) {
+                device.swipe(
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.82).toInt(),
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.28).toInt(),
+                    8
+                )
+            } else {
+                device.swipe(
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.28).toInt(),
+                    device.displayWidth / 2,
+                    (device.displayHeight * 0.82).toInt(),
+                    8
+                )
+            }
+            device.waitForIdle()
+            Thread.sleep(150)
+        }
+        return false
+    }
+
+    private fun waitForAnyVisibleText(vararg texts: String, timeoutMs: Long): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (texts.any { device.hasObject(By.text(it)) }) return true
+            device.waitForIdle(); Thread.sleep(250)
+        }
+        return texts.any { device.hasObject(By.text(it)) }
+    }
+}

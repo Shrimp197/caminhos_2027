@@ -30,9 +30,35 @@ data class GpsTrackingPolicy(
     val probableDeviationSamples: Int = 3,
     /** Poor accuracy must not by itself become a deviation. */
     val weakAccuracyMeters: Double = 50.0,
+    /** Fresh GPS must be close to the planned route-km before a prepared walk becomes ACTIVE. */
+    val startArrivalToleranceMeters: Double = 100.0,
     /** Reject physically implausible route jumps instead of moving the walking state. Initial test value. */
-    val maxPlausibleSpeedKmh: Double = 8.0
-)
+    val maxPlausibleSpeedKmh: Double = 8.0,
+    /** Accept small device-clock skew, but never let a materially future observation advance state. */
+    val maxFutureSkewSeconds: Long = 15
+) {
+    init {
+        require(noSignalAfterSeconds >= 0) { "noSignalAfterSeconds must be >= 0" }
+        require(possibleDeviationMeters.isFinite() && possibleDeviationMeters >= 0.0) {
+            "possibleDeviationMeters must be finite and >= 0"
+        }
+        require(probableDeviationMeters.isFinite() && probableDeviationMeters >= possibleDeviationMeters) {
+            "probableDeviationMeters must be finite and >= possibleDeviationMeters"
+        }
+        require(possibleDeviationSamples > 0) { "possibleDeviationSamples must be > 0" }
+        require(probableDeviationSamples > 0) { "probableDeviationSamples must be > 0" }
+        require(weakAccuracyMeters.isFinite() && weakAccuracyMeters >= 0.0) {
+            "weakAccuracyMeters must be finite and >= 0"
+        }
+        require(startArrivalToleranceMeters.isFinite() && startArrivalToleranceMeters >= 0.0) {
+            "startArrivalToleranceMeters must be finite and >= 0"
+        }
+        require(maxPlausibleSpeedKmh.isFinite() && maxPlausibleSpeedKmh >= 0.0) {
+            "maxPlausibleSpeedKmh must be finite and >= 0"
+        }
+        require(maxFutureSkewSeconds >= 0) { "maxFutureSkewSeconds must be >= 0" }
+    }
+}
 
 data class GpsTrackingState(
     val state: GpsState,

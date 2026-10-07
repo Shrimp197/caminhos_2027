@@ -7,38 +7,66 @@ import com.caminhos2027.v1.core.model.Stage
 import com.caminhos2027.v1.core.model.Walk
 import com.caminhos2027.v1.core.model.WalkStatus
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WalkingProgressTest {
     @Test
     fun calculatesProgressFromActualStartToPlannedDestination() {
-        val progress = WalkingProgressCalculator.calculate(route(), walk(), 6.0, "stage-1")
+        val progress = WalkingProgressCalculator.calculate(route(), walk(), 6.0)
 
         assertEquals(6.0, progress.currentRouteKm, 0.001)
         assertEquals(1.0, progress.walkedKm, 0.001)
         assertEquals(4.0, progress.remainingKm, 0.001)
-        assertEquals(0.1, progress.progressRatio, 0.001)
-        assertEquals("stage-1", progress.stageId)
+        assertEquals(0.2, progress.progressRatio, 0.001)
+        assertEquals("stage-2", progress.stageId)
     }
 
     @Test
     fun reachingTargetClampsProgressToOne() {
-        val progress = WalkingProgressCalculator.calculate(route(), walk(), 11.0, "stage-2")
+        val progress = WalkingProgressCalculator.calculate(route(), walk(), 11.0)
         assertEquals(1.0, progress.progressRatio, 0.001)
         assertEquals(0.0, progress.remainingKm, 0.001)
+        assertEquals("stage-2", progress.stageId)
+    }
+
+    @Test
+    fun destinationDoesNotTruncateReliablePositionBeyondPlannedTarget() {
+        val progress = WalkingProgressCalculator.calculate(route(), walk(), 12.0)
+
+        assertEquals(12.0, progress.currentRouteKm, 0.001)
+        assertEquals(7.0, progress.walkedKm, 0.001)
+        assertEquals(10.0, progress.targetRouteKm, 0.001)
+        assertEquals(0.0, progress.remainingKm, 0.001)
+        assertEquals(1.0, progress.progressRatio, 0.001)
     }
 
     @Test
     fun positionBeforeStartDoesNotCreateNegativeWalkedDistance() {
-        val progress = WalkingProgressCalculator.calculate(route(), walk(), 4.0, "stage-1")
+        val progress = WalkingProgressCalculator.calculate(route(), walk(), 4.0)
         assertEquals(0.0, progress.walkedKm, 0.001)
         assertTrue(progress.remainingKm > 0.0)
+        assertEquals("stage-1", progress.stageId)
+    }
+
+    @Test
+    fun stageIsDerivedFromRoutePosition() {
+        val progress = WalkingProgressCalculator.calculate(route(), walk(), 6.0)
+        assertEquals("stage-2", progress.stageId)
+        assertEquals("TEST/FICTITIOUS stage", progress.stageName)
+    }
+
+    @Test
+    fun gapsDoNotInventStage() {
+        val progress = WalkingProgressCalculator.calculate(routeWithGap(), walk(), 6.5)
+        assertNull(progress.stageId)
+        assertNull(progress.stageName)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun mismatchedRouteIsRejected() {
-        WalkingProgressCalculator.calculate(route(), walk().copy(routeId = "other"), 6.0, null)
+        WalkingProgressCalculator.calculate(route(), walk().copy(routeId = "other"), 6.0)
     }
 
     private fun walk() = Walk(
@@ -59,8 +87,15 @@ class WalkingProgressTest {
         updatedAt = "2026-09-02",
         geometry = RouteGeometry(listOf(GeoPoint(40.0, -8.0), GeoPoint(40.0, -7.9))),
         stages = listOf(
-            stage("stage-1", 0, 6.0),
+            stage("stage-1", 0.0, 6.0),
             stage("stage-2", 6.0, 12.0)
+        )
+    )
+
+    private fun routeWithGap() = route().copy(
+        stages = listOf(
+            stage("stage-1", 0.0, 6.0),
+            stage("stage-2", 7.0, 12.0)
         )
     )
 
