@@ -2,11 +2,11 @@
 
 ## Acionamento
 
-O protocolo é acionado pelo comando externo de retoma que identifica explicitamente este repositório:
+O protocolo é acionado pelo comando externo:
 
-> Retomar Caminhos 2027 no GitHub: `Shrimp197/caminhos_2027`, branch `v1-route-import`.
+> Retomar Caminhos 2027.
 
-Ao receber esse comando, aceder diretamente ao repositório indicado. Não procurar o projeto através de pesquisa pública nem pedir ao utilizador ficheiros/contexto que o próprio repositório já contém.
+A expressão identifica o projeto. Ao recebê-la, aceder diretamente ao repositório `Shrimp197/caminhos_2027`, usar a branch de desenvolvimento `v1-route-import` e seguir este protocolo. Não procurar o projeto através de pesquisa pública nem pedir ao utilizador ficheiros/contexto que o próprio repositório já contém.
 
 Se o repositório/branch indicados no comando diferirem do estado atual documentado, verificar o GitHub e usar sempre o estado real.
 
@@ -223,3 +223,33 @@ Considerar o ciclo concluído apenas quando:
 - a próxima ação estiver clara.
 
 Nunca declarar sucesso com base apenas em intenção, código escrito ou ausência de erros aparentes.
+
+
+## Modo de execução contínua
+
+Ao receber “Retomar Caminhos 2027.”, o agente deve trabalhar em modo de execução contínua.
+
+Enquanto existir trabalho útil, seguro e dentro dos objetivos do projeto que possa executar autonomamente:
+
+- não parar depois de concluir uma tarefa;
+- não pedir confirmação entre tarefas normais;
+- escolher automaticamente a próxima prioridade;
+- implementar, testar, validar e documentar;
+- corrigir falhas encontradas e voltar a validar;
+- repetir o ciclo continuamente;
+- não enviar apenas um relatório intermédio enquanto ainda houver trabalho útil por executar.
+
+Quando uma tarefa terminar, a pergunta operacional deve ser:
+
+> “Qual é a próxima ação relevante que consigo executar agora para aproximar a V1 do objetivo?”
+
+Só interromper quando:
+- for necessária uma decisão real de produto;
+- for necessária uma ação que apenas o utilizador possa executar;
+- faltar acesso/credencial;
+- for necessário um teste físico ou hardware;
+- já não existir trabalho autónomo relevante disponível.
+
+Não criar trabalho artificial apenas para manter a execução.
+
+O progresso contínuo nunca pode ultrapassar as regras, decisões e critérios de aceitação do projeto.
