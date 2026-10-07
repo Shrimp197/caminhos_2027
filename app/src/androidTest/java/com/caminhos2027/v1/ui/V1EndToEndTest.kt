@@ -188,6 +188,7 @@ class V1EndToEndTest {
         device.pressBack()
         device.waitForIdle()
         assertTrue("Map did not return from Next 10 km", waitForVisibleText("Percorridos", 30_000))
+        expandWalkingSheet()
 
         assertTrue("SOS action did not become visible", waitForVisibleTextOrDescription("SOS", 10_000))
         clickVisibleTextOrDescription("SOS")
