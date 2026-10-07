@@ -10,17 +10,17 @@
 - Pull Request: #8
 - PR title: V1 route import — official geometry provenance and runtime policy
 - PR state: open, draft
-- Último HEAD funcional verificado: `8018d1010ef7f20412b7db2915cb0e703c2ecfd9`
+- Último HEAD funcional verificado: `dfa774adef5d9024d61cd802b1d4c41d9cdf000b`
 - Base SHA do PR: `c5222c1fb3052ea22ccf4b25701257a84f55f704`
-- Última implementação funcional verificada: `8018d1010ef7f20412b7db2915cb0e703c2ecfd9` — aplicação do estilo cartográfico local após ativação da região offline.
+- Última implementação funcional verificada: `8018d1010ef7f20412b7db2915cb0e703c2ecfd9` — aplicação do estilo cartográfico local após ativação da região offline. O HEAD atual acrescenta apenas documentação de continuidade.
 
 ## CI da implementação validada
 
-No HEAD `817f50f374e4d3043e0417413a5ab4484a169880`:
+No último estado funcional validado `8018d1010ef7f20412b7db2915cb0e703c2ecfd9`:
 
 - V1 Route Import Validation: sucesso (run 1676).
 - V1 Route Source Provenance: sucesso (run 2241).
-- V1 Route Import Build: sucesso (run 1689).
+- V1 Route Import Build: sucesso (run 1689); o HEAD atual `dfa774a…` também passou no build 1691.
 - O build passou por testes JVM, compilação, APK debug assinado, emulador Android, E2E com process-death, validação visual e APK release.
 
 Artefactos validados no build 1689:
@@ -49,7 +49,7 @@ Artefactos validados no build 1689:
 - Auditoria visual das 10 superfícies concluída com screenshots reais.
 - Preparação alinhada estruturalmente com a referência.
 - Caminhada/mapa alinhada com a referência principal: mapa visível, estado compacto por defeito, traçado azul e reconstrução offline funcional.
-- Persistência e E2E passam no build 1685.
+- Persistência e E2E passam nos builds validados; o build 1691 do HEAD atual também passou.
 - Offline tem evidência positiva no Android virtual; validação em condições reais continua necessária.
 - APK debug validado disponível para teste físico; APK release unsigned também produzido pelo CI.
 - **Teste físico ainda não realizado.**
