@@ -81,6 +81,13 @@ fun ApoiBrowserScreenV1(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
+                FilterChip(
+                    selected = selectedServices.isEmpty(),
+                    onClick = {
+                        selectedServices.toList().forEach(onServiceToggled)
+                    },
+                    label = { Text("Todos") }
+                )
                 ApoiCategory.entries.forEach { category ->
                     FilterChip(
                         selected = category in selectedServices,
@@ -124,26 +131,59 @@ private fun ApoiBrowserCard(item: ApoiAhead, onSelected: (ApoiAhead) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                Modifier.size(46.dp).background(categoryColor(category), RoundedCornerShape(13.dp)),
+                Modifier.size(48.dp).background(
+                    categoryColor(category).copy(alpha = 0.12f),
+                    RoundedCornerShape(14.dp)
+                ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(categoryIcon(category), null, tint = Color.White, modifier = Modifier.size(25.dp))
+                Icon(categoryIcon(category), null, tint = categoryColor(category), modifier = Modifier.size(25.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(categoryLabel(category).uppercase(Locale("pt", "PT")), color = categoryColor(category), fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
-                Text(item.apoi.name, fontWeight = FontWeight.ExtraBold, color = ApoioBlue)
                 Text(
-                    "${formatKm(item.distanceKm)} km · " +
-                        item.apoi.services.sortedBy { it.name }.joinToString(" · ") { categoryLabel(it) },
-                    color = ApoioMuted,
-                    style = MaterialTheme.typography.bodySmall
+                    categoryLabel(category).uppercase(Locale("pt", "PT")),
+                    color = categoryColor(category),
+                    fontWeight = FontWeight.ExtraBold,
+                    style = MaterialTheme.typography.labelSmall
                 )
-                Text(costLabelBrowser(item.apoi), color = ApoioBlue, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
-                reservationLabelBrowser(item.apoi)?.let { Text(it, color = ApoioMuted, style = MaterialTheme.typography.bodySmall) }
-                Text(availabilityLabelBrowser(item.apoi), color = availabilityColorBrowser(item.apoi), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    item.apoi.name,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = ApoioBlue,
+                    maxLines = 2
+                )
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "${formatKm(item.distanceKm)} km",
+                        color = ApoioBlue,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        costLabelBrowser(item.apoi),
+                        color = ApoioMuted,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1
+                    )
+                }
+                Text(
+                    availabilityLabelBrowser(item.apoi),
+                    color = availabilityColorBrowser(item.apoi),
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1
+                )
+                reservationLabelBrowser(item.apoi)?.let {
+                    Text(it, color = ApoioMuted, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                }
                 if (item.apoi.publication.status == PublicationStatus.PUBLISHED_WITH_WARNING) {
-                    Text("⚠ Informação com ressalva", color = Color(0xFF9A5A00), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "⚠ Informação com ressalva",
+                        color = Color(0xFF9A5A00),
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }
