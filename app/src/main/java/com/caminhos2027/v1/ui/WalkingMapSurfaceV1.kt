@@ -227,7 +227,7 @@ internal fun RealWalkingMap(
             loaded.addPolyline(
                 PolylineOptions()
                     .addAll(mapPoints.map { LatLng(it.latitude, it.longitude) })
-                    .color(AndroidColor.rgb(31, 107, 74))
+                    .color(AndroidColor.rgb(32, 112, 210))
                     .width(7f)
             )
             loaded.addMarker(
