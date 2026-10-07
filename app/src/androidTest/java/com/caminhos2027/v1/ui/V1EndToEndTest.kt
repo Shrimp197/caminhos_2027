@@ -222,7 +222,7 @@ class V1EndToEndTest {
         assertTrue("More surface did not return after smartwatch", waitForVisibleText("Mais", 30_000))
 
         clickMoreAction("Modo Peregrino")
-        assertTrue("Pilgrim mode surface did not appear", waitForVisibleText("MODO PEREGRINO", 30_000))
+        assertTrue("Pilgrim mode surface did not appear", waitForVisibleTextOrDescription("MODO PEREGRINO — SUPERFÍCIE", 30_000))
         capture("caminhos-pilgrim-mode.png")
         clickVisibleTextOrDescription("Sair do Modo Peregrino")
         clickVisibleText("Mais")

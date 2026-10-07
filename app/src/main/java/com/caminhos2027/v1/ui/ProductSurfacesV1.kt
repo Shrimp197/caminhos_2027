@@ -407,7 +407,7 @@ internal fun PilgrimModeSurfaceV1(state: WalkingState, onOpenApoi: () -> Unit, o
     val routeKm = state.routePosition?.routeKm ?: state.progress?.currentRouteKm ?: 0.0
     val remaining = state.progress?.remainingKm ?: 0.0
     val progress = (state.progress?.progressRatio ?: 0.0).coerceIn(0.0, 1.0)
-    Surface(Modifier.fillMaxSize(), color = Color.Black) {
+    Surface(Modifier.fillMaxSize().semantics { contentDescription = "MODO PEREGRINO — SUPERFÍCIE" }, color = Color.Black) {
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) { Text("MODO PEREGRINO", color = Color.White, fontWeight = FontWeight.ExtraBold); Text(if (state.isPaused) "PAUSADO" else "CAMINHADA EM CURSO", color = Color(0xFF8DFF9A), fontWeight = FontWeight.Bold) }
