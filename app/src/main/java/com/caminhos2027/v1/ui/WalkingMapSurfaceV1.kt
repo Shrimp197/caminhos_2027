@@ -188,7 +188,18 @@ internal fun RealWalkingMap(
             styleReady = false
             runCatching {
                 loaded.setOfflineRegionDefinition(offlineRegion!!.definition) {
-                    styleReady = true
+                    val localStyle = runCatching {
+                        context.assets.open("data/map/openfreemap-liberty.json")
+                            .bufferedReader()
+                            .use { it.readText() }
+                    }.getOrNull()
+                    if (localStyle != null) {
+                        loaded.setStyle(Style.Builder().fromJson(localStyle)) {
+                            styleReady = true
+                        }
+                    } else {
+                        styleReady = true
+                    }
                 }
             }.onFailure {
                 styleReady = false
